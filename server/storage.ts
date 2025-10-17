@@ -290,8 +290,10 @@ export class MemStorage implements IStorage {
     // Group by requestId
     const conversationsMap = new Map<string, any>();
     
-    for (const msg of userMessages) {
-      console.log(`[DEBUG Storage] Processing message: requestId=${msg.requestId}`);
+    console.log(`[DEBUG Storage] Starting to group ${userMessages.length} messages`);
+    for (let i = 0; i < userMessages.length; i++) {
+      const msg = userMessages[i];
+      console.log(`[DEBUG Storage] Processing message ${i}: requestId=${msg.requestId}`);
       const existing = conversationsMap.get(msg.requestId);
       const isUnread = msg.receiverId === userId && !msg.isRead;
       
