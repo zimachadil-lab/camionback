@@ -1,0 +1,61 @@
+Je viens de refaire tout l’exercice que tu as décrit, et le problème persiste : côté transporteur, je vois bien le badge “1” sur Messages, mais la page de conversation est vide et je ne peux ni lire ni répondre.
+
+Contexte
+
+Environnement : staging (Replit)
+
+Navigateur : Chrome desktop
+
+Date/heure (Africa/Casablanca) : 17/10/2025, ~ [met ton heure]
+
+Étapes que j’ai suivies (exactement comme ton guide)
+
+Connexion client : 0612345678 (OTP : 6 chiffres aléatoires)
+
+Création d’une demande : nouvelle commande (détails quelconques)
+
+Connexion transporteur (nouvel onglet) : 0698765432 (OTP : 6 chiffres)
+
+Soumission d’une offre par le transporteur sur la demande
+
+Retour client : j’accepte l’offre du transporteur
+
+Client → Chat : j’envoie un message au transporteur depuis le tableau de bord
+
+Transporteur :
+
+Le badge Messages = 1 ✅
+
+Je clique → redirection vers /messages
+
+Problème : la conversation est vide (aucun message listé, impossible de répondre) ❌
+
+Ce que tu peux vérifier dans tes logs (debug)
+
+userId utilisé côté transporteur
+
+requestId / orderId accepté (référence de la commande)
+
+otherUser (côté pair de conversation) — suspicion : null/undefined
+
+Nombre de messages renvoyés par la requête (devrait être ≥ 1)
+
+La requête DB/endpoint qui alimente /messages et /messages/:id (filtre par participants: [clientId, driverId] et/ou orderId)
+
+L’événement de création de conversation au moment de l’acceptation d’offre (est-ce que la conversation est bien créée/lié au orderId ?)
+
+Hypothèse rapide (à confirmer par tes logs)
+
+Le request (commande) ou otherUser (interlocuteur) n’est pas chargé/populé côté transporteur, du coup la vue rend un état vide malgré le compteur.
+
+Action demandée
+
+Peux-tu reproduire le même flux et checker les logs serveur sur ces champs (userId, orderId, otherUser, messagesCount) ?
+
+Si besoin, ajoute un log temporaire côté /messages pour tracer :
+
+req.user.id, query.orderId, participants, messages.length
+
+Dis-moi ce que tu observes ; je refais un test dès que tu pousses un correctif.
+
+Merci !

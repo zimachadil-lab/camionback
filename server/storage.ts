@@ -316,7 +316,7 @@ export class MemStorage implements IStorage {
     const conversations: any[] = [];
     console.log(`[DEBUG Storage] Processing ${conversationsMap.size} conversation groups`);
     
-    for (const conv of conversationsMap.values()) {
+    for (const conv of Array.from(conversationsMap.values())) {
       console.log(`[DEBUG Storage] Looking for request: ${conv.requestId}, otherUser: ${conv.otherUserId}`);
       const request = await this.getTransportRequest(conv.requestId);
       const otherUser = await this.getUser(conv.otherUserId);
