@@ -9,6 +9,44 @@ The application supports three distinct user roles:
 - **Transporters**: Browse available requests and submit price offers
 - **Administrators**: Manage users, validate transactions, and access platform analytics
 
+## Recent Changes (October 2025)
+
+### Completed Features
+✅ **Full Authentication Flow**: Phone-only OTP authentication with automatic user creation and role assignment
+  - Dev mode accepts any 6-digit OTP code (e.g., "123456", "999999")
+  - Automatic role detection based on phone number patterns
+  - Test users: 0612345678 (client), 0698765432 (transporter), 0612000000 (admin)
+
+✅ **Complete Frontend-Backend Integration**: All dashboards connected to real API endpoints
+  - Client dashboard: Create requests, view/accept offers with commission display
+  - Transporter dashboard: Browse available requests, submit offers, track status
+  - Admin dashboard: User management, order tracking, commission configuration
+
+✅ **Order Reference System**: Auto-generated CMD-2025-XXXXX format for all transport requests
+
+✅ **Commission Calculation**: Automatic 10% commission calculation on offer acceptance
+  - Configurable by admin
+  - Displayed clearly to clients before acceptance
+  - Example: 2500 MAD offer → 250 MAD commission → 2750 MAD total
+
+✅ **Data Persistence**: In-memory storage with full CRUD operations for:
+  - Users (with role-based access)
+  - Transport requests (with status tracking)
+  - Offers (pending/accepted/rejected)
+  - OTP codes (with expiry)
+  - Admin settings
+
+✅ **End-to-End Testing**: Complete user journey validated via Playwright
+  - Client creates request → Transporter submits offer → Client accepts → Commission calculated
+
+### Technical Fixes Applied
+- Fixed dateTime validation: Schema now uses `z.coerce.date()` to accept ISO strings
+- Fixed optional fields: Frontend only sends non-empty values to prevent validation errors
+- Fixed OTP verification: Dev mode accepts any 6-digit code for easier testing
+- Fixed role assignment: Automatic role detection based on phone number patterns
+- Fixed WebSocket path: Uses `/ws-chat` to avoid Vite HMR conflicts
+- Fixed TypeScript errors: Explicit type annotations for array variables
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.

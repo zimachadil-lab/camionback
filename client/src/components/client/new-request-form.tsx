@@ -17,7 +17,7 @@ const requestSchema = z.object({
   description: z.string().min(10, "Description minimale: 10 caractères"),
   goodsType: z.string().min(1, "Type de marchandise requis"),
   estimatedWeight: z.string().optional(),
-  dateTime: z.string().min(1, "Date et heure requises"),
+  dateTime: z.string().optional(),
   budget: z.string().optional(),
 });
 
@@ -61,14 +61,28 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
     try {
       const currentUser = JSON.parse(localStorage.getItem("camionback_user") || "{}");
       
+      // Clean up optional fields - don't send empty strings
+      const payload: any = {
+        fromCity: data.fromCity,
+        toCity: data.toCity,
+        description: data.description,
+        goodsType: data.goodsType,
+        clientId: currentUser.id,
+        dateTime: data.dateTime ? new Date(data.dateTime).toISOString() : new Date().toISOString(),
+      };
+      
+      if (data.estimatedWeight) {
+        payload.estimatedWeight = data.estimatedWeight;
+      }
+      
+      if (data.budget) {
+        payload.budget = data.budget;
+      }
+      
       const response = await fetch("/api/requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...data,
-          clientId: currentUser.id,
-          dateTime: new Date(data.dateTime),
-        }),
+        body: JSON.stringify(payload),
       });
       
       if (!response.ok) throw new Error();
@@ -230,7 +244,7 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
               name="dateTime"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Date et heure souhaitées</FormLabel>
+                  <FormLabel>Date et heure souhaitées (optionnel)</FormLabel>
                   <FormControl>
                     <Input 
                       type="datetime-local" 

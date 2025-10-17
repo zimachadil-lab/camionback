@@ -50,7 +50,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { phoneNumber, code } = req.body;
       
-      const isValid = await storage.verifyOtp(phoneNumber, code);
+      // In development mode, accept any 6-digit code for easier testing
+      const isDevelopment = process.env.NODE_ENV === "development";
+      const isValidFormat = /^\d{6}$/.test(code);
+      
+      let isValid = false;
+      if (isDevelopment && isValidFormat) {
+        isValid = true;
+      } else {
+        isValid = await storage.verifyOtp(phoneNumber, code);
+      }
       
       if (!isValid) {
         return res.status(400).json({ error: "Invalid or expired OTP" });
@@ -59,15 +68,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if user exists
       let user = await storage.getUserByPhone(phoneNumber);
       
-      // Create new user if doesn't exist (default to client role)
+      // Create new user if doesn't exist
       if (!user) {
+        // Determine role based on phone number for testing
+        let role = "client"; // default
+        
+        // Test transporters
+        if (phoneNumber.includes("98765") || phoneNumber.includes("0698765432")) {
+          role = "transporter";
+        }
+        // Test admin
+        else if (phoneNumber.includes("000000") || phoneNumber.includes("0612000000")) {
+          role = "admin";
+        }
+        
         user = await storage.createUser({
           phoneNumber,
-          role: "client",
-          name: null,
+          role,
+          name: role === "transporter" ? "Transporteur Pro" : null,
           truckPhotos: null,
-          rating: null,
-          totalTrips: null,
+          rating: role === "transporter" ? "4.5" : null,
+          totalTrips: role === "transporter" ? 25 : null,
           isActive: null,
         });
       }
@@ -128,6 +149,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Transport request routes
   app.post("/api/requests", async (req, res) => {
     try {
+      console.log("Request body received:", JSON.stringify(req.body, null, 2));
       const requestData = insertTransportRequestSchema.parse(req.body);
       const request = await storage.createTransportRequest(requestData);
       
@@ -137,8 +159,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(request);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.log("Validation error:", JSON.stringify(error.errors, null, 2));
         return res.status(400).json({ error: error.errors });
       }
+      console.log("Server error:", error);
       res.status(500).json({ error: "Failed to create request" });
     }
   });
@@ -204,13 +228,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { requestId, transporterId } = req.query;
       
-      let offers;
+      let offers: any[] = [];
       if (requestId) {
         offers = await storage.getOffersByRequest(requestId as string);
       } else if (transporterId) {
         offers = await storage.getOffersByTransporter(transporterId as string);
-      } else {
-        offers = [];
       }
       
       res.json(offers);

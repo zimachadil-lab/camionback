@@ -78,7 +78,9 @@ export const adminSettings = pgTable("admin_settings", {
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertOtpCodeSchema = createInsertSchema(otpCodes).omit({ id: true, createdAt: true, verified: true });
-export const insertTransportRequestSchema = createInsertSchema(transportRequests).omit({ id: true, createdAt: true, referenceId: true, status: true, acceptedOfferId: true });
+export const insertTransportRequestSchema = createInsertSchema(transportRequests).omit({ id: true, createdAt: true, referenceId: true, status: true, acceptedOfferId: true }).extend({
+  dateTime: z.coerce.date(), // Accept ISO string and coerce to Date
+});
 export const insertOfferSchema = createInsertSchema(offers).omit({ id: true, createdAt: true, status: true, paymentProofUrl: true, paymentValidated: true });
 export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({ id: true, createdAt: true, filteredMessage: true });
 export const insertAdminSettingsSchema = createInsertSchema(adminSettings).omit({ id: true, updatedAt: true });
