@@ -41,9 +41,9 @@ export default function TransporterDashboard() {
   };
 
   const { data: requests = [], isLoading: requestsLoading } = useQuery({
-    queryKey: ["/api/requests"],
+    queryKey: ["/api/requests", user.id],
     queryFn: async () => {
-      const response = await fetch("/api/requests?status=open");
+      const response = await fetch(`/api/requests?status=open&transporterId=${user.id}`);
       return response.json();
     },
   });
