@@ -273,8 +273,19 @@ export class MemStorage implements IStorage {
 
   async getUserConversations(userId: string): Promise<any[]> {
     // Get all messages where user is sender or receiver
-    const userMessages = Array.from(this.chatMessages.values())
-      .filter((msg) => msg.senderId === userId || msg.receiverId === userId);
+    const allMessages = Array.from(this.chatMessages.values());
+    console.log(`[DEBUG Storage] Total messages in system: ${allMessages.length}`);
+    console.log(`[DEBUG Storage] Looking for messages with userId: ${userId}`);
+    
+    const userMessages = allMessages.filter((msg) => {
+      const matches = msg.senderId === userId || msg.receiverId === userId;
+      if (matches) {
+        console.log(`[DEBUG Storage] Found message: senderId=${msg.senderId}, receiverId=${msg.receiverId}`);
+      }
+      return matches;
+    });
+    
+    console.log(`[DEBUG Storage] Found ${userMessages.length} messages for user ${userId}`);
 
     // Group by requestId
     const conversationsMap = new Map<string, any>();
@@ -303,9 +314,14 @@ export class MemStorage implements IStorage {
 
     // Convert to array and enrich with request data
     const conversations: any[] = [];
+    console.log(`[DEBUG Storage] Processing ${conversationsMap.size} conversation groups`);
+    
     for (const conv of conversationsMap.values()) {
+      console.log(`[DEBUG Storage] Looking for request: ${conv.requestId}, otherUser: ${conv.otherUserId}`);
       const request = await this.getTransportRequest(conv.requestId);
       const otherUser = await this.getUser(conv.otherUserId);
+      
+      console.log(`[DEBUG Storage] Request found: ${!!request}, OtherUser found: ${!!otherUser}`);
       
       if (request && otherUser) {
         conversations.push({
@@ -321,6 +337,8 @@ export class MemStorage implements IStorage {
             role: otherUser.role,
           },
         });
+      } else {
+        console.log(`[DEBUG Storage] Skipping conversation - missing request or otherUser!`);
       }
     }
 

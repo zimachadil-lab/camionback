@@ -374,9 +374,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "userId required" });
       }
       
+      console.log(`[DEBUG] Getting conversations for userId: ${userId}`);
       const conversations = await storage.getUserConversations(userId as string);
+      console.log(`[DEBUG] Found ${conversations.length} conversations`);
       res.json(conversations);
     } catch (error) {
+      console.error('[DEBUG] Error fetching conversations:', error);
       res.status(500).json({ error: "Failed to fetch conversations" });
     }
   });
