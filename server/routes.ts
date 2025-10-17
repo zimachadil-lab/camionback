@@ -365,6 +365,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all conversations for a user
+  app.get("/api/chat/conversations", async (req, res) => {
+    try {
+      const { userId } = req.query;
+      
+      if (!userId) {
+        return res.status(400).json({ error: "userId required" });
+      }
+      
+      const conversations = await storage.getUserConversations(userId as string);
+      res.json(conversations);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch conversations" });
+    }
+  });
+
+  // Mark messages as read
+  app.post("/api/chat/mark-read", async (req, res) => {
+    try {
+      const { userId, requestId } = req.body;
+      
+      if (!userId || !requestId) {
+        return res.status(400).json({ error: "userId and requestId required" });
+      }
+      
+      await storage.markMessagesAsRead(userId, requestId);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to mark messages as read" });
+    }
+  });
+
+  // Get unread messages count
+  app.get("/api/chat/unread-count", async (req, res) => {
+    try {
+      const { userId } = req.query;
+      
+      if (!userId) {
+        return res.status(400).json({ error: "userId required" });
+      }
+      
+      const count = await storage.getUnreadMessagesCount(userId as string);
+      res.json({ count });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch unread count" });
+    }
+  });
+
   // Admin routes
   app.get("/api/admin/settings", async (req, res) => {
     try {
