@@ -11,7 +11,7 @@ export default function MessagesPage() {
   const [selectedConversation, setSelectedConversation] = useState<any | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
 
-  const userStr = localStorage.getItem("user");
+  const userStr = localStorage.getItem("camionback_user");
   const user = userStr ? JSON.parse(userStr) : null;
 
   // Fetch conversations
