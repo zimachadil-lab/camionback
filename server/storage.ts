@@ -291,10 +291,12 @@ export class MemStorage implements IStorage {
     const conversationsMap = new Map<string, any>();
     
     for (const msg of userMessages) {
+      console.log(`[DEBUG Storage] Processing message: requestId=${msg.requestId}`);
       const existing = conversationsMap.get(msg.requestId);
       const isUnread = msg.receiverId === userId && !msg.isRead;
       
       if (!existing) {
+        console.log(`[DEBUG Storage] Creating new conversation group for requestId=${msg.requestId}`);
         conversationsMap.set(msg.requestId, {
           requestId: msg.requestId,
           lastMessage: msg,
@@ -302,8 +304,9 @@ export class MemStorage implements IStorage {
           otherUserId: msg.senderId === userId ? msg.receiverId : msg.senderId,
         });
       } else {
+        console.log(`[DEBUG Storage] Updating existing conversation for requestId=${msg.requestId}`);
         // Update if this message is newer
-        if (msg.createdAt > existing.lastMessage.createdAt) {
+        if (msg.createdAt && existing.lastMessage.createdAt && msg.createdAt > existing.lastMessage.createdAt) {
           existing.lastMessage = msg;
         }
         if (isUnread) {
@@ -311,6 +314,8 @@ export class MemStorage implements IStorage {
         }
       }
     }
+    
+    console.log(`[DEBUG Storage] conversationsMap size after grouping: ${conversationsMap.size}`);
 
     // Convert to array and enrich with request data
     const conversations: any[] = [];
