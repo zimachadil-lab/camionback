@@ -1,0 +1,274 @@
+import { 
+  type User, type InsertUser,
+  type OtpCode, type InsertOtpCode,
+  type TransportRequest, type InsertTransportRequest,
+  type Offer, type InsertOffer,
+  type ChatMessage, type InsertChatMessage,
+  type AdminSettings, type InsertAdminSettings
+} from "@shared/schema";
+import { randomUUID } from "crypto";
+
+export interface IStorage {
+  // User operations
+  getUser(id: string): Promise<User | undefined>;
+  getUserByPhone(phoneNumber: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
+  
+  // OTP operations
+  createOtp(otp: InsertOtpCode): Promise<OtpCode>;
+  getOtpByPhone(phoneNumber: string): Promise<OtpCode | undefined>;
+  verifyOtp(phoneNumber: string, code: string): Promise<boolean>;
+  
+  // Transport request operations
+  createTransportRequest(request: InsertTransportRequest): Promise<TransportRequest>;
+  getTransportRequest(id: string): Promise<TransportRequest | undefined>;
+  getAllTransportRequests(): Promise<TransportRequest[]>;
+  getRequestsByClient(clientId: string): Promise<TransportRequest[]>;
+  getOpenRequests(): Promise<TransportRequest[]>;
+  updateTransportRequest(id: string, updates: Partial<TransportRequest>): Promise<TransportRequest | undefined>;
+  
+  // Offer operations
+  createOffer(offer: InsertOffer): Promise<Offer>;
+  getOffer(id: string): Promise<Offer | undefined>;
+  getOffersByRequest(requestId: string): Promise<Offer[]>;
+  getOffersByTransporter(transporterId: string): Promise<Offer[]>;
+  updateOffer(id: string, updates: Partial<Offer>): Promise<Offer | undefined>;
+  
+  // Chat operations
+  createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
+  getMessagesByRequest(requestId: string): Promise<ChatMessage[]>;
+  getAllMessages(): Promise<ChatMessage[]>;
+  
+  // Admin settings
+  getAdminSettings(): Promise<AdminSettings | undefined>;
+  updateAdminSettings(settings: Partial<AdminSettings>): Promise<AdminSettings>;
+}
+
+export class MemStorage implements IStorage {
+  private users: Map<string, User>;
+  private otpCodes: Map<string, OtpCode>;
+  private transportRequests: Map<string, TransportRequest>;
+  private offers: Map<string, Offer>;
+  private chatMessages: Map<string, ChatMessage>;
+  private adminSettings: AdminSettings;
+  private requestCounter: number;
+
+  constructor() {
+    this.users = new Map();
+    this.otpCodes = new Map();
+    this.transportRequests = new Map();
+    this.offers = new Map();
+    this.chatMessages = new Map();
+    this.requestCounter = 1;
+    this.adminSettings = {
+      id: randomUUID(),
+      commissionPercentage: "10",
+      updatedAt: new Date(),
+    };
+  }
+
+  async getUser(id: string): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async getUserByPhone(phoneNumber: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.phoneNumber === phoneNumber,
+    );
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const id = randomUUID();
+    const user: User = { 
+      ...insertUser, 
+      id,
+      rating: insertUser.rating || "0",
+      totalTrips: insertUser.totalTrips || 0,
+      isActive: insertUser.isActive !== undefined ? insertUser.isActive : true,
+      createdAt: new Date(),
+    };
+    this.users.set(id, user);
+    return user;
+  }
+
+  async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    const updated = { ...user, ...updates };
+    this.users.set(id, updated);
+    return updated;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
+  async createOtp(insertOtp: InsertOtpCode): Promise<OtpCode> {
+    const id = randomUUID();
+    const otp: OtpCode = {
+      ...insertOtp,
+      id,
+      verified: false,
+      createdAt: new Date(),
+    };
+    this.otpCodes.set(insertOtp.phoneNumber, otp);
+    return otp;
+  }
+
+  async getOtpByPhone(phoneNumber: string): Promise<OtpCode | undefined> {
+    return this.otpCodes.get(phoneNumber);
+  }
+
+  async verifyOtp(phoneNumber: string, code: string): Promise<boolean> {
+    const otp = this.otpCodes.get(phoneNumber);
+    if (!otp || otp.code !== code || new Date() > otp.expiresAt) {
+      return false;
+    }
+    otp.verified = true;
+    return true;
+  }
+
+  generateReferenceId(): string {
+    const year = new Date().getFullYear();
+    const id = String(this.requestCounter++).padStart(5, '0');
+    return `CMD-${year}-${id}`;
+  }
+
+  async createTransportRequest(insertRequest: InsertTransportRequest): Promise<TransportRequest> {
+    const id = randomUUID();
+    const referenceId = this.generateReferenceId();
+    const request: TransportRequest = {
+      ...insertRequest,
+      id,
+      referenceId,
+      status: "open",
+      acceptedOfferId: null,
+      createdAt: new Date(),
+    };
+    this.transportRequests.set(id, request);
+    return request;
+  }
+
+  async getTransportRequest(id: string): Promise<TransportRequest | undefined> {
+    return this.transportRequests.get(id);
+  }
+
+  async getAllTransportRequests(): Promise<TransportRequest[]> {
+    return Array.from(this.transportRequests.values());
+  }
+
+  async getRequestsByClient(clientId: string): Promise<TransportRequest[]> {
+    return Array.from(this.transportRequests.values()).filter(
+      (req) => req.clientId === clientId
+    );
+  }
+
+  async getOpenRequests(): Promise<TransportRequest[]> {
+    return Array.from(this.transportRequests.values()).filter(
+      (req) => req.status === "open"
+    );
+  }
+
+  async updateTransportRequest(id: string, updates: Partial<TransportRequest>): Promise<TransportRequest | undefined> {
+    const request = this.transportRequests.get(id);
+    if (!request) return undefined;
+    const updated = { ...request, ...updates };
+    this.transportRequests.set(id, updated);
+    return updated;
+  }
+
+  async createOffer(insertOffer: InsertOffer): Promise<Offer> {
+    const id = randomUUID();
+    const offer: Offer = {
+      ...insertOffer,
+      id,
+      status: "pending",
+      paymentProofUrl: null,
+      paymentValidated: false,
+      createdAt: new Date(),
+    };
+    this.offers.set(id, offer);
+    return offer;
+  }
+
+  async getOffer(id: string): Promise<Offer | undefined> {
+    return this.offers.get(id);
+  }
+
+  async getOffersByRequest(requestId: string): Promise<Offer[]> {
+    return Array.from(this.offers.values()).filter(
+      (offer) => offer.requestId === requestId
+    );
+  }
+
+  async getOffersByTransporter(transporterId: string): Promise<Offer[]> {
+    return Array.from(this.offers.values()).filter(
+      (offer) => offer.transporterId === transporterId
+    );
+  }
+
+  async updateOffer(id: string, updates: Partial<Offer>): Promise<Offer | undefined> {
+    const offer = this.offers.get(id);
+    if (!offer) return undefined;
+    const updated = { ...offer, ...updates };
+    this.offers.set(id, updated);
+    return updated;
+  }
+
+  filterPhoneNumbers(message: string): string {
+    // Filter Moroccan phone numbers and international formats
+    let filtered = message;
+    
+    // Remove +212 format
+    filtered = filtered.replace(/\+212[\s\-]?\d{9}/g, '[Numéro filtré]');
+    
+    // Remove 0X XX XX XX XX format
+    filtered = filtered.replace(/0[67][\s\-]?\d{2}[\s\-]?\d{2}[\s\-]?\d{2}[\s\-]?\d{2}/g, '[Numéro filtré]');
+    
+    // Remove URLs and links
+    filtered = filtered.replace(/https?:\/\/[^\s]+/g, '[Lien filtré]');
+    filtered = filtered.replace(/www\.[^\s]+/g, '[Lien filtré]');
+    
+    return filtered;
+  }
+
+  async createChatMessage(insertMessage: InsertChatMessage): Promise<ChatMessage> {
+    const id = randomUUID();
+    const filteredMessage = this.filterPhoneNumbers(insertMessage.message);
+    const message: ChatMessage = {
+      ...insertMessage,
+      id,
+      filteredMessage: filteredMessage !== insertMessage.message ? filteredMessage : null,
+      createdAt: new Date(),
+    };
+    this.chatMessages.set(id, message);
+    return message;
+  }
+
+  async getMessagesByRequest(requestId: string): Promise<ChatMessage[]> {
+    return Array.from(this.chatMessages.values())
+      .filter((msg) => msg.requestId === requestId)
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  }
+
+  async getAllMessages(): Promise<ChatMessage[]> {
+    return Array.from(this.chatMessages.values());
+  }
+
+  async getAdminSettings(): Promise<AdminSettings | undefined> {
+    return this.adminSettings;
+  }
+
+  async updateAdminSettings(updates: Partial<AdminSettings>): Promise<AdminSettings> {
+    this.adminSettings = {
+      ...this.adminSettings,
+      ...updates,
+      updatedAt: new Date(),
+    };
+    return this.adminSettings;
+  }
+}
+
+export const storage = new MemStorage();

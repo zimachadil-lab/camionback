@@ -1,0 +1,277 @@
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Calendar, Upload, MapPin } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+const requestSchema = z.object({
+  fromCity: z.string().min(2, "Ville de départ requise"),
+  toCity: z.string().min(2, "Ville d'arrivée requise"),
+  description: z.string().min(10, "Description minimale: 10 caractères"),
+  goodsType: z.string().min(1, "Type de marchandise requis"),
+  estimatedWeight: z.string().optional(),
+  dateTime: z.string().min(1, "Date et heure requises"),
+  budget: z.string().optional(),
+});
+
+type RequestFormData = z.infer<typeof requestSchema>;
+
+const moroccanCities = [
+  "Casablanca", "Rabat", "Marrakech", "Fès", "Tanger", "Agadir", 
+  "Meknès", "Oujda", "Kenitra", "Tétouan", "Safi", "El Jadida",
+  "Nador", "Khouribga", "Béni Mellal", "Mohammedia"
+];
+
+const goodsTypes = [
+  "Meubles", "Électroménager", "Marchandises", "Déménagement",
+  "Matériaux de construction", "Colis", "Véhicule", "Autre"
+];
+
+export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
+  const [photos, setPhotos] = useState<File[]>([]);
+  const { toast } = useToast();
+
+  const form = useForm<RequestFormData>({
+    resolver: zodResolver(requestSchema),
+    defaultValues: {
+      fromCity: "",
+      toCity: "",
+      description: "",
+      goodsType: "",
+      estimatedWeight: "",
+      dateTime: "",
+      budget: "",
+    },
+  });
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setPhotos(Array.from(e.target.files));
+    }
+  };
+
+  const onSubmit = async (data: RequestFormData) => {
+    try {
+      const currentUser = JSON.parse(localStorage.getItem("camionback_user") || "{}");
+      
+      const response = await fetch("/api/requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...data,
+          clientId: currentUser.id,
+          dateTime: new Date(data.dateTime),
+        }),
+      });
+      
+      if (!response.ok) throw new Error();
+      
+      toast({
+        title: "Demande créée",
+        description: "Votre demande de transport a été publiée avec succès",
+      });
+      form.reset();
+      setPhotos([]);
+      onSuccess?.();
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Échec de création de la demande",
+      });
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-2xl">Nouvelle demande de transport</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="fromCity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Ville de départ</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-from-city">
+                          <SelectValue placeholder="Sélectionner" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {moroccanCities.map((city) => (
+                          <SelectItem key={city} value={city}>{city}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="toCity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Ville d'arrivée</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-to-city">
+                          <SelectValue placeholder="Sélectionner" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {moroccanCities.map((city) => (
+                          <SelectItem key={city} value={city}>{city}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="goodsType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Type de marchandise</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-goods-type">
+                        <SelectValue placeholder="Sélectionner" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {goodsTypes.map((type) => (
+                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Décrivez votre demande de transport..."
+                      className="min-h-24"
+                      data-testid="input-description"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="estimatedWeight"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Poids estimé (optionnel)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="ex: 50 kg" 
+                        data-testid="input-weight"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="budget"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Budget (optionnel)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="ex: 500 MAD" 
+                        data-testid="input-budget"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="dateTime"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Date et heure souhaitées</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="datetime-local" 
+                      data-testid="input-datetime"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Photos (optionnel)</label>
+              <div className="border-2 border-dashed rounded-lg p-6 text-center hover-elevate cursor-pointer">
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                  className="hidden"
+                  id="photo-upload"
+                  data-testid="input-photos"
+                />
+                <label htmlFor="photo-upload" className="cursor-pointer">
+                  <Upload className="mx-auto h-10 w-10 text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground">
+                    {photos.length > 0 
+                      ? `${photos.length} photo(s) sélectionnée(s)` 
+                      : "Cliquez pour ajouter des photos"}
+                  </p>
+                </label>
+              </div>
+            </div>
+
+            <Button type="submit" size="lg" className="w-full" data-testid="button-create-request">
+              Publier la demande
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
+  );
+}
