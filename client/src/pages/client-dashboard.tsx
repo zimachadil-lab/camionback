@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Phone, CheckCircle } from "lucide-react";
+import { Package, Phone, CheckCircle, Trash2 } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { NewRequestForm } from "@/components/client/new-request-form";
 import { OfferCard } from "@/components/client/offer-card";
@@ -12,6 +12,7 @@ import { queryClient } from "@/lib/queryClient";
 import {
   AlertDialog,
   AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -19,7 +20,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-function RequestWithOffers({ request, onAcceptOffer, onChat, users }: any) {
+function RequestWithOffers({ request, onAcceptOffer, onChat, onDelete, users }: any) {
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
   const { data: offers = [] } = useQuery({
     queryKey: ["/api/offers", request.id],
     queryFn: async () => {
@@ -40,38 +43,72 @@ function RequestWithOffers({ request, onAcceptOffer, onChat, users }: any) {
   });
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-xl font-semibold">{request.referenceId}</h3>
-          <p className="text-sm text-muted-foreground">
-            {request.fromCity} → {request.toCity}
-          </p>
+    <>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-xl font-semibold">{request.referenceId}</h3>
+            <p className="text-sm text-muted-foreground">
+              {request.fromCity} → {request.toCity}
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowDeleteDialog(true)}
+            data-testid={`button-delete-${request.id}`}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="space-y-4">
+          <h4 className="font-medium">
+            Offres reçues ({offersWithTransporters.length})
+          </h4>
+          {offersWithTransporters.length > 0 ? (
+            <div className="grid gap-4 md:grid-cols-2">
+              {offersWithTransporters.map((offer: any) => (
+                <OfferCard
+                  key={offer.id}
+                  offer={offer}
+                  onAccept={onAcceptOffer}
+                  onChat={() => onChat(offer.transporterId, offer.transporterName, request.id)}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Aucune offre pour le moment
+            </p>
+          )}
         </div>
       </div>
 
-      <div className="space-y-4">
-        <h4 className="font-medium">
-          Offres reçues ({offersWithTransporters.length})
-        </h4>
-        {offersWithTransporters.length > 0 ? (
-          <div className="grid gap-4 md:grid-cols-2">
-            {offersWithTransporters.map((offer: any) => (
-              <OfferCard
-                key={offer.id}
-                offer={offer}
-                onAccept={onAcceptOffer}
-                onChat={() => onChat(offer.transporterId, offer.transporterName, request.id)}
-              />
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            Aucune offre pour le moment
-          </p>
-        )}
-      </div>
-    </div>
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer la commande</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer cette commande ? Cette action supprimera également toutes les offres et messages associés. Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                onDelete(request.id);
+                setShowDeleteDialog(false);
+              }}
+              data-testid="button-confirm-delete"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
@@ -128,8 +165,29 @@ export default function ClientDashboard() {
     },
   });
 
+  const deleteRequestMutation = useMutation({
+    mutationFn: async (requestId: string) => {
+      const response = await fetch(`/api/requests/${requestId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        throw new Error("Failed to delete request");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/offers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+    },
+  });
+
   const handleAcceptOffer = (offerId: string) => {
     acceptOfferMutation.mutate(offerId);
+  };
+
+  const handleDeleteRequest = (requestId: string) => {
+    deleteRequestMutation.mutate(requestId);
   };
 
   const handleChat = (transporterId: string, transporterName: string, requestId: string) => {
@@ -192,6 +250,7 @@ export default function ClientDashboard() {
                     users={users}
                     onAcceptOffer={handleAcceptOffer}
                     onChat={handleChat}
+                    onDelete={handleDeleteRequest}
                   />
                 ))
               ) : (

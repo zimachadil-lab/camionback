@@ -219,6 +219,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/requests/:id", async (req, res) => {
+    try {
+      const success = await storage.deleteTransportRequest(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+      res.json({ success: true, message: "Request deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete request" });
+    }
+  });
+
   // Offer routes
   app.post("/api/offers", async (req, res) => {
     try {

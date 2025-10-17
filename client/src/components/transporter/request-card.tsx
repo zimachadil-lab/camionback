@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Package, Calendar, DollarSign } from "lucide-react";
+import { MapPin, Package, Calendar, DollarSign, Image as ImageIcon } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { PhotoGalleryDialog } from "./photo-gallery-dialog";
 
 interface RequestCardProps {
   request: {
@@ -25,11 +27,14 @@ interface RequestCardProps {
 }
 
 export function RequestCard({ request, onMakeOffer, showOfferButton = true }: RequestCardProps) {
+  const [photoGalleryOpen, setPhotoGalleryOpen] = useState(false);
+  
   const dateTime = typeof request.dateTime === 'string' 
     ? new Date(request.dateTime) 
     : request.dateTime;
 
   return (
+    <>
     <Card className="overflow-hidden hover-elevate">
       <CardContent className="p-4 space-y-4">
         <div className="flex items-start justify-between gap-2">
@@ -78,16 +83,16 @@ export function RequestCard({ request, onMakeOffer, showOfferButton = true }: Re
         )}
 
         {request.photos && request.photos.length > 0 && (
-          <div className="flex gap-2 overflow-x-auto">
-            {request.photos.map((photo, idx) => (
-              <img
-                key={idx}
-                src={photo}
-                alt={`Photo ${idx + 1}`}
-                className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
-              />
-            ))}
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPhotoGalleryOpen(true)}
+            className="w-full gap-2"
+            data-testid={`button-view-photos-${request.id}`}
+          >
+            <ImageIcon className="w-4 h-4" />
+            Voir les photos ({request.photos.length})
+          </Button>
         )}
       </CardContent>
 
@@ -104,5 +109,13 @@ export function RequestCard({ request, onMakeOffer, showOfferButton = true }: Re
         </CardFooter>
       )}
     </Card>
+
+    <PhotoGalleryDialog
+      open={photoGalleryOpen}
+      onClose={() => setPhotoGalleryOpen(false)}
+      photos={request.photos || []}
+      referenceId={request.referenceId}
+    />
+    </>
   );
 }

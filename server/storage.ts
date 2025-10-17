@@ -192,6 +192,35 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
+  async deleteTransportRequest(id: string): Promise<boolean> {
+    const request = this.transportRequests.get(id);
+    if (!request) return false;
+    
+    // Delete the request
+    this.transportRequests.delete(id);
+    
+    // Delete all related offers and collect their IDs
+    const relatedOffers = Array.from(this.offers.entries()).filter(
+      ([, offer]) => offer.requestId === id
+    );
+    const offerIds: string[] = relatedOffers.map(([offerId]) => offerId);
+    relatedOffers.forEach(([offerId]) => this.offers.delete(offerId));
+    
+    // Delete all related chat messages
+    const relatedMessages = Array.from(this.chatMessages.entries()).filter(
+      ([, msg]) => msg.requestId === id
+    );
+    relatedMessages.forEach(([msgId]) => this.chatMessages.delete(msgId));
+    
+    // Delete all related notifications (both for the request and its offers)
+    const relatedNotifications = Array.from(this.notifications.entries()).filter(
+      ([, notif]) => notif.relatedId === id || offerIds.includes(notif.relatedId || "")
+    );
+    relatedNotifications.forEach(([notifId]) => this.notifications.delete(notifId));
+    
+    return true;
+  }
+
   async createOffer(insertOffer: InsertOffer): Promise<Offer> {
     const id = randomUUID();
     const offer: Offer = {

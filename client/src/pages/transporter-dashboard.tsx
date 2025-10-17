@@ -4,13 +4,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare } from "lucide-react";
+import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, Image as ImageIcon } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { RequestCard } from "@/components/transporter/request-card";
 import { OfferForm } from "@/components/transporter/offer-form";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { ChatWindow } from "@/components/chat/chat-window";
+import { PhotoGalleryDialog } from "@/components/transporter/photo-gallery-dialog";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 
@@ -28,6 +29,9 @@ export default function TransporterDashboard() {
   const [chatOpen, setChatOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<{ id: string; name: string; role: string } | null>(null);
   const [chatRequestId, setChatRequestId] = useState<string>("");
+  const [photoGalleryOpen, setPhotoGalleryOpen] = useState(false);
+  const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
+  const [selectedReferenceId, setSelectedReferenceId] = useState("");
 
   const user = JSON.parse(localStorage.getItem("camionback_user") || "{}");
 
@@ -82,6 +86,12 @@ export default function TransporterDashboard() {
     setSelectedClient({ id: clientId, name: clientName || "Client", role: "client" });
     setChatRequestId(requestId);
     setChatOpen(true);
+  };
+
+  const handleViewPhotos = (photos: string[], referenceId: string) => {
+    setSelectedPhotos(photos);
+    setSelectedReferenceId(referenceId);
+    setPhotoGalleryOpen(true);
   };
 
   const filteredRequests = requests.filter((req: any) => {
@@ -209,10 +219,25 @@ export default function TransporterDashboard() {
                         </div>
 
                         {request && (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <MapPin className="w-4 h-4" />
-                            <span>{request.fromCity} → {request.toCity}</span>
-                          </div>
+                          <>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <MapPin className="w-4 h-4" />
+                              <span>{request.fromCity} → {request.toCity}</span>
+                            </div>
+
+                            {request.photos && request.photos.length > 0 && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewPhotos(request.photos, request.referenceId)}
+                                className="gap-2"
+                                data-testid={`button-view-offer-photos-${offer.id}`}
+                              >
+                                <ImageIcon className="w-4 h-4" />
+                                Voir les photos ({request.photos.length})
+                              </Button>
+                            )}
+                          </>
                         )}
 
                         {isAccepted && client && (
@@ -294,6 +319,13 @@ export default function TransporterDashboard() {
           requestId={chatRequestId}
         />
       )}
+
+      <PhotoGalleryDialog
+        open={photoGalleryOpen}
+        onClose={() => setPhotoGalleryOpen(false)}
+        photos={selectedPhotos}
+        referenceId={selectedReferenceId}
+      />
     </div>
   );
 }

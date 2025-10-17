@@ -59,6 +59,20 @@ The application supports three distinct user roles:
   - Schema: isRead field (boolean) added to chatMessages table
   - Available for both client and transporter roles
 
+✅ **Photo Gallery**: Transporters can view order photos in a gallery modal
+  - PhotoGalleryDialog component with image carousel navigation
+  - Accessible from both "Available Requests" and "My Offers" sections
+  - Photos stored as text array in transportRequests.photos field
+  - Uses Embla Carousel for smooth image browsing
+
+✅ **Order Deletion**: Clients can delete their transport requests
+  - Delete button (Trash2 icon) on each request in client dashboard
+  - Confirmation dialog with warning about cascade deletion
+  - API endpoint: DELETE /api/requests/:id
+  - Cascade deletion removes: request + all related offers + messages + notifications
+  - Uses fetch() with proper error handling and cache invalidation
+  - Test IDs: button-delete-{requestId}, button-confirm-delete, button-cancel-delete
+
 ✅ **Data Persistence**: In-memory storage with full CRUD operations for:
   - Users (with role-based access)
   - Transport requests (with status tracking)
@@ -73,6 +87,8 @@ The application supports three distinct user roles:
   - Notification flow: Offer events trigger notifications → Badge counter updates → Mark read
   - Chat flow: Client ↔ Transporter bidirectional messaging → Real-time delivery → Regex filtering
   - Messages inbox: Badge increments on new message → Conversation list displays → Mark as read on open → Badge updates
+  - Order deletion: Client creates request → Clicks delete button → Confirms deletion → Request removed with cascade deletion
+  - Photo gallery: Transporter views order photos → Opens gallery → Navigates through images
 
 ### Technical Fixes Applied
 - Fixed dateTime validation: Schema now uses `z.coerce.date()` to accept ISO strings
