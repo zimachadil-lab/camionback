@@ -67,7 +67,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.createUser({
         phoneNumber,
         passwordHash,
-        role: isAdmin ? "admin" : "pending_role", // Will be updated when role is selected
+        role: isAdmin ? "admin" : null, // Will be updated when role is selected
         name: null,
         city: null,
         truckPhotos: null,

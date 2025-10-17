@@ -8,7 +8,7 @@ export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   phoneNumber: text("phone_number").notNull().unique(),
   passwordHash: text("password_hash").notNull(), // Bcrypt hash of 6-digit PIN
-  role: text("role").notNull(), // 'client', 'transporter', 'admin'
+  role: text("role"), // 'client', 'transporter', 'admin' - null until selected
   name: text("name"),
   city: text("city"), // City of residence
   truckPhotos: text("truck_photos").array(), // For transporters
