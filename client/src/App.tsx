@@ -6,12 +6,16 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/home";
 import NotificationsPage from "@/pages/notifications-page";
 import MessagesPage from "@/pages/messages-page";
+import SelectRole from "@/pages/select-role";
+import CompleteProfile from "@/pages/complete-profile";
 import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/select-role" component={SelectRole} />
+      <Route path="/complete-profile" component={CompleteProfile} />
       <Route path="/notifications" component={NotificationsPage} />
       <Route path="/messages" component={MessagesPage} />
       <Route component={NotFound} />

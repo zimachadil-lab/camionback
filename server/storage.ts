@@ -16,6 +16,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
+  getPendingDrivers(): Promise<User[]>;
   
   // OTP operations
   createOtp(otp: InsertOtpCode): Promise<OtpCode>;
@@ -95,11 +96,15 @@ export class MemStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
     const user: User = { 
-      ...insertUser, 
+      ...insertUser,
+      name: insertUser.name ?? null,
+      city: insertUser.city ?? null,
+      truckPhotos: insertUser.truckPhotos ?? null,
+      rating: insertUser.rating ?? null,
+      totalTrips: insertUser.totalTrips ?? null,
+      status: insertUser.status ?? null,
+      isActive: insertUser.isActive ?? null,
       id,
-      rating: insertUser.rating || "0",
-      totalTrips: insertUser.totalTrips || 0,
-      isActive: insertUser.isActive !== undefined ? insertUser.isActive : true,
       createdAt: new Date(),
     };
     this.users.set(id, user);
@@ -116,6 +121,12 @@ export class MemStorage implements IStorage {
 
   async getAllUsers(): Promise<User[]> {
     return Array.from(this.users.values());
+  }
+
+  async getPendingDrivers(): Promise<User[]> {
+    return Array.from(this.users.values()).filter(
+      (user) => user.role === "transporter" && user.status === "pending"
+    );
   }
 
   async createOtp(insertOtp: InsertOtpCode): Promise<OtpCode> {
@@ -154,6 +165,9 @@ export class MemStorage implements IStorage {
     const referenceId = this.generateReferenceId();
     const request: TransportRequest = {
       ...insertRequest,
+      estimatedWeight: insertRequest.estimatedWeight ?? null,
+      budget: insertRequest.budget ?? null,
+      photos: insertRequest.photos ?? null,
       id,
       referenceId,
       status: "open",
@@ -239,6 +253,7 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const offer: Offer = {
       ...insertOffer,
+      message: insertOffer.message ?? null,
       id,
       status: "pending",
       paymentProofUrl: null,
@@ -313,7 +328,11 @@ export class MemStorage implements IStorage {
   async getMessagesByRequest(requestId: string): Promise<ChatMessage[]> {
     return Array.from(this.chatMessages.values())
       .filter((msg) => msg.requestId === requestId)
-      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+      .sort((a, b) => {
+        const aTime = a.createdAt?.getTime() ?? 0;
+        const bTime = b.createdAt?.getTime() ?? 0;
+        return aTime - bTime;
+      });
   }
 
   async getAllMessages(): Promise<ChatMessage[]> {
@@ -419,7 +438,7 @@ export class MemStorage implements IStorage {
 
   async markMessagesAsRead(userId: string, requestId: string): Promise<void> {
     // Mark all messages in this conversation as read where user is receiver
-    for (const [id, message] of this.chatMessages.entries()) {
+    for (const [id, message] of Array.from(this.chatMessages.entries())) {
       if (message.requestId === requestId && message.receiverId === userId && !message.isRead) {
         this.chatMessages.set(id, { ...message, isRead: true });
       }

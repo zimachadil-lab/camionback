@@ -4,6 +4,7 @@ import { WebSocketServer } from "ws";
 import { storage } from "./storage";
 import multer from "multer";
 import { z } from "zod";
+import bcrypt from "bcrypt";
 import { 
   insertUserSchema, 
   insertOtpCodeSchema, 
@@ -19,92 +20,200 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth routes
-  app.post("/api/auth/send-otp", async (req, res) => {
+  // Auth routes - New PIN-based system
+  
+  // Check if phone number exists
+  app.post("/api/auth/check-phone", async (req, res) => {
     try {
       const { phoneNumber } = req.body;
       
       if (!phoneNumber) {
-        return res.status(400).json({ error: "Phone number required" });
+        return res.status(400).json({ error: "Numéro de téléphone requis" });
       }
 
-      // Generate 6-digit OTP
-      const code = Math.floor(100000 + Math.random() * 900000).toString();
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-      await storage.createOtp({
-        phoneNumber,
-        code,
-        expiresAt,
-      });
-
-      // TODO: Send OTP via Twilio SMS in production
-      console.log(`OTP for ${phoneNumber}: ${code}`);
-
-      res.json({ success: true, message: "OTP sent" });
+      const user = await storage.getUserByPhone(phoneNumber);
+      res.json({ exists: !!user, hasRole: user?.role ? true : false });
     } catch (error) {
-      res.status(500).json({ error: "Failed to send OTP" });
+      res.status(500).json({ error: "Erreur lors de la vérification" });
     }
   });
 
-  app.post("/api/auth/verify-otp", async (req, res) => {
+  // Register new user with PIN
+  app.post("/api/auth/register", async (req, res) => {
     try {
-      const { phoneNumber, code } = req.body;
+      const { phoneNumber, pin } = req.body;
       
-      // In development mode, accept any 6-digit code for easier testing
-      const isDevelopment = process.env.NODE_ENV === "development";
-      const isValidFormat = /^\d{6}$/.test(code);
-      
-      let isValid = false;
-      if (isDevelopment && isValidFormat) {
-        isValid = true;
-      } else {
-        isValid = await storage.verifyOtp(phoneNumber, code);
-      }
-      
-      if (!isValid) {
-        return res.status(400).json({ error: "Invalid or expired OTP" });
+      if (!phoneNumber || !pin) {
+        return res.status(400).json({ error: "Numéro et code PIN requis" });
       }
 
-      // Check if user exists
-      let user = await storage.getUserByPhone(phoneNumber);
+      // Validate PIN format (6 digits)
+      if (!/^\d{6}$/.test(pin)) {
+        return res.status(400).json({ error: "Le code PIN doit contenir 6 chiffres" });
+      }
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByPhone(phoneNumber);
+      if (existingUser) {
+        return res.status(400).json({ error: "Ce numéro est déjà enregistré" });
+      }
+
+      // Hash the PIN
+      const passwordHash = await bcrypt.hash(pin, 10);
+
+      // Create user without role (will be selected after)
+      // Special case: if phone contains "000000", make it admin
+      const isAdmin = phoneNumber.includes("000000");
+      const user = await storage.createUser({
+        phoneNumber,
+        passwordHash,
+        role: isAdmin ? "admin" : "pending_role", // Will be updated when role is selected
+        name: null,
+        city: null,
+        truckPhotos: null,
+        rating: null,
+        totalTrips: null,
+        status: null,
+        isActive: true,
+      });
+
+      res.json({ user });
+    } catch (error) {
+      console.error("Registration error:", error);
+      res.status(500).json({ error: "Échec de l'inscription" });
+    }
+  });
+
+  // Login with phone + PIN
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { phoneNumber, pin } = req.body;
       
-      // Create new user if doesn't exist
+      if (!phoneNumber || !pin) {
+        return res.status(400).json({ error: "Numéro et code PIN requis" });
+      }
+
+      const user = await storage.getUserByPhone(phoneNumber);
       if (!user) {
-        // Determine role based on phone number for testing
-        let role = "client"; // default
-        
-        // Test transporters
-        if (phoneNumber.includes("98765") || phoneNumber.includes("0698765432")) {
-          role = "transporter";
-        }
-        // Test admin
-        else if (phoneNumber.includes("000000") || phoneNumber.includes("0612000000")) {
-          role = "admin";
-        }
-        
-        // Generate default name based on role
-        let defaultName = "Client";
-        if (role === "transporter") {
-          defaultName = "Transporteur Pro";
-        } else if (role === "admin") {
-          defaultName = "Administrateur";
-        }
-        
-        user = await storage.createUser({
-          phoneNumber,
-          role,
-          name: defaultName,
-          truckPhotos: null,
-          rating: role === "transporter" ? "4.5" : null,
-          totalTrips: role === "transporter" ? 25 : null,
-          isActive: null,
-        });
+        return res.status(400).json({ error: "Numéro ou code PIN incorrect" });
+      }
+
+      // Verify PIN
+      const isValidPin = await bcrypt.compare(pin, user.passwordHash);
+      if (!isValidPin) {
+        return res.status(400).json({ error: "Numéro ou code PIN incorrect" });
       }
 
       res.json({ user });
     } catch (error) {
-      res.status(500).json({ error: "Verification failed" });
+      console.error("Login error:", error);
+      res.status(500).json({ error: "Échec de la connexion" });
+    }
+  });
+
+  // Select role after registration
+  app.post("/api/auth/select-role", async (req, res) => {
+    try {
+      const { userId, role } = req.body;
+      
+      if (!userId || !role) {
+        return res.status(400).json({ error: "ID utilisateur et rôle requis" });
+      }
+
+      if (role !== "client" && role !== "transporter") {
+        return res.status(400).json({ error: "Rôle invalide" });
+      }
+
+      // Update user role
+      const updates: any = { role };
+      
+      // If transporter, set status to pending
+      if (role === "transporter") {
+        updates.status = "pending";
+      }
+
+      const user = await storage.updateUser(userId, updates);
+      if (!user) {
+        return res.status(404).json({ error: "Utilisateur non trouvé" });
+      }
+
+      res.json({ user });
+    } catch (error) {
+      console.error("Select role error:", error);
+      res.status(500).json({ error: "Échec de la sélection du rôle" });
+    }
+  });
+
+  // Complete transporter profile
+  app.post("/api/auth/complete-profile", upload.single("truckPhoto"), async (req, res) => {
+    try {
+      const { userId, name, city } = req.body;
+      const truckPhoto = req.file;
+
+      if (!userId || !name || !city || !truckPhoto) {
+        return res.status(400).json({ error: "Tous les champs sont requis" });
+      }
+
+      // Convert truck photo to base64
+      const truckPhotoBase64 = `data:${truckPhoto.mimetype};base64,${truckPhoto.buffer.toString('base64')}`;
+
+      // Update user profile
+      const user = await storage.updateUser(userId, {
+        name,
+        city,
+        truckPhotos: [truckPhotoBase64],
+        status: "pending" // Keep pending until admin validates
+      });
+
+      if (!user) {
+        return res.status(404).json({ error: "Utilisateur non trouvé" });
+      }
+
+      res.json({ user });
+    } catch (error) {
+      console.error("Complete profile error:", error);
+      res.status(500).json({ error: "Échec de la complétion du profil" });
+    }
+  });
+
+  // Admin routes for driver validation
+  app.get("/api/admin/pending-drivers", async (req, res) => {
+    try {
+      const drivers = await storage.getPendingDrivers();
+      res.json(drivers);
+    } catch (error) {
+      console.error("Get pending drivers error:", error);
+      res.status(500).json({ error: "Échec de récupération des transporteurs" });
+    }
+  });
+
+  app.post("/api/admin/validate-driver/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { validated, note } = req.body; // validated: boolean, note: optional string
+
+      if (validated === undefined) {
+        return res.status(400).json({ error: "État de validation requis" });
+      }
+
+      const updates: any = {
+        status: validated ? "validated" : "rejected"
+      };
+
+      // If there's a note from admin, we could store it (would need to add a field to schema)
+      // For now, we'll just update the status
+
+      const user = await storage.updateUser(id, updates);
+      if (!user) {
+        return res.status(404).json({ error: "Transporteur non trouvé" });
+      }
+
+      // TODO: Send notification to transporter about validation status
+
+      res.json({ user });
+    } catch (error) {
+      console.error("Validate driver error:", error);
+      res.status(500).json({ error: "Échec de la validation" });
     }
   });
 

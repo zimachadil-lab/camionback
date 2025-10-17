@@ -6,22 +6,62 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCircle } from "lucide-react";
+import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCircle, UserCheck } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { KpiCard } from "@/components/admin/kpi-card";
 import { AddTransporterForm } from "@/components/admin/add-transporter-form";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const [addTransporterOpen, setAddTransporterOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [commissionRate, setCommissionRate] = useState("10");
+  const { toast } = useToast();
 
   const user = JSON.parse(localStorage.getItem("camionback_user") || "{}");
 
   const handleLogout = () => {
     localStorage.removeItem("camionback_user");
     setLocation("/");
+  };
+
+  // Fetch pending drivers
+  const { data: pendingDrivers = [], isLoading: pendingLoading } = useQuery({
+    queryKey: ["/api/admin/pending-drivers"],
+    queryFn: async () => {
+      const response = await fetch("/api/admin/pending-drivers");
+      return response.json();
+    },
+  });
+
+  const handleValidateDriver = async (driverId: string, validated: boolean) => {
+    try {
+      const response = await fetch(`/api/admin/validate-driver/${driverId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ validated }),
+      });
+
+      if (!response.ok) throw new Error();
+
+      toast({
+        title: validated ? "Transporteur validé" : "Transporteur refusé",
+        description: validated 
+          ? "Le transporteur a été validé avec succès"
+          : "Le transporteur a été refusé",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pending-drivers"] });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Échec de la validation",
+      });
+    }
   };
 
   // Mock KPI data
@@ -132,12 +172,98 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs defaultValue="requests" className="w-full">
-          <TabsList className="grid w-full max-w-2xl grid-cols-4">
+          <TabsList className="grid w-full max-w-3xl grid-cols-5">
             <TabsTrigger value="requests" data-testid="tab-requests">Demandes</TabsTrigger>
+            <TabsTrigger value="validation" data-testid="tab-validation">
+              Validation
+              {pendingDrivers.length > 0 && (
+                <Badge variant="destructive" className="ml-2 px-1.5 py-0 h-5 min-w-5 text-xs">
+                  {pendingDrivers.length}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="drivers" data-testid="tab-drivers">Transporteurs</TabsTrigger>
             <TabsTrigger value="settings" data-testid="tab-settings">Paramètres</TabsTrigger>
             <TabsTrigger value="stats" data-testid="tab-stats">Statistiques</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="validation" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <UserCheck className="w-5 h-5" />
+                  Validation des transporteurs
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {pendingLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Chargement...</p>
+                  </div>
+                ) : pendingDrivers.length === 0 ? (
+                  <div className="text-center py-8">
+                    <UserCheck className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">Aucun transporteur en attente de validation</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nom</TableHead>
+                        <TableHead>Téléphone</TableHead>
+                        <TableHead>Ville</TableHead>
+                        <TableHead>Photo camion</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pendingDrivers.map((driver: any) => (
+                        <TableRow key={driver.id}>
+                          <TableCell className="font-medium">{driver.name}</TableCell>
+                          <TableCell>{driver.phone}</TableCell>
+                          <TableCell>{driver.city}</TableCell>
+                          <TableCell>
+                            {driver.truckPhoto ? (
+                              <img 
+                                src={driver.truckPhoto} 
+                                alt="Camion" 
+                                className="w-16 h-16 object-cover rounded"
+                              />
+                            ) : (
+                              <span className="text-muted-foreground text-sm">Aucune photo</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex gap-2 justify-end">
+                              <Button
+                                size="sm"
+                                variant="default"
+                                onClick={() => handleValidateDriver(driver.id, true)}
+                                data-testid={`button-validate-${driver.id}`}
+                              >
+                                <CheckCircle className="w-4 h-4 mr-1" />
+                                Valider
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleValidateDriver(driver.id, false)}
+                                data-testid={`button-reject-${driver.id}`}
+                              >
+                                <XCircle className="w-4 h-4 mr-1" />
+                                Refuser
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="requests" className="mt-6 space-y-6">
             <div className="relative">

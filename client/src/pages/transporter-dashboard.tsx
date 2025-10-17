@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, Image as ImageIcon } from "lucide-react";
+import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, Image as ImageIcon, Clock } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { RequestCard } from "@/components/transporter/request-card";
 import { OfferForm } from "@/components/transporter/offer-form";
@@ -121,6 +121,24 @@ export default function TransporterDashboard() {
         user={user}
         onLogout={handleLogout}
       />
+      
+      {/* Pending validation message */}
+      {user.status === "pending" && (
+        <div className="bg-amber-50 dark:bg-amber-950/30 border-l-4 border-amber-500 p-4 mx-4 mt-4">
+          <div className="flex items-start gap-3">
+            <Clock className="w-5 h-5 text-amber-600 dark:text-amber-500 mt-0.5 flex-shrink-0" />
+            <div>
+              <h3 className="font-semibold text-amber-900 dark:text-amber-100">
+                Compte en cours de validation
+              </h3>
+              <p className="text-sm text-amber-800 dark:text-amber-200 mt-1">
+                Votre compte est en cours de validation par l'équipe CamionBack. 
+                Vous serez notifié dès son approbation et pourrez alors accéder à toutes les fonctionnalités.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       
       <div className="container mx-auto p-4 md:p-6 max-w-7xl space-y-6">
         <div>
