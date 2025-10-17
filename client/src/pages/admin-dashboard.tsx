@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,13 +7,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCircle } from "lucide-react";
+import { Header } from "@/components/layout/header";
 import { KpiCard } from "@/components/admin/kpi-card";
 import { AddTransporterForm } from "@/components/admin/add-transporter-form";
 
 export default function AdminDashboard() {
+  const [, setLocation] = useLocation();
   const [addTransporterOpen, setAddTransporterOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [commissionRate, setCommissionRate] = useState("10");
+
+  const user = JSON.parse(localStorage.getItem("camionback_user") || "{}");
+
+  const handleLogout = () => {
+    localStorage.removeItem("camionback_user");
+    setLocation("/");
+  };
 
   // Mock KPI data
   const kpis = {
@@ -34,8 +44,8 @@ export default function AdminDashboard() {
       toCity: "Marrakech",
       status: "open",
       offers: [
-        { id: "o1", transporterName: "Ahmed Transport", amount: "800" },
-        { id: "o2", transporterName: "Youssef Logistics", amount: "750" },
+        { id: "o1", transporterName: "Ahmed Transport", amount: "800", accepted: false },
+        { id: "o2", transporterName: "Youssef Logistics", amount: "750", accepted: false },
       ]
     },
     {
@@ -71,8 +81,13 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background">
+      <Header
+        user={user}
+        onLogout={handleLogout}
+      />
+      
+      <div className="container mx-auto p-4 md:p-6 max-w-7xl space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Administration</h1>

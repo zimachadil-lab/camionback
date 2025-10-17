@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, ListFilter, Package, Phone, CheckCircle, MapPin } from "lucide-react";
+import { Header } from "@/components/layout/header";
 import { RequestCard } from "@/components/transporter/request-card";
 import { OfferForm } from "@/components/transporter/offer-form";
 import { Badge } from "@/components/ui/badge";
@@ -16,12 +18,18 @@ const moroccanCities = [
 ];
 
 export default function TransporterDashboard() {
+  const [, setLocation] = useLocation();
   const [selectedCity, setSelectedCity] = useState("Toutes les villes");
   const [searchQuery, setSearchQuery] = useState("");
   const [offerDialogOpen, setOfferDialogOpen] = useState(false);
   const [selectedRequestId, setSelectedRequestId] = useState<string>("");
 
   const user = JSON.parse(localStorage.getItem("camionback_user") || "{}");
+
+  const handleLogout = () => {
+    localStorage.removeItem("camionback_user");
+    setLocation("/");
+  };
 
   const { data: requests = [], isLoading: requestsLoading } = useQuery({
     queryKey: ["/api/requests"],
@@ -83,8 +91,13 @@ export default function TransporterDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background">
+      <Header
+        user={user}
+        onLogout={handleLogout}
+      />
+      
+      <div className="container mx-auto p-4 md:p-6 max-w-7xl space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Tableau de bord</h1>
           <p className="text-muted-foreground mt-1">Trouvez des demandes de transport</p>

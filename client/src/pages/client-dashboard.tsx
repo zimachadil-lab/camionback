@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Package, Phone, CheckCircle } from "lucide-react";
+import { Package, Phone, CheckCircle } from "lucide-react";
+import { Header } from "@/components/layout/header";
 import { NewRequestForm } from "@/components/client/new-request-form";
 import { OfferCard } from "@/components/client/offer-card";
 import { ChatWindow } from "@/components/chat/chat-window";
@@ -82,6 +84,7 @@ function RequestWithOffers({ request, onAcceptOffer, onChat }: any) {
 }
 
 export default function ClientDashboard() {
+  const [, setLocation] = useLocation();
   const [showNewRequest, setShowNewRequest] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [selectedTransporter, setSelectedTransporter] = useState<any>(null);
@@ -89,6 +92,11 @@ export default function ClientDashboard() {
   const [contactInfo, setContactInfo] = useState<any>(null);
 
   const user = JSON.parse(localStorage.getItem("camionback_user") || "{}");
+
+  const handleLogout = () => {
+    localStorage.removeItem("camionback_user");
+    setLocation("/");
+  };
 
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ["/api/requests", user.id],
@@ -143,21 +151,17 @@ export default function ClientDashboard() {
   const completedRequests = requests.filter((r: any) => r.status === "completed");
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Mes demandes</h1>
-            <p className="text-muted-foreground mt-1">Gérez vos demandes de transport</p>
-          </div>
-          <Button 
-            onClick={() => setShowNewRequest(true)} 
-            size="lg"
-            data-testid="button-new-request"
-          >
-            <Plus className="mr-2 h-5 w-5" />
-            Nouvelle demande
-          </Button>
+    <div className="min-h-screen bg-background">
+      <Header
+        user={user}
+        onNewRequest={() => setShowNewRequest(true)}
+        onLogout={handleLogout}
+      />
+      
+      <div className="container mx-auto p-4 md:p-6 max-w-7xl space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Mes demandes</h1>
+          <p className="text-muted-foreground mt-1">Gérez vos demandes de transport</p>
         </div>
 
         {showNewRequest ? (
