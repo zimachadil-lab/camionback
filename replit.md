@@ -46,7 +46,17 @@ Preferred communication style: Simple, everyday language.
 
 ### File Upload & Storage
 
-**Implementation:** Multer middleware for multipart form uploads, in-memory storage with a 5MB limit. Supports truck photos (transporters) and request photos (clients).
+**Implementation:** Base64 encoding for request photos, Multer middleware for truck photos. 
+
+**Request Photos (Client → Transporter):**
+- Client uploads photos via file input during request creation
+- Photos converted to base64 using FileReader API
+- Stored as text array in transportRequests.photos field
+- Transporter views photos via PhotoGalleryDialog modal with carousel navigation
+- "Voir les photos (N)" button shows photo count
+- Gallery includes previous/next navigation and photo counter (e.g., "1 / 2")
+
+**Truck Photos (Transporter Profile):** Multer middleware for multipart form uploads, in-memory storage with a 5MB limit.
 
 ## External Dependencies
 
