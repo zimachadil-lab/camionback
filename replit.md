@@ -43,12 +43,18 @@ Preferred communication style: Simple, everyday language.
 4. Admin validation required for transporters before accessing features
 5. Existing users: enter PIN to login
 
-**Session Management:** localStorage-based user session persistence, role-based access control (client/transporter/admin), status-based feature access for transporters (pending/validated).
+**Session Management:** localStorage-based user session persistence with automatic status refresh, role-based access control (client/transporter/admin), status-based feature access for transporters (pending/validated). Logout functionality uses `window.location.href` for complete session clearing and state reset.
+
+**User Data Refresh System:**
+- Dashboards automatically call GET `/api/auth/me/:userId` on mount to fetch latest user data from database
+- Updates localStorage and React state with fresh data (critical for status changes)
+- Ensures transporters see validation status updates immediately after admin approval
 
 **Admin Validation Workflow:** 
 - New transporters have "pending" status after profile completion
-- Admin validates transporters via dedicated validation tab in dashboard
+- Admin validates transporters via dedicated validation tab in dashboard (`/admin` route)
 - Validation changes status to "validated", enabling full platform access
+- Status updates are immediately visible to transporters upon next dashboard load (via auto-refresh)
 - Rejection removes transporter from pending queue
 
 ### Real-time Features
