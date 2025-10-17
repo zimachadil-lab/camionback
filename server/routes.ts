@@ -235,6 +235,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/offers", async (req, res) => {
     try {
       const offerData = insertOfferSchema.parse(req.body);
+      
+      // Check if transporter already has an offer for this request
+      const hasExistingOffer = await storage.hasOfferForRequest(
+        offerData.transporterId,
+        offerData.requestId
+      );
+      
+      if (hasExistingOffer) {
+        return res.status(409).json({ error: "Vous avez déjà soumis une offre pour cette demande" });
+      }
+      
       const offer = await storage.createOffer(offerData);
       
       // Get request and transporter info for notification
