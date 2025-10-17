@@ -57,9 +57,22 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
     }
   };
 
+  const convertToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
+  };
+
   const onSubmit = async (data: RequestFormData) => {
     try {
       const currentUser = JSON.parse(localStorage.getItem("camionback_user") || "{}");
+      
+      // Convert photos to base64
+      const photoBase64Promises = photos.map(photo => convertToBase64(photo));
+      const photoBase64Array = await Promise.all(photoBase64Promises);
       
       // Clean up optional fields - don't send empty strings
       const payload: any = {
@@ -69,6 +82,7 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
         goodsType: data.goodsType,
         clientId: currentUser.id,
         dateTime: data.dateTime ? new Date(data.dateTime).toISOString() : new Date().toISOString(),
+        photos: photoBase64Array,
       };
       
       if (data.estimatedWeight) {
