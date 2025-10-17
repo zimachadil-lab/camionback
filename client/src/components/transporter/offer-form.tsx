@@ -50,7 +50,19 @@ export function OfferForm({ open, onClose, requestId, onSuccess }: OfferFormProp
         }),
       });
       
-      if (!response.ok) throw new Error();
+      if (!response.ok) {
+        if (response.status === 409) {
+          const errorData = await response.json();
+          toast({
+            variant: "destructive",
+            title: "Offre déjà soumise",
+            description: errorData.error || "Vous avez déjà soumis une offre pour cette demande",
+          });
+          onClose();
+          return;
+        }
+        throw new Error();
+      }
       
       toast({
         title: "Offre envoyée",
