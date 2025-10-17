@@ -9,7 +9,8 @@ import {
   insertOtpCodeSchema, 
   insertTransportRequestSchema,
   insertOfferSchema,
-  insertChatMessageSchema 
+  insertChatMessageSchema,
+  insertNotificationSchema
 } from "@shared/schema";
 
 const upload = multer({ 
@@ -223,6 +224,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const offerData = insertOfferSchema.parse(req.body);
       const offer = await storage.createOffer(offerData);
+      
+      // Get request and transporter info for notification
+      const request = await storage.getTransportRequest(offer.requestId);
+      const transporter = await storage.getUser(offer.transporterId);
+      
+      if (request) {
+        // Create notification for client
+        await storage.createNotification({
+          userId: request.clientId,
+          type: "offer_received",
+          title: "Nouvelle offre reçue",
+          message: `${transporter?.name || "Un transporteur"} a soumis une offre de ${offer.amount} MAD pour votre demande ${request.referenceId}`,
+          relatedId: offer.id
+        });
+      }
+      
       res.json(offer);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -292,6 +309,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateTransportRequest(offer.requestId, {
         status: "accepted",
         acceptedOfferId: req.params.id,
+      });
+
+      // Create notification for transporter
+      await storage.createNotification({
+        userId: offer.transporterId,
+        type: "offer_accepted",
+        title: "Offre acceptée !",
+        message: `${client?.name || "Le client"} a accepté votre offre de ${offer.amount} MAD pour la demande ${request?.referenceId}. Commission: ${commissionAmount.toFixed(2)} MAD. Total: ${totalWithCommission.toFixed(2)} MAD`,
+        relatedId: offer.id
       });
 
       res.json({ 
@@ -391,6 +417,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ url: fileUrl });
     } catch (error) {
       res.status(500).json({ error: "Failed to upload file" });
+    }
+  });
+
+  // Notification routes
+  app.get("/api/notifications", async (req, res) => {
+    try {
+      const { userId } = req.query;
+      
+      if (!userId) {
+        return res.status(400).json({ error: "userId required" });
+      }
+      
+      const notifications = await storage.getNotificationsByUser(userId as string);
+      res.json(notifications);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch notifications" });
+    }
+  });
+
+  app.get("/api/notifications/unread-count", async (req, res) => {
+    try {
+      const { userId } = req.query;
+      
+      if (!userId) {
+        return res.status(400).json({ error: "userId required" });
+      }
+      
+      const count = await storage.getUnreadCount(userId as string);
+      res.json({ count });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch unread count" });
+    }
+  });
+
+  app.patch("/api/notifications/:id/read", async (req, res) => {
+    try {
+      const notification = await storage.markAsRead(req.params.id);
+      
+      if (!notification) {
+        return res.status(404).json({ error: "Notification not found" });
+      }
+      
+      res.json(notification);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to mark as read" });
+    }
+  });
+
+  app.post("/api/notifications/mark-all-read", async (req, res) => {
+    try {
+      const { userId } = req.body;
+      
+      if (!userId) {
+        return res.status(400).json({ error: "userId required" });
+      }
+      
+      await storage.markAllAsRead(userId);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to mark all as read" });
     }
   });
 

@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Menu, User, Plus, LogOut, FileText, Clock, Receipt, Package } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 
 interface HeaderProps {
   user: {
@@ -91,6 +92,8 @@ export function Header({ user, onNewRequest, onLogout }: HeaderProps) {
               <span className="sm:hidden">Nouveau</span>
             </Button>
           )}
+
+          <NotificationBell userId={user.id} />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
