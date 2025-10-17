@@ -117,6 +117,9 @@ export function PhoneAuth({ onAuthSuccess }: { onAuthSuccess: (user: any) => voi
       if (!user.role) {
         // New user needs to select role
         setLocation("/select-role");
+      } else if (user.role === "admin") {
+        // Admin users go directly to admin dashboard
+        setLocation("/admin");
       } else if (user.role === "transporter" && (!user.name || !user.city)) {
         // Transporter needs to complete profile
         setLocation("/complete-profile");

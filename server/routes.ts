@@ -111,6 +111,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get current user data (refreshes from database)
+  app.get("/api/auth/me/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      
+      if (!userId) {
+        return res.status(400).json({ error: "ID utilisateur requis" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "Utilisateur non trouvé" });
+      }
+
+      res.json({ user });
+    } catch (error) {
+      console.error("Get user error:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération des données" });
+    }
+  });
+
   // Select role after registration
   app.post("/api/auth/select-role", async (req, res) => {
     try {

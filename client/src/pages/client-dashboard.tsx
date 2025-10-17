@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -121,7 +121,28 @@ export default function ClientDashboard() {
   const [showContactDialog, setShowContactDialog] = useState(false);
   const [contactInfo, setContactInfo] = useState<any>(null);
 
-  const user = JSON.parse(localStorage.getItem("camionback_user") || "{}");
+  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
+
+  // Refresh user data from database on mount to get latest status
+  useEffect(() => {
+    const refreshUserData = async () => {
+      try {
+        const response = await fetch(`/api/auth/me/${user.id}`);
+        if (response.ok) {
+          const { user: updatedUser } = await response.json();
+          // Update localStorage with fresh data
+          localStorage.setItem("camionback_user", JSON.stringify(updatedUser));
+          setUser(updatedUser);
+        }
+      } catch (error) {
+        console.error("Failed to refresh user data:", error);
+      }
+    };
+
+    if (user.id) {
+      refreshUserData();
+    }
+  }, [user.id]);
 
   const handleLogout = () => {
     localStorage.removeItem("camionback_user");
