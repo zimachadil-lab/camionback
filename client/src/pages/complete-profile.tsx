@@ -180,50 +180,55 @@ export default function CompleteProfile() {
               <FormField
                 control={form.control}
                 name="truckPhoto"
-                render={({ field: { value, ...fieldProps } }) => (
+                render={({ field: { value, onChange, ...fieldProps } }) => (
                   <FormItem>
                     <FormLabel>Photo du camion *</FormLabel>
                     <FormControl>
                       <div className="space-y-4">
-                        <div className="border-2 border-dashed rounded-lg p-6 text-center hover-elevate active-elevate-2 cursor-pointer transition-all">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handlePhotoChange}
-                            className="hidden"
-                            id="truck-photo"
-                            data-testid="input-truck-photo"
-                          />
-                          <label htmlFor="truck-photo" className="cursor-pointer">
-                            {previewUrl ? (
-                              <img 
-                                src={previewUrl} 
-                                alt="Aperçu camion" 
-                                className="max-h-48 mx-auto rounded-lg"
-                              />
-                            ) : (
-                              <div className="space-y-2">
-                                <Upload className="w-12 h-12 mx-auto text-muted-foreground" />
-                                <p className="text-sm text-muted-foreground">
-                                  Cliquez pour télécharger une photo de votre camion
-                                </p>
-                              </div>
-                            )}
-                          </label>
-                        </div>
-                        {previewUrl && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setPreviewUrl(null);
-                              form.setValue("truckPhoto", undefined as any);
-                            }}
-                            data-testid="button-remove-photo"
-                          >
-                            Changer la photo
-                          </Button>
+                        {previewUrl ? (
+                          <div className="border-2 border-dashed rounded-lg p-4">
+                            <img 
+                              src={previewUrl} 
+                              alt="Aperçu camion" 
+                              className="max-h-48 mx-auto rounded-lg mb-4"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="w-full"
+                              onClick={() => {
+                                setPreviewUrl(null);
+                                const input = document.getElementById("truck-photo") as HTMLInputElement;
+                                if (input) input.value = "";
+                                form.resetField("truckPhoto");
+                              }}
+                              data-testid="button-remove-photo"
+                            >
+                              Changer la photo
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                            <Upload className="w-12 h-12 mx-auto text-muted-foreground mb-2" />
+                            <p className="text-sm text-muted-foreground mb-4">
+                              Cliquez pour télécharger une photo de votre camion
+                            </p>
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  handlePhotoChange(e);
+                                  onChange(file);
+                                }
+                              }}
+                              id="truck-photo"
+                              data-testid="input-truck-photo"
+                              className="max-w-xs mx-auto"
+                            />
+                          </div>
                         )}
                       </div>
                     </FormControl>

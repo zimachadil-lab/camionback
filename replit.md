@@ -2,7 +2,7 @@
 
 ## Overview
 
-CamionBack is a full-stack logistics marketplace web application for the Moroccan market, connecting clients needing transportation services (furniture, freight, deliveries) with independent transporters. The platform features a mobile-first design, dark teal theme, French language interface, and phone-based OTP authentication. It supports three user roles: Clients, Transporters, and Administrators, enabling clients to create requests, transporters to offer services, and administrators to manage the platform.
+CamionBack is a full-stack logistics marketplace web application for the Moroccan market, connecting clients needing transportation services (furniture, freight, deliveries) with independent transporters. The platform features a mobile-first design, dark teal theme, French language interface, and phone-based PIN authentication with bcrypt hashing. It supports three user roles: Clients, Transporters, and Administrators, enabling clients to create requests, transporters to offer services, and administrators to manage and validate the platform.
 
 ## User Preferences
 
@@ -30,13 +30,26 @@ Preferred communication style: Simple, everyday language.
 
 **Database:** PostgreSQL (configured for Neon serverless) with Drizzle ORM for type-safe queries and migrations.
 
-**Schema Design:** Key tables for users (multi-role), OTP codes, transport requests (CMD-2025-XXXXX format), offers, notifications, chat messages (with filtering), and admin settings.
+**Schema Design:** Key tables for users (multi-role with passwordHash, city, status fields), transport requests (CMD-2025-XXXXX format), offers, notifications, chat messages (with filtering), and admin settings.
 
 ### Authentication & Authorization
 
-**Authentication Method:** Phone number-based OTP verification (6-digit codes, 10-minute validity) with support for Moroccan phone formats.
+**Authentication Method:** Phone number-based PIN verification (6-digit codes with bcrypt hashing) supporting Moroccan phone formats (+212 + 9 digits, displayed with spaces: 6 12 34 56 78).
 
-**Session Management:** localStorage-based user session persistence, role-based access control (client/transporter/admin).
+**Registration Flow:** 
+1. Enter phone number → check if exists
+2. New users: create 6-digit PIN (bcrypt hashed) → select role (Client/Transporter)
+3. Transporters: complete profile (name, city, truck photo) → status set to "pending"
+4. Admin validation required for transporters before accessing features
+5. Existing users: enter PIN to login
+
+**Session Management:** localStorage-based user session persistence, role-based access control (client/transporter/admin), status-based feature access for transporters (pending/validated).
+
+**Admin Validation Workflow:** 
+- New transporters have "pending" status after profile completion
+- Admin validates transporters via dedicated validation tab in dashboard
+- Validation changes status to "validated", enabling full platform access
+- Rejection removes transporter from pending queue
 
 ### Real-time Features
 
