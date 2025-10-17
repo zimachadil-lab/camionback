@@ -41,6 +41,9 @@ export interface IStorage {
   createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
   getMessagesByRequest(requestId: string): Promise<ChatMessage[]>;
   getAllMessages(): Promise<ChatMessage[]>;
+  getUserConversations(userId: string): Promise<any[]>;
+  markMessagesAsRead(userId: string, requestId: string): Promise<void>;
+  getUnreadMessagesCount(userId: string): Promise<number>;
   
   // Admin settings
   getAdminSettings(): Promise<AdminSettings | undefined>;
@@ -251,6 +254,7 @@ export class MemStorage implements IStorage {
       ...insertMessage,
       id,
       filteredMessage: filteredMessage !== insertMessage.message ? filteredMessage : null,
+      isRead: false,
       createdAt: new Date(),
     };
     this.chatMessages.set(id, message);
@@ -265,6 +269,80 @@ export class MemStorage implements IStorage {
 
   async getAllMessages(): Promise<ChatMessage[]> {
     return Array.from(this.chatMessages.values());
+  }
+
+  async getUserConversations(userId: string): Promise<any[]> {
+    // Get all messages where user is sender or receiver
+    const userMessages = Array.from(this.chatMessages.values())
+      .filter((msg) => msg.senderId === userId || msg.receiverId === userId);
+
+    // Group by requestId
+    const conversationsMap = new Map<string, any>();
+    
+    for (const msg of userMessages) {
+      const existing = conversationsMap.get(msg.requestId);
+      const isUnread = msg.receiverId === userId && !msg.isRead;
+      
+      if (!existing) {
+        conversationsMap.set(msg.requestId, {
+          requestId: msg.requestId,
+          lastMessage: msg,
+          unreadCount: isUnread ? 1 : 0,
+          otherUserId: msg.senderId === userId ? msg.receiverId : msg.senderId,
+        });
+      } else {
+        // Update if this message is newer
+        if (msg.createdAt > existing.lastMessage.createdAt) {
+          existing.lastMessage = msg;
+        }
+        if (isUnread) {
+          existing.unreadCount++;
+        }
+      }
+    }
+
+    // Convert to array and enrich with request data
+    const conversations: any[] = [];
+    for (const conv of conversationsMap.values()) {
+      const request = await this.getTransportRequest(conv.requestId);
+      const otherUser = await this.getUser(conv.otherUserId);
+      
+      if (request && otherUser) {
+        conversations.push({
+          requestId: conv.requestId,
+          referenceId: request.referenceId,
+          fromCity: request.fromCity,
+          toCity: request.toCity,
+          lastMessage: conv.lastMessage,
+          unreadCount: conv.unreadCount,
+          otherUser: {
+            id: otherUser.id,
+            name: otherUser.name || otherUser.phoneNumber,
+            role: otherUser.role,
+          },
+        });
+      }
+    }
+
+    // Sort by last message date (most recent first)
+    return conversations.sort((a, b) => 
+      b.lastMessage.createdAt.getTime() - a.lastMessage.createdAt.getTime()
+    );
+  }
+
+  async markMessagesAsRead(userId: string, requestId: string): Promise<void> {
+    // Mark all messages in this conversation as read where user is receiver
+    for (const [id, message] of this.chatMessages.entries()) {
+      if (message.requestId === requestId && message.receiverId === userId && !message.isRead) {
+        this.chatMessages.set(id, { ...message, isRead: true });
+      }
+    }
+  }
+
+  async getUnreadMessagesCount(userId: string): Promise<number> {
+    return Array.from(this.chatMessages.values())
+      .filter((msg) => msg.receiverId === userId && !msg.isRead)
+      .length;
   }
 
   async getAdminSettings(): Promise<AdminSettings | undefined> {

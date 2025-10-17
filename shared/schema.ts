@@ -65,6 +65,7 @@ export const chatMessages = pgTable("chat_messages", {
   receiverId: varchar("receiver_id").notNull().references(() => users.id),
   message: text("message").notNull(),
   filteredMessage: text("filtered_message"), // Message after phone/link filtering
+  isRead: boolean("is_read").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -94,7 +95,7 @@ export const insertTransportRequestSchema = createInsertSchema(transportRequests
   dateTime: z.coerce.date(), // Accept ISO string and coerce to Date
 });
 export const insertOfferSchema = createInsertSchema(offers).omit({ id: true, createdAt: true, status: true, paymentProofUrl: true, paymentValidated: true });
-export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({ id: true, createdAt: true, filteredMessage: true });
+export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({ id: true, createdAt: true, filteredMessage: true, isRead: true });
 export const insertAdminSettingsSchema = createInsertSchema(adminSettings).omit({ id: true, updatedAt: true });
 export const insertNotificationSchema = createInsertSchema(notifications).omit({ id: true, createdAt: true, read: true });
 
