@@ -7,11 +7,14 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   phoneNumber: text("phone_number").notNull().unique(),
+  passwordHash: text("password_hash").notNull(), // Bcrypt hash of 6-digit PIN
   role: text("role").notNull(), // 'client', 'transporter', 'admin'
   name: text("name"),
+  city: text("city"), // City of residence
   truckPhotos: text("truck_photos").array(), // For transporters
   rating: decimal("rating", { precision: 3, scale: 2 }).default("0"), // For transporters
   totalTrips: integer("total_trips").default(0), // For transporters
+  status: text("status"), // 'pending', 'validated' - for transporters only
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });

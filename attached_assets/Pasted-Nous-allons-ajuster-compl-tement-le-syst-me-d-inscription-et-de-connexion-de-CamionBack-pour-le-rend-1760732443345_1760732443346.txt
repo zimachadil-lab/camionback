@@ -1,0 +1,118 @@
+Nous allons ajuster complètement le système d’inscription et de connexion de CamionBack pour le rendre plus fluide et mieux adapté aux utilisateurs marocains.
+Merci d’implémenter les changements suivants 👇
+
+🔐 1️⃣ Authentification simplifiée sans OTP
+
+Supprimer complètement l’envoi OTP.
+
+Le numéro de téléphone sera utilisé comme identifiant principal.
+
+Lors de la première connexion, le nouvel utilisateur choisit un code confidentiel à 6 chiffres (par exemple “123456”).
+
+Ce code servira de mot de passe permanent pour les connexions suivantes.
+
+Les mots de passe à 6 chiffres doivent être hashés avec bcrypt et sécurisés dans la base de données.
+
+Lors d’une future connexion, l’utilisateur entre simplement :
+
+Numéro de téléphone
+
+Code confidentiel à 6 chiffres
+
+Ajouter un bouton “Mot de passe oublié” (non fonctionnel pour le moment, à implémenter plus tard).
+
+☎️ 2️⃣ Format du numéro de téléphone
+
+Garder le préfixe “+212” grisé et fixe (non modifiable).
+
+L’utilisateur ne saisit que la partie restante du numéro sous ce format :
+
+6 12 34 56 78
+
+Vérifier automatiquement que le numéro comporte 9 chiffres après le +212.
+
+Afficher un message d’erreur clair si le format est incorrect.
+
+🧭 3️⃣ Sélection du rôle à la première connexion
+
+Après validation du numéro de téléphone et du code à 6 chiffres, afficher une page avec deux grands boutons illustrés :
+
+🚚 Transporteur
+
+📦 Expéditeur (Client)
+
+Chaque bouton doit comporter une icône, un petit texte descriptif et un effet visuel au survol.
+
+Lorsqu’un utilisateur clique :
+
+S’il choisit Expéditeur, rediriger vers le tableau de bord client.
+
+S’il choisit Transporteur, rediriger vers une page de complétion du profil (voir section suivante).
+
+🚛 4️⃣ Complétion du profil Transporteur
+
+Lorsqu’un utilisateur choisit “Transporteur”, afficher un formulaire obligatoire avec :
+
+Nom complet
+
+Ville de résidence (liste déroulante avec principales villes du Maroc)
+
+Téléphone (prérempli avec le numéro saisi à l’inscription, non modifiable)
+
+Upload d’une photo du camion (obligatoire)
+
+En soumettant, ces données sont sauvegardées dans la collection drivers.
+
+Côté admin, un tableau “Transporteurs à valider” doit afficher :
+
+Nom complet
+
+Ville
+
+Numéro de téléphone
+
+Photo du camion
+
+Bouton “Valider / Refuser”.
+
+L’admin peut ajouter une note ou modifier ces informations si besoin.
+
+🕓 5️⃣ Validation du profil transporteur
+
+Tant que l’admin n’a pas validé le profil, le transporteur peut se connecter, mais voit seulement :
+
+Son tableau de bord normal
+
+Un message en haut de la page indiquant :
+
+“🕓 Votre compte est en cours de validation par l’équipe CamionBack. Vous serez notifié dès son approbation.”
+
+Une fois validé, le message disparaît et le transporteur accède à toutes les fonctionnalités (offres, messages, etc.).
+
+💬 6️⃣ Redirection logique
+
+Une fois le compte validé :
+
+Expéditeur → vers /dashboard-client
+
+Transporteur validé → vers /dashboard-transporteur
+
+Transporteur en attente → vers /dashboard-transporteur + message d’attente
+
+Admin (déjà existant) → vers /admin-panel
+
+🧩 7️⃣ Structure technique à garder
+
+Base de données : MongoDB (ou Replit DB selon le setup existant).
+
+Collections à jour : users, drivers, clients, admins.
+
+Chaque utilisateur doit avoir un champ role = “client” ou “driver”.
+
+Ajouter un champ status = “pending” | “validated” pour les transporteurs.
+
+Les routes et redirections doivent s’adapter selon ces statuts.
+
+Merci de construire ce flux de manière fluide et moderne (boutons illustrés, champs bien espacés, interface mobile-first, cohérente avec le style visuel actuel de CamionBack).
+
+Une fois terminé, je testerai le parcours complet (création → choix rôle → validation admin → connexion) pour m’assurer que tout est cohérent.
