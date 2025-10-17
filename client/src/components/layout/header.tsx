@@ -133,7 +133,7 @@ export function Header({ user, onNewRequest, onLogout }: HeaderProps) {
 
               <DropdownMenuItem
                 onClick={onLogout}
-                className="gap-2 cursor-pointer text-destructive focus:text-destructive"
+                className="gap-2 cursor-pointer text-destructive focus:text-destructive hover:bg-destructive/10 transition-all duration-200 font-medium"
                 data-testid="button-logout"
               >
                 <LogOut className="h-4 w-4" />

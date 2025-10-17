@@ -15,8 +15,10 @@ export default function NotificationsPage() {
   const user = JSON.parse(localStorage.getItem("camionback_user") || "{}");
 
   const handleLogout = () => {
+    // Clear user session
     localStorage.removeItem("camionback_user");
-    navigate("/");
+    // Force page reload to clear all state
+    window.location.href = "/";
   };
 
   const { data: notifications, isLoading } = useQuery<Notification[]>({

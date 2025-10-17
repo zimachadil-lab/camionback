@@ -145,8 +145,10 @@ export default function ClientDashboard() {
   }, [user.id]);
 
   const handleLogout = () => {
+    // Clear user session
     localStorage.removeItem("camionback_user");
-    setLocation("/");
+    // Force page reload to clear all state
+    window.location.href = "/";
   };
 
   const { data: requests = [], isLoading } = useQuery({

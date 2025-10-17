@@ -24,8 +24,10 @@ export default function AdminDashboard() {
   const user = JSON.parse(localStorage.getItem("camionback_user") || "{}");
 
   const handleLogout = () => {
+    // Clear user session
     localStorage.removeItem("camionback_user");
-    setLocation("/");
+    // Force page reload to clear all state
+    window.location.href = "/";
   };
 
   // Fetch pending drivers
