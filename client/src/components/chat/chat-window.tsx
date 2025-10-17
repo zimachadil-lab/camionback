@@ -1,18 +1,13 @@
 import { useState, useEffect, useRef } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Send, X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
-interface Message {
-  id: string;
-  senderId: string;
-  message: string;
-  filteredMessage?: string;
-  createdAt: Date;
-}
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { type ChatMessage } from "@shared/schema";
 
 interface ChatWindowProps {
   open: boolean;
@@ -27,9 +22,15 @@ interface ChatWindowProps {
 }
 
 export function ChatWindow({ open, onClose, otherUser, currentUserId, requestId }: ChatWindowProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const [ws, setWs] = useState<WebSocket | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const { data: messages = [], refetch } = useQuery<ChatMessage[]>({
+    queryKey: [`/api/chat/messages?requestId=${requestId}`],
+    enabled: open && !!requestId,
+    refetchInterval: 5000,
+  });
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -37,20 +38,74 @@ export function ChatWindow({ open, onClose, otherUser, currentUserId, requestId 
     }
   }, [messages]);
 
-  const handleSendMessage = () => {
-    if (!newMessage.trim()) return;
+  useEffect(() => {
+    if (!open) {
+      // Close existing websocket if chat is closed
+      if (ws) {
+        ws.close();
+        setWs(null);
+      }
+      return;
+    }
 
-    const message: Message = {
-      id: Date.now().toString(),
-      senderId: currentUserId,
-      message: newMessage,
-      createdAt: new Date(),
-    };
-
-    setMessages([...messages, message]);
-    setNewMessage("");
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws-chat`;
     
-    // API call will be implemented in phase 2
+    const websocket = new WebSocket(wsUrl);
+    
+    websocket.onopen = () => {
+      console.log('Chat WebSocket connected');
+    };
+    
+    websocket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'chat' && data.requestId === requestId) {
+          refetch();
+        }
+      } catch (error) {
+        console.error('WebSocket message error:', error);
+      }
+    };
+    
+    websocket.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+    
+    setWs(websocket);
+    
+    return () => {
+      websocket.close();
+      setWs(null);
+    };
+  }, [open, requestId, refetch]);
+
+  const sendMessageMutation = useMutation({
+    mutationFn: async (messageText: string) => {
+      return apiRequest("POST", "/api/chat/messages", {
+        requestId,
+        senderId: currentUserId,
+        receiverId: otherUser.id,
+        message: messageText,
+      });
+    },
+    onSuccess: (newMsg) => {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          type: 'chat',
+          requestId,
+          message: newMsg,
+        }));
+      }
+      queryClient.invalidateQueries({ queryKey: [`/api/chat/messages?requestId=${requestId}`] });
+      setNewMessage("");
+    },
+  });
+
+  const handleSendMessage = () => {
+    const trimmed = newMessage.trim();
+    if (!trimmed) return;
+    sendMessageMutation.mutate(trimmed);
   };
 
   if (!open) return null;
@@ -92,6 +147,7 @@ export function ChatWindow({ open, onClose, otherUser, currentUserId, requestId 
                 <div
                   key={msg.id}
                   className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
+                  data-testid={`message-${msg.id}`}
                 >
                   <div
                     className={`max-w-[80%] rounded-lg px-4 py-2 ${
@@ -119,13 +175,15 @@ export function ChatWindow({ open, onClose, otherUser, currentUserId, requestId 
           <Input
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+            onKeyPress={(e) => e.key === "Enter" && !sendMessageMutation.isPending && handleSendMessage()}
             placeholder="Tapez votre message..."
+            disabled={sendMessageMutation.isPending}
             data-testid="input-chat-message"
           />
           <Button 
             onClick={handleSendMessage} 
             size="icon"
+            disabled={sendMessageMutation.isPending || !newMessage.trim()}
             data-testid="button-send-message"
           >
             <Send className="h-4 w-4" />

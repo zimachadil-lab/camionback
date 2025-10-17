@@ -16,7 +16,7 @@ interface OfferCardProps {
     status: string;
   };
   onAccept: (offerId: string) => void;
-  onChat: (transporterId: string) => void;
+  onChat: () => void;
 }
 
 export function OfferCard({ offer, onAccept, onChat }: OfferCardProps) {
@@ -80,8 +80,8 @@ export function OfferCard({ offer, onAccept, onChat }: OfferCardProps) {
         )}
       </CardContent>
 
-      {!isAccepted && (
-        <CardFooter className="p-4 pt-0 gap-2 flex-col sm:flex-row">
+      <CardFooter className="p-4 pt-0 gap-2 flex-col sm:flex-row">
+        {!isAccepted && (
           <Button 
             onClick={() => onAccept(offer.id)} 
             className="w-full sm:flex-1"
@@ -91,18 +91,18 @@ export function OfferCard({ offer, onAccept, onChat }: OfferCardProps) {
           >
             Choisir cette offre
           </Button>
-          <Button 
-            onClick={() => onChat(offer.transporterId)} 
-            variant="outline"
-            className="w-full sm:flex-1"
-            size="lg"
-            data-testid={`button-chat-${offer.id}`}
-          >
-            <MessageSquare className="mr-2 h-5 w-5" />
-            Envoyer un message
-          </Button>
-        </CardFooter>
-      )}
+        )}
+        <Button 
+          onClick={onChat} 
+          variant={isAccepted ? "default" : "outline"}
+          className={isAccepted ? "w-full gap-2" : "w-full sm:flex-1"}
+          size="lg"
+          data-testid={`button-chat-${offer.id}`}
+        >
+          <MessageSquare className="h-5 w-5" />
+          Envoyer un message
+        </Button>
+      </CardFooter>
     </Card>
   );
 }

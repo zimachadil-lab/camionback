@@ -3,12 +3,14 @@ import { useLocation } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, ListFilter, Package, Phone, CheckCircle, MapPin } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { RequestCard } from "@/components/transporter/request-card";
 import { OfferForm } from "@/components/transporter/offer-form";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { ChatWindow } from "@/components/chat/chat-window";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 
@@ -23,6 +25,9 @@ export default function TransporterDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [offerDialogOpen, setOfferDialogOpen] = useState(false);
   const [selectedRequestId, setSelectedRequestId] = useState<string>("");
+  const [chatOpen, setChatOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<{ id: string; name: string; role: string } | null>(null);
+  const [chatRequestId, setChatRequestId] = useState<string>("");
 
   const user = JSON.parse(localStorage.getItem("camionback_user") || "{}");
 
@@ -67,6 +72,16 @@ export default function TransporterDashboard() {
   const handleMakeOffer = (requestId: string) => {
     setSelectedRequestId(requestId);
     setOfferDialogOpen(true);
+  };
+
+  const handleChat = (clientId: string, clientName: string, requestId: string) => {
+    if (!requestId) {
+      console.error('Cannot open chat: requestId is missing');
+      return;
+    }
+    setSelectedClient({ id: clientId, name: clientName || "Client", role: "client" });
+    setChatRequestId(requestId);
+    setChatOpen(true);
   };
 
   const filteredRequests = requests.filter((req: any) => {
@@ -201,16 +216,16 @@ export default function TransporterDashboard() {
                         )}
 
                         {isAccepted && client && (
-                          <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg p-4 space-y-2">
+                          <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg p-4 space-y-3">
                             <p className="text-sm font-medium text-green-900 dark:text-green-100 flex items-center gap-2">
                               <CheckCircle className="w-4 h-4" />
                               Votre offre a été acceptée !
                             </p>
-                            <div className="space-y-1">
+                            <div className="space-y-2">
                               <p className="text-sm text-green-800 dark:text-green-200">
                                 Vous pouvez maintenant contacter le client :
                               </p>
-                              <div className="flex items-center gap-2 mt-2">
+                              <div className="flex items-center gap-2">
                                 <Phone className="w-4 h-4 text-green-700 dark:text-green-300" />
                                 <a 
                                   href={`tel:${client.phoneNumber}`} 
@@ -220,9 +235,21 @@ export default function TransporterDashboard() {
                                   {client.phoneNumber}
                                 </a>
                               </div>
-                              <p className="text-xs text-green-700 dark:text-green-400 mt-1">
+                              <p className="text-xs text-green-700 dark:text-green-400">
                                 Client : {client.name || "Non spécifié"}
                               </p>
+                              {request && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleChat(client.id, client.name, request.id)}
+                                  className="gap-2 mt-2 w-full"
+                                  data-testid={`button-chat-${offer.id}`}
+                                >
+                                  <MessageSquare className="w-4 h-4" />
+                                  Envoyer un message
+                                </Button>
+                              )}
                             </div>
                           </div>
                         )}
@@ -257,6 +284,16 @@ export default function TransporterDashboard() {
           queryClient.invalidateQueries({ queryKey: ["/api/offers"] });
         }}
       />
+
+      {selectedClient && (
+        <ChatWindow
+          open={chatOpen}
+          onClose={() => setChatOpen(false)}
+          otherUser={selectedClient}
+          currentUserId={user.id}
+          requestId={chatRequestId}
+        />
+      )}
     </div>
   );
 }

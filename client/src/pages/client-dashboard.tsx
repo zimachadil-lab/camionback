@@ -19,19 +19,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-function RequestWithOffers({ request, onAcceptOffer, onChat }: any) {
+function RequestWithOffers({ request, onAcceptOffer, onChat, users }: any) {
   const { data: offers = [] } = useQuery({
     queryKey: ["/api/offers", request.id],
     queryFn: async () => {
       const response = await fetch(`/api/offers?requestId=${request.id}`);
-      return response.json();
-    },
-  });
-
-  const { data: users = [] } = useQuery({
-    queryKey: ["/api/users"],
-    queryFn: async () => {
-      const response = await fetch("/api/users");
       return response.json();
     },
   });
@@ -69,7 +61,7 @@ function RequestWithOffers({ request, onAcceptOffer, onChat }: any) {
                 key={offer.id}
                 offer={offer}
                 onAccept={onAcceptOffer}
-                onChat={onChat}
+                onChat={() => onChat(offer.transporterId, offer.transporterName, request.id)}
               />
             ))}
           </div>
@@ -88,6 +80,7 @@ export default function ClientDashboard() {
   const [showNewRequest, setShowNewRequest] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [selectedTransporter, setSelectedTransporter] = useState<any>(null);
+  const [chatRequestId, setChatRequestId] = useState<string>("");
   const [showContactDialog, setShowContactDialog] = useState(false);
   const [contactInfo, setContactInfo] = useState<any>(null);
 
@@ -102,6 +95,14 @@ export default function ClientDashboard() {
     queryKey: ["/api/requests", user.id],
     queryFn: async () => {
       const response = await fetch(`/api/requests?clientId=${user.id}`);
+      return response.json();
+    },
+  });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ["/api/users"],
+    queryFn: async () => {
+      const response = await fetch("/api/users");
       return response.json();
     },
   });
@@ -131,8 +132,9 @@ export default function ClientDashboard() {
     acceptOfferMutation.mutate(offerId);
   };
 
-  const handleChat = (transporterId: string) => {
-    setSelectedTransporter({ id: transporterId, name: "Transporteur", role: "transporter" });
+  const handleChat = (transporterId: string, transporterName: string, requestId: string) => {
+    setSelectedTransporter({ id: transporterId, name: transporterName || "Transporteur", role: "transporter" });
+    setChatRequestId(requestId);
     setChatOpen(true);
   };
 
@@ -187,6 +189,7 @@ export default function ClientDashboard() {
                   <RequestWithOffers 
                     key={request.id} 
                     request={request}
+                    users={users}
                     onAcceptOffer={handleAcceptOffer}
                     onChat={handleChat}
                   />
@@ -237,8 +240,8 @@ export default function ClientDashboard() {
           open={chatOpen}
           onClose={() => setChatOpen(false)}
           otherUser={selectedTransporter}
-          currentUserId="current-client-id"
-          requestId="1"
+          currentUserId={user.id}
+          requestId={chatRequestId}
         />
       )}
 
