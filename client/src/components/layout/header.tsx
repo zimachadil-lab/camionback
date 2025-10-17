@@ -11,6 +11,7 @@ import {
 import { Menu, User, Plus, LogOut, FileText, Clock, Receipt, Package } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { MessagesBadge } from "@/components/chat/messages-badge";
 
 interface HeaderProps {
   user: {
@@ -94,6 +95,7 @@ export function Header({ user, onNewRequest, onLogout }: HeaderProps) {
           )}
 
           <NotificationBell userId={user.id} />
+          <MessagesBadge userId={user.id} />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
