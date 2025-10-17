@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, ListFilter, Package } from "lucide-react";
+import { Search, ListFilter, Package, Phone, CheckCircle, MapPin } from "lucide-react";
 import { RequestCard } from "@/components/transporter/request-card";
 import { OfferForm } from "@/components/transporter/offer-form";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 
@@ -36,6 +37,23 @@ export default function TransporterDashboard() {
       const response = await fetch(`/api/offers?transporterId=${user.id}`);
       return response.json();
     },
+    refetchInterval: 5000,
+  });
+
+  const { data: allRequests = [] } = useQuery({
+    queryKey: ["/api/requests/all"],
+    queryFn: async () => {
+      const response = await fetch("/api/requests");
+      return response.json();
+    },
+  });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ["/api/users"],
+    queryFn: async () => {
+      const response = await fetch("/api/users");
+      return response.json();
+    },
   });
 
   const handleMakeOffer = (requestId: string) => {
@@ -44,10 +62,10 @@ export default function TransporterDashboard() {
   };
 
   const filteredRequests = requests.filter((req: any) => {
-    const cityMatch = selectedCity === "Toutes les villes" || 
+    const cityMatch: boolean = selectedCity === "Toutes les villes" || 
                      req.fromCity === selectedCity || 
                      req.toCity === selectedCity;
-    const searchMatch = searchQuery === "" || 
+    const searchMatch: boolean = searchQuery === "" || 
                        req.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
                        req.goodsType.toLowerCase().includes(searchQuery.toLowerCase());
     return cityMatch && searchMatch;
@@ -111,7 +129,7 @@ export default function TransporterDashboard() {
 
             {filteredRequests.length > 0 ? (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {filteredRequests.map((request) => (
+                {filteredRequests.map((request: any) => (
                   <RequestCard
                     key={request.id}
                     request={request}
@@ -131,25 +149,80 @@ export default function TransporterDashboard() {
 
           <TabsContent value="my-offers" className="mt-6 space-y-6">
             {myOffers.length > 0 ? (
-              <div className="space-y-6">
-                {myOffers.map((offer: any) => (
-                  <div key={offer.id} className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <Badge variant={
-                        offer.status === "pending" ? "outline" :
-                        offer.status === "accepted" ? "default" :
-                        "secondary"
-                      }>
-                        {offer.status === "pending" ? "En attente" :
-                         offer.status === "accepted" ? "Acceptée" :
-                         "Refusée"}
-                      </Badge>
-                      <span className="text-sm text-muted-foreground">
-                        Votre offre: <span className="font-bold text-primary">{offer.amount} MAD</span>
-                      </span>
-                    </div>
-                  </div>
-                ))}
+              <div className="space-y-4">
+                {myOffers.map((offer: any) => {
+                  const request = allRequests.find((r: any) => r.id === offer.requestId);
+                  const client = users.find((u: any) => u.id === request?.clientId);
+                  const isAccepted = offer.status === "accepted";
+
+                  return (
+                    <Card key={offer.id} className="hover-elevate">
+                      <CardContent className="p-6 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Badge 
+                              variant={
+                                offer.status === "pending" ? "outline" :
+                                offer.status === "accepted" ? "default" :
+                                "secondary"
+                              }
+                              className={isAccepted ? "bg-green-600" : ""}
+                            >
+                              {isAccepted && <CheckCircle className="w-3 h-3 mr-1" />}
+                              {offer.status === "pending" ? "En attente" :
+                               offer.status === "accepted" ? "Acceptée" :
+                               "Refusée"}
+                            </Badge>
+                            <span className="text-sm text-muted-foreground">
+                              Référence: <span className="font-semibold text-foreground">{request?.referenceId}</span>
+                            </span>
+                          </div>
+                          <span className="text-xl font-bold text-primary">{offer.amount} MAD</span>
+                        </div>
+
+                        {request && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <MapPin className="w-4 h-4" />
+                            <span>{request.fromCity} → {request.toCity}</span>
+                          </div>
+                        )}
+
+                        {isAccepted && client && (
+                          <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg p-4 space-y-2">
+                            <p className="text-sm font-medium text-green-900 dark:text-green-100 flex items-center gap-2">
+                              <CheckCircle className="w-4 h-4" />
+                              Votre offre a été acceptée !
+                            </p>
+                            <div className="space-y-1">
+                              <p className="text-sm text-green-800 dark:text-green-200">
+                                Vous pouvez maintenant contacter le client :
+                              </p>
+                              <div className="flex items-center gap-2 mt-2">
+                                <Phone className="w-4 h-4 text-green-700 dark:text-green-300" />
+                                <a 
+                                  href={`tel:${client.phoneNumber}`} 
+                                  className="text-lg font-semibold text-green-700 dark:text-green-300 hover:underline"
+                                  data-testid={`link-client-phone-${offer.id}`}
+                                >
+                                  {client.phoneNumber}
+                                </a>
+                              </div>
+                              <p className="text-xs text-green-700 dark:text-green-400 mt-1">
+                                Client : {client.name || "Non spécifié"}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {offer.message && (
+                          <p className="text-sm text-muted-foreground border-l-2 border-primary pl-3">
+                            {offer.message}
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-12">

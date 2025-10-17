@@ -82,10 +82,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           role = "admin";
         }
         
+        // Generate default name based on role
+        let defaultName = "Client";
+        if (role === "transporter") {
+          defaultName = "Transporteur Pro";
+        } else if (role === "admin") {
+          defaultName = "Administrateur";
+        }
+        
         user = await storage.createUser({
           phoneNumber,
           role,
-          name: role === "transporter" ? "Transporteur Pro" : null,
+          name: defaultName,
           truckPhotos: null,
           rating: role === "transporter" ? "4.5" : null,
           totalTrips: role === "transporter" ? 25 : null,
@@ -260,6 +268,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Offer not found" });
       }
 
+      // Get transporter and request info
+      const transporter = await storage.getUser(offer.transporterId);
+      const request = await storage.getTransportRequest(offer.requestId);
+      const client = request ? await storage.getUser(request.clientId) : null;
+
       // Get commission percentage
       const settings = await storage.getAdminSettings();
       const commissionRate = parseFloat(settings?.commissionPercentage || "10");
@@ -284,7 +297,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ 
         success: true,
         commission: commissionAmount,
-        total: totalWithCommission 
+        total: totalWithCommission,
+        transporterPhone: transporter?.phoneNumber,
+        transporterName: transporter?.name,
+        clientPhone: client?.phoneNumber,
+        clientName: client?.name
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to accept offer" });

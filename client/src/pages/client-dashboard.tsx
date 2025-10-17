@@ -1,12 +1,21 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Package } from "lucide-react";
+import { Plus, Package, Phone, CheckCircle } from "lucide-react";
 import { NewRequestForm } from "@/components/client/new-request-form";
 import { OfferCard } from "@/components/client/offer-card";
 import { ChatWindow } from "@/components/chat/chat-window";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 function RequestWithOffers({ request, onAcceptOffer, onChat }: any) {
   const { data: offers = [] } = useQuery({
@@ -76,6 +85,8 @@ export default function ClientDashboard() {
   const [showNewRequest, setShowNewRequest] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [selectedTransporter, setSelectedTransporter] = useState<any>(null);
+  const [showContactDialog, setShowContactDialog] = useState(false);
+  const [contactInfo, setContactInfo] = useState<any>(null);
 
   const user = JSON.parse(localStorage.getItem("camionback_user") || "{}");
 
@@ -94,8 +105,17 @@ export default function ClientDashboard() {
       });
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/offers"] });
+      
+      setContactInfo({
+        transporterPhone: data.transporterPhone,
+        transporterName: data.transporterName,
+        commission: data.commission,
+        total: data.total
+      });
+      setShowContactDialog(true);
     },
   });
 
@@ -217,6 +237,49 @@ export default function ClientDashboard() {
           requestId="1"
         />
       )}
+
+      <AlertDialog open={showContactDialog} onOpenChange={setShowContactDialog}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-12 h-12 rounded-full bg-green-600 flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-white" />
+              </div>
+              <AlertDialogTitle className="text-xl">Offre acceptée !</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="space-y-4 text-base">
+              <p className="text-foreground">
+                Le transporteur <span className="font-semibold">{contactInfo?.transporterName}</span> a été informé que vous avez choisi son offre.
+              </p>
+              
+              <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
+                <p className="font-medium text-foreground mb-2">Vous pouvez maintenant le contacter :</p>
+                <div className="flex items-center gap-2 text-lg font-semibold text-primary">
+                  <Phone className="w-5 h-5" />
+                  <a href={`tel:${contactInfo?.transporterPhone}`} className="hover:underline">
+                    {contactInfo?.transporterPhone}
+                  </a>
+                </div>
+              </div>
+
+              {contactInfo?.commission && (
+                <div className="text-sm text-muted-foreground border-t pt-3 space-y-1">
+                  <p>Commission CamionBack : {contactInfo.commission.toFixed(2)} MAD</p>
+                  <p className="font-semibold text-foreground">Total à payer : {contactInfo.total.toFixed(2)} MAD</p>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction 
+              className="w-full"
+              data-testid="button-close-contact-dialog"
+            >
+              J'ai compris
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

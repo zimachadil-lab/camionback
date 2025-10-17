@@ -1,0 +1,69 @@
+Voici mes retours de test et ajustements à effectuer sur la version actuelle de CamionBack 👇
+
+🔥 Priorité 1 : Rafraîchissement automatique et affichage des contacts
+
+Quand un client accepte une offre d’un transporteur :
+
+La page doit se rafraîchir automatiquement.
+
+Le client doit voir un message clair :
+
+“✅ Le transporteur a été informé que vous avez choisi son offre. Vous pouvez maintenant le contacter au numéro : +212 XXXXXXXXX.”
+
+Le numéro de téléphone du transporteur (champ driver.phone) doit s’afficher dans ce message.
+
+Idem côté transporteur : dès qu’une offre est acceptée, il doit recevoir la notification correspondante et voir le numéro de téléphone du client pour pouvoir le contacter.
+
+Le statut de la commande doit passer à “Acceptée” dans la base pour les deux côtés.
+
+🧭 Priorité 2 : En-tête et navigation
+
+Ajouter un menu principal dans le header, visible pour chaque rôle :
+
+Client : Profil, Historique, Mes commandes
+
+Transporteur : Profil, Mes offres, Facturation
+
+Conserver le bouton “+ Nouvelle commande” à sa position actuelle (visible côté client).
+
+Vérifier la lisibilité du menu sur mobile (responsive).
+
+🔐 Priorité 3 : Déconnexion
+
+Ajouter un bouton “Se déconnecter / Logout” pour tous les profils (Client, Transporteur, Admin).
+
+Une fois déconnecté, l’utilisateur doit être redirigé vers la page de login et sa session vidée.
+
+🔔 Priorité 4 : Système de notifications
+
+Créer une rubrique “Notifications” accessible depuis le menu principal.
+
+Cette rubrique doit afficher toutes les notifications liées au fonctionnement de CamionBack :
+
+Offre reçue
+
+Offre acceptée
+
+Message reçu
+
+Preuve de paiement validée
+
+Compte approuvé / rejeté
+
+Ajouter un indicateur (badge rouge avec le nombre de notifications non lues) dans le header.
+
+💬 Priorité 5 : Chat instantané côté transporteur
+
+Actuellement, le chat n’apparaît pas côté transporteur : il ne peut ni voir les messages reçus ni répondre.
+
+Corriger cela pour que le transporteur ait la même interface de messagerie que le client :
+
+Liste des conversations par commande
+
+Messages envoyés/réçus en temps réel
+
+Champ de saisie + bouton “Envoyer”
+
+Vérifier que le chat est bien lié à la commande (via order_id) et que les messages sont filtrés pour supprimer numéros/lien (regex).
+
+Merci de traiter ces 5 priorités dans cet ordre. Une fois ces points corrigés
