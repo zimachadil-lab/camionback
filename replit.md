@@ -48,6 +48,17 @@ The application supports three distinct user roles:
   - Chat accessible from both client and transporter dashboards on accepted offers
   - Per-request message isolation (server-side filtering by requestId)
 
+✅ **Messages Inbox**: Dedicated messaging center with unread tracking
+  - Dedicated /messages page displaying all conversations grouped by order reference (CMD-2025-XXXXX)
+  - Badge counter in header (MessageSquare icon) showing total unread messages across all conversations
+  - Per-conversation unread badge showing unread count for each request
+  - Automatic mark-as-read when conversation opened from Messages page
+  - Conversation metadata: order reference, transport route, last message preview, other user info
+  - Real-time badge updates (5-second refetch interval)
+  - API routes: GET /api/chat/conversations, POST /api/chat/mark-read, GET /api/chat/unread-count
+  - Schema: isRead field (boolean) added to chatMessages table
+  - Available for both client and transporter roles
+
 ✅ **Data Persistence**: In-memory storage with full CRUD operations for:
   - Users (with role-based access)
   - Transport requests (with status tracking)
@@ -55,12 +66,13 @@ The application supports three distinct user roles:
   - OTP codes (with expiry)
   - Admin settings
   - Notifications (with read/unread status)
-  - Chat messages (with regex filtering)
+  - Chat messages (with regex filtering and read/unread status)
 
 ✅ **End-to-End Testing**: Complete user journeys validated via Playwright
   - Client creates request → Transporter submits offer → Client accepts → Commission calculated
   - Notification flow: Offer events trigger notifications → Badge counter updates → Mark read
   - Chat flow: Client ↔ Transporter bidirectional messaging → Real-time delivery → Regex filtering
+  - Messages inbox: Badge increments on new message → Conversation list displays → Mark as read on open → Badge updates
 
 ### Technical Fixes Applied
 - Fixed dateTime validation: Schema now uses `z.coerce.date()` to accept ISO strings
@@ -74,6 +86,7 @@ The application supports three distinct user roles:
 - Fixed OfferCard: Chat button now visible after offer acceptance (signature mismatch resolved)
 - Fixed ChatWindow WebSocket lifecycle: Proper cleanup on unmount (close + setWs(null))
 - Fixed transporter chat: RequestId validation before opening chat
+- Fixed MessagesPage localStorage key: Uses "camionback_user" matching PhoneAuth persistence
 
 ## User Preferences
 
