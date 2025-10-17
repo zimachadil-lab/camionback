@@ -178,13 +178,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/requests", async (req, res) => {
     try {
-      const { clientId, status } = req.query;
+      const { clientId, status, transporterId } = req.query;
       
       let requests;
       if (clientId) {
         requests = await storage.getRequestsByClient(clientId as string);
       } else if (status === "open") {
-        requests = await storage.getOpenRequests();
+        requests = await storage.getOpenRequests(transporterId as string | undefined);
       } else {
         requests = await storage.getAllTransportRequests();
       }

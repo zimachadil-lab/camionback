@@ -178,10 +178,24 @@ export class MemStorage implements IStorage {
     );
   }
 
-  async getOpenRequests(): Promise<TransportRequest[]> {
-    return Array.from(this.transportRequests.values()).filter(
+  async getOpenRequests(transporterId?: string): Promise<TransportRequest[]> {
+    const openRequests = Array.from(this.transportRequests.values()).filter(
       (req) => req.status === "open"
     );
+    
+    // If transporterId is provided, exclude requests where transporter already has an offer
+    if (transporterId) {
+      const filteredRequests: TransportRequest[] = [];
+      for (const request of openRequests) {
+        const hasOffer = await this.hasOfferForRequest(transporterId, request.id);
+        if (!hasOffer) {
+          filteredRequests.push(request);
+        }
+      }
+      return filteredRequests;
+    }
+    
+    return openRequests;
   }
 
   async updateTransportRequest(id: string, updates: Partial<TransportRequest>): Promise<TransportRequest | undefined> {
