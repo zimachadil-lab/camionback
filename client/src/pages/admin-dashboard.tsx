@@ -221,14 +221,15 @@ export default function AdminDashboard() {
                       {pendingDrivers.map((driver: any) => (
                         <TableRow key={driver.id}>
                           <TableCell className="font-medium">{driver.name}</TableCell>
-                          <TableCell>{driver.phone}</TableCell>
+                          <TableCell>{driver.phoneNumber}</TableCell>
                           <TableCell>{driver.city}</TableCell>
                           <TableCell>
-                            {driver.truckPhoto ? (
+                            {driver.truckPhotos && driver.truckPhotos.length > 0 ? (
                               <img 
-                                src={driver.truckPhoto} 
+                                src={driver.truckPhotos[0]} 
                                 alt="Camion" 
                                 className="w-16 h-16 object-cover rounded"
+                                data-testid={`img-truck-${driver.id}`}
                               />
                             ) : (
                               <span className="text-muted-foreground text-sm">Aucune photo</span>

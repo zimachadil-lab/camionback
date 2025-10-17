@@ -66,32 +66,6 @@ export default function SelectRole() {
         <div className="grid md:grid-cols-2 gap-6">
           <Card 
             className="hover-elevate active-elevate-2 cursor-pointer transition-all border-2"
-            onClick={() => !loading && handleSelectRole("transporter")}
-            data-testid="card-role-transporter"
-          >
-            <CardHeader className="text-center space-y-4">
-              <div className="mx-auto w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
-                <Truck className="w-12 h-12 text-primary" />
-              </div>
-              <CardTitle className="text-2xl">Transporteur</CardTitle>
-              <CardDescription className="text-base">
-                Je possède un camion et je souhaite proposer mes services de transport
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                className="w-full" 
-                size="lg"
-                disabled={loading}
-                data-testid="button-select-transporter"
-              >
-                {loading ? "Sélection..." : "Devenir Transporteur"}
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card 
-            className="hover-elevate active-elevate-2 cursor-pointer transition-all border-2"
             onClick={() => !loading && handleSelectRole("client")}
             data-testid="card-role-client"
           >
@@ -112,6 +86,32 @@ export default function SelectRole() {
                 data-testid="button-select-client"
               >
                 {loading ? "Sélection..." : "Devenir Expéditeur"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="hover-elevate active-elevate-2 cursor-pointer transition-all border-2"
+            onClick={() => !loading && handleSelectRole("transporter")}
+            data-testid="card-role-transporter"
+          >
+            <CardHeader className="text-center space-y-4">
+              <div className="mx-auto w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
+                <Truck className="w-12 h-12 text-primary" />
+              </div>
+              <CardTitle className="text-2xl">Transporteur</CardTitle>
+              <CardDescription className="text-base">
+                Je possède un camion et je souhaite proposer mes services de transport
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                className="w-full" 
+                size="lg"
+                disabled={loading}
+                data-testid="button-select-transporter"
+              >
+                {loading ? "Sélection..." : "Devenir Transporteur"}
               </Button>
             </CardContent>
           </Card>
