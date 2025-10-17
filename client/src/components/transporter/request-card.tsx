@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Package, Calendar, DollarSign, Image as ImageIcon } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { MapPin, Package, Calendar, DollarSign, Image as ImageIcon, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { PhotoGalleryDialog } from "./photo-gallery-dialog";
@@ -24,14 +25,26 @@ interface RequestCardProps {
   };
   onMakeOffer: (requestId: string) => void;
   showOfferButton?: boolean;
+  userStatus?: string | null;
 }
 
-export function RequestCard({ request, onMakeOffer, showOfferButton = true }: RequestCardProps) {
+export function RequestCard({ request, onMakeOffer, showOfferButton = true, userStatus }: RequestCardProps) {
   const [photoGalleryOpen, setPhotoGalleryOpen] = useState(false);
+  const [showValidationWarning, setShowValidationWarning] = useState(false);
   
   const dateTime = typeof request.dateTime === 'string' 
     ? new Date(request.dateTime) 
     : request.dateTime;
+
+  const isUserValidated = userStatus === "validated";
+
+  const handleOfferClick = () => {
+    if (!isUserValidated) {
+      setShowValidationWarning(true);
+    } else {
+      onMakeOffer(request.id);
+    }
+  };
 
   return (
     <>
@@ -94,14 +107,24 @@ export function RequestCard({ request, onMakeOffer, showOfferButton = true }: Re
             Voir les photos ({request.photos.length})
           </Button>
         )}
+
+        {showValidationWarning && !isUserValidated && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Votre compte est en cours de validation par l'équipe CamionBack. Vous pourrez soumettre des offres dès que votre profil sera approuvé.
+            </AlertDescription>
+          </Alert>
+        )}
       </CardContent>
 
       {showOfferButton && request.status === "open" && (
         <CardFooter className="p-4 pt-0">
           <Button 
-            onClick={() => onMakeOffer(request.id)} 
+            onClick={handleOfferClick} 
             className="w-full"
             size="lg"
+            variant={!isUserValidated ? "secondary" : "default"}
             data-testid={`button-make-offer-${request.id}`}
           >
             Faire une offre

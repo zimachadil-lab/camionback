@@ -190,6 +190,7 @@ export default function TransporterDashboard() {
                     key={request.id}
                     request={request}
                     onMakeOffer={handleMakeOffer}
+                    userStatus={user.status}
                   />
                 ))}
               </div>

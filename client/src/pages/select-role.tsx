@@ -85,7 +85,7 @@ export default function SelectRole() {
                 disabled={loading}
                 data-testid="button-select-client"
               >
-                {loading ? "Sélection..." : "Devenir Expéditeur"}
+                {loading ? "Sélection..." : "Demander un CamionBack"}
               </Button>
             </CardContent>
           </Card>
