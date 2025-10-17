@@ -326,9 +326,22 @@ export class MemStorage implements IStorage {
     for (const conv of Array.from(conversationsMap.values())) {
       console.log(`[DEBUG Storage] Looking for request: ${conv.requestId}, otherUser: ${conv.otherUserId}`);
       const request = await this.getTransportRequest(conv.requestId);
-      const otherUser = await this.getUser(conv.otherUserId);
+      let otherUser = await this.getUser(conv.otherUserId);
       
       console.log(`[DEBUG Storage] Request found: ${!!request}, OtherUser found: ${!!otherUser}`);
+      
+      // If request exists but otherUser doesn't (e.g., after server restart), create a minimal user object
+      if (request && !otherUser) {
+        console.log(`[DEBUG Storage] Creating minimal otherUser object for ${conv.otherUserId}`);
+        // Determine role based on who is viewing (userId is the viewer)
+        const viewerIsClient = request.clientId === userId;
+        otherUser = {
+          id: conv.otherUserId,
+          name: viewerIsClient ? 'Transporteur' : 'Client',
+          role: viewerIsClient ? 'transporter' : 'client',
+          phoneNumber: '',
+        } as any;
+      }
       
       if (request && otherUser) {
         conversations.push({
@@ -345,7 +358,7 @@ export class MemStorage implements IStorage {
           },
         });
       } else {
-        console.log(`[DEBUG Storage] Skipping conversation - missing request or otherUser!`);
+        console.log(`[DEBUG Storage] Skipping conversation - missing request!`);
       }
     }
 
