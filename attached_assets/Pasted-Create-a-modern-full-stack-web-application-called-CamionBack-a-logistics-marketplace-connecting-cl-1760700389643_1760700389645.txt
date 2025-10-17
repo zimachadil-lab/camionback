@@ -1,0 +1,77 @@
+Create a modern full-stack web application called CamionBack — a logistics marketplace connecting clients who need transport (furniture, freight, deliveries, etc.) with independent transporters who own trucks or vans.
+
+🌍 Core Roles:
+
+1️⃣ Client:
+
+Authentication only via phone number (no email) using OTP verification.
+
+Can publish a transport request (from city → to city, description, goods type, date/time, optional budget, photos).
+
+Can view offers received from drivers (with amount, truck photo, and driver ranking).
+
+Can chat internally with drivers (real-time chat filtered to remove phone numbers/links).
+
+Can accept one offer per order.
+
+2️⃣ Transporter:
+
+Registration by phone number and truck photos (no ID uploads required).
+
+Dashboard to browse all available client requests with city filters.
+
+Can submit a price offer and send a message to the client.
+
+“My Offers” tab showing pending, accepted, or completed proposals.
+
+3️⃣ Administrator (Back Office):
+
+Full dashboard to manage clients, transporters, and requests.
+
+Can manually add new transporters and grant them login access.
+
+Can upload/edit truck photos for transporters.
+
+Can view all requests, see the ID number of each order, and all offers submitted (e.g. “Transporter X offered 500 MAD for Order #145”).
+
+Can validate or reject offers, update commission percentages, and track payment proofs.
+
+Has access to global statistics (number of users, trips, commissions, best drivers, etc.).
+
+⚙️ Key Features:
+
+Real-time chat system with automatic number/link filtering (regex for +212, 06, 07 formats).
+
+WhatsApp notification integration (Twilio API) when new requests are published.
+
+Commission logic: total price includes a hidden CamionBack fee.
+
+Drivers upload payment proofs; admin validates them manually.
+
+Each transport request has a clear reference ID (e.g. CMD-2025-00145).
+
+🖌️ Design & Tech:
+
+Modern mobile-first UI inspired by your reference screens: dark teal background (#0a2540 / #163049), minimal rounded cards, large readable fonts.
+
+Use React + Next.js for frontend, Tailwind CSS + Shadcn UI for styling, and Node.js + MongoDB backend.
+
+Include authentication, dashboard navigation, file upload system (for photos and payment proofs).
+
+Use responsive card layouts similar to a mobile app, with buttons: “Choisir cette offre”, “Envoyer un message”, and “Nouvelle demande”.
+
+Include ranking stars (⭐) and photo previews of trucks.
+
+📈 Admin KPIs:
+
+Total active clients & drivers
+
+Total requests posted & completed
+
+Total commissions
+
+Conversion rates (offers → validated)
+
+Top-rated drivers and most active clients
+
+Deliver a mobile-friendly, clean and professional interface, optimized for Moroccan users, simple, fast, and visually consistent with the CamionBack design shown.
