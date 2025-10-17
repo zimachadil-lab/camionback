@@ -29,15 +29,38 @@ The application supports three distinct user roles:
   - Displayed clearly to clients before acceptance
   - Example: 2500 MAD offer → 250 MAD commission → 2750 MAD total
 
+✅ **Notification System**: Full notification center with badge counter and automatic event tracking
+  - Badge counter in header with red notification dot (unread count)
+  - Dedicated notifications page (/notifications) with mark read/unread functionality
+  - Automatic notification creation on offer events (received, accepted)
+  - Notification types: offer_received, offer_accepted, message_received, payment_validated
+  - Icons from lucide-react (Inbox, CheckCircle, MessageSquare, Wallet, Bell) - no emojis
+  - Real-time unread count updates
+
+✅ **Chat System**: Bidirectional real-time messaging between clients and transporters
+  - ChatWindow component with message history and live updates
+  - WebSocket integration (ws://host/ws-chat) for real-time message delivery
+  - API integration: POST /api/chat/messages, GET /api/chat/messages?requestId=...
+  - Refetch interval (5 seconds) as backup to WebSocket
+  - Auto-scroll to latest message
+  - Regex filtering on backend: blocks +212, 06, 07, URLs with "[Numéro filtré]" / "[Lien filtré]"
+  - "[Contenu filtré]" indicator when filtering applied
+  - Chat accessible from both client and transporter dashboards on accepted offers
+  - Per-request message isolation (server-side filtering by requestId)
+
 ✅ **Data Persistence**: In-memory storage with full CRUD operations for:
   - Users (with role-based access)
   - Transport requests (with status tracking)
   - Offers (pending/accepted/rejected)
   - OTP codes (with expiry)
   - Admin settings
+  - Notifications (with read/unread status)
+  - Chat messages (with regex filtering)
 
-✅ **End-to-End Testing**: Complete user journey validated via Playwright
+✅ **End-to-End Testing**: Complete user journeys validated via Playwright
   - Client creates request → Transporter submits offer → Client accepts → Commission calculated
+  - Notification flow: Offer events trigger notifications → Badge counter updates → Mark read
+  - Chat flow: Client ↔ Transporter bidirectional messaging → Real-time delivery → Regex filtering
 
 ### Technical Fixes Applied
 - Fixed dateTime validation: Schema now uses `z.coerce.date()` to accept ISO strings
@@ -46,6 +69,11 @@ The application supports three distinct user roles:
 - Fixed role assignment: Automatic role detection based on phone number patterns
 - Fixed WebSocket path: Uses `/ws-chat` to avoid Vite HMR conflicts
 - Fixed TypeScript errors: Explicit type annotations for array variables
+- Fixed queryKey format: Use URL string with params for proper API integration (e.g., `/api/notifications?userId=${userId}`)
+- Replaced all emojis with lucide-react icons (design compliance)
+- Fixed OfferCard: Chat button now visible after offer acceptance (signature mismatch resolved)
+- Fixed ChatWindow WebSocket lifecycle: Proper cleanup on unmount (close + setWs(null))
+- Fixed transporter chat: RequestId validation before opening chat
 
 ## User Preferences
 
@@ -111,7 +139,8 @@ Key tables include:
 - `otp_codes`: Time-limited verification codes with expiry tracking
 - `transport_requests`: Client requests with reference IDs (CMD-2025-XXXXX format)
 - `offers`: Transporter bids linked to requests
-- `chat_messages`: Real-time messaging with content filtering
+- `notifications`: User notifications with type, read status, and metadata (offerId, requestId)
+- `chat_messages`: Real-time messaging with content filtering (message, filteredMessage, requestId)
 - `admin_settings`: Platform configuration and commission rates
 
 **Alternative Considered:** In-memory storage is currently implemented for development, but the abstraction layer allows seamless migration to PostgreSQL in production.
@@ -140,12 +169,17 @@ Key tables include:
 ### Real-time Features
 
 **WebSocket Integration:**
-- WebSocketServer configured on HTTP server
+- WebSocketServer configured on HTTP server at `/ws-chat`
 - Real-time chat between clients and transporters per request
-- Message filtering to prevent phone number and link sharing (regex patterns for +212, 06, 07)
+- Message filtering to prevent phone number and link sharing (regex patterns for +212, 06, 07, URLs)
+- Broadcast mechanism triggers message refetch on connected clients
+- Proper lifecycle management (cleanup on component unmount)
 
 **Notification System:**
-- WhatsApp notifications via Twilio API (planned)
+- In-app notifications with badge counter in header
+- Dedicated notifications page with mark read/unread functionality
+- Automatic notification creation on offer events (received, accepted)
+- WhatsApp notifications via Twilio API (planned for future)
 - Event-driven alerts for new requests and offer updates
 
 ### File Upload & Storage
