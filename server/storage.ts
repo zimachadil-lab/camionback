@@ -251,6 +251,12 @@ export class MemStorage implements IStorage {
     );
   }
 
+  async hasOfferForRequest(transporterId: string, requestId: string): Promise<boolean> {
+    return Array.from(this.offers.values()).some(
+      (offer) => offer.transporterId === transporterId && offer.requestId === requestId
+    );
+  }
+
   async updateOffer(id: string, updates: Partial<Offer>): Promise<Offer | undefined> {
     const offer = this.offers.get(id);
     if (!offer) return undefined;
