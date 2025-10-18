@@ -667,6 +667,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin rejects payment receipt
+  // NOTE: In production, this should use session/JWT authentication to verify admin role
+  app.post("/api/requests/:id/admin-reject-receipt", async (req, res) => {
+    try {
+      const request = await storage.getTransportRequest(req.params.id);
+      
+      if (!request) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+
+      // TODO PRODUCTION: Verify admin role via session/JWT
+      // For now, we trust the client-side check
+
+      if (request.paymentStatus !== "pending_admin_validation") {
+        return res.status(400).json({ error: "Request must be pending admin validation" });
+      }
+
+      // Update payment status back to awaiting_payment and clear receipt
+      const updatedRequest = await storage.updateTransportRequest(req.params.id, {
+        paymentStatus: "awaiting_payment",
+        paymentReceipt: null,
+      });
+
+      // Create notification for client
+      if (request.clientId) {
+        try {
+          await storage.createNotification({
+            userId: request.clientId,
+            type: "payment_receipt_rejected",
+            title: "Reçu refusé",
+            message: `Votre reçu de paiement pour la commande ${request.referenceId} a été refusé. Veuillez téléverser un nouveau reçu de paiement.`,
+            relatedId: request.id,
+          });
+        } catch (notifError) {
+          console.error("Failed to create receipt rejected notification:", notifError);
+        }
+      }
+
+      res.json({ 
+        success: true, 
+        request: updatedRequest
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to reject receipt" });
+    }
+  });
+
   // Get ratings for a transporter with request details
   app.get("/api/transporters/:id/ratings", async (req, res) => {
     try {
