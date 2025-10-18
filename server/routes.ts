@@ -943,6 +943,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         relatedId: offer.id
       });
 
+      // Create contract automatically
+      if (request) {
+        await storage.createContract({
+          requestId: offer.requestId,
+          offerId: offer.id,
+          clientId: request.clientId,
+          transporterId: offer.transporterId,
+          referenceId: request.referenceId,
+          amount: offer.amount,
+        });
+      }
+
       res.json({ 
         success: true,
         commission: commissionAmount,
