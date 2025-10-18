@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star, CreditCard, Upload, Eye, Edit, MessageSquare, Calendar } from "lucide-react";
+import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star, CreditCard, Upload, Eye, Edit, MessageSquare, Calendar, Flag } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { NewRequestForm } from "@/components/client/new-request-form";
 import { OfferCard } from "@/components/client/offer-card";
@@ -68,6 +68,11 @@ const editRequestSchema = z.object({
   dateFlexible: z.boolean().default(false),
   invoiceRequired: z.boolean().default(false),
   budget: z.string().optional(),
+});
+
+const reportSchema = z.object({
+  description: z.string().min(10, "Description minimale: 10 caractères"),
+  type: z.string().min(1, "Type de problème requis"),
 });
 
 function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onDelete, onViewTransporter, onUpdateStatus, users }: any) {
@@ -602,6 +607,8 @@ export default function ClientDashboard() {
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [paymentRequestId, setPaymentRequestId] = useState<string>("");
   const [paymentReceipt, setPaymentReceipt] = useState<string>("");
+  const [showReportDialog, setShowReportDialog] = useState(false);
+  const [reportRequestId, setReportRequestId] = useState<string>("");
 
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
 
@@ -847,9 +854,60 @@ export default function ClientDashboard() {
     },
   });
 
+  const reportForm = useForm({
+    resolver: zodResolver(reportSchema),
+    defaultValues: {
+      description: "",
+      type: "",
+    },
+  });
+
+  const createReportMutation = useMutation({
+    mutationFn: async (data: { requestId: string; description: string; type: string }) => {
+      return await apiRequest("POST", "/api/reports", {
+        requestId: data.requestId,
+        reportedBy: user.id,
+        reportedAgainst: null, // will be determined by backend from request
+        type: data.type,
+        description: data.description,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Signalement envoyé",
+        description: "Votre signalement a été envoyé à l'équipe support",
+      });
+      setShowReportDialog(false);
+      reportForm.reset();
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Échec de l'envoi du signalement",
+      });
+    },
+  });
+
   const handleSubmitRating = () => {
     if (ratingValue > 0 && ratingRequestId) {
       completeWithRatingMutation.mutate({ requestId: ratingRequestId, rating: ratingValue });
+    }
+  };
+
+  const handleOpenReportDialog = (requestId: string) => {
+    setReportRequestId(requestId);
+    reportForm.reset();
+    setShowReportDialog(true);
+  };
+
+  const handleSubmitReport = (data: any) => {
+    if (reportRequestId) {
+      createReportMutation.mutate({
+        requestId: reportRequestId,
+        description: data.description,
+        type: data.type,
+      });
     }
   };
 
@@ -1145,6 +1203,16 @@ export default function ClientDashboard() {
                             </>
                           )}
                           <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleOpenReportDialog(request.id)}
+                            data-testid={`button-report-completed-${request.id}`}
+                            className="gap-2"
+                          >
+                            <Flag className="h-4 w-4" />
+                            <span className="hidden sm:inline">Signaler</span>
+                          </Button>
+                          <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => handleDeleteRequest(request.id)}
@@ -1417,6 +1485,82 @@ export default function ClientDashboard() {
               {markAsPaidMutation.isPending ? "Envoi en cours..." : "Confirmer le paiement"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
+        <DialogContent className="max-w-[90vw] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Signaler un problème</DialogTitle>
+            <DialogDescription>
+              Décrivez le problème rencontré avec cette commande.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...reportForm}>
+            <form onSubmit={reportForm.handleSubmit(handleSubmitReport)} className="space-y-4">
+              <FormField
+                control={reportForm.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Type de problème <span className="text-destructive">*</span></FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-report-type">
+                          <SelectValue placeholder="Sélectionnez un type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="service">Problème de service</SelectItem>
+                        <SelectItem value="payment">Problème de paiement</SelectItem>
+                        <SelectItem value="communication">Problème de communication</SelectItem>
+                        <SelectItem value="quality">Problème de qualité</SelectItem>
+                        <SelectItem value="damage">Marchandises endommagées</SelectItem>
+                        <SelectItem value="delay">Retard de livraison</SelectItem>
+                        <SelectItem value="other">Autre</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={reportForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description détaillée <span className="text-destructive">*</span></FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Décrivez en détail le problème rencontré..."
+                        className="resize-none h-32"
+                        data-testid="textarea-report-description"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowReportDialog(false)}
+                  data-testid="button-cancel-report"
+                >
+                  Annuler
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createReportMutation.isPending}
+                  data-testid="button-submit-report"
+                >
+                  {createReportMutation.isPending ? "Envoi en cours..." : "Envoyer le signalement"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </div>
