@@ -667,6 +667,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get ratings for a transporter with request details
+  app.get("/api/transporters/:id/ratings", async (req, res) => {
+    try {
+      const transporterId = req.params.id;
+      
+      // Get all ratings for this transporter
+      const ratings = await storage.getRatingsByTransporter(transporterId);
+      
+      // Enrich ratings with request details (reference, date)
+      const ratingsWithDetails = await Promise.all(
+        ratings.map(async (rating) => {
+          const request = await storage.getTransportRequest(rating.requestId);
+          return {
+            id: rating.id,
+            score: rating.score,
+            comment: rating.comment,
+            createdAt: rating.createdAt,
+            requestReference: request?.referenceId || "N/A",
+            requestDate: request?.createdAt,
+          };
+        })
+      );
+
+      // Get transporter info for summary
+      const transporter = await storage.getUser(transporterId);
+      const averageRating = transporter?.rating ? parseFloat(transporter.rating) : 0;
+      const totalRatings = transporter?.totalRatings || 0;
+
+      res.json({
+        summary: {
+          averageRating: averageRating.toFixed(1),
+          totalRatings,
+        },
+        ratings: ratingsWithDetails,
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch ratings" });
+    }
+  });
+
   // Offer routes
   app.post("/api/offers", async (req, res) => {
     try {
