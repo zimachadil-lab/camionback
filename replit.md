@@ -33,6 +33,9 @@ Transporters submit offers with three mandatory fields: amount (price), pickup d
 ### Transporter Rating System
 Clients can rate transporters (1-5 stars) upon request completion. The system calculates and updates average ratings, total ratings, and total completed trips for transporters. Ratings are displayed on offer cards with decimal precision.
 
+### Contract Management System
+An automated contract generation and tracking system creates contracts when offers are accepted (by client or admin). Each contract stores requestId, offerId, clientId, transporterId, referenceId, amount, and status. Contract statuses include: 'in_progress' (initial), 'marked_paid_transporter' (transporter billing), 'marked_paid_client' (client receipt uploaded), and 'completed' (admin validated). The admin dashboard features a dedicated "Contrats" tab with comprehensive contract listing (reference, parties, dates, amounts, statuses), a detailed contract view dialog with full information display and manual status update capability, and KPI cards showing total contracts with breakdowns of active and completed contracts. Contract statuses automatically update based on payment workflow actions: transporter marking for billing updates to 'marked_paid_transporter', client uploading receipt updates to 'marked_paid_client', and admin validating payment updates to 'completed'. The system includes error handling to prevent payment workflow disruptions if contract updates fail.
+
 ### Mobile Responsive Design
 The platform features a mobile-first design with responsive adaptations using Tailwind CSS breakpoints (primarily `sm` at 640px). This includes dynamic sizing for popups and dialogs, adaptive button layouts and text, and optimized photo galleries for various screen sizes.
 
