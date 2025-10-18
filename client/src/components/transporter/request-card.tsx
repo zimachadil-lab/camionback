@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { MapPin, Package, Calendar, DollarSign, Image as ImageIcon, AlertCircle } from "lucide-react";
+import { MapPin, Package, Calendar, DollarSign, Image as ImageIcon, AlertCircle, Eye, FileText, X } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { PhotoGalleryDialog } from "./photo-gallery-dialog";
@@ -22,19 +22,36 @@ interface RequestCardProps {
     budget?: string;
     photos?: string[];
     status: string;
+    viewCount?: number;
+    createdAt?: Date | string;
   };
   onMakeOffer: (requestId: string) => void;
   showOfferButton?: boolean;
   userStatus?: string | null;
+  offerCount?: number;
+  onDecline?: (requestId: string) => void;
+  onTrackView?: () => void;
 }
 
-export function RequestCard({ request, onMakeOffer, showOfferButton = true, userStatus }: RequestCardProps) {
+export function RequestCard({ 
+  request, 
+  onMakeOffer, 
+  showOfferButton = true, 
+  userStatus,
+  offerCount,
+  onDecline,
+  onTrackView 
+}: RequestCardProps) {
   const [photoGalleryOpen, setPhotoGalleryOpen] = useState(false);
   const [showValidationWarning, setShowValidationWarning] = useState(false);
   
   const dateTime = typeof request.dateTime === 'string' 
     ? new Date(request.dateTime) 
     : request.dateTime;
+
+  const createdAt = request.createdAt 
+    ? (typeof request.createdAt === 'string' ? new Date(request.createdAt) : request.createdAt)
+    : null;
 
   const isUserValidated = userStatus === "validated";
 
@@ -44,6 +61,11 @@ export function RequestCard({ request, onMakeOffer, showOfferButton = true, user
     } else {
       onMakeOffer(request.id);
     }
+  };
+
+  const handleViewPhotos = () => {
+    onTrackView?.();
+    setPhotoGalleryOpen(true);
   };
 
   return (
@@ -95,11 +117,33 @@ export function RequestCard({ request, onMakeOffer, showOfferButton = true, user
           </div>
         )}
 
+        {/* Statistics */}
+        <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+          {offerCount !== undefined && (
+            <div className="flex items-center gap-1">
+              <FileText className="w-3 h-3" />
+              <span>{offerCount} offre{offerCount > 1 ? 's' : ''}</span>
+            </div>
+          )}
+          {request.viewCount !== undefined && (
+            <div className="flex items-center gap-1">
+              <Eye className="w-3 h-3" />
+              <span>{request.viewCount} vue{request.viewCount > 1 ? 's' : ''}</span>
+            </div>
+          )}
+          {createdAt && (
+            <div className="flex items-center gap-1 col-span-3">
+              <Calendar className="w-3 h-3" />
+              <span>Créée le {format(createdAt, "d MMM", { locale: fr })}</span>
+            </div>
+          )}
+        </div>
+
         {request.photos && request.photos.length > 0 && (
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setPhotoGalleryOpen(true)}
+            onClick={handleViewPhotos}
             className="w-full gap-2"
             data-testid={`button-view-photos-${request.id}`}
           >
@@ -119,7 +163,7 @@ export function RequestCard({ request, onMakeOffer, showOfferButton = true, user
       </CardContent>
 
       {showOfferButton && request.status === "open" && (
-        <CardFooter className="p-4 pt-0">
+        <CardFooter className="p-4 pt-0 flex flex-col gap-2">
           <Button 
             onClick={handleOfferClick} 
             className="w-full"
@@ -129,6 +173,18 @@ export function RequestCard({ request, onMakeOffer, showOfferButton = true, user
           >
             Faire une offre
           </Button>
+          {onDecline && (
+            <Button 
+              onClick={() => onDecline(request.id)} 
+              className="w-full bg-red-600 hover:bg-red-700"
+              size="sm"
+              variant="destructive"
+              data-testid={`button-decline-${request.id}`}
+            >
+              <X className="w-4 h-4 mr-1" />
+              Décliner
+            </Button>
+          )}
         </CardFooter>
       )}
     </Card>

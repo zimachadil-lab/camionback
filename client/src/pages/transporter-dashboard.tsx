@@ -165,15 +165,57 @@ export default function TransporterDashboard() {
     },
   });
 
+  const declineRequestMutation = useMutation({
+    mutationFn: async (requestId: string) => {
+      return await apiRequest("POST", `/api/requests/${requestId}/decline`, {
+        transporterId: user.id,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Commande masquée",
+        description: "Cette commande ne sera plus affichée",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Échec de l'opération",
+      });
+    },
+  });
+
+  const trackViewMutation = useMutation({
+    mutationFn: async (requestId: string) => {
+      return await apiRequest("POST", `/api/requests/${requestId}/track-view`, {});
+    },
+  });
+
+  const handleDeclineRequest = (requestId: string) => {
+    if (confirm("Voulez-vous vraiment masquer cette commande ? Elle ne sera plus visible dans votre liste.")) {
+      declineRequestMutation.mutate(requestId);
+    }
+  };
+
   const filteredRequests = requests.filter((req: any) => {
+    // Exclude requests declined by this transporter
+    const notDeclined = !req.declinedBy || !req.declinedBy.includes(user.id);
     const cityMatch: boolean = selectedCity === "Toutes les villes" || 
                      req.fromCity === selectedCity || 
                      req.toCity === selectedCity;
     const searchMatch: boolean = searchQuery === "" || 
                        req.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
                        req.goodsType.toLowerCase().includes(searchQuery.toLowerCase());
-    return cityMatch && searchMatch;
+    return notDeclined && cityMatch && searchMatch;
   });
+
+  // Count offers per request for display
+  const offerCounts = myOffers.reduce((acc: any, offer: any) => {
+    acc[offer.requestId] = (acc[offer.requestId] || 0) + 1;
+    return acc;
+  }, {});
 
   if (requestsLoading || offersLoading) {
     return (
@@ -234,6 +276,15 @@ export default function TransporterDashboard() {
           </TabsList>
 
           <TabsContent value="available" className="mt-6 space-y-6">
+            <div className="bg-green-600/10 border border-green-600/20 rounded-lg p-4">
+              <div className="flex items-center gap-2">
+                <Package className="h-5 w-5 text-green-600" />
+                <span className="text-lg font-semibold text-green-600" data-testid="text-available-count">
+                  {filteredRequests.length} commande{filteredRequests.length > 1 ? 's' : ''} disponible{filteredRequests.length > 1 ? 's' : ''}
+                </span>
+              </div>
+            </div>
+
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -266,6 +317,9 @@ export default function TransporterDashboard() {
                     request={request}
                     onMakeOffer={handleMakeOffer}
                     userStatus={user.status}
+                    offerCount={offerCounts[request.id] || 0}
+                    onDecline={handleDeclineRequest}
+                    onTrackView={() => trackViewMutation.mutate(request.id)}
                   />
                 ))}
               </div>
