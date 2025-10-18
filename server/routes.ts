@@ -304,6 +304,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Report/Signalement routes
+  app.post("/api/reports", async (req, res) => {
+    try {
+      const reportData = insertReportSchema.parse(req.body);
+      const report = await storage.createReport(reportData);
+      
+      // Create notification for admin about new report
+      const allUsers = await storage.getAllUsers();
+      const adminUser = allUsers.find(u => u.role === "admin");
+      
+      if (adminUser) {
+        await storage.createNotification({
+          userId: adminUser.id,
+          type: "new_report",
+          title: "Nouveau signalement",
+          message: `Un nouveau signalement a été créé concernant la commande ${reportData.requestId}.`,
+          relatedId: report.id,
+        });
+      }
+
+      res.json(report);
+    } catch (error) {
+      console.error("Create report error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(500).json({ error: "Échec de la création du signalement" });
+    }
+  });
+
+  app.get("/api/reports", async (req, res) => {
+    try {
+      const reports = await storage.getAllReports();
+      res.json(reports);
+    } catch (error) {
+      console.error("Get reports error:", error);
+      res.status(500).json({ error: "Échec de la récupération des signalements" });
+    }
+  });
+
+  app.patch("/api/reports/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      
+      const report = await storage.updateReport(id, updates);
+      
+      if (!report) {
+        return res.status(404).json({ error: "Signalement non trouvé" });
+      }
+
+      // If status changed to resolved, notify the reporter
+      if (updates.status === "resolved" && report.reportedBy) {
+        await storage.createNotification({
+          userId: report.reportedBy,
+          type: "report_resolved",
+          title: "Signalement résolu",
+          message: `Votre signalement concernant la commande ${report.requestId} a été résolu.`,
+          relatedId: report.id,
+        });
+      }
+
+      res.json(report);
+    } catch (error) {
+      console.error("Update report error:", error);
+      res.status(500).json({ error: "Échec de la mise à jour du signalement" });
+    }
+  });
+
   // User routes
   app.get("/api/users", async (req, res) => {
     try {

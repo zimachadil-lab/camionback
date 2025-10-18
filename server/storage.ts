@@ -87,6 +87,12 @@ export interface IStorage {
   getContractById(id: string): Promise<Contract | undefined>;
   updateContract(id: string, updates: Partial<Contract>): Promise<Contract | undefined>;
   getContractByRequestId(requestId: string): Promise<Contract | undefined>;
+  
+  // Report operations
+  createReport(report: InsertReport): Promise<Report>;
+  getAllReports(): Promise<Report[]>;
+  getReportById(id: string): Promise<Report | undefined>;
+  updateReport(id: string, updates: Partial<Report>): Promise<Report | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -99,6 +105,7 @@ export class MemStorage implements IStorage {
   private ratings: Map<string, Rating>;
   private emptyReturns: Map<string, EmptyReturn>;
   private contracts: Map<string, Contract>;
+  private reports: Map<string, Report>;
   private adminSettings: AdminSettings;
   private requestCounter: number;
 
@@ -112,6 +119,7 @@ export class MemStorage implements IStorage {
     this.ratings = new Map();
     this.emptyReturns = new Map();
     this.contracts = new Map();
+    this.reports = new Map();
     this.requestCounter = 1;
     this.adminSettings = {
       id: randomUUID(),
@@ -894,6 +902,35 @@ export class MemStorage implements IStorage {
     return Array.from(this.contracts.values()).find(
       (contract) => contract.requestId === requestId
     );
+  }
+
+  // Report operations
+  async createReport(report: InsertReport): Promise<Report> {
+    const newReport: Report = {
+      id: randomUUID(),
+      ...report,
+      status: "pending",
+      createdAt: new Date(),
+    };
+    this.reports.set(newReport.id, newReport);
+    return newReport;
+  }
+
+  async getAllReports(): Promise<Report[]> {
+    return Array.from(this.reports.values());
+  }
+
+  async getReportById(id: string): Promise<Report | undefined> {
+    return this.reports.get(id);
+  }
+
+  async updateReport(id: string, updates: Partial<Report>): Promise<Report | undefined> {
+    const report = this.reports.get(id);
+    if (!report) return undefined;
+
+    const updatedReport = { ...report, ...updates };
+    this.reports.set(id, updatedReport);
+    return updatedReport;
   }
 }
 
