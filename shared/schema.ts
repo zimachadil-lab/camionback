@@ -45,7 +45,7 @@ export const transportRequests = pgTable("transport_requests", {
   photos: text("photos").array(),
   status: text("status").default("open"), // open, accepted, completed, cancelled
   acceptedOfferId: varchar("accepted_offer_id"),
-  paymentStatus: text("payment_status").default("pending"), // pending, awaiting_payment, paid
+  paymentStatus: text("payment_status").default("pending"), // pending, awaiting_payment, pending_admin_validation, paid
   paymentReceipt: text("payment_receipt"), // Client's payment receipt photo (base64)
   paymentDate: timestamp("payment_date"),
   createdAt: timestamp("created_at").defaultNow(),

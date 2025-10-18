@@ -6,19 +6,28 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCircle, UserCheck } from "lucide-react";
+import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCircle, UserCheck, CreditCard, Phone, Eye } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { KpiCard } from "@/components/admin/kpi-card";
 import { AddTransporterForm } from "@/components/admin/add-transporter-form";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const [addTransporterOpen, setAddTransporterOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [commissionRate, setCommissionRate] = useState("10");
+  const [selectedReceipt, setSelectedReceipt] = useState<string>("");
+  const [showReceiptDialog, setShowReceiptDialog] = useState(false);
   const { toast } = useToast();
 
   const user = JSON.parse(localStorage.getItem("camionback_user") || "{}");
@@ -38,6 +47,47 @@ export default function AdminDashboard() {
       return response.json();
     },
   });
+
+  // Fetch all requests for payment validation
+  const { data: allRequests = [] } = useQuery({
+    queryKey: ["/api/requests"],
+    queryFn: async () => {
+      const response = await fetch("/api/requests");
+      return response.json();
+    },
+  });
+
+  // Fetch all users for client/transporter details
+  const { data: users = [] } = useQuery({
+    queryKey: ["/api/users"],
+    queryFn: async () => {
+      const response = await fetch("/api/users");
+      return response.json();
+    },
+  });
+
+  // Fetch admin settings for commission calculation
+  const { data: adminSettings } = useQuery({
+    queryKey: ["/api/admin/settings"],
+    queryFn: async () => {
+      const response = await fetch("/api/admin/settings");
+      return response.json();
+    },
+  });
+
+  // Fetch all offers to get transporter and amount details
+  const { data: allOffers = [] } = useQuery({
+    queryKey: ["/api/offers/all"],
+    queryFn: async () => {
+      const response = await fetch("/api/offers");
+      return response.json();
+    },
+  });
+
+  // Filter requests pending admin validation
+  const pendingPayments = allRequests.filter(
+    (req: any) => req.paymentStatus === "pending_admin_validation"
+  );
 
   const handleValidateDriver = async (driverId: string, validated: boolean) => {
     try {
@@ -62,6 +112,30 @@ export default function AdminDashboard() {
         variant: "destructive",
         title: "Erreur",
         description: "Échec de la validation",
+      });
+    }
+  };
+
+  const handleValidatePayment = async (requestId: string) => {
+    try {
+      const response = await fetch(`/api/requests/${requestId}/admin-validate-payment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!response.ok) throw new Error();
+
+      toast({
+        title: "Paiement validé",
+        description: "Le paiement a été validé avec succès",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Échec de la validation du paiement",
       });
     }
   };
@@ -109,10 +183,6 @@ export default function AdminDashboard() {
     { id: "2", name: "Youssef Logistics", rating: 4.7, trips: 143, commissions: "14,200 MAD" },
     { id: "3", name: "Hassan Transport", rating: 4.6, trips: 128, commissions: "12,800 MAD" },
   ];
-
-  const handleValidatePayment = (offerId: string) => {
-    console.log("Validating payment for offer:", offerId);
-  };
 
   const handleRejectOffer = (offerId: string) => {
     console.log("Rejecting offer:", offerId);
@@ -174,8 +244,16 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs defaultValue="requests" className="w-full">
-          <TabsList className="grid w-full max-w-3xl grid-cols-5">
+          <TabsList className="grid w-full max-w-4xl grid-cols-6">
             <TabsTrigger value="requests" data-testid="tab-requests">Demandes</TabsTrigger>
+            <TabsTrigger value="to-pay" data-testid="tab-to-pay">
+              À payer
+              {pendingPayments.length > 0 && (
+                <Badge variant="destructive" className="ml-2 px-1.5 py-0 h-5 min-w-5 text-xs">
+                  {pendingPayments.length}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="validation" data-testid="tab-validation">
               Validation
               {pendingDrivers.length > 0 && (
@@ -261,6 +339,119 @@ export default function AdminDashboard() {
                           </TableCell>
                         </TableRow>
                       ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="to-pay" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="w-5 h-5" />
+                  Paiements en attente de validation
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {pendingPayments.length === 0 ? (
+                  <div className="text-center py-8">
+                    <CreditCard className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">Aucun paiement en attente de validation</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>N° Commande</TableHead>
+                        <TableHead>Client</TableHead>
+                        <TableHead>Transporteur</TableHead>
+                        <TableHead>Montant net</TableHead>
+                        <TableHead>Reçu</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pendingPayments.map((request: any) => {
+                        const client = users.find((u: any) => u.id === request.clientId);
+                        
+                        // Get accepted offer details
+                        const acceptedOffer = request.acceptedOfferId 
+                          ? allOffers.find((o: any) => o.id === request.acceptedOfferId)
+                          : null;
+                        
+                        // Get transporter from accepted offer
+                        const transporter = acceptedOffer 
+                          ? users.find((u: any) => u.id === acceptedOffer.transporterId)
+                          : null;
+
+                        // Calculate net amount (base amount that transporter gets, without commission)
+                        const netAmount = acceptedOffer 
+                          ? parseFloat(acceptedOffer.amount).toFixed(2)
+                          : "N/A";
+
+                        return (
+                          <TableRow key={request.id}>
+                            <TableCell className="font-medium">{request.referenceId}</TableCell>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{client?.name || "Client inconnu"}</p>
+                                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                  <Phone className="w-3 h-3" />
+                                  <a href={`tel:${client?.phoneNumber}`} className="hover:underline">
+                                    {client?.phoneNumber || "N/A"}
+                                  </a>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{transporter?.name || "Transporteur"}</p>
+                                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                  <Phone className="w-3 h-3" />
+                                  <a href={`tel:${transporter?.phoneNumber}`} className="hover:underline">
+                                    {transporter?.phoneNumber || "N/A"}
+                                  </a>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-semibold">{netAmount} MAD</span>
+                            </TableCell>
+                            <TableCell>
+                              {request.paymentReceipt ? (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setSelectedReceipt(request.paymentReceipt);
+                                    setShowReceiptDialog(true);
+                                  }}
+                                  className="gap-1"
+                                  data-testid={`button-view-receipt-${request.id}`}
+                                >
+                                  <Eye className="w-4 h-4" />
+                                  Voir
+                                </Button>
+                              ) : (
+                                <span className="text-muted-foreground text-sm">Aucun reçu</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                size="sm"
+                                variant="default"
+                                onClick={() => handleValidatePayment(request.id)}
+                                data-testid={`button-validate-payment-${request.id}`}
+                              >
+                                <CheckCircle className="w-4 h-4 mr-1" />
+                                Marquer comme payé
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 )}
@@ -461,6 +652,26 @@ export default function AdminDashboard() {
         onClose={() => setAddTransporterOpen(false)}
         onSuccess={() => {}}
       />
+
+      <Dialog open={showReceiptDialog} onOpenChange={setShowReceiptDialog}>
+        <DialogContent className="max-w-[90vw] sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Reçu de paiement</DialogTitle>
+            <DialogDescription>
+              Vérifiez le reçu de paiement du client avant validation
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4">
+            {selectedReceipt && (
+              <img
+                src={selectedReceipt}
+                alt="Reçu de paiement"
+                className="w-full h-auto max-h-[70vh] object-contain rounded-lg border"
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

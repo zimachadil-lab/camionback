@@ -557,7 +557,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Mark a request as paid (client confirms payment)
+  // Mark a request as paid (client uploads receipt and awaits admin validation)
   // NOTE: In production, this should use session/JWT authentication instead of req.body.clientId
   app.post("/api/requests/:id/mark-as-paid", async (req, res) => {
     try {
@@ -578,7 +578,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Request must be awaiting payment" });
       }
 
-      // Update payment status to paid
+      const paymentReceipt = req.body.paymentReceipt;
+      if (!paymentReceipt) {
+        return res.status(400).json({ error: "Payment receipt is required" });
+      }
+
+      // Update payment status to pending_admin_validation (client uploaded receipt, awaiting admin approval)
+      const updatedRequest = await storage.updateTransportRequest(req.params.id, {
+        paymentStatus: "pending_admin_validation",
+        paymentReceipt,
+      });
+
+      res.json({ 
+        success: true, 
+        request: updatedRequest
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to mark request as paid" });
+    }
+  });
+
+  // Admin validates payment (final step)
+  // NOTE: In production, this should use session/JWT authentication to verify admin role
+  app.post("/api/requests/:id/admin-validate-payment", async (req, res) => {
+    try {
+      const request = await storage.getTransportRequest(req.params.id);
+      
+      if (!request) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+
+      // TODO PRODUCTION: Verify admin role via session/JWT
+      // For now, we trust the client-side check
+
+      if (request.paymentStatus !== "pending_admin_validation") {
+        return res.status(400).json({ error: "Request must be pending admin validation" });
+      }
+
+      // Update payment status to paid and set payment date
       const updatedRequest = await storage.updateTransportRequest(req.params.id, {
         paymentStatus: "paid",
         paymentDate: new Date(),
@@ -594,13 +631,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             await storage.createNotification({
               userId: acceptedOffer.transporterId,
               type: "payment_confirmed",
-              title: "Paiement confirmé",
-              message: `Le client ${client.name || "votre client"} a confirmé le paiement pour la commande ${request.referenceId}. La transaction est terminée.`,
+              title: "Paiement validé",
+              message: `L'administrateur a validé le paiement pour la commande ${request.referenceId}. Le montant sera versé prochainement.`,
               relatedId: request.id,
             });
           } catch (notifError) {
-            console.error("Failed to create payment confirmed notification:", notifError);
-            // Continue anyway - notification failure shouldn't block the payment status update
+            console.error("Failed to create payment validated notification:", notifError);
           }
         }
       }
@@ -610,7 +646,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         request: updatedRequest
       });
     } catch (error) {
-      res.status(500).json({ error: "Failed to mark request as paid" });
+      res.status(500).json({ error: "Failed to validate payment" });
     }
   });
 

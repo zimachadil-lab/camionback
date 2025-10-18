@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star, CreditCard } from "lucide-react";
+import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star, CreditCard, Upload } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { NewRequestForm } from "@/components/client/new-request-form";
 import { OfferCard } from "@/components/client/offer-card";
@@ -21,12 +21,21 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 
 function RequestWithOffers({ request, onAcceptOffer, onChat, onDelete, onViewTransporter, onUpdateStatus, users }: any) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -193,6 +202,9 @@ export default function ClientDashboard() {
   const [ratingValue, setRatingValue] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [ratingRequestId, setRatingRequestId] = useState<string>("");
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [paymentRequestId, setPaymentRequestId] = useState<string>("");
+  const [paymentReceipt, setPaymentReceipt] = useState<string>("");
 
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
 
@@ -361,17 +373,21 @@ export default function ClientDashboard() {
   const { toast } = useToast();
 
   const markAsPaidMutation = useMutation({
-    mutationFn: async (requestId: string) => {
+    mutationFn: async ({ requestId, receipt }: { requestId: string; receipt: string }) => {
       return await apiRequest("POST", `/api/requests/${requestId}/mark-as-paid`, {
         clientId: user.id,
+        paymentReceipt: receipt,
       });
     },
     onSuccess: () => {
       toast({
         title: "Succès",
-        description: "Le paiement a été confirmé",
+        description: "Le paiement a été confirmé et envoyé pour validation",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+      setShowPaymentDialog(false);
+      setPaymentReceipt("");
+      setPaymentRequestId("");
     },
     onError: () => {
       toast({
@@ -386,6 +402,67 @@ export default function ClientDashboard() {
     if (ratingValue > 0 && ratingRequestId) {
       completeWithRatingMutation.mutate({ requestId: ratingRequestId, rating: ratingValue });
     }
+  };
+
+  const handleOpenPaymentDialog = (requestId: string) => {
+    setPaymentRequestId(requestId);
+    setPaymentReceipt("");
+    setShowPaymentDialog(true);
+  };
+
+  const handleReceiptUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type (accept images only)
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        variant: "destructive",
+        title: "Format non accepté",
+        description: "Veuillez téléverser une image (JPEG, PNG ou WebP)",
+      });
+      e.target.value = ''; // Reset input
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    if (file.size > maxSize) {
+      toast({
+        variant: "destructive",
+        title: "Fichier trop volumineux",
+        description: "La taille maximale autorisée est de 5 Mo",
+      });
+      e.target.value = ''; // Reset input
+      return;
+    }
+
+    // Convert to base64
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPaymentReceipt(reader.result as string);
+    };
+    reader.onerror = () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur de lecture",
+        description: "Impossible de lire le fichier",
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleConfirmPayment = () => {
+    if (!paymentReceipt) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Veuillez téléverser le reçu de paiement",
+      });
+      return;
+    }
+    markAsPaidMutation.mutate({ requestId: paymentRequestId, receipt: paymentReceipt });
   };
 
   const handleChat = (transporterId: string, transporterName: string, requestId: string) => {
@@ -547,8 +624,7 @@ export default function ClientDashboard() {
                           <Button
                             variant="default"
                             size="sm"
-                            onClick={() => markAsPaidMutation.mutate(request.id)}
-                            disabled={markAsPaidMutation.isPending}
+                            onClick={() => handleOpenPaymentDialog(request.id)}
                             className="gap-2"
                             data-testid={`button-mark-paid-${request.id}`}
                           >
@@ -810,6 +886,85 @@ export default function ClientDashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+        <DialogContent className="max-w-[90vw] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmer le paiement</DialogTitle>
+            <DialogDescription className="space-y-4 pt-4">
+              <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800 space-y-3">
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                  Merci d'effectuer le virement sur le compte suivant :
+                </p>
+                <div className="space-y-1">
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    <span className="font-semibold">RIB :</span> 011815000005210001099713
+                  </p>
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    <span className="font-semibold">À l'ordre de :</span> CamionBack
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="receipt-upload" className="text-sm font-medium">
+                  Reçu de paiement <span className="text-destructive">*</span>
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Veuillez téléverser votre reçu de paiement (formats acceptés : JPEG, PNG, WebP - max. 5 Mo).
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => document.getElementById('receipt-upload')?.click()}
+                    className="w-full gap-2"
+                    data-testid="button-upload-receipt"
+                  >
+                    <Upload className="w-4 h-4" />
+                    {paymentReceipt ? "Reçu téléversé" : "Téléverser le reçu"}
+                  </Button>
+                  <input
+                    id="receipt-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleReceiptUpload}
+                    className="hidden"
+                    data-testid="input-receipt-upload"
+                  />
+                </div>
+                {paymentReceipt && (
+                  <div className="mt-2">
+                    <img
+                      src={paymentReceipt}
+                      alt="Reçu de paiement"
+                      className="w-full h-40 object-cover rounded-lg border"
+                    />
+                  </div>
+                )}
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowPaymentDialog(false)}
+              data-testid="button-cancel-payment"
+            >
+              Annuler
+            </Button>
+            <Button
+              type="button"
+              onClick={handleConfirmPayment}
+              disabled={!paymentReceipt || markAsPaidMutation.isPending}
+              data-testid="button-confirm-payment"
+            >
+              {markAsPaidMutation.isPending ? "Envoi en cours..." : "Confirmer le paiement"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
