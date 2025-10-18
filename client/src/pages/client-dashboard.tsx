@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star, CreditCard, Upload } from "lucide-react";
+import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star, CreditCard, Upload, Eye } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { NewRequestForm } from "@/components/client/new-request-form";
 import { OfferCard } from "@/components/client/offer-card";
@@ -73,9 +73,15 @@ function RequestWithOffers({ request, onAcceptOffer, onChat, onDelete, onViewTra
                 </Badge>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">
-              {request.fromCity} → {request.toCity}
-            </p>
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <span>{request.fromCity} → {request.toCity}</span>
+              {request.viewCount !== undefined && (
+                <span className="flex items-center gap-1">
+                  <Eye className="w-3 h-3" />
+                  {request.viewCount} vue{request.viewCount > 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-2">
             {isAccepted && (
