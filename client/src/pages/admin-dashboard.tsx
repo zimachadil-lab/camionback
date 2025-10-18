@@ -435,73 +435,86 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs defaultValue="requests" className="w-full">
-          <TabsList className="grid w-full max-w-6xl grid-cols-12 text-xs sm:text-sm">
-            <TabsTrigger value="requests" data-testid="tab-requests">Demandes</TabsTrigger>
-            <TabsTrigger value="offers" data-testid="tab-offers">
-              Offres
-              {allOffers.length > 0 && (
-                <Badge className="ml-2 px-1.5 py-0 h-5 min-w-5 text-xs">
-                  {allOffers.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="contracts" data-testid="tab-contracts">
-              Contrats
-              {contracts.length > 0 && (
-                <Badge className="ml-2 px-1.5 py-0 h-5 min-w-5 text-xs">
-                  {contracts.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="messages" data-testid="tab-messages">
-              <MessageSquare className="w-4 h-4 mr-1" />
-              Messages
-              {conversations.length > 0 && (
-                <Badge className="ml-2 px-1.5 py-0 h-5 min-w-5 text-xs" data-testid="badge-messages-count">
-                  {conversations.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="to-pay" data-testid="tab-to-pay">
-              À payer
-              {pendingPayments.length > 0 && (
-                <Badge variant="destructive" className="ml-2 px-1.5 py-0 h-5 min-w-5 text-xs">
-                  {pendingPayments.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="validation" data-testid="tab-validation">
-              Validation
-              {pendingDrivers.length > 0 && (
-                <Badge variant="destructive" className="ml-2 px-1.5 py-0 h-5 min-w-5 text-xs">
-                  {pendingDrivers.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="empty-returns" data-testid="tab-empty-returns">
-              <TruckIcon className="w-4 h-4 mr-1" />
-              Retours
-              {emptyReturns.length > 0 && (
-                <Badge className="ml-2 px-1.5 py-0 h-5 min-w-5 text-xs bg-[#00d4b2]">
-                  {emptyReturns.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="drivers" data-testid="tab-drivers">Transporteurs</TabsTrigger>
-            <TabsTrigger value="clients" data-testid="tab-clients">Clients</TabsTrigger>
-            <TabsTrigger value="reports" data-testid="tab-reports">
-              <Flag className="w-4 h-4 mr-1" />
-              Signalements
-              {allReports.filter((r: any) => r.status === "pending").length > 0 && (
-                <Badge variant="destructive" className="ml-2 px-1.5 py-0 h-5 min-w-5 text-xs">
-                  {allReports.filter((r: any) => r.status === "pending").length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="facturation" data-testid="tab-facturation">Facturation</TabsTrigger>
-            <TabsTrigger value="settings" data-testid="tab-settings">Paramètres</TabsTrigger>
-            <TabsTrigger value="stats" data-testid="tab-stats">Statistiques</TabsTrigger>
-          </TabsList>
+          <div className="space-y-2">
+            {/* Barre de navigation principale - Opérations */}
+            <div className="bg-muted/30 p-2 rounded-lg">
+              <p className="text-xs text-muted-foreground mb-2 px-2 font-medium">Opérations</p>
+              <TabsList className="grid w-full grid-cols-7 text-xs sm:text-sm">
+                <TabsTrigger value="requests" data-testid="tab-requests">Demandes</TabsTrigger>
+                <TabsTrigger value="offers" data-testid="tab-offers">
+                  Offres
+                  {allOffers.length > 0 && (
+                    <Badge className="ml-2 px-1.5 py-0 h-5 min-w-5 text-xs">
+                      {allOffers.length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="contracts" data-testid="tab-contracts">
+                  Contrats
+                  {contracts.length > 0 && (
+                    <Badge className="ml-2 px-1.5 py-0 h-5 min-w-5 text-xs">
+                      {contracts.length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="messages" data-testid="tab-messages">
+                  <MessageSquare className="w-4 h-4 mr-1" />
+                  Messages
+                  {conversations.length > 0 && (
+                    <Badge className="ml-2 px-1.5 py-0 h-5 min-w-5 text-xs" data-testid="badge-messages-count">
+                      {conversations.length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="to-pay" data-testid="tab-to-pay">
+                  À payer
+                  {pendingPayments.length > 0 && (
+                    <Badge variant="destructive" className="ml-2 px-1.5 py-0 h-5 min-w-5 text-xs">
+                      {pendingPayments.length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="validation" data-testid="tab-validation">
+                  Validation
+                  {pendingDrivers.length > 0 && (
+                    <Badge variant="destructive" className="ml-2 px-1.5 py-0 h-5 min-w-5 text-xs">
+                      {pendingDrivers.length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="empty-returns" data-testid="tab-empty-returns">
+                  <TruckIcon className="w-4 h-4 mr-1" />
+                  Retours
+                  {emptyReturns.length > 0 && (
+                    <Badge className="ml-2 px-1.5 py-0 h-5 min-w-5 text-xs bg-[#00d4b2]">
+                      {emptyReturns.length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            {/* Barre de navigation secondaire - Gestion */}
+            <div className="bg-muted/30 p-2 rounded-lg">
+              <p className="text-xs text-muted-foreground mb-2 px-2 font-medium">Gestion & Configuration</p>
+              <TabsList className="grid w-full grid-cols-6 text-xs sm:text-sm">
+                <TabsTrigger value="drivers" data-testid="tab-drivers">Transporteurs</TabsTrigger>
+                <TabsTrigger value="clients" data-testid="tab-clients">Clients</TabsTrigger>
+                <TabsTrigger value="reports" data-testid="tab-reports">
+                  <Flag className="w-4 h-4 mr-1" />
+                  Signalements
+                  {allReports.filter((r: any) => r.status === "pending").length > 0 && (
+                    <Badge variant="destructive" className="ml-2 px-1.5 py-0 h-5 min-w-5 text-xs">
+                      {allReports.filter((r: any) => r.status === "pending").length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="facturation" data-testid="tab-facturation">Facturation</TabsTrigger>
+                <TabsTrigger value="stats" data-testid="tab-stats">Statistiques</TabsTrigger>
+                <TabsTrigger value="settings" data-testid="tab-settings">Paramètres</TabsTrigger>
+              </TabsList>
+            </div>
+          </div>
 
           <TabsContent value="requests" className="mt-6">
             <Card>
