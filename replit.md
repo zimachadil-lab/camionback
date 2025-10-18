@@ -27,6 +27,9 @@ Real-time chat is implemented via WebSockets (`/ws-chat`) for direct communicati
 **Client Request Workflow:** Requests progress through 'Open', 'Accepted', and 'Completed' statuses. Clients can accept offers, mark requests as complete, and republish requests, which resets their status and deletes previous offers.
 **Payment Workflow:** A comprehensive payment flow includes statuses: 'pending' (initial), 'awaiting_payment' (transporter marks for billing), 'pending_admin_validation' (client uploads receipt), and 'paid' (admin validates payment). This involves interactions across Transporter, Client, and Admin dashboards, with receipt upload functionality (JPEG, PNG, WebP; max 5MB) and admin validation.
 
+### Transporter Offers System
+Transporters submit offers with three mandatory fields: amount (price), pickup date (when they can collect the load), and load type (either "Retour" for empty return trips or "Groupage / Partagé" for shared/grouped loads). The offer form uses a calendar date picker for pickup dates and radio buttons for load type selection. Client dashboards display offers with formatted pickup dates and load type badges. The admin dashboard includes a dedicated "Offres transporteurs" tab showing all offers system-wide with full details (order reference, client, transporter, dates, prices, load type, and status). Administrators can accept offers on behalf of clients, triggering the same workflow as client acceptance (commission calculation, status updates, notifications). The API endpoint GET /api/offers returns all offers when called without filters (for admin use) or filtered results when called with requestId or transporterId parameters.
+
 ### Transporter Rating System
 Clients can rate transporters (1-5 stars) upon request completion. The system calculates and updates average ratings, total ratings, and total completed trips for transporters. Ratings are displayed on offer cards with decimal precision.
 

@@ -1,0 +1,128 @@
+Je souhaite maintenant ajouter une nouvelle fonctionnalité importante côté Admin, permettant de suivre et gérer les contrats générés automatiquement lorsqu’un client choisit un transporteur.
+
+📜 1️⃣ – Génération automatique d’un contrat
+🔹 Objectif :
+
+Lorsqu’un client X accepte la proposition d’un transporteur Y, cela doit automatiquement générer une ligne dans une nouvelle rubrique appelée “Contrats” au niveau Admin.
+
+🔹 Données à enregistrer pour chaque contrat :
+
+Référence de la commande (CMD-XXXX)
+
+Nom et numéro de téléphone du client
+
+Nom et numéro de téléphone du transporteur
+
+Date de création du contrat (date d’acceptation de l’offre)
+
+Montant convenu (prix proposé et accepté)
+
+Statut du contrat (voir section suivante)
+
+⚙️ 2️⃣ – Statuts du contrat
+
+Chaque ligne doit afficher le statut actuel du contrat parmi les statuts suivants :
+
+En cours d’exécution – dès qu’un client choisit un transporteur.
+
+Marqué comme payé côté transporteur – quand le transporteur signale “À facturer” ou “Payé”.
+
+Marqué comme payé côté client – lorsque le client ajoute le reçu de paiement.
+
+Terminé – une fois le paiement validé par CamionBack (admin).
+
+Le statut doit se mettre à jour automatiquement selon les actions effectuées par le client, le transporteur ou l’admin.
+
+🧾 3️⃣ – Nouvelle rubrique Admin : “Contrats”
+
+Créer une nouvelle section dans le panneau d’administration intitulée :
+
+Contrats
+
+🔹 Affichage :
+
+Chaque ligne de contrat doit contenir :
+
+Référence de la commande (CMD-XXXX)
+
+Nom et téléphone du client
+
+Nom et téléphone du transporteur
+
+Montant convenu (en MAD)
+
+Date de création
+
+Statut actuel
+
+Un bouton d’action sous forme d’icône “œil” 👁️ à droite
+
+👁️ 4️⃣ – Fonction du bouton “œil” (popup de détails du contrat)
+
+Lorsqu’on clique sur l’icône 👁️ :
+
+Ouvrir une popup complète affichant toutes les informations liées à ce contrat, notamment :
+
+Informations du client et du transporteur (nom, téléphone, ville, etc.)
+
+Détails complets du formulaire de commande :
+
+Ville de départ / d’arrivée
+
+Description
+
+Date souhaitée
+
+Cases cochées (date flexible, facture TTC)
+
+Photos jointes à la commande (affichage en galerie)
+
+Type de chargement choisi (Retour / Groupage)
+
+Prix convenu (offre acceptée)
+
+🔹 Contrôle administratif :
+
+Dans cette popup, ajouter un menu déroulant ou boutons permettant à l’administrateur de changer manuellement le statut du contrat, avec toutes les options disponibles :
+
+En cours d’exécution
+
+Marqué payé côté transporteur
+
+Marqué payé côté client
+
+Terminé
+
+Dès que l’admin change le statut, la ligne principale du tableau “Contrats” doit se mettre à jour en temps réel.
+
+🧩 5️⃣ – Comportement automatique attendu
+
+Quand le client accepte une offre → un contrat est créé automatiquement.
+
+Le contrat apparaît dans la rubrique “Contrats” avec le statut “En cours d’exécution”.
+
+Les actions des utilisateurs changent le statut automatiquement :
+
+Transporteur → “Marqué payé côté transporteur”
+
+Client → “Marqué payé côté client”
+
+Admin → “Terminé” (après validation du paiement).
+
+L’admin peut modifier le statut manuellement depuis la popup de détails si nécessaire.
+
+🎨 6️⃣ – Design & Interface
+
+Rubrique au même style que “Offres transporteurs” :
+
+fond clair, lignes bien espacées,
+
+titres en gras,
+
+boutons d’action à droite (icône œil 👁️ en bleu clair #3498db).
+
+La popup doit avoir un fond blanc avec scroll vertical, affichant toutes les infos lisiblement.
+
+Ajouter un compteur en haut de la page :
+
+“Contrats actifs : 7 | Terminés : 12”
