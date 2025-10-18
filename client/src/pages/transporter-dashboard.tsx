@@ -276,15 +276,6 @@ export default function TransporterDashboard() {
           </TabsList>
 
           <TabsContent value="available" className="mt-6 space-y-6">
-            <div className="bg-green-600/10 border border-green-600/20 rounded-lg p-4">
-              <div className="flex items-center gap-2">
-                <Package className="h-5 w-5 text-green-600" />
-                <span className="text-lg font-semibold text-green-600" data-testid="text-available-count">
-                  {filteredRequests.length} commande{filteredRequests.length > 1 ? 's' : ''} disponible{filteredRequests.length > 1 ? 's' : ''}
-                </span>
-              </div>
-            </div>
-
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
