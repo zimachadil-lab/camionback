@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCircle, UserCheck, CreditCard, Phone, Eye, TruckIcon } from "lucide-react";
+import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCircle, UserCheck, CreditCard, Phone, Eye, TruckIcon, MapPin, Calendar, FileText } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Header } from "@/components/layout/header";
 import { KpiCard } from "@/components/admin/kpi-card";
 import { AddTransporterForm } from "@/components/admin/add-transporter-form";
@@ -1171,6 +1172,236 @@ export default function AdminDashboard() {
               </div>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Contract Details Dialog */}
+      <Dialog open={contractDetailsOpen} onOpenChange={setContractDetailsOpen}>
+        <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Détails du contrat</DialogTitle>
+            <DialogDescription>
+              Informations complètes sur le contrat et la commande associée
+            </DialogDescription>
+          </DialogHeader>
+          {selectedContract && (() => {
+            const request = allRequests.find((r: any) => r.id === selectedContract.requestId);
+            const offer = allOffers.find((o: any) => o.id === selectedContract.offerId);
+            const client = users.find((u: any) => u.id === selectedContract.clientId);
+            const transporter = users.find((u: any) => u.id === selectedContract.transporterId);
+
+            return (
+              <div className="mt-4 space-y-6">
+                {/* Header avec statut */}
+                <div className="flex items-center justify-between pb-4 border-b">
+                  <div>
+                    <h3 className="text-lg font-semibold">Contrat {selectedContract.referenceId}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Créé le {new Date(selectedContract.createdAt).toLocaleDateString("fr-FR")}
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium">Changer le statut</label>
+                    <Select
+                      value={selectedContract.status}
+                      onValueChange={async (value) => {
+                        try {
+                          await apiRequest("PATCH", `/api/contracts/${selectedContract.id}`, { status: value });
+                          toast({
+                            title: "Statut mis à jour",
+                            description: "Le statut du contrat a été modifié avec succès",
+                          });
+                          queryClient.invalidateQueries({ queryKey: ["/api/contracts"] });
+                          setContractDetailsOpen(false);
+                        } catch (error) {
+                          toast({
+                            variant: "destructive",
+                            title: "Erreur",
+                            description: "Échec de la mise à jour du statut",
+                          });
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="w-[250px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="in_progress">En cours d'exécution</SelectItem>
+                        <SelectItem value="marked_paid_transporter">Payé côté transporteur</SelectItem>
+                        <SelectItem value="marked_paid_client">Payé côté client</SelectItem>
+                        <SelectItem value="completed">Terminé</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Informations financières */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Informations financières</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Montant convenu</span>
+                      <span className="font-semibold">{selectedContract.amount} MAD</span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Informations client et transporteur */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Users className="w-4 h-4" />
+                        Client
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Nom</p>
+                        <p className="font-medium">{client?.name || "N/A"}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Téléphone</p>
+                        <p className="font-medium flex items-center gap-2">
+                          <Phone className="w-4 h-4" />
+                          {client?.phoneNumber || "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Ville</p>
+                        <p className="font-medium flex items-center gap-2">
+                          <MapPin className="w-4 h-4" />
+                          {client?.city || "N/A"}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <TruckIcon className="w-4 h-4" />
+                        Transporteur
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Nom</p>
+                        <p className="font-medium">{transporter?.name || "N/A"}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Téléphone</p>
+                        <p className="font-medium flex items-center gap-2">
+                          <Phone className="w-4 h-4" />
+                          {transporter?.phoneNumber || "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Ville</p>
+                        <p className="font-medium flex items-center gap-2">
+                          <MapPin className="w-4 h-4" />
+                          {transporter?.city || "N/A"}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Détails de la commande */}
+                {request && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <FileText className="w-4 h-4" />
+                        Détails de la commande
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm text-muted-foreground">Ville de départ</p>
+                          <p className="font-medium">{request.fromCity}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Ville d'arrivée</p>
+                          <p className="font-medium">{request.toCity}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Date souhaitée</p>
+                          <p className="font-medium flex items-center gap-2">
+                            <Calendar className="w-4 h-4" />
+                            {new Date(request.dateTime).toLocaleDateString("fr-FR")}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Type de marchandise</p>
+                          <p className="font-medium">{request.goodsType}</p>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Description</p>
+                        <p className="mt-1">{request.description}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        {request.dateFlexible && (
+                          <Badge variant="outline">Date flexible</Badge>
+                        )}
+                        {request.invoiceRequired && (
+                          <Badge variant="outline">Facture TTC requise</Badge>
+                        )}
+                      </div>
+                      {request.photos && request.photos.length > 0 && (
+                        <div>
+                          <p className="text-sm text-muted-foreground mb-2">Photos</p>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                            {request.photos.map((photo: string, index: number) => (
+                              <img
+                                key={index}
+                                src={photo}
+                                alt={`Photo ${index + 1}`}
+                                className="w-full h-24 object-cover rounded-lg border"
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Détails de l'offre */}
+                {offer && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Package className="w-4 h-4" />
+                        Détails de l'offre
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm text-muted-foreground">Date de prise en charge</p>
+                          <p className="font-medium flex items-center gap-2">
+                            <Calendar className="w-4 h-4" />
+                            {new Date(offer.pickupDate).toLocaleDateString("fr-FR")}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Type de chargement</p>
+                          <p className="font-medium">
+                            {offer.loadType === "return" ? "Retour (camion vide)" : "Groupage / Partagé"}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>
