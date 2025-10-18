@@ -21,6 +21,7 @@ export interface IStorage {
   getAllUsers(): Promise<User[]>;
   getPendingDrivers(): Promise<User[]>;
   getNextClientId(): Promise<string>;
+  getClientStatistics(): Promise<any[]>;
   
   // OTP operations
   createOtp(otp: InsertOtpCode): Promise<OtpCode>;
@@ -188,6 +189,41 @@ export class MemStorage implements IStorage {
     
     // Format as C-XXXX with zero padding
     return `C-${nextNumber.toString().padStart(4, '0')}`;
+  }
+
+  async getClientStatistics(): Promise<any[]> {
+    const clients = Array.from(this.users.values()).filter(
+      (user) => user.role === "client"
+    );
+    
+    const allRequests = Array.from(this.transportRequests.values());
+    const allRatings = Array.from(this.ratings.values());
+    
+    return clients.map(client => {
+      // Count orders
+      const clientRequests = allRequests.filter(req => req.clientId === client.id);
+      const totalOrders = clientRequests.length;
+      const completedOrders = clientRequests.filter(
+        req => req.status === "completed" || req.paymentStatus === "paid"
+      ).length;
+      
+      // Calculate average satisfaction (ratings given by this client)
+      const clientRatings = allRatings.filter(rating => rating.clientId === client.id);
+      const averageRating = clientRatings.length > 0
+        ? clientRatings.reduce((sum, r) => sum + r.rating, 0) / clientRatings.length
+        : 0;
+      
+      return {
+        id: client.id,
+        clientId: client.clientId || "N/A",
+        name: client.name || "Non renseigné",
+        phoneNumber: client.phoneNumber,
+        totalOrders,
+        completedOrders,
+        averageRating: Number(averageRating.toFixed(2)),
+        registrationDate: client.createdAt,
+      };
+    });
   }
 
   async createOtp(insertOtp: InsertOtpCode): Promise<OtpCode> {

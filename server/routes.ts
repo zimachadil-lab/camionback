@@ -1376,6 +1376,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all clients with stats (admin)
+  app.get("/api/admin/clients", async (req, res) => {
+    try {
+      const clientStats = await storage.getClientStatistics();
+      res.json(clientStats);
+    } catch (error) {
+      console.error("Error fetching client statistics:", error);
+      res.status(500).json({ error: "Failed to fetch clients" });
+    }
+  });
+
   // Get all conversations (admin)
   app.get("/api/admin/conversations", async (req, res) => {
     try {
