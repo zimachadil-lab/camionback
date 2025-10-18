@@ -1,0 +1,99 @@
+J’aimerais ajouter une nouvelle fonctionnalité côté transporteur, accessible depuis le header, permettant aux transporteurs d’annoncer leurs retours à vide afin que l’équipe admin puisse en tirer parti et affecter des commandes correspondantes.
+
+🚛 1️⃣ – Nouveau bouton dans le header (côté transporteur)
+🔹 Objectif :
+
+Permettre aux transporteurs de signaler qu’ils prévoient un trajet retour à vide pour que l’administration puisse leur proposer des missions sur ce trajet.
+
+🔹 Détails :
+
+Le bouton doit être placé au même endroit que le bouton “+ Nouveau” côté client.
+
+Titre du bouton :
+
+“📢 Annoncer un retour”
+(clair, attractif, simple et visible)
+
+Style : bouton arrondi, couleur turquoise (#00d4b2), texte blanc, légèrement plus petit que “+ Nouveau” pour différenciation.
+
+🗓️ 2️⃣ – Contenu de la popup
+
+Quand le transporteur clique sur “📢 Annoncer un retour”, afficher une popup de saisie avec les champs suivants :
+
+Ville de départ du retour (liste ou champ texte)
+
+Ville d’arrivée prévue
+
+Date du trajet retour (J/M/A)
+
+Bouton Valider
+
+Une fois validé :
+
+Un message de confirmation s’affiche (“Votre retour a été annoncé ✅”).
+
+Les données sont enregistrées dans la base et transmises côté admin.
+
+🧾 3️⃣ – Nouvelle rubrique côté Admin : “Retours annoncés”
+
+Créer une nouvelle section dans le tableau de bord Admin intitulée :
+
+“Retours annoncés”
+
+Chaque ligne doit afficher :
+
+Nom du transporteur
+
+Numéro de téléphone du transporteur
+
+Ville de départ
+
+Ville d’arrivée
+
+Date du trajet retour
+
+Un bouton d’action : “Affecter une commande”
+
+⚙️ 4️⃣ – Fonctionnement du bouton “Affecter une commande” (Admin)
+
+Lorsqu’un admin clique sur “Affecter une commande” :
+
+Une petite fenêtre modale s’ouvre avec :
+
+Un champ de recherche par référence de commande (CMD-XXXX).
+
+Un champ Montant proposé (en MAD).
+
+Un bouton Valider l’affectation.
+
+Une fois validée :
+
+Une proposition automatique est créée pour le client correspondant :
+
+Elle s’affiche sur le tableau de bord du client comme une offre reçue (avec le montant proposé).
+
+Elle s’affiche également sur le tableau de bord du transporteur dans “Mes offres”, comme si le transporteur avait soumis lui-même cette offre.
+
+La commande garde le comportement normal (le client peut accepter ou refuser).
+
+🕓 5️⃣ – Gestion automatique des retours expirés
+
+Chaque ligne dans la rubrique “Retours annoncés” doit disparaître automatiquement le lendemain (J+1) de la date indiquée dans le formulaire.
+
+Cela évite d’avoir des retours obsolètes dans la base.
+
+🎨 6️⃣ – Détails design
+
+Rubrique admin “Retours annoncés” :
+
+fond clair, lignes séparées avec ombre légère,
+
+boutons d’action colorés :
+
+“Affecter une commande” → couleur bleu clair (#1abc9c).
+
+En haut de la page : compteur des retours actifs
+
+“3 retours annoncés actuellement.”
+
+Popup côté transporteur : fond blanc, texte sombre, boutons turquoise.

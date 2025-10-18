@@ -109,6 +109,17 @@ export const ratings = pgTable("ratings", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Empty Returns - Transporters announce their empty return trips
+export const emptyReturns = pgTable("empty_returns", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  transporterId: varchar("transporter_id").notNull().references(() => users.id),
+  fromCity: text("from_city").notNull(),
+  toCity: text("to_city").notNull(),
+  returnDate: timestamp("return_date").notNull(), // Date of the return trip
+  status: text("status").default("active"), // active, expired, assigned
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertOtpCodeSchema = createInsertSchema(otpCodes).omit({ id: true, createdAt: true, verified: true });
@@ -120,6 +131,9 @@ export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({ i
 export const insertAdminSettingsSchema = createInsertSchema(adminSettings).omit({ id: true, updatedAt: true });
 export const insertNotificationSchema = createInsertSchema(notifications).omit({ id: true, createdAt: true, read: true });
 export const insertRatingSchema = createInsertSchema(ratings).omit({ id: true, createdAt: true });
+export const insertEmptyReturnSchema = createInsertSchema(emptyReturns).omit({ id: true, createdAt: true, status: true }).extend({
+  returnDate: z.coerce.date(), // Accept ISO string and coerce to Date
+});
 
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -138,3 +152,5 @@ export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type Notification = typeof notifications.$inferSelect;
 export type InsertRating = z.infer<typeof insertRatingSchema>;
 export type Rating = typeof ratings.$inferSelect;
+export type InsertEmptyReturn = z.infer<typeof insertEmptyReturnSchema>;
+export type EmptyReturn = typeof emptyReturns.$inferSelect;

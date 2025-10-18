@@ -6,7 +6,8 @@ import {
   type ChatMessage, type InsertChatMessage,
   type AdminSettings, type InsertAdminSettings,
   type Notification, type InsertNotification,
-  type Rating, type InsertRating
+  type Rating, type InsertRating,
+  type EmptyReturn, type InsertEmptyReturn
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -65,6 +66,13 @@ export interface IStorage {
   createRating(rating: InsertRating): Promise<Rating>;
   getRatingsByTransporter(transporterId: string): Promise<Rating[]>;
   getRatingByRequestId(requestId: string): Promise<Rating | undefined>;
+  
+  // Empty Return operations
+  createEmptyReturn(emptyReturn: InsertEmptyReturn): Promise<EmptyReturn>;
+  getActiveEmptyReturns(): Promise<EmptyReturn[]>;
+  getEmptyReturnsByTransporter(transporterId: string): Promise<EmptyReturn[]>;
+  updateEmptyReturn(id: string, updates: Partial<EmptyReturn>): Promise<EmptyReturn | undefined>;
+  expireOldReturns(): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -75,6 +83,7 @@ export class MemStorage implements IStorage {
   private chatMessages: Map<string, ChatMessage>;
   private notifications: Map<string, Notification>;
   private ratings: Map<string, Rating>;
+  private emptyReturns: Map<string, EmptyReturn>;
   private adminSettings: AdminSettings;
   private requestCounter: number;
 
@@ -86,6 +95,7 @@ export class MemStorage implements IStorage {
     this.chatMessages = new Map();
     this.notifications = new Map();
     this.ratings = new Map();
+    this.emptyReturns = new Map();
     this.requestCounter = 1;
     this.adminSettings = {
       id: randomUUID(),
@@ -622,6 +632,66 @@ export class MemStorage implements IStorage {
     return Array.from(this.ratings.values()).find(
       rating => rating.requestId === requestId
     );
+  }
+
+  async createEmptyReturn(insertEmptyReturn: InsertEmptyReturn): Promise<EmptyReturn> {
+    const id = randomUUID();
+    const emptyReturn: EmptyReturn = {
+      id,
+      transporterId: insertEmptyReturn.transporterId,
+      fromCity: insertEmptyReturn.fromCity,
+      toCity: insertEmptyReturn.toCity,
+      returnDate: insertEmptyReturn.returnDate,
+      status: "active",
+      createdAt: new Date(),
+    };
+    this.emptyReturns.set(id, emptyReturn);
+    return emptyReturn;
+  }
+
+  async getActiveEmptyReturns(): Promise<EmptyReturn[]> {
+    return Array.from(this.emptyReturns.values())
+      .filter(emptyReturn => emptyReturn.status === "active")
+      .sort((a, b) => {
+        const aTime = a.returnDate?.getTime() || 0;
+        const bTime = b.returnDate?.getTime() || 0;
+        return aTime - bTime; // Soonest first
+      });
+  }
+
+  async getEmptyReturnsByTransporter(transporterId: string): Promise<EmptyReturn[]> {
+    return Array.from(this.emptyReturns.values())
+      .filter(emptyReturn => emptyReturn.transporterId === transporterId)
+      .sort((a, b) => {
+        const aTime = a.returnDate?.getTime() || 0;
+        const bTime = b.returnDate?.getTime() || 0;
+        return bTime - aTime; // Most recent first
+      });
+  }
+
+  async updateEmptyReturn(id: string, updates: Partial<EmptyReturn>): Promise<EmptyReturn | undefined> {
+    const emptyReturn = this.emptyReturns.get(id);
+    if (!emptyReturn) return undefined;
+    const updated = { ...emptyReturn, ...updates };
+    this.emptyReturns.set(id, updated);
+    return updated;
+  }
+
+  async expireOldReturns(): Promise<void> {
+    const now = new Date();
+    const entries = Array.from(this.emptyReturns.entries());
+    for (const [id, emptyReturn] of entries) {
+      if (emptyReturn.status === "active" && emptyReturn.returnDate) {
+        // Check if returnDate is J+1 (next day after return date)
+        const returnDate = new Date(emptyReturn.returnDate);
+        const expiryDate = new Date(returnDate);
+        expiryDate.setDate(expiryDate.getDate() + 1);
+        
+        if (now >= expiryDate) {
+          this.emptyReturns.set(id, { ...emptyReturn, status: "expired" });
+        }
+      }
+    }
   }
 }
 
