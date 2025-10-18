@@ -322,9 +322,24 @@ export class MemStorage implements IStorage {
   }
 
   async getOffersByTransporter(transporterId: string): Promise<Offer[]> {
-    return Array.from(this.offers.values()).filter(
-      (offer) => offer.transporterId === transporterId
-    );
+    const offers: Offer[] = [];
+    
+    for (const offer of Array.from(this.offers.values())) {
+      if (offer.transporterId === transporterId) {
+        // Get the associated request
+        const request = await this.getTransportRequest(offer.requestId);
+        
+        // Exclude offers where the request payment is pending validation or paid
+        // These should only appear in "Paiements reçus"
+        if (request && 
+            request.paymentStatus !== "pending_admin_validation" && 
+            request.paymentStatus !== "paid") {
+          offers.push(offer);
+        }
+      }
+    }
+    
+    return offers;
   }
 
   async hasOfferForRequest(transporterId: string, requestId: string): Promise<boolean> {
