@@ -105,6 +105,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Numéro ou code PIN incorrect" });
       }
 
+      // Check if account is blocked
+      if (user.accountStatus === "blocked") {
+        return res.status(403).json({ 
+          error: "Compte bloqué",
+          message: "Votre compte est temporairement désactivé. Merci de contacter le support CamionBack."
+        });
+      }
+
       res.json({ user });
     } catch (error) {
       console.error("Login error:", error);
@@ -242,6 +250,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Validate driver error:", error);
       res.status(500).json({ error: "Échec de la validation" });
+    }
+  });
+
+  // Admin routes for blocking/unblocking users
+  app.post("/api/admin/block-user/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const user = await storage.blockUser(id);
+      
+      if (!user) {
+        return res.status(404).json({ error: "Utilisateur non trouvé" });
+      }
+
+      // Create notification for blocked user
+      await storage.createNotification({
+        userId: id,
+        type: "account_blocked",
+        title: "Compte bloqué",
+        message: "Votre compte CamionBack a été temporairement bloqué. Contactez l'équipe support pour plus d'informations.",
+        relatedId: null,
+      });
+
+      res.json({ user });
+    } catch (error) {
+      console.error("Block user error:", error);
+      res.status(500).json({ error: "Échec du blocage de l'utilisateur" });
+    }
+  });
+
+  app.post("/api/admin/unblock-user/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const user = await storage.unblockUser(id);
+      
+      if (!user) {
+        return res.status(404).json({ error: "Utilisateur non trouvé" });
+      }
+
+      // Create notification for unblocked user
+      await storage.createNotification({
+        userId: id,
+        type: "account_unblocked",
+        title: "Compte débloqué",
+        message: "Votre compte CamionBack a été réactivé. Vous pouvez à nouveau utiliser la plateforme normalement.",
+        relatedId: null,
+      });
+
+      res.json({ user });
+    } catch (error) {
+      console.error("Unblock user error:", error);
+      res.status(500).json({ error: "Échec du déblocage de l'utilisateur" });
     }
   });
 

@@ -22,6 +22,8 @@ export interface IStorage {
   getPendingDrivers(): Promise<User[]>;
   getNextClientId(): Promise<string>;
   getClientStatistics(): Promise<any[]>;
+  blockUser(userId: string): Promise<User | undefined>;
+  unblockUser(userId: string): Promise<User | undefined>;
   
   // OTP operations
   createOtp(otp: InsertOtpCode): Promise<OtpCode>;
@@ -135,6 +137,7 @@ export class MemStorage implements IStorage {
       phoneNumber: insertUser.phoneNumber,
       passwordHash: insertUser.passwordHash,
       role: insertUser.role ?? null,
+      clientId: insertUser.clientId ?? null,
       name: insertUser.name ?? null,
       city: insertUser.city ?? null,
       truckPhotos: insertUser.truckPhotos ?? null,
@@ -142,6 +145,7 @@ export class MemStorage implements IStorage {
       totalRatings: insertUser.totalRatings ?? null,
       totalTrips: insertUser.totalTrips ?? null,
       status: insertUser.status ?? null,
+      accountStatus: insertUser.accountStatus ?? "active",
       isActive: insertUser.isActive ?? true,
       createdAt: new Date(),
     };
@@ -210,7 +214,7 @@ export class MemStorage implements IStorage {
       // Calculate average satisfaction (ratings given by this client)
       const clientRatings = allRatings.filter(rating => rating.clientId === client.id);
       const averageRating = clientRatings.length > 0
-        ? clientRatings.reduce((sum, r) => sum + r.rating, 0) / clientRatings.length
+        ? clientRatings.reduce((sum, r) => sum + r.score, 0) / clientRatings.length
         : 0;
       
       return {
@@ -224,6 +228,18 @@ export class MemStorage implements IStorage {
         registrationDate: client.createdAt,
       };
     });
+  }
+
+  async blockUser(userId: string): Promise<User | undefined> {
+    const user = this.users.get(userId);
+    if (!user) return undefined;
+    return this.updateUser(userId, { accountStatus: "blocked" });
+  }
+
+  async unblockUser(userId: string): Promise<User | undefined> {
+    const user = this.users.get(userId);
+    if (!user) return undefined;
+    return this.updateUser(userId, { accountStatus: "active" });
   }
 
   async createOtp(insertOtp: InsertOtpCode): Promise<OtpCode> {
