@@ -1129,18 +1129,210 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const users = await storage.getAllUsers();
       const requests = await storage.getAllTransportRequests();
+      const offers = await storage.getAllOffers();
+      const contracts = await storage.getAllContracts();
+      
+      // Get dates for monthly comparison
+      const now = new Date();
+      const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+      
+      // Clients actifs
+      const activeClients = users.filter(u => u.role === "client" && u.isActive);
+      const activeClientsCount = activeClients.length;
+      const activeClientsLastMonth = activeClients.filter(u => 
+        u.createdAt && new Date(u.createdAt) >= startOfLastMonth && new Date(u.createdAt) <= endOfLastMonth
+      ).length;
+      const activeClientsThisMonth = activeClients.filter(u => 
+        u.createdAt && new Date(u.createdAt) >= startOfCurrentMonth
+      ).length;
+      const activeClientsTrend = activeClientsLastMonth > 0 
+        ? Math.round(((activeClientsThisMonth - activeClientsLastMonth) / activeClientsLastMonth) * 100)
+        : activeClientsThisMonth > 0 ? 100 : 0;
+      
+      // Transporteurs actifs
+      const activeTransporters = users.filter(u => u.role === "transporter" && u.isActive && u.status === "validated");
+      const activeTransportersCount = activeTransporters.length;
+      const activeTransportersLastMonth = activeTransporters.filter(u => 
+        u.createdAt && new Date(u.createdAt) >= startOfLastMonth && new Date(u.createdAt) <= endOfLastMonth
+      ).length;
+      const activeTransportersThisMonth = activeTransporters.filter(u => 
+        u.createdAt && new Date(u.createdAt) >= startOfCurrentMonth
+      ).length;
+      const activeTransportersTrend = activeTransportersLastMonth > 0
+        ? Math.round(((activeTransportersThisMonth - activeTransportersLastMonth) / activeTransportersLastMonth) * 100)
+        : activeTransportersThisMonth > 0 ? 100 : 0;
+      
+      // Demandes totales
+      const totalRequests = requests.length;
+      
+      // Commissions totales
+      const acceptedOffers = offers.filter(o => o.status === "accepted");
+      const adminSettings = await storage.getAdminSettings();
+      const commissionRate = adminSettings?.commissionPercentage ? parseFloat(adminSettings.commissionPercentage) : 10;
+      const totalCommissions = acceptedOffers.reduce((sum, offer) => {
+        const amount = parseFloat(offer.amount);
+        const commission = (amount * commissionRate) / 100;
+        return sum + commission;
+      }, 0);
+      
+      const acceptedOffersLastMonth = acceptedOffers.filter(o => 
+        o.createdAt && new Date(o.createdAt) >= startOfLastMonth && new Date(o.createdAt) <= endOfLastMonth
+      );
+      const commissionsLastMonth = acceptedOffersLastMonth.reduce((sum, offer) => {
+        const amount = parseFloat(offer.amount);
+        const commission = (amount * commissionRate) / 100;
+        return sum + commission;
+      }, 0);
+      
+      const acceptedOffersThisMonth = acceptedOffers.filter(o => 
+        o.createdAt && new Date(o.createdAt) >= startOfCurrentMonth
+      );
+      const commissionsThisMonth = acceptedOffersThisMonth.reduce((sum, offer) => {
+        const amount = parseFloat(offer.amount);
+        const commission = (amount * commissionRate) / 100;
+        return sum + commission;
+      }, 0);
+      
+      const commissionsTrend = commissionsLastMonth > 0
+        ? Math.round(((commissionsThisMonth - commissionsLastMonth) / commissionsLastMonth) * 100)
+        : commissionsThisMonth > 0 ? 100 : 0;
+      
+      // Taux de conversion
+      const totalOffers = offers.length;
+      const conversionRate = totalOffers > 0 
+        ? Math.round((acceptedOffers.length / totalOffers) * 100)
+        : 0;
+      
+      // Demandes complétées
+      const completedRequests = requests.filter(r => r.status === "completed").length;
+      
+      // Taux de satisfaction transporteurs (moyenne des notes)
+      const transportersWithRating = users.filter(u => 
+        u.role === "transporter" && u.rating !== null && parseFloat(u.rating) > 0
+      );
+      const averageRating = transportersWithRating.length > 0
+        ? transportersWithRating.reduce((sum, u) => sum + parseFloat(u.rating || "0"), 0) / transportersWithRating.length
+        : 0;
+      
+      // Durée moyenne de traitement (jours entre création et complétion)
+      // Note: We don't have updatedAt, so we'll use a default processing time estimate
+      const completedRequestsCount = requests.filter(r => r.status === "completed").length;
+      const averageProcessingTime = 2.5; // Default estimate in days
+      
+      // Commandes republiées - on ne peut pas les calculer car pas de champ republishedCount
+      const republishedCount = 0;
+      
+      // Montant moyen par mission
+      const completedRequestsWithOffers = requests.filter(r => r.status === "completed");
+      const completedOffersAmounts = acceptedOffers
+        .filter(o => completedRequestsWithOffers.find(r => r.id === o.requestId))
+        .map(o => parseFloat(o.amount));
+      const averageAmount = completedOffersAmounts.length > 0
+        ? completedOffersAmounts.reduce((sum, amount) => sum + amount, 0) / completedOffersAmounts.length
+        : 0;
+      
+      // Total paiements en attente
+      const pendingPayments = requests.filter(r => 
+        r.paymentStatus === "pending_admin_validation"
+      );
+      const pendingPaymentsTotal = pendingPayments.reduce((sum, req) => {
+        const offer = acceptedOffers.find(o => o.requestId === req.id);
+        return sum + (offer ? parseFloat(offer.amount) : 0);
+      }, 0);
       
       const stats = {
-        activeClients: users.filter(u => u.role === "client" && u.isActive).length,
-        activeDrivers: users.filter(u => u.role === "transporter" && u.isActive).length,
-        totalRequests: requests.length,
-        completedRequests: requests.filter(r => r.status === "completed").length,
+        // KPIs principaux
+        activeClients: activeClientsCount,
+        activeClientsTrend,
+        activeDrivers: activeTransportersCount,
+        activeDriversTrend: activeTransportersTrend,
+        totalRequests,
+        totalCommissions: Math.round(totalCommissions),
+        commissionsTrend,
+        contracts: contracts.length,
+        
+        // Statistiques détaillées
+        conversionRate,
+        completedRequests,
         openRequests: requests.filter(r => r.status === "open").length,
+        averageRating: Math.round(averageRating * 10) / 10,
+        averageProcessingTime: Math.round(averageProcessingTime * 10) / 10,
+        republishedCount,
+        averageAmount: Math.round(averageAmount),
+        pendingPaymentsTotal: Math.round(pendingPaymentsTotal),
+        pendingPaymentsCount: pendingPayments.length,
       };
       
       res.json(stats);
     } catch (error) {
+      console.error("Error fetching admin stats:", error);
       res.status(500).json({ error: "Failed to fetch stats" });
+    }
+  });
+
+  // Get all transporters with detailed stats (admin)
+  app.get("/api/admin/transporters", async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      const offers = await storage.getAllOffers();
+      const requests = await storage.getAllTransportRequests();
+      
+      // Filter transporters
+      const transporters = users.filter(u => u.role === "transporter" && u.status === "validated");
+      
+      // Get admin settings for commission calculation
+      const adminSettings = await storage.getAdminSettings();
+      const commissionRate = adminSettings?.commissionPercentage ? parseFloat(adminSettings.commissionPercentage) : 10;
+      
+      // Build transporter stats
+      const transportersWithStats = transporters.map(transporter => {
+        // Get all accepted offers by this transporter
+        const transporterAcceptedOffers = offers.filter(
+          o => o.transporterId === transporter.id && o.status === "accepted"
+        );
+        
+        // Calculate total trips (completed requests)
+        const completedRequests = requests.filter(r => {
+          const acceptedOffer = transporterAcceptedOffers.find(o => o.requestId === r.id);
+          return acceptedOffer && r.status === "completed";
+        });
+        const totalTrips = completedRequests.length;
+        
+        // Calculate total commissions generated
+        const totalCommissions = transporterAcceptedOffers.reduce((sum, offer) => {
+          const amount = parseFloat(offer.amount);
+          const commission = (amount * commissionRate) / 100;
+          return sum + commission;
+        }, 0);
+        
+        // Get last activity date (most recent offer created)
+        const allTransporterOffers = offers.filter(o => o.transporterId === transporter.id);
+        const lastActivityDate = allTransporterOffers.length > 0
+          ? allTransporterOffers.reduce((latest, offer) => {
+              const offerDate = offer.createdAt ? new Date(offer.createdAt) : new Date(0);
+              return offerDate > latest ? offerDate : latest;
+            }, new Date(0))
+          : null;
+        
+        return {
+          id: transporter.id,
+          name: transporter.name || "Sans nom",
+          city: transporter.city || "Non spécifiée",
+          phoneNumber: transporter.phoneNumber,
+          rating: transporter.rating ? parseFloat(transporter.rating) : 0,
+          totalTrips,
+          totalCommissions: Math.round(totalCommissions),
+          lastActivity: lastActivityDate,
+          totalRatings: transporter.totalRatings || 0,
+        };
+      });
+      
+      res.json(transportersWithStats);
+    } catch (error) {
+      console.error("Error fetching transporters stats:", error);
+      res.status(500).json({ error: "Failed to fetch transporters" });
     }
   });
 

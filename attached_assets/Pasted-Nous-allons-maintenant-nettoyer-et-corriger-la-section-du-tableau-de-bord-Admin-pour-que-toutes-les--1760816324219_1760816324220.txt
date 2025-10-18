@@ -1,0 +1,132 @@
+Nous allons maintenant nettoyer et corriger la section du tableau de bord Admin pour que toutes les statistiques et indicateurs soient basés sur des données réelles et dynamiques issues de CamionBack.
+
+🧮 1️⃣ – Réinitialisation et recalcul des statistiques principales (haut de page)
+🔹 Objectif :
+
+Corriger les valeurs fixes actuelles et connecter chaque statistique à ses valeurs dynamiques réelles issues de la base de données.
+
+🔹 Statistiques actuelles à corriger :
+
+Les quatre blocs en haut de la page Admin doivent afficher des valeurs réelles, calculées automatiquement :
+
+Indicateur	Source de données	Valeur initiale (avant hébergement)	Évolution mensuelle
+Clients actifs	Nombre total de comptes clients validés	0	+X% calculé sur 30 derniers jours
+Transporteurs actifs	Nombre total de transporteurs validés	0	+X% calculé sur 30 derniers jours
+ajouter Demandes totales	Total des commandes créées par les clients	0	Pas de %
+Commissions totales (MAD)	Somme de toutes les commissions générées sur les offres acceptées	0 MAD	+X% sur 30 derniers jours et garder lindicateur Contrats comme indiqué actuellement 
+🔹 Important :
+Toutes les valeurs doivent être réinitialisées à 0 avant hébergement officiel, pour un départ propre.
+Les pourcentages d’évolution mensuelle doivent ensuite se baser sur la variation réelle entre le mois en cours et le mois précédent.
+
+📊 2️⃣ – Rubrique “Statistiques détaillées”
+🔹 Corriger les indicateurs existants :
+
+Actuellement :
+
+Taux de conversion (75%)
+
+Offres acceptées / Total des offres
+
+Demandes complétées (342 / 456)
+
+👉 Corrige-les pour qu’ils se basent sur les valeurs réelles issues des offres et commandes.
+
+🔹 Calcul attendu :
+
+Taux de conversion = (Offres acceptées / Total des offres) × 100
+
+Demandes complétées = Nombre de commandes marquées “terminées”
+
+Demandes totales = Total des commandes créées
+
+🔹 Autres statistiques utiles à ajouter :
+
+Voici quelques propositions concrètes basées sur les données disponibles dans CamionBack :
+
+Taux de satisfaction transporteurs
+Moyenne des notes laissées par les clients sur toutes les commandes terminées.
+
+Exemple d’affichage : ⭐ 4.6 / 5
+
+Durée moyenne de traitement des commandes
+Moyenne du délai (en jours) entre la date de création d’une commande et sa validation finale.
+
+Exemple : ⏱️ 2.8 jours
+
+Nombre de commandes republiées
+Nombre de commandes que les clients ont republiées après une annulation ou refus.
+
+Montant moyen par mission
+Calcul : Total des montants payés / Nombre de commandes terminées.
+
+Total des paiements en attente (MAD)
+Somme de toutes les commandes marquées “À payer” côté admin.
+
+👉 Ces indicateurs permettront à l’équipe de suivre la performance opérationnelle et financière de CamionBack en temps réel.
+
+🚛 3️⃣ – Vue “Transporteurs” : amélioration et extension
+🔹 Objectif :
+
+Rendre la section “Meilleurs transporteurs” plus complète et interactive.
+
+🔹 Améliorations à appliquer :
+
+Afficher tous les transporteurs, pas seulement les meilleurs.
+
+Pour chaque transporteur, afficher les informations suivantes :
+
+Nom complet
+
+Ville de résidence
+
+Numéro de téléphone
+
+Note moyenne (⭐ basée sur les évaluations clients)
+
+Nombre de trajets effectués
+
+Total des commissions générées
+
+Date de dernière activité
+
+Filtres dynamiques :
+
+Filtrer par ville (liste déroulante des villes disponibles).
+
+Rechercher par nom ou numéro de téléphone (barre de recherche).
+
+Classement dynamique :
+
+Possibilité de trier par note, nombre de trajets, ou commissions totales.
+
+🔹 Calculs à corriger :
+
+La colonne Note doit être calculée à partir de la moyenne réelle des évaluations clients.
+
+Trajets = nombre de commandes terminées par ce transporteur.
+
+Commissions = somme totale des commissions générées sur ses missions.
+
+🎨 4️⃣ – Design et cohérence visuelle
+
+Garder le même style graphique global du tableau de bord (cards + graphiques).
+
+Mettre à jour les graphiques en bas de page pour refléter les données réelles :
+
+Un graphique “Évolution des commandes mensuelles” (barres).
+
+Un graphique “Répartition des types de chargement” (Retour / Groupage).
+
+Un graphique “Activité transporteurs par ville” (camembert).
+
+✅ 5️⃣ – Résumé des actions à effectuer
+
+Réinitialiser toutes les statistiques hautes à 0.
+
+Reconnecter les indicateurs à leurs données dynamiques.
+
+Ajouter de nouveaux KPIs pertinents (satisfaction, délai, republiées, etc.).
+
+Corriger la vue “Transporteurs” avec affichage complet, filtres et recherche.
+
+Mettre à jour tous les calculs pour être cohérents avec la base réelle.
