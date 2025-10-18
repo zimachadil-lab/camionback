@@ -82,13 +82,41 @@ Preferred communication style: Simple, everyday language.
 
 **Backend Endpoints:**
 - GET `/api/requests/:id/accepted-transporter` - Retrieves accepted transporter info with commission calculation
-- POST `/api/requests/:id/complete` - Marks accepted request as completed
+- POST `/api/requests/:id/complete` - Marks accepted request as completed with transporter rating (1-5 stars)
 - POST `/api/requests/:id/republish` - Republishes accepted/completed request, deletes all offers, resets to open status
 
 **Key Implementation Details:**
 - `deleteOffersByRequest(requestId)` method in storage layer ensures clean slate for republished requests
 - Transporter visibility in "Disponibles" filtered by existing offers (via `hasOfferForRequest`)
 - Republishing removes this filter by deleting all offers, allowing fresh bidding
+
+### Transporter Rating System
+
+**Rating Workflow:**
+1. Client marks request as "Terminée" → Rating dialog appears
+2. Client rates transporter (1-5 stars, mandatory)
+3. Backend calculates new average: `((currentRating * totalRatings) + newRating) / (totalRatings + 1)`
+4. Transporter stats updated: `rating`, `totalRatings`, `totalTrips`
+5. Request status changes to "completed"
+
+**Rating Display:**
+- Offer cards show: 5 yellow stars (filled according to rating) + average score (e.g., "4.3") + trip count (e.g., "12 courses réalisées")
+- Rating scale: decimal (3,2) precision
+- Stats tracked: `totalRatings` (number of reviews), `totalTrips` (completed orders), `rating` (weighted average)
+
+**Database Schema:**
+- `users.rating`: decimal (average rating for transporters)
+- `users.totalRatings`: integer (number of ratings received)
+- `users.totalTrips`: integer (number of completed trips)
+
+### Mobile Responsive Design
+
+**Mobile-First Adaptations:**
+- Popups/Dialogs: `max-w-[90vw] sm:max-w-md` for responsive sizing on small screens
+- Button layouts: `flex-col sm:flex-row` to stack vertically on mobile
+- Button text: adaptive labels (e.g., "Infos transporteur" → "Infos" on very small screens)
+- Button widths: `w-full sm:w-auto` for full-width buttons on mobile
+- No horizontal scrolling required for any UI elements
 
 ### File Upload & Storage
 

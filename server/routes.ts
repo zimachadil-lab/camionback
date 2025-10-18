@@ -431,10 +431,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Mark a request as completed
+  // Mark a request as completed with rating
   app.post("/api/requests/:id/complete", async (req, res) => {
     try {
+      const { rating } = req.body;
       const request = await storage.getTransportRequest(req.params.id);
+      
       if (!request) {
         return res.status(404).json({ error: "Request not found" });
       }
@@ -443,11 +445,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Only accepted requests can be marked as completed" });
       }
 
+      if (!rating || rating < 1 || rating > 5) {
+        return res.status(400).json({ error: "Valid rating (1-5) is required" });
+      }
+
+      // Get the accepted offer to find the transporter
+      if (!request.acceptedOfferId) {
+        return res.status(400).json({ error: "No accepted offer found" });
+      }
+
+      const offer = await storage.getOffer(request.acceptedOfferId);
+      if (!offer) {
+        return res.status(404).json({ error: "Accepted offer not found" });
+      }
+
+      // Get transporter
+      const transporter = await storage.getUser(offer.transporterId);
+      if (!transporter) {
+        return res.status(404).json({ error: "Transporter not found" });
+      }
+
+      // Calculate new average rating
+      const currentRating = parseFloat(transporter.rating || "0");
+      const currentTotalRatings = transporter.totalRatings || 0;
+      const newTotalRatings = currentTotalRatings + 1;
+      const newAverageRating = ((currentRating * currentTotalRatings) + rating) / newTotalRatings;
+
+      // Update transporter stats
+      await storage.updateUser(offer.transporterId, {
+        rating: newAverageRating.toFixed(2),
+        totalRatings: newTotalRatings,
+        totalTrips: (transporter.totalTrips || 0) + 1,
+      });
+
+      // Mark request as completed
       const updatedRequest = await storage.updateTransportRequest(req.params.id, {
         status: "completed",
       });
 
-      res.json({ success: true, request: updatedRequest });
+      res.json({ 
+        success: true, 
+        request: updatedRequest,
+        transporter: {
+          id: transporter.id,
+          newRating: newAverageRating.toFixed(2),
+          totalRatings: newTotalRatings,
+          totalTrips: (transporter.totalTrips || 0) + 1,
+        }
+      });
     } catch (error) {
       res.status(500).json({ error: "Failed to complete request" });
     }

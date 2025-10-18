@@ -1,0 +1,70 @@
+Tout fonctionne globalement bien, mais il faut revoir certains points de design et ajouter la nouvelle fonctionnalité de notation des transporteurs.
+
+🎨 1️⃣ Ajustements de design sur mobile
+
+Sur mobile (vue téléphone), plusieurs éléments sortent du cadre :
+
+La popup “Infos transporteur” dépasse de l’écran quand on clique dessus.
+
+La liste des commandes validées (la partie “statut” et ses boutons) déborde également du cadre.
+
+Lorsque la commande passe en “Terminée”, le bouton “Republier” n’apparaît pas, il est décalé trop à droite (hors du cadre visible).
+👉 Merci de recentrer tous ces éléments pour un affichage propre et responsive :
+
+Utiliser un conteneur centré et redimensionné automatiquement sur mobile.
+
+Veiller à ce que la popup s’adapte à la largeur du téléphone (max-width ~90%).
+
+Pour la liste des commandes, que tous les boutons restent visibles sans défilement horizontal.
+
+⭐ 2️⃣ Nouvelle fonctionnalité : notation du transporteur
+
+Quand un client marque une commande comme “Terminée” :
+
+Avant de valider définitivement, afficher une petite fenêtre (popup) demandant de noter le transporteur :
+
+“Merci d’évaluer le transporteur pour cette commande.”
+
+5 étoiles jaunes à cliquer (notation de 1 à 5).
+
+Bouton “Valider la note”.
+
+Une fois la note enregistrée :
+
+Le transporteur est noté dans la base (champ rating ou averageRating).
+
+La commande est alors déplacée vers la rubrique “Terminées” comme actuellement.
+
+Le popup se ferme et la liste s’actualise.
+
+💡 Détails fonctionnels :
+
+La note doit être liée au transporteur et moyennée avec ses précédentes évaluations.
+
+Exemples de champs à stocker :
+
+driver.totalRatings
+
+driver.averageRating
+
+driver.completedOrders
+
+Dans le profil transporteur visible côté client (lors de la réception des offres) :
+
+Afficher maintenant les étoiles jaunes remplies selon la moyenne réelle.
+
+Ajouter aussi un indicateur du type :
+
+“⭐ 4.3 (12 courses réalisées)”
+
+📱 3️⃣ Résumé du comportement attendu
+
+Client clique “Infos transporteur” → popup centrée et responsive.
+
+Statut/Commandes → tous les boutons visibles et correctement alignés.
+
+Client choisit “Terminée” → popup d’évaluation du transporteur → saisie des étoiles → validation.
+
+Note enregistrée → commande déplacée vers “Terminées”.
+
+Côté client, les profils transporteurs afficheront désormais leurs vraies notes et nombre de commandes effectuées.

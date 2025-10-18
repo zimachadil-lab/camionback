@@ -58,12 +58,15 @@ export function OfferCard({ offer, onAccept, onChat }: OfferCardProps) {
                   className={`w-4 h-4 ${
                     i < Math.floor(offer.rating)
                       ? "fill-yellow-400 text-yellow-400"
-                      : "text-muted"
+                      : "text-gray-300"
                   }`}
                 />
               ))}
-              <span className="text-sm text-muted-foreground ml-1">
-                ({offer.totalTrips} trajets)
+              <span className="text-sm font-medium text-foreground ml-1">
+                {offer.rating > 0 ? offer.rating.toFixed(1) : "0.0"}
+              </span>
+              <span className="text-sm text-muted-foreground">
+                ({offer.totalTrips} {offer.totalTrips === 1 ? "course réalisée" : "courses réalisées"})
               </span>
             </div>
 

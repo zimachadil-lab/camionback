@@ -12,7 +12,8 @@ export const users = pgTable("users", {
   name: text("name"),
   city: text("city"), // City of residence
   truckPhotos: text("truck_photos").array(), // For transporters
-  rating: decimal("rating", { precision: 3, scale: 2 }).default("0"), // For transporters
+  rating: decimal("rating", { precision: 3, scale: 2 }).default("0"), // Average rating for transporters
+  totalRatings: integer("total_ratings").default(0), // Number of ratings received
   totalTrips: integer("total_trips").default(0), // For transporters
   status: text("status"), // 'pending', 'validated' - for transporters only
   isActive: boolean("is_active").default(true),

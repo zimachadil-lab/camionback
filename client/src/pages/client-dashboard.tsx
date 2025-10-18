@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw } from "lucide-react";
+import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { NewRequestForm } from "@/components/client/new-request-form";
 import { OfferCard } from "@/components/client/offer-card";
@@ -53,9 +53,9 @@ function RequestWithOffers({ request, onAcceptOffer, onChat, onDelete, onViewTra
   return (
     <>
       <div className="space-y-4">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <h3 className="text-xl font-semibold">{request.referenceId}</h3>
               {isAccepted && (
                 <Badge variant="default" className="bg-green-600">
@@ -67,7 +67,7 @@ function RequestWithOffers({ request, onAcceptOffer, onChat, onDelete, onViewTra
               {request.fromCity} → {request.toCity}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {isAccepted && (
               <>
                 <Button
@@ -75,10 +75,11 @@ function RequestWithOffers({ request, onAcceptOffer, onChat, onDelete, onViewTra
                   size="sm"
                   onClick={() => onViewTransporter(request.id)}
                   data-testid={`button-view-transporter-${request.id}`}
-                  className="gap-2"
+                  className="gap-2 flex-1 sm:flex-none"
                 >
                   <Info className="h-4 w-4" />
-                  Infos transporteur
+                  <span className="hidden xs:inline">Infos transporteur</span>
+                  <span className="xs:hidden">Infos</span>
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -86,6 +87,7 @@ function RequestWithOffers({ request, onAcceptOffer, onChat, onDelete, onViewTra
                       variant="outline"
                       size="sm"
                       data-testid={`button-update-status-${request.id}`}
+                      className="flex-1 sm:flex-none"
                     >
                       Mettre à jour
                     </Button>
@@ -184,6 +186,10 @@ export default function ClientDashboard() {
   const [contactInfo, setContactInfo] = useState<any>(null);
   const [showTransporterInfo, setShowTransporterInfo] = useState(false);
   const [transporterInfo, setTransporterInfo] = useState<any>(null);
+  const [showRatingDialog, setShowRatingDialog] = useState(false);
+  const [ratingValue, setRatingValue] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [ratingRequestId, setRatingRequestId] = useState<string>("");
 
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
 
@@ -316,7 +322,43 @@ export default function ClientDashboard() {
   };
 
   const handleUpdateStatus = (requestId: string, action: string) => {
-    updateStatusMutation.mutate({ requestId, action });
+    if (action === "completed") {
+      // Show rating dialog before completing
+      setRatingRequestId(requestId);
+      setRatingValue(0);
+      setHoverRating(0);
+      setShowRatingDialog(true);
+    } else {
+      // For republish action
+      updateStatusMutation.mutate({ requestId, action });
+    }
+  };
+
+  const completeWithRatingMutation = useMutation({
+    mutationFn: async ({ requestId, rating }: { requestId: string; rating: number }) => {
+      const response = await fetch(`/api/requests/${requestId}/complete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ rating }),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to complete request with rating");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/offers"] });
+      setShowRatingDialog(false);
+    },
+  });
+
+  const handleSubmitRating = () => {
+    if (ratingValue > 0 && ratingRequestId) {
+      completeWithRatingMutation.mutate({ requestId: ratingRequestId, rating: ratingValue });
+    }
   };
 
   const handleChat = (transporterId: string, transporterName: string, requestId: string) => {
@@ -412,9 +454,9 @@ export default function ClientDashboard() {
                 <div className="space-y-4">
                   {completedRequests.map((request: any) => (
                     <div key={request.id} className="p-4 rounded-lg border space-y-3">
-                      <div className="flex items-center justify-between gap-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <p className="font-semibold">{request.referenceId}</p>
                             <Badge variant="default" className="bg-gray-600">
                               Terminée
@@ -425,23 +467,24 @@ export default function ClientDashboard() {
                           </p>
                         </div>
                         {request.acceptedOfferId && (
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleViewTransporter(request.id)}
                               data-testid={`button-view-transporter-completed-${request.id}`}
-                              className="gap-2"
+                              className="gap-2 flex-1 sm:flex-none"
                             >
                               <Info className="h-4 w-4" />
-                              Infos transporteur
+                              <span className="hidden xs:inline">Infos transporteur</span>
+                              <span className="xs:hidden">Infos</span>
                             </Button>
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleUpdateStatus(request.id, "republish")}
                               data-testid={`button-republish-completed-${request.id}`}
-                              className="gap-2"
+                              className="gap-2 flex-1 sm:flex-none"
                             >
                               <RotateCcw className="h-4 w-4" />
                               Republier
@@ -469,7 +512,7 @@ export default function ClientDashboard() {
       )}
 
       <AlertDialog open={showContactDialog} onOpenChange={setShowContactDialog}>
-        <AlertDialogContent className="max-w-md">
+        <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
           <AlertDialogHeader>
             <div className="flex items-center gap-2 mb-2">
               <div className="w-12 h-12 rounded-full bg-green-600 flex items-center justify-center">
@@ -512,7 +555,7 @@ export default function ClientDashboard() {
       </AlertDialog>
 
       <AlertDialog open={showTransporterInfo} onOpenChange={setShowTransporterInfo}>
-        <AlertDialogContent className="max-w-md">
+        <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
           <AlertDialogHeader>
             <div className="flex items-center gap-2 mb-2">
               <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center">
@@ -577,6 +620,68 @@ export default function ClientDashboard() {
               data-testid="button-close-transporter-info"
             >
               Fermer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showRatingDialog} onOpenChange={setShowRatingDialog}>
+        <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-12 h-12 rounded-full bg-yellow-500 flex items-center justify-center">
+                <Star className="w-6 h-6 text-white fill-white" />
+              </div>
+              <AlertDialogTitle className="text-xl">Évaluer le transporteur</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="space-y-6 text-base">
+              <p className="text-foreground text-center">
+                Merci d'évaluer le transporteur pour cette commande.
+              </p>
+              
+              <div className="flex justify-center items-center gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setRatingValue(star)}
+                    onMouseEnter={() => setHoverRating(star)}
+                    onMouseLeave={() => setHoverRating(0)}
+                    className="p-1 transition-transform hover:scale-110"
+                    data-testid={`button-star-${star}`}
+                  >
+                    <Star
+                      className={`w-10 h-10 ${
+                        star <= (hoverRating || ratingValue)
+                          ? "fill-yellow-400 text-yellow-400"
+                          : "text-gray-300"
+                      } transition-colors`}
+                    />
+                  </button>
+                ))}
+              </div>
+
+              {ratingValue > 0 && (
+                <p className="text-center text-sm text-muted-foreground">
+                  Note sélectionnée : {ratingValue} {ratingValue === 1 ? "étoile" : "étoiles"}
+                </p>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel 
+              onClick={() => setShowRatingDialog(false)}
+              data-testid="button-cancel-rating"
+            >
+              Annuler
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleSubmitRating}
+              disabled={ratingValue === 0 || completeWithRatingMutation.isPending}
+              className="bg-yellow-500 hover:bg-yellow-600 text-white"
+              data-testid="button-submit-rating"
+            >
+              {completeWithRatingMutation.isPending ? "Enregistrement..." : "Valider la note"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
