@@ -466,6 +466,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Transporter not found" });
       }
 
+      // Check if rating already exists for this request
+      const existingRating = await storage.getRatingByRequestId(req.params.id);
+      if (existingRating) {
+        return res.status(400).json({ error: "This request has already been rated" });
+      }
+
+      // Create individual rating record
+      await storage.createRating({
+        requestId: req.params.id,
+        transporterId: offer.transporterId,
+        clientId: request.clientId,
+        score: rating,
+        comment: null,
+      });
+
       // Calculate new average rating
       const currentRating = parseFloat(transporter.rating || "0");
       const currentTotalRatings = transporter.totalRatings || 0;
