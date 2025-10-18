@@ -24,6 +24,8 @@ interface RequestCardProps {
     status: string;
     viewCount?: number;
     createdAt?: Date | string;
+    dateFlexible?: boolean | null;
+    invoiceRequired?: boolean | null;
   };
   onMakeOffer: (requestId: string) => void;
   showOfferButton?: boolean;
@@ -126,7 +128,7 @@ export function RequestCard({
         )}
 
         {/* Statistics */}
-        <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+        <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
           {offerCount !== undefined && (
             <div className="flex items-center gap-1">
               <FileText className="w-3 h-3" />
@@ -139,8 +141,20 @@ export function RequestCard({
               <span>{request.viewCount} vue{request.viewCount > 1 ? 's' : ''}</span>
             </div>
           )}
+          {request.dateFlexible !== undefined && request.dateFlexible !== null && (
+            <div className="flex items-center gap-1">
+              <Calendar className="w-3 h-3" />
+              <span>Date flexible : {request.dateFlexible ? 'Oui' : 'Non'}</span>
+            </div>
+          )}
+          {request.invoiceRequired !== undefined && request.invoiceRequired !== null && (
+            <div className="flex items-center gap-1">
+              <FileText className="w-3 h-3" />
+              <span>Facture TTC : {request.invoiceRequired ? 'Oui' : 'Non'}</span>
+            </div>
+          )}
           {createdAt && (
-            <div className="flex items-center gap-1 col-span-3">
+            <div className="flex items-center gap-1 col-span-2">
               <Calendar className="w-3 h-3" />
               <span>Créée le {format(createdAt, "d MMM", { locale: fr })}</span>
             </div>
