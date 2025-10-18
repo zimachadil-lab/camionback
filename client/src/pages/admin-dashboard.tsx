@@ -50,6 +50,7 @@ export default function AdminDashboard() {
   const [adminMessage, setAdminMessage] = useState("");
   const [transporterSearch, setTransporterSearch] = useState("");
   const [transporterCityFilter, setTransporterCityFilter] = useState("all");
+  const [clientSearch, setClientSearch] = useState("");
   const [assignOrderSearch, setAssignOrderSearch] = useState("");
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
   const [invoiceDetailsOpen, setInvoiceDetailsOpen] = useState(false);
@@ -150,6 +151,15 @@ export default function AdminDashboard() {
     queryKey: ["/api/admin/transporters"],
     queryFn: async () => {
       const response = await fetch("/api/admin/transporters");
+      return response.json();
+    },
+  });
+
+  // Fetch clients with stats
+  const { data: clientsWithStats = [] } = useQuery({
+    queryKey: ["/api/admin/clients"],
+    queryFn: async () => {
+      const response = await fetch("/api/admin/clients");
       return response.json();
     },
   });
@@ -1178,6 +1188,121 @@ export default function AdminDashboard() {
                                   {transporter.lastActivity 
                                     ? new Date(transporter.lastActivity).toLocaleDateString("fr-FR")
                                     : "Aucune"}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    );
+                  })()
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="clients" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  Tous les clients
+                  <Badge className="ml-2" data-testid="badge-total-clients">
+                    Total: {clientsWithStats.filter((c: any) => {
+                      const searchLower = clientSearch.toLowerCase();
+                      return !clientSearch || 
+                        c.name.toLowerCase().includes(searchLower) || 
+                        c.phoneNumber.includes(clientSearch) ||
+                        c.clientId.toLowerCase().includes(searchLower);
+                    }).length}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex gap-4 flex-wrap">
+                  <div className="relative flex-1 min-w-[200px]">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Rechercher par ID, nom ou téléphone..."
+                      value={clientSearch}
+                      onChange={(e) => setClientSearch(e.target.value)}
+                      className="pl-10"
+                      data-testid="input-search-client"
+                    />
+                  </div>
+                </div>
+
+                {clientsWithStats.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">Aucun client enregistré</p>
+                  </div>
+                ) : (
+                  (() => {
+                    const filteredClients = clientsWithStats.filter((c: any) => {
+                      const searchLower = clientSearch.toLowerCase();
+                      return !clientSearch || 
+                        c.name.toLowerCase().includes(searchLower) || 
+                        c.phoneNumber.includes(clientSearch) ||
+                        c.clientId.toLowerCase().includes(searchLower);
+                    });
+
+                    return filteredClients.length === 0 ? (
+                      <div className="text-center py-8">
+                        <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground">Aucun client trouvé avec ces critères</p>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>ID Client</TableHead>
+                              <TableHead>Nom</TableHead>
+                              <TableHead>Téléphone</TableHead>
+                              <TableHead>Commandes totales</TableHead>
+                              <TableHead>Commandes complétées</TableHead>
+                              <TableHead>Satisfaction</TableHead>
+                              <TableHead>Date d'inscription</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {filteredClients.map((client: any) => (
+                              <TableRow key={client.id}>
+                                <TableCell className="font-medium" data-testid={`text-client-id-${client.id}`}>
+                                  {client.clientId}
+                                </TableCell>
+                                <TableCell data-testid={`text-client-name-${client.id}`}>
+                                  {client.name}
+                                </TableCell>
+                                <TableCell>
+                                  <a 
+                                    href={`tel:${client.phoneNumber}`}
+                                    className="text-primary hover:underline"
+                                    data-testid={`link-client-phone-${client.id}`}
+                                  >
+                                    {client.phoneNumber}
+                                  </a>
+                                </TableCell>
+                                <TableCell data-testid={`text-total-orders-${client.id}`}>
+                                  {client.totalOrders}
+                                </TableCell>
+                                <TableCell data-testid={`text-completed-orders-${client.id}`}>
+                                  {client.completedOrders}
+                                </TableCell>
+                                <TableCell data-testid={`text-client-rating-${client.id}`}>
+                                  {client.averageRating > 0 ? (
+                                    <div className="flex items-center gap-1">
+                                      ⭐ {client.averageRating.toFixed(1)}
+                                    </div>
+                                  ) : (
+                                    <span className="text-muted-foreground">Aucune note</span>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-sm text-muted-foreground" data-testid={`text-registration-date-${client.id}`}>
+                                  {client.registrationDate 
+                                    ? new Date(client.registrationDate).toLocaleDateString("fr-FR")
+                                    : "N/A"}
                                 </TableCell>
                               </TableRow>
                             ))}
