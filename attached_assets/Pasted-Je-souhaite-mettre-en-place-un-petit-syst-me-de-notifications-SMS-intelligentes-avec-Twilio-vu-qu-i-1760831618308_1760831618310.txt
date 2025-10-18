@@ -1,0 +1,65 @@
+Je souhaite mettre en place un petit système de notifications SMS intelligentes avec Twilio (vu qu’il est déjà intégré à Replit).
+L’objectif est d’envoyer uniquement 2 types de SMS importants pour limiter les coûts :
+
+📱 1️⃣ SMS au client — uniquement à la première offre reçue
+🎯 Objectif :
+
+Quand un client reçoit sa première offre de transporteur pour une commande, il doit recevoir un seul SMS d’alerte.
+Aucune notification SMS ne doit être envoyée pour les offres suivantes sur cette même commande.
+
+🔧 Détails techniques :
+
+Vérifier si offers.length === 1 pour la commande.
+
+Si oui → envoyer le SMS via Twilio et ajouter un flag smsSent: true dans la commande.
+
+Si non → ne rien envoyer.
+
+💬 Contenu du SMS :
+
+Expéditeur : CamionBack
+Texte :
+
+🚚 CamionBack : Vous avez reçu une nouvelle offre de chargement !
+Consultez votre compte CamionBack dès maintenant pour bloquer votre camion au meilleur prix.
+
+🚛 2️⃣ SMS au transporteur — à chaque offre validée
+🎯 Objectif :
+
+Quand un client accepte une offre, le transporteur sélectionné doit recevoir un SMS immédiat confirmant la validation.
+
+💬 Contenu du SMS :
+
+Expéditeur : CamionBack
+Texte :
+
+✅ CamionBack : Félicitations !
+Votre offre sur la commande [CMD-XXXX] a été acceptée.
+Contactez le client dès que possible pour organiser le transport.
+
+⚙️ 3️⃣ Détails techniques de l’intégration
+Exemple d’implémentation :
+import twilio from "twilio";
+
+const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_TOKEN);
+
+async function sendSMS(to, message) {
+  try {
+    await client.messages.create({
+      from: process.env.TWILIO_PHONE, // numéro Twilio configuré
+      to: `+212${to.slice(1)}`,       // convertit 06xxxxx → +2126xxxxx
+      body: message,
+    });
+    console.log("✅ SMS envoyé à", to);
+  } catch (error) {
+    console.error("❌ Erreur d’envoi SMS :", error);
+  }
+}
+
+Points clés :
+
+SMS 1 (client) → déclenché à la création de la première offre (offers.length === 1).
+
+SMS 2 (transporteur) → déclenché quand l’offre passe à status = "accepted".
+
+Les autres cas (offres suivantes, autres transporteurs non sélectionnés) → aucun SMS.
