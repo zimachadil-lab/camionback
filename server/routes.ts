@@ -11,7 +11,8 @@ import {
   insertTransportRequestSchema,
   insertOfferSchema,
   insertChatMessageSchema,
-  insertNotificationSchema
+  insertNotificationSchema,
+  insertEmptyReturnSchema
 } from "@shared/schema";
 
 const upload = multer({ 
@@ -1148,6 +1149,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to mark all as read" });
+    }
+  });
+
+  // Empty Returns routes
+  app.post("/api/empty-returns", async (req, res) => {
+    try {
+      const validatedData = insertEmptyReturnSchema.parse(req.body);
+      const emptyReturn = await storage.createEmptyReturn(validatedData);
+      res.json(emptyReturn);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(500).json({ error: "Échec de la création du retour à vide" });
+    }
+  });
+
+  app.get("/api/empty-returns", async (req, res) => {
+    try {
+      // Expire old returns before fetching
+      await storage.expireOldReturns();
+      const emptyReturns = await storage.getActiveEmptyReturns();
+      res.json(emptyReturns);
+    } catch (error) {
+      res.status(500).json({ error: "Échec de la récupération des retours à vide" });
+    }
+  });
+
+  app.get("/api/empty-returns/transporter/:transporterId", async (req, res) => {
+    try {
+      const { transporterId } = req.params;
+      const emptyReturns = await storage.getEmptyReturnsByTransporter(transporterId);
+      res.json(emptyReturns);
+    } catch (error) {
+      res.status(500).json({ error: "Échec de la récupération des retours à vide" });
+    }
+  });
+
+  app.patch("/api/empty-returns/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const emptyReturn = await storage.updateEmptyReturn(id, req.body);
+      
+      if (!emptyReturn) {
+        return res.status(404).json({ error: "Retour à vide non trouvé" });
+      }
+      
+      res.json(emptyReturn);
+    } catch (error) {
+      res.status(500).json({ error: "Échec de la mise à jour du retour à vide" });
     }
   });
 
