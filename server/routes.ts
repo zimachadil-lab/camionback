@@ -14,6 +14,7 @@ import {
   insertNotificationSchema,
   insertEmptyReturnSchema
 } from "@shared/schema";
+import { sendFirstOfferSMS, sendOfferAcceptedSMS } from "./sms";
 
 const upload = multer({ 
   storage: multer.memoryStorage(),
@@ -1021,6 +1022,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: `${transporter?.name || "Un transporteur"} a soumis une offre de ${clientAmount} MAD pour votre demande ${request.referenceId}`,
           relatedId: offer.id
         });
+
+        // Send SMS to client if this is the first offer
+        const allOffers = await storage.getOffersByRequest(offer.requestId);
+        if (allOffers.length === 1 && !request.smsSent) {
+          const client = await storage.getUser(request.clientId);
+          if (client?.phoneNumber) {
+            const smsSent = await sendFirstOfferSMS(client.phoneNumber);
+            if (smsSent) {
+              // Mark SMS as sent to avoid sending again
+              await storage.updateTransportRequest(request.id, { smsSent: true });
+            }
+          }
+        }
       }
       
       res.json(offer);
