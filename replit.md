@@ -112,11 +112,29 @@ Preferred communication style: Simple, everyday language.
 ### Mobile Responsive Design
 
 **Mobile-First Adaptations:**
-- Popups/Dialogs: `max-w-[90vw] sm:max-w-md` for responsive sizing on small screens
+- Popups/Dialogs: `max-w-[90vw] sm:max-w-md` or `max-w-[95vw] sm:max-w-4xl` for responsive sizing on small screens
 - Button layouts: `flex-col sm:flex-row` to stack vertically on mobile
-- Button text: adaptive labels (e.g., "Infos transporteur" → "Infos" on very small screens)
+- Button text: adaptive labels (e.g., "Infos transporteur" → "Infos" on small screens using `sm:hidden` / `hidden sm:inline`)
 - Button widths: `w-full sm:w-auto` for full-width buttons on mobile
 - No horizontal scrolling required for any UI elements
+
+**Tailwind Breakpoint Usage:**
+- Default Tailwind `sm` breakpoint (640px) used for all responsive adaptations
+- Pattern: `sm:hidden` for content visible only on mobile (<640px), `hidden sm:inline` for content visible on desktop (≥640px)
+- Applied in: NotificationsPage ("Marquer comme lu" vs "Tout marquer comme lu"), ClientDashboard ("Infos" vs "Infos transporteur")
+
+**PhotoGalleryDialog Responsive Enhancements:**
+- Dialog width: `max-w-[95vw] sm:max-w-4xl` to prevent overflow on mobile
+- Navigation controls: `h-8 w-8 sm:h-10 sm:w-10` with icons `h-5 w-5 sm:h-6 sm:w-6`
+- Image scaling: `object-cover` on mobile for better aspect ratio, `object-contain` on desktop for full view
+- Miniatures: `w-16 h-16 sm:w-20 sm:h-20` for smaller thumbnails on mobile
+- Counter: `text-xs sm:text-sm` for compact display
+- Background opacity: `bg-background/90` for better contrast with navigation arrows
+
+**MessagesPage Navigation:**
+- Header component added with back button (ArrowLeft icon)
+- Back button navigates to "/" using wouter's `useLocation` hook
+- Container: `p-4 md:p-6 max-w-4xl mx-auto` for consistent responsive layout
 
 ### File Upload & Storage
 
