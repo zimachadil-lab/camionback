@@ -545,6 +545,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymentStatus: "awaiting_payment",
       });
 
+      // Update contract status to marked_paid_transporter
+      try {
+        const contract = await storage.getContractByRequestId(req.params.id);
+        if (contract) {
+          await storage.updateContract(contract.id, {
+            status: "marked_paid_transporter",
+          });
+        }
+      } catch (error) {
+        console.error("Failed to update contract status:", error);
+        // Continue anyway - contract update failure shouldn't block the payment status update
+      }
+
       // Create notification for client
       if (request.acceptedOfferId && request.clientId) {
         const acceptedOffer = await storage.getOffer(request.acceptedOfferId);
@@ -607,6 +620,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymentReceipt,
       });
 
+      // Update contract status to marked_paid_client
+      try {
+        const contract = await storage.getContractByRequestId(req.params.id);
+        if (contract) {
+          await storage.updateContract(contract.id, {
+            status: "marked_paid_client",
+          });
+        }
+      } catch (error) {
+        console.error("Failed to update contract status:", error);
+        // Continue anyway - contract update failure shouldn't block the payment status update
+      }
+
       res.json({ 
         success: true, 
         request: updatedRequest
@@ -638,6 +664,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymentStatus: "paid",
         paymentDate: new Date(),
       });
+
+      // Update contract status to completed
+      try {
+        const contract = await storage.getContractByRequestId(req.params.id);
+        if (contract) {
+          await storage.updateContract(contract.id, {
+            status: "completed",
+          });
+        }
+      } catch (error) {
+        console.error("Failed to update contract status:", error);
+        // Continue anyway - contract update failure shouldn't block the payment status update
+      }
 
       // Create notification for transporter
       if (request.acceptedOfferId && request.clientId) {
