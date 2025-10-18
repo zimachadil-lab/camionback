@@ -109,7 +109,7 @@ export default function TransporterRatings() {
               </p>
               <p className="text-sm text-gray-400 mt-2">
                 Continuez à effectuer vos livraisons pour bâtir votre réputation sur
-                CamionBack 🚛.
+                CamionBack.
               </p>
             </CardContent>
           </Card>
