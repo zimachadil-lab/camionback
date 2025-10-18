@@ -1256,6 +1256,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Contract routes
+  app.get("/api/contracts", async (req, res) => {
+    try {
+      const contracts = await storage.getAllContracts();
+      res.json(contracts);
+    } catch (error) {
+      res.status(500).json({ error: "Échec de la récupération des contrats" });
+    }
+  });
+
+  app.get("/api/contracts/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const contract = await storage.getContractById(id);
+      
+      if (!contract) {
+        return res.status(404).json({ error: "Contrat non trouvé" });
+      }
+      
+      res.json(contract);
+    } catch (error) {
+      res.status(500).json({ error: "Échec de la récupération du contrat" });
+    }
+  });
+
+  app.patch("/api/contracts/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+
+      if (!status) {
+        return res.status(400).json({ error: "status requis" });
+      }
+
+      const contract = await storage.updateContract(id, { status });
+      
+      if (!contract) {
+        return res.status(404).json({ error: "Contrat non trouvé" });
+      }
+      
+      res.json(contract);
+    } catch (error) {
+      res.status(500).json({ error: "Échec de la mise à jour du contrat" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // WebSocket server for real-time chat (using separate path to avoid Vite HMR conflict)
