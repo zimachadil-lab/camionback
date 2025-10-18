@@ -20,6 +20,7 @@ export interface IStorage {
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
   getPendingDrivers(): Promise<User[]>;
+  getNextClientId(): Promise<string>;
   
   // OTP operations
   createOtp(otp: InsertOtpCode): Promise<OtpCode>;
@@ -163,6 +164,30 @@ export class MemStorage implements IStorage {
     return Array.from(this.users.values()).filter(
       (user) => user.role === "transporter" && user.status === "pending"
     );
+  }
+
+  async getNextClientId(): Promise<string> {
+    const clients = Array.from(this.users.values()).filter(
+      (user) => user.role === "client" && user.clientId
+    );
+    
+    if (clients.length === 0) {
+      return "C-0001";
+    }
+    
+    // Extract numbers from clientIds and find the max
+    const clientNumbers = clients
+      .map(client => {
+        const match = client.clientId?.match(/C-(\d+)/);
+        return match ? parseInt(match[1], 10) : 0;
+      })
+      .filter(num => num > 0);
+    
+    const maxNumber = Math.max(...clientNumbers, 0);
+    const nextNumber = maxNumber + 1;
+    
+    // Format as C-XXXX with zero padding
+    return `C-${nextNumber.toString().padStart(4, '0')}`;
   }
 
   async createOtp(insertOtp: InsertOtpCode): Promise<OtpCode> {

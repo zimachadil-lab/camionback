@@ -149,6 +149,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update user role
       const updates: any = { role };
       
+      // If client, generate automatic clientId
+      if (role === "client") {
+        const clientId = await storage.getNextClientId();
+        updates.clientId = clientId;
+      }
+      
       // If transporter, set status to pending
       if (role === "transporter") {
         updates.status = "pending";

@@ -9,6 +9,7 @@ export const users = pgTable("users", {
   phoneNumber: text("phone_number").notNull().unique(),
   passwordHash: text("password_hash").notNull(), // Bcrypt hash of 6-digit PIN
   role: text("role"), // 'client', 'transporter', 'admin' - null until selected
+  clientId: text("client_id").unique(), // Auto-generated ID for clients (C-XXXX)
   name: text("name"),
   city: text("city"), // City of residence
   truckPhotos: text("truck_photos").array(), // For transporters

@@ -1,0 +1,96 @@
+Je souhaite maintenant ajouter une identification automatique des clients et une nouvelle vue “Clients” dans le panneau d’administration pour centraliser toutes les informations.
+
+👤 1️⃣ – Attribution automatique d’un ID client
+🔹 Objectif :
+
+Générer automatiquement un ID unique pour chaque nouveau client lors de sa souscription.
+Ce code servira d’identifiant interne et public pour le suivi des commandes et de la satisfaction.
+
+🔹 Format attendu :
+C-XXXX
+
+
+Exemples :
+
+C-0001
+
+C-0245
+
+C-1056
+
+Chaque nouvel utilisateur (rôle client) reçoit le prochain ID incrémenté automatiquement.
+
+🔹 Détails d’intégration :
+
+L’ID doit être enregistré dans la base de données utilisateur (clientId ou équivalent).
+
+Cet ID doit apparaître à la place du mot “Utilisateur” actuellement visible dans :
+
+Le burger menu côté client.
+
+Les zones où le nom du client est affiché (ex : détails de commande, historique, offres reçues, etc.).
+
+L’ID client doit aussi être visible côté admin à chaque fois qu’une commande, un message ou un contrat implique un client.
+
+🧾 2️⃣ – Nouvelle vue Admin : “Clients”
+🔹 Objectif :
+
+Ajouter une nouvelle section dans la barre de navigation Admin, à côté de “Transporteurs”, intitulée “Clients”.
+
+🔹 Contenu de la vue :
+
+Chaque ligne de la liste des clients doit contenir les informations suivantes :
+
+Champ	Description
+ID Client (C-XXXX)	Identifiant unique du client
+Nom complet (si renseigné)	Nom ou vide si non saisi
+Numéro de téléphone	Numéro utilisé pour la connexion
+Nombre de commandes publiées	Total des commandes créées
+Nombre de commandes terminées	Total des commandes clôturées
+Taux de satisfaction	Moyenne des notes laissées par le client sur ses missions terminées
+Date d’inscription	Date de création du compte client
+🔹 Fonctionnalités :
+
+Barre de recherche :
+
+Permet de rechercher un client par ID (C-XXXX) ou numéro de téléphone.
+
+Tri / filtres dynamiques :
+
+Possibilité de trier par nombre de commandes ou satisfaction.
+
+Pagination ou scroll infini si beaucoup de clients.
+
+Affichage responsive compatible mobile.
+
+🔹 Design :
+
+Style identique aux vues existantes (Transporteurs / Retours).
+
+Entête fixe avec compteur :
+
+Clients totaux : XX | Actifs : YY | Moyenne satisfaction : ZZ%
+
+Lignes avec icônes ou couleurs légères selon l’activité (ex. vert = client actif, gris = inactif).
+
+⚙️ 3️⃣ – Données dynamiques et cohérence
+
+Le nombre de commandes publiées et terminées doit se baser sur les vrais statuts des commandes liées à ce client.
+
+Le taux de satisfaction doit se baser sur la moyenne des évaluations laissées par ce client sur les transporteurs.
+
+Tous les champs doivent être mis à jour automatiquement à chaque action (nouvelle commande, commande terminée, note laissée, etc.).
+
+✅ 4️⃣ – Résumé des actions à implémenter
+
+Créer un champ “clientId” auto-généré au format C-XXXX.
+
+Remplacer le label “Utilisateur” par cet ID dans tout le front client et les vues liées.
+
+Créer une nouvelle rubrique Admin “Clients” dans la barre principale (à côté de “Transporteurs”).
+
+Afficher la liste complète des clients avec les colonnes : ID, téléphone, commandes publiées, terminées, satisfaction.
+
+Ajouter recherche par ID ou téléphone, tri et filtres.
+
+Lier toutes les données à la base existante en temps réel.
