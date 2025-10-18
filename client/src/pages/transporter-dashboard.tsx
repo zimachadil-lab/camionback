@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, Image as ImageIcon, Clock, Calendar } from "lucide-react";
+import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, Image as ImageIcon, Clock, Calendar, Flag } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { RequestCard } from "@/components/transporter/request-card";
 import { OfferForm } from "@/components/transporter/offer-form";
@@ -15,12 +15,22 @@ import { PhotoGalleryDialog } from "@/components/transporter/photo-gallery-dialo
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
 
 const moroccanCities = [
   "Toutes les villes", "Casablanca", "Rabat", "Marrakech", "Fès", "Tanger", 
   "Agadir", "Meknès", "Oujda", "Kenitra"
 ];
+
+const reportSchema = z.object({
+  description: z.string().min(10, "Description minimale: 10 caractères"),
+  type: z.string().min(1, "Type de problème requis"),
+});
 
 export default function TransporterDashboard() {
   const [, setLocation] = useLocation();
@@ -40,6 +50,8 @@ export default function TransporterDashboard() {
   const [returnFromCity, setReturnFromCity] = useState("");
   const [returnToCity, setReturnToCity] = useState("");
   const [returnDate, setReturnDate] = useState("");
+  const [showReportDialog, setShowReportDialog] = useState(false);
+  const [reportRequestId, setReportRequestId] = useState<string>("");
 
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
 
@@ -223,6 +235,57 @@ export default function TransporterDashboard() {
       });
     },
   });
+
+  const reportForm = useForm({
+    resolver: zodResolver(reportSchema),
+    defaultValues: {
+      description: "",
+      type: "",
+    },
+  });
+
+  const createReportMutation = useMutation({
+    mutationFn: async (data: { requestId: string; description: string; type: string }) => {
+      return await apiRequest("POST", "/api/reports", {
+        requestId: data.requestId,
+        reportedBy: user.id,
+        reportedAgainst: null, // will be determined by backend from request
+        type: data.type,
+        description: data.description,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Signalement envoyé",
+        description: "Votre signalement a été envoyé à l'équipe support",
+      });
+      setShowReportDialog(false);
+      reportForm.reset();
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Échec de l'envoi du signalement",
+      });
+    },
+  });
+
+  const handleOpenReportDialog = (requestId: string) => {
+    setReportRequestId(requestId);
+    reportForm.reset();
+    setShowReportDialog(true);
+  };
+
+  const handleSubmitReport = (data: any) => {
+    if (reportRequestId) {
+      createReportMutation.mutate({
+        requestId: reportRequestId,
+        description: data.description,
+        type: data.type,
+      });
+    }
+  };
 
   const handleDeclineRequest = (requestId: string) => {
     if (confirm("Voulez-vous vraiment masquer cette commande ? Elle ne sera plus visible dans votre liste.")) {
@@ -505,7 +568,7 @@ export default function TransporterDashboard() {
                               <Phone className="h-4 w-4" />
                               Voir les détails
                             </Button>
-                            {!isMarkedForBilling && (
+                            {!isMarkedForBilling && request.status !== "completed" && request.paymentStatus !== "paid" && (
                               <Button
                                 variant="default"
                                 size="sm"
@@ -516,6 +579,18 @@ export default function TransporterDashboard() {
                               >
                                 <CheckCircle className="h-4 w-4" />
                                 Marquer comme à facturer
+                              </Button>
+                            )}
+                            {(request.status === "completed" || request.paymentStatus === "paid") && (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleOpenReportDialog(request.id)}
+                                data-testid={`button-report-${request.id}`}
+                                className="gap-2"
+                              >
+                                <Flag className="h-4 w-4" />
+                                <span className="hidden sm:inline">Signaler</span>
                               </Button>
                             )}
                           </div>
@@ -757,6 +832,81 @@ export default function TransporterDashboard() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
+        <DialogContent className="max-w-[90vw] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Signaler un problème</DialogTitle>
+            <DialogDescription>
+              Décrivez le problème rencontré avec ce client.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...reportForm}>
+            <form onSubmit={reportForm.handleSubmit(handleSubmitReport)} className="space-y-4">
+              <FormField
+                control={reportForm.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Type de problème <span className="text-destructive">*</span></FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-report-type">
+                          <SelectValue placeholder="Sélectionnez un type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="no-show">Client absent</SelectItem>
+                        <SelectItem value="payment">Problème de paiement</SelectItem>
+                        <SelectItem value="communication">Problème de communication</SelectItem>
+                        <SelectItem value="incorrect-info">Informations incorrectes</SelectItem>
+                        <SelectItem value="damaged-goods">Marchandises non conformes</SelectItem>
+                        <SelectItem value="other">Autre</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={reportForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description détaillée <span className="text-destructive">*</span></FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Décrivez en détail le problème rencontré..."
+                        className="resize-none h-32"
+                        data-testid="textarea-report-description"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowReportDialog(false)}
+                  data-testid="button-cancel-report"
+                >
+                  Annuler
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createReportMutation.isPending}
+                  data-testid="button-submit-report"
+                >
+                  {createReportMutation.isPending ? "Envoi en cours..." : "Envoyer le signalement"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </div>
