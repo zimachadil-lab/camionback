@@ -18,6 +18,7 @@ interface HeaderProps {
     id: string;
     name?: string;
     role: string;
+    clientId?: string;
   };
   onNewRequest?: () => void;
   onAnnounceReturn?: () => void;
@@ -122,7 +123,11 @@ export function Header({ user, onNewRequest, onAnnounceReturn, onLogout }: Heade
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>
                 <div className="flex flex-col">
-                  <span className="font-medium">{user.name || "Utilisateur"}</span>
+                  <span className="font-medium">
+                    {user.role === "client" && user.clientId 
+                      ? user.clientId 
+                      : user.name || "Utilisateur"}
+                  </span>
                   <span className="text-xs text-muted-foreground capitalize">{user.role}</span>
                 </div>
               </DropdownMenuLabel>
