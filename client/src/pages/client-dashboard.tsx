@@ -39,12 +39,43 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+
+const moroccanCities = [
+  "Casablanca", "Rabat", "Marrakech", "Fès", "Tanger", "Agadir", 
+  "Meknès", "Oujda", "Kenitra", "Tétouan", "Safi", "El Jadida",
+  "Nador", "Khouribga", "Béni Mellal", "Mohammedia"
+];
+
+const goodsTypes = [
+  "Meubles", "Électroménager", "Marchandises", "Déménagement",
+  "Matériaux de construction", "Colis", "Véhicule", "Autre"
+];
+
+const editRequestSchema = z.object({
+  fromCity: z.string().min(2, "Ville de départ requise"),
+  toCity: z.string().min(2, "Ville d'arrivée requise"),
+  description: z.string().min(10, "Description minimale: 10 caractères"),
+  goodsType: z.string().min(1, "Type de marchandise requis"),
+  dateTime: z.string().optional(),
+  dateFlexible: z.boolean().default(false),
+  invoiceRequired: z.boolean().default(false),
+  budget: z.string().optional(),
+});
 
 function RequestWithOffers({ request, onAcceptOffer, onChat, onDelete, onViewTransporter, onUpdateStatus, users }: any) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showOffersDialog, setShowOffersDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const isAccepted = request.status === "accepted";
+  const { toast } = useToast();
 
   const { data: offers = [] } = useQuery({
     queryKey: ["/api/offers", request.id],
@@ -68,6 +99,90 @@ function RequestWithOffers({ request, onAcceptOffer, onChat, onDelete, onViewTra
   const createdAt = request.createdAt 
     ? (typeof request.createdAt === 'string' ? new Date(request.createdAt) : request.createdAt)
     : null;
+
+  // Format datetime for input
+  const formatDateTimeForInput = (dateStr: string | Date | null) => {
+    if (!dateStr) return "";
+    const date = typeof dateStr === 'string' ? new Date(dateStr) : dateStr;
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  const editForm = useForm({
+    resolver: zodResolver(editRequestSchema),
+    defaultValues: {
+      fromCity: request.fromCity || "",
+      toCity: request.toCity || "",
+      description: request.description || "",
+      goodsType: request.goodsType || "",
+      dateTime: formatDateTimeForInput(request.dateTime),
+      dateFlexible: request.dateFlexible || false,
+      invoiceRequired: request.invoiceRequired || false,
+      budget: request.budget || "",
+    },
+  });
+
+  // Reset form with latest request data when dialog opens or request changes
+  useEffect(() => {
+    if (showEditDialog) {
+      editForm.reset({
+        fromCity: request.fromCity || "",
+        toCity: request.toCity || "",
+        description: request.description || "",
+        goodsType: request.goodsType || "",
+        dateTime: formatDateTimeForInput(request.dateTime),
+        dateFlexible: request.dateFlexible || false,
+        invoiceRequired: request.invoiceRequired || false,
+        budget: request.budget || "",
+      });
+    }
+  }, [showEditDialog, request, editForm]);
+
+  const editRequestMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return await apiRequest("PATCH", `/api/requests/${request.id}`, data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Commande modifiée",
+        description: "Vos modifications ont été enregistrées avec succès",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+      setShowEditDialog(false);
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Échec de la modification de la commande",
+      });
+    },
+  });
+
+  const onSubmitEdit = (data: any) => {
+    const payload: any = {
+      fromCity: data.fromCity,
+      toCity: data.toCity,
+      description: data.description,
+      goodsType: data.goodsType,
+      dateFlexible: data.dateFlexible,
+      invoiceRequired: data.invoiceRequired,
+    };
+    
+    if (data.dateTime) {
+      payload.dateTime = new Date(data.dateTime).toISOString();
+    }
+    
+    if (data.budget) {
+      payload.budget = data.budget;
+    }
+    
+    editRequestMutation.mutate(payload);
+  };
 
   return (
     <>
@@ -245,15 +360,197 @@ function RequestWithOffers({ request, onAcceptOffer, onChat, onDelete, onViewTra
               Modifiez les informations de votre commande
             </DialogDescription>
           </DialogHeader>
-          <div className="text-sm text-muted-foreground py-4">
-            <p>La fonctionnalité de modification sera bientôt disponible.</p>
-            <p className="mt-2">Pour le moment, vous pouvez supprimer cette commande et en créer une nouvelle avec les informations modifiées.</p>
-          </div>
-          <DialogFooter>
-            <Button variant="secondary" onClick={() => setShowEditDialog(false)}>
-              Fermer
-            </Button>
-          </DialogFooter>
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(onSubmitEdit)} className="space-y-4 py-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <FormField
+                  control={editForm.control}
+                  name="fromCity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Ville de départ</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="edit-select-from-city">
+                            <SelectValue placeholder="Sélectionner" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {moroccanCities.map((city) => (
+                            <SelectItem key={city} value={city}>{city}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={editForm.control}
+                  name="toCity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Ville d'arrivée</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="edit-select-to-city">
+                            <SelectValue placeholder="Sélectionner" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {moroccanCities.map((city) => (
+                            <SelectItem key={city} value={city}>{city}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={editForm.control}
+                name="goodsType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Type de marchandise</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="edit-select-goods-type">
+                          <SelectValue placeholder="Sélectionner" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {goodsTypes.map((type) => (
+                          <SelectItem key={type} value={type}>{type}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={editForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Décrivez votre demande de transport..."
+                        className="min-h-24"
+                        data-testid="edit-input-description"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={editForm.control}
+                name="budget"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Budget (optionnel)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="ex: 500 MAD" 
+                        data-testid="edit-input-budget"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={editForm.control}
+                name="dateTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Date et heure souhaitées (optionnel)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="datetime-local" 
+                        data-testid="edit-input-datetime"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={editForm.control}
+                  name="dateFlexible"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          data-testid="edit-checkbox-date-flexible"
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="cursor-pointer">
+                          Date flexible
+                        </FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={editForm.control}
+                  name="invoiceRequired"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          data-testid="edit-checkbox-invoice-required"
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="cursor-pointer">
+                          Besoin d'une facture TTC
+                        </FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <DialogFooter className="gap-2">
+                <Button 
+                  type="button" 
+                  variant="secondary" 
+                  onClick={() => setShowEditDialog(false)}
+                  data-testid="button-cancel-edit"
+                >
+                  Annuler
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={editRequestMutation.isPending}
+                  data-testid="button-save-edit"
+                >
+                  {editRequestMutation.isPending ? "Enregistrement..." : "Enregistrer les changements"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
 
