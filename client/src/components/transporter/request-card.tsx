@@ -79,7 +79,7 @@ export function RequestCard({
   return (
     <>
     <Card className="overflow-hidden hover-elevate">
-      <CardContent className="p-4 space-y-4">
+      <CardContent className="p-4 space-y-3">
         <div className="flex items-start justify-between gap-2">
           <div>
             <Badge variant="outline" className="mb-2" data-testid={`text-reference-${request.id}`}>
