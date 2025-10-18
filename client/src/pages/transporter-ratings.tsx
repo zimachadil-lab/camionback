@@ -1,14 +1,32 @@
 import { useQuery } from "@tanstack/react-query";
 import { Star, Package } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useUser } from "@/hooks/useUser";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
-export default function TransporterRatings() {
-  const { user } = useUser();
+interface RatingSummary {
+  averageRating: string;
+  totalRatings: number;
+}
 
-  const { data, isLoading } = useQuery({
+interface RatingWithDetails {
+  id: string;
+  score: number;
+  comment: string | null;
+  createdAt: string;
+  requestReference: string;
+  requestDate: string;
+}
+
+interface RatingsResponse {
+  summary: RatingSummary;
+  ratings: RatingWithDetails[];
+}
+
+export default function TransporterRatings() {
+  const user = JSON.parse(localStorage.getItem("camionback_user") || "{}");
+
+  const { data, isLoading } = useQuery<RatingsResponse>({
     queryKey: ["/api/transporters", user?.id, "ratings"],
     enabled: !!user?.id,
   });
