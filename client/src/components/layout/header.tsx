@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu, User, Plus, LogOut, FileText, Clock, Receipt, Package } from "lucide-react";
+import { Menu, User, Plus, LogOut, FileText, Clock, Receipt, Package, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { MessagesBadge } from "@/components/chat/messages-badge";
@@ -35,6 +35,7 @@ export function Header({ user, onNewRequest, onLogout }: HeaderProps) {
       return [
         { label: "Tableau de bord", icon: Package, href: "/" },
         { label: "Paiements reçus", icon: Receipt, href: "/transporter/payments" },
+        { label: "Mes avis clients", icon: Star, href: "/transporter/ratings" },
       ];
     } else if (user.role === "admin") {
       return [

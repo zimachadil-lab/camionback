@@ -10,6 +10,7 @@ import SelectRole from "@/pages/select-role";
 import CompleteProfile from "@/pages/complete-profile";
 import AdminDashboard from "@/pages/admin-dashboard";
 import TransporterPayments from "@/pages/transporter-payments";
+import TransporterRatings from "@/pages/transporter-ratings";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/notifications" component={NotificationsPage} />
       <Route path="/messages" component={MessagesPage} />
       <Route path="/transporter/payments" component={TransporterPayments} />
+      <Route path="/transporter/ratings" component={TransporterRatings} />
       <Route component={NotFound} />
     </Switch>
   );
