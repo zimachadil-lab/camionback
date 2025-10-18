@@ -53,6 +53,7 @@ export const transportRequests = pgTable("transport_requests", {
   paymentDate: timestamp("payment_date"),
   viewCount: integer("view_count").default(0), // Number of times request was viewed
   declinedBy: text("declined_by").array().default(sql`ARRAY[]::text[]`), // IDs of transporters who declined
+  smsSent: boolean("sms_sent").default(false), // Track if first offer SMS was sent to client
   createdAt: timestamp("created_at").defaultNow(),
 });
 
