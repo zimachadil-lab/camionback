@@ -263,7 +263,7 @@ export default function TransporterDashboard() {
           <TabsList className="grid w-full max-w-3xl grid-cols-3">
             <TabsTrigger value="available" data-testid="tab-available">
               <Search className="mr-2 h-4 w-4" />
-              Disponibles
+              Disponibles (<span className="text-[#00ff99]">{filteredRequests.length}</span>)
             </TabsTrigger>
             <TabsTrigger value="my-offers" data-testid="tab-my-offers">
               <Package className="mr-2 h-4 w-4" />
