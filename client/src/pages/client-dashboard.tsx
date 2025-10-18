@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star, CreditCard, Upload, Eye } from "lucide-react";
+import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star, CreditCard, Upload, Eye, Edit, MessageSquare, Calendar } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { NewRequestForm } from "@/components/client/new-request-form";
 import { OfferCard } from "@/components/client/offer-card";
@@ -36,9 +36,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 function RequestWithOffers({ request, onAcceptOffer, onChat, onDelete, onViewTransporter, onUpdateStatus, users }: any) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showOffersDialog, setShowOffersDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const isAccepted = request.status === "accepted";
 
   const { data: offers = [] } = useQuery({
@@ -60,113 +65,199 @@ function RequestWithOffers({ request, onAcceptOffer, onChat, onDelete, onViewTra
     };
   });
 
+  const createdAt = request.createdAt 
+    ? (typeof request.createdAt === 'string' ? new Date(request.createdAt) : request.createdAt)
+    : null;
+
   return (
     <>
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <h3 className="text-xl font-semibold">{request.referenceId}</h3>
-              {isAccepted && (
-                <Badge variant="default" className="bg-green-600">
-                  Acceptée
-                </Badge>
-              )}
-            </div>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span>{request.fromCity} → {request.toCity}</span>
-              {request.viewCount !== undefined && (
-                <span className="flex items-center gap-1">
-                  <Eye className="w-3 h-3" />
-                  {request.viewCount} vue{request.viewCount > 1 ? 's' : ''}
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {isAccepted && (
-              <>
+      <Card className="overflow-hidden hover-elevate bg-[#0f324f]/30 border-[#1d3c57]">
+        <CardContent className="p-4 space-y-3">
+          {/* Header avec référence et actions */}
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="text-lg font-semibold" data-testid={`text-reference-${request.id}`}>
+              {request.referenceId}
+            </h3>
+            <div className="flex items-center gap-2">
+              {!isAccepted && (
                 <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => onViewTransporter(request.id)}
-                  data-testid={`button-view-transporter-${request.id}`}
-                  className="gap-2"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowEditDialog(true)}
+                  data-testid={`button-edit-${request.id}`}
+                  className="h-8 w-8 text-[#1abc9c] hover:text-[#1abc9c] hover:bg-[#1abc9c]/10"
                 >
-                  <Info className="h-4 w-4" />
-                  <span className="hidden sm:inline">Infos transporteur</span>
-                  <span className="sm:hidden">Infos</span>
+                  <Edit className="h-4 w-4" />
                 </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      data-testid={`button-update-status-${request.id}`}
-                      className="gap-2"
-                    >
-                      <RotateCcw className="h-4 w-4" />
-                      Statut
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      onClick={() => onUpdateStatus(request.id, "completed")}
-                      data-testid={`button-complete-${request.id}`}
-                      className="gap-2"
-                    >
-                      <CheckCircle className="h-4 w-4" />
-                      Terminée
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => onUpdateStatus(request.id, "republish")}
-                      data-testid={`button-republish-${request.id}`}
-                      className="gap-2"
-                    >
-                      <RotateCcw className="h-4 w-4" />
-                      Republier
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
-            )}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowDeleteDialog(true)}
-              data-testid={`button-delete-${request.id}`}
-              className="text-destructive hover:text-destructive"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowDeleteDialog(true)}
+                data-testid={`button-delete-${request.id}`}
+                className="h-8 w-8 text-[#e74c3c] hover:text-[#e74c3c] hover:bg-[#e74c3c]/10"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-        </div>
 
-        {!isAccepted && (
-          <div className="space-y-4">
-            <h4 className="font-medium">
+          {/* Trajet et statut */}
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2 text-sm">
+              <span className="font-medium">{request.fromCity} → {request.toCity}</span>
+            </div>
+            {isAccepted && (
+              <Badge variant="default" className="bg-green-600">
+                Acceptée
+              </Badge>
+            )}
+          </div>
+
+          {/* Infos compactes: Vues et Date */}
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            {request.viewCount !== undefined && (
+              <span className="flex items-center gap-1">
+                <Eye className="w-3 h-3" />
+                {request.viewCount} vue{request.viewCount > 1 ? 's' : ''}
+              </span>
+            )}
+            {createdAt && (
+              <span className="flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                Créée le {format(createdAt, "d MMM yyyy", { locale: fr })}
+              </span>
+            )}
+          </div>
+
+          {/* Description */}
+          {request.description && (
+            <div className="text-sm">
+              <p className="text-muted-foreground text-xs mb-1">Description :</p>
+              <p className="line-clamp-2">{request.description}</p>
+            </div>
+          )}
+
+          {/* Bouton Offres reçues */}
+          {!isAccepted && (
+            <Button
+              variant="secondary"
+              className="w-full gap-2 bg-[#1d3c57] hover:bg-[#1d3c57]/80"
+              onClick={() => setShowOffersDialog(true)}
+              data-testid={`button-view-offers-${request.id}`}
+            >
+              <MessageSquare className="w-4 h-4" />
               Offres reçues ({offersWithTransporters.length})
-            </h4>
+            </Button>
+          )}
+
+          {/* Actions pour commande acceptée */}
+          {isAccepted && (
+            <div className="flex flex-col sm:flex-row gap-2 pt-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => onViewTransporter(request.id)}
+                data-testid={`button-view-transporter-${request.id}`}
+                className="gap-2 flex-1"
+              >
+                <Info className="h-4 w-4" />
+                Infos transporteur
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    data-testid={`button-update-status-${request.id}`}
+                    className="gap-2 flex-1"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    Statut
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => onUpdateStatus(request.id, "completed")}
+                    data-testid={`button-complete-${request.id}`}
+                    className="gap-2"
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    Terminée
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => onUpdateStatus(request.id, "republish")}
+                    data-testid={`button-republish-${request.id}`}
+                    className="gap-2"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    Republier
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Dialog des offres */}
+      <Dialog open={showOffersDialog} onOpenChange={setShowOffersDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Offres reçues - {request.referenceId}</DialogTitle>
+            <DialogDescription>
+              {request.fromCity} → {request.toCity}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
             {offersWithTransporters.length > 0 ? (
               <div className="grid gap-4 md:grid-cols-2">
                 {offersWithTransporters.map((offer: any) => (
                   <OfferCard
                     key={offer.id}
                     offer={offer}
-                    onAccept={onAcceptOffer}
-                    onChat={() => onChat(offer.transporterId, offer.transporterName, request.id)}
+                    onAccept={(offerId) => {
+                      onAcceptOffer(offerId);
+                      setShowOffersDialog(false);
+                    }}
+                    onChat={() => {
+                      onChat(offer.transporterId, offer.transporterName, request.id);
+                      setShowOffersDialog(false);
+                    }}
                   />
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground text-center py-8">
                 Aucune offre pour le moment
               </p>
             )}
           </div>
-        )}
-      </div>
+        </DialogContent>
+      </Dialog>
 
+      {/* Dialog de modification */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Modifier la commande</DialogTitle>
+            <DialogDescription>
+              Modifiez les informations de votre commande
+            </DialogDescription>
+          </DialogHeader>
+          <div className="text-sm text-muted-foreground py-4">
+            <p>La fonctionnalité de modification sera bientôt disponible.</p>
+            <p className="mt-2">Pour le moment, vous pouvez supprimer cette commande et en créer une nouvelle avec les informations modifiées.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setShowEditDialog(false)}>
+              Fermer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de suppression */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>

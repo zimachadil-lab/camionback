@@ -1,0 +1,112 @@
+Je souhaite maintenant améliorer l’affichage des commandes côté client, ainsi que l’ergonomie des actions sur chaque carte (suppression, modification, offres reçues).
+
+🎨 1️⃣ – Amélioration visuelle des cartes de commandes
+🔹 Objectif :
+
+Donner un rendu plus clair et plus professionnel aux cartes de commandes dans la rubrique “Actives”, “À payer”, et “Terminées”.
+
+🔹 À faire :
+
+Chaque commande doit être affichée dans une carte distincte (avec un léger encadré ou fond différent).
+
+Exemple : fond bleu légèrement plus clair (#0f324f) avec coins arrondis et ombre légère pour donner de la profondeur.
+
+L’espace entre les cartes doit être réduit pour un affichage plus compact et élégant.
+
+Chaque carte doit contenir clairement :
+
+Le numéro de commande (CMD-...)
+
+Le trajet (ville départ → arrivée)
+
+Le nombre de vues 👁️ et la date de création 🗓️
+
+En dessous : un petit encadré pour les offres reçues.
+
+🧾 2️⃣ – Placement des icônes et actions principales
+🔹 À faire :
+
+Placer l’icône Supprimer (🗑️) à droite du numéro de commande (dans la même ligne).
+
+Ajouter juste à côté une icône Modifier (✏️) pour permettre l’édition.
+
+Lorsqu’on clique sur ✏️, le client doit pouvoir modifier toutes les informations de la commande :
+
+Description
+
+Date souhaitée
+
+Flexibilité / Facture TTC
+
+Photos (possibilité de remplacer, supprimer ou ajouter).
+
+Une fois les modifications faites, il peut cliquer sur un bouton “Enregistrer les changements”.
+
+🔹 Icônes design :
+
+Supprimer → rouge clair (#e74c3c)
+
+Modifier → bleu clair (#1abc9c)
+
+Espacement de 6–8 px entre les deux pour équilibre visuel.
+
+📩 3️⃣ – Bouton “Offres reçues (0)”
+🔹 Nouvelle approche :
+
+Transformer le texte “Offres reçues (0)” en un bouton CTA.
+
+Design :
+
+Fond gris clair (#1d3c57)
+
+Coins arrondis
+
+Légère ombre au survol
+
+Exemple visuel :
+
+[ 💬 Offres reçues (2) ]
+
+🔹 Fonctionnalité :
+
+Quand le client clique dessus :
+
+Une popup s’ouvre affichant la liste complète des offres reçues pour cette commande, avec :
+
+Photo du camion du transporteur
+
+Nom / note du transporteur
+
+Montant proposé
+
+Boutons :
+
+“Choisir cette offre”
+
+“Envoyer un message”
+
+Même popup que celle déjà existante pour la consultation des offres, mais intégrée à cette nouvelle logique CTA.
+
+🗓️ 4️⃣ – Informations additionnelles sur la carte
+
+Garder l’indication “Offres reçues (0)” en bas de la carte (sous forme de bouton).
+
+Afficher également sur chaque carte :
+
+“Créée le : [date]”
+
+“Vues : [X]”
+
+Ces infos doivent être compactes, sur une même ligne en petit gris clair.
+
+🧱 5️⃣ – Exemple de structure finale (mobile-friendly)
+----------------------------------------------------
+CMD-2025-00001        ✏️   🗑️
+Marrakech → Kenitra          👁️ 7 vues
+Créée le 18 oct. 2025
+
+📦 Description :
+Uehhdh jejdjdh jdjdjhd
+
+[ 💬 Offres reçues (0) ]
+----------------------------------------------------
