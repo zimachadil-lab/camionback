@@ -5,7 +5,8 @@ import {
   type Offer, type InsertOffer,
   type ChatMessage, type InsertChatMessage,
   type AdminSettings, type InsertAdminSettings,
-  type Notification, type InsertNotification
+  type Notification, type InsertNotification,
+  type Rating, type InsertRating
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -59,6 +60,11 @@ export interface IStorage {
   getUnreadCount(userId: string): Promise<number>;
   markAsRead(id: string): Promise<Notification | undefined>;
   markAllAsRead(userId: string): Promise<void>;
+  
+  // Rating operations
+  createRating(rating: InsertRating): Promise<Rating>;
+  getRatingsByTransporter(transporterId: string): Promise<Rating[]>;
+  getRatingByRequestId(requestId: string): Promise<Rating | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -68,6 +74,7 @@ export class MemStorage implements IStorage {
   private offers: Map<string, Offer>;
   private chatMessages: Map<string, ChatMessage>;
   private notifications: Map<string, Notification>;
+  private ratings: Map<string, Rating>;
   private adminSettings: AdminSettings;
   private requestCounter: number;
 
@@ -78,6 +85,7 @@ export class MemStorage implements IStorage {
     this.offers = new Map();
     this.chatMessages = new Map();
     this.notifications = new Map();
+    this.ratings = new Map();
     this.requestCounter = 1;
     this.adminSettings = {
       id: randomUUID(),
@@ -580,6 +588,33 @@ export class MemStorage implements IStorage {
         this.notifications.set(id, { ...notif, read: true });
       }
     }
+  }
+
+  async createRating(insertRating: InsertRating): Promise<Rating> {
+    const id = randomUUID();
+    const rating: Rating = {
+      id,
+      requestId: insertRating.requestId,
+      transporterId: insertRating.transporterId,
+      clientId: insertRating.clientId,
+      score: insertRating.score,
+      comment: insertRating.comment ?? null,
+      createdAt: new Date(),
+    };
+    this.ratings.set(id, rating);
+    return rating;
+  }
+
+  async getRatingsByTransporter(transporterId: string): Promise<Rating[]> {
+    return Array.from(this.ratings.values())
+      .filter(rating => rating.transporterId === transporterId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()); // Most recent first
+  }
+
+  async getRatingByRequestId(requestId: string): Promise<Rating | undefined> {
+    return Array.from(this.ratings.values()).find(
+      rating => rating.requestId === requestId
+    );
   }
 }
 
