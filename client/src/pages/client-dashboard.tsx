@@ -435,25 +435,24 @@ export default function ClientDashboard() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type (accept images only)
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    if (!allowedTypes.includes(file.type)) {
+    // Accept all image formats - validation is manual by admin
+    if (!file.type.startsWith('image/')) {
       toast({
         variant: "destructive",
         title: "Format non accepté",
-        description: "Veuillez téléverser une image (JPEG, PNG ou WebP)",
+        description: "Veuillez téléverser une image",
       });
       e.target.value = ''; // Reset input
       return;
     }
 
-    // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    // Validate file size (max 10MB - increased limit)
+    const maxSize = 10 * 1024 * 1024; // 10MB in bytes
     if (file.size > maxSize) {
       toast({
         variant: "destructive",
         title: "Fichier trop volumineux",
-        description: "La taille maximale autorisée est de 5 Mo",
+        description: "La taille maximale autorisée est de 10 Mo",
       });
       e.target.value = ''; // Reset input
       return;
@@ -463,13 +462,19 @@ export default function ClientDashboard() {
     const reader = new FileReader();
     reader.onloadend = () => {
       setPaymentReceipt(reader.result as string);
+      toast({
+        title: "Reçu téléversé",
+        description: "Le reçu de paiement a été chargé avec succès",
+      });
     };
-    reader.onerror = () => {
+    reader.onerror = (error) => {
+      console.error("FileReader error:", error);
       toast({
         variant: "destructive",
         title: "Erreur de lecture",
-        description: "Impossible de lire le fichier",
+        description: "Impossible de lire le fichier. Veuillez réessayer avec une autre image.",
       });
+      e.target.value = ''; // Reset input
     };
     reader.readAsDataURL(file);
   };
