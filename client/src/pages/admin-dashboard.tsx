@@ -140,6 +140,30 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleRejectReceipt = async (requestId: string) => {
+    try {
+      const response = await fetch(`/api/requests/${requestId}/admin-reject-receipt`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!response.ok) throw new Error();
+
+      toast({
+        title: "Reçu refusé",
+        description: "Le reçu a été refusé. Le client pourra téléverser un nouveau reçu.",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Échec du refus du reçu",
+      });
+    }
+  };
+
   // Mock KPI data
   const kpis = {
     activeClients: 124,
@@ -439,15 +463,26 @@ export default function AdminDashboard() {
                               )}
                             </TableCell>
                             <TableCell className="text-right">
-                              <Button
-                                size="sm"
-                                variant="default"
-                                onClick={() => handleValidatePayment(request.id)}
-                                data-testid={`button-validate-payment-${request.id}`}
-                              >
-                                <CheckCircle className="w-4 h-4 mr-1" />
-                                Marquer comme payé
-                              </Button>
+                              <div className="flex gap-2 justify-end flex-wrap">
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  onClick={() => handleValidatePayment(request.id)}
+                                  data-testid={`button-validate-payment-${request.id}`}
+                                >
+                                  <CheckCircle className="w-4 h-4 mr-1" />
+                                  Marquer comme payé
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => handleRejectReceipt(request.id)}
+                                  data-testid={`button-reject-receipt-${request.id}`}
+                                >
+                                  <XCircle className="w-4 h-4 mr-1" />
+                                  Refuser le reçu
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         );
