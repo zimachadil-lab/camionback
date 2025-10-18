@@ -761,6 +761,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         viewCount: currentViews + 1,
       });
 
+      if (!updatedRequest) {
+        return res.status(500).json({ error: "Failed to update view count" });
+      }
+
       res.json({ success: true, viewCount: updatedRequest.viewCount });
     } catch (error) {
       console.error("Failed to track view:", error);

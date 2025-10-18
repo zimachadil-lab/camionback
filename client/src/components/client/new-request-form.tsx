@@ -9,6 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Upload, MapPin } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 
 const requestSchema = z.object({
@@ -16,8 +17,9 @@ const requestSchema = z.object({
   toCity: z.string().min(2, "Ville d'arrivée requise"),
   description: z.string().min(10, "Description minimale: 10 caractères"),
   goodsType: z.string().min(1, "Type de marchandise requis"),
-  estimatedWeight: z.string().optional(),
   dateTime: z.string().optional(),
+  dateFlexible: z.boolean().default(false),
+  invoiceRequired: z.boolean().default(false),
   budget: z.string().optional(),
 });
 
@@ -45,8 +47,9 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
       toCity: "",
       description: "",
       goodsType: "",
-      estimatedWeight: "",
       dateTime: "",
+      dateFlexible: false,
+      invoiceRequired: false,
       budget: "",
     },
   });
@@ -82,12 +85,10 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
         goodsType: data.goodsType,
         clientId: currentUser.id,
         dateTime: data.dateTime ? new Date(data.dateTime).toISOString() : new Date().toISOString(),
+        dateFlexible: data.dateFlexible,
+        invoiceRequired: data.invoiceRequired,
         photos: photoBase64Array,
       };
-      
-      if (data.estimatedWeight) {
-        payload.estimatedWeight = data.estimatedWeight;
-      }
       
       if (data.budget) {
         payload.budget = data.budget;
@@ -215,43 +216,23 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
               )}
             />
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="estimatedWeight"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Poids estimé (optionnel)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="ex: 50 kg" 
-                        data-testid="input-weight"
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="budget"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Budget (optionnel)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="ex: 500 MAD" 
-                        data-testid="input-budget"
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="budget"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Budget (optionnel)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="ex: 500 MAD" 
+                      data-testid="input-budget"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}
@@ -270,6 +251,50 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
                 </FormItem>
               )}
             />
+
+            <div className="grid gap-4 grid-cols-2">
+              <FormField
+                control={form.control}
+                name="dateFlexible"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        data-testid="checkbox-date-flexible"
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="cursor-pointer">
+                        Date flexible
+                      </FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="invoiceRequired"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        data-testid="checkbox-invoice-required"
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="cursor-pointer">
+                        Besoin d'une facture TTC
+                      </FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Photos (optionnel)</label>
