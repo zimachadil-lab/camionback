@@ -90,6 +90,48 @@ Preferred communication style: Simple, everyday language.
 - Transporter visibility in "Disponibles" filtered by existing offers (via `hasOfferForRequest`)
 - Republishing removes this filter by deleting all offers, allowing fresh bidding
 
+### Payment Workflow System
+
+**Complete Payment Flow (pending → awaiting_payment → paid):**
+
+1. **Transporter Dashboard - "À traiter" Tab:**
+   - Shows accepted requests (status="accepted") assigned to the transporter
+   - Displays count badge with number of accepted orders
+   - Request cards show: reference ID, route, goods type, weight, description
+   - "Voir les détails" button opens dialog with client contact information (name, city, clickable phone number, route)
+   - "Marquer comme à facturer" button changes paymentStatus to "awaiting_payment"
+   - Blue "À facturer" badge appears when paymentStatus="awaiting_payment"
+
+2. **Client Dashboard - "À payer" Tab:**
+   - Shows requests awaiting payment (paymentStatus="awaiting_payment")
+   - Displays count badge with number of payment pending requests
+   - Request cards show: reference ID, blue "À facturer" badge, route, goods details
+   - "Infos transporteur" button shows transporter details
+   - "Marquer comme payé" button changes paymentStatus to "paid" and sets paymentDate
+   - After payment, request moves to "Terminées" tab (removed from both "Actives" and "À payer")
+
+3. **Dashboard Filtering Logic:**
+   - **Actives**: (status="open" OR status="accepted") AND paymentStatus != "paid"
+   - **À payer**: paymentStatus="awaiting_payment"
+   - **Terminées**: status="completed" OR paymentStatus="paid"
+
+**Backend Endpoints:**
+- POST `/api/requests/:id/mark-for-billing` - Transporter marks accepted request for billing
+  - Authorization: validates transporterId matches accepted offer owner
+  - Changes paymentStatus: "pending" → "awaiting_payment"
+  - NOTE: Basic authorization check; production should use session/JWT authentication
+  
+- POST `/api/requests/:id/mark-as-paid` - Client confirms payment
+  - Authorization: validates clientId matches request owner
+  - Changes paymentStatus: "awaiting_payment" → "paid"
+  - Sets paymentDate to current timestamp
+  - NOTE: Basic authorization check; production should use session/JWT authentication
+
+**Database Schema:**
+- `transportRequests.paymentStatus`: text field (pending, awaiting_payment, paid)
+- `transportRequests.paymentReceipt`: text field for base64 payment receipt (optional)
+- `transportRequests.paymentDate`: timestamp field (set when marked as paid)
+
 ### Transporter Rating System
 
 **Rating Workflow:**

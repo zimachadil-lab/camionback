@@ -498,6 +498,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Mark a request as ready for billing (transporter marks as done)
+  // NOTE: In production, this should use session/JWT authentication instead of req.body.transporterId
   app.post("/api/requests/:id/mark-for-billing", async (req, res) => {
     try {
       const request = await storage.getTransportRequest(req.params.id);
@@ -510,7 +511,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Only accepted requests can be marked for billing" });
       }
 
-      // Verify the accepted offer belongs to the transporter making this request
+      // Basic authorization check - verify transporterId matches the accepted offer
+      // TODO PRODUCTION: Replace with server-side session/JWT verification
       if (request.acceptedOfferId) {
         const acceptedOffer = await storage.getOffer(request.acceptedOfferId);
         const transporterId = req.body.transporterId;
@@ -531,6 +533,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to mark request for billing" });
+    }
+  });
+
+  // Mark a request as paid (client confirms payment)
+  // NOTE: In production, this should use session/JWT authentication instead of req.body.clientId
+  app.post("/api/requests/:id/mark-as-paid", async (req, res) => {
+    try {
+      const request = await storage.getTransportRequest(req.params.id);
+      
+      if (!request) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+
+      // Basic authorization check - verify clientId matches the request owner
+      // TODO PRODUCTION: Replace with server-side session/JWT verification
+      const clientId = req.body.clientId;
+      if (!clientId || request.clientId !== clientId) {
+        return res.status(403).json({ error: "Unauthorized: only the client can mark this request as paid" });
+      }
+
+      if (request.paymentStatus !== "awaiting_payment") {
+        return res.status(400).json({ error: "Request must be awaiting payment" });
+      }
+
+      // Update payment status to paid
+      const updatedRequest = await storage.updateTransportRequest(req.params.id, {
+        paymentStatus: "paid",
+        paymentDate: new Date(),
+      });
+
+      res.json({ 
+        success: true, 
+        request: updatedRequest
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to mark request as paid" });
     }
   });
 

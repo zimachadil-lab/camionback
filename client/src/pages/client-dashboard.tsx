@@ -2,13 +2,14 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star } from "lucide-react";
+import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star, CreditCard } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { NewRequestForm } from "@/components/client/new-request-form";
 import { OfferCard } from "@/components/client/offer-card";
 import { ChatWindow } from "@/components/chat/chat-window";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -357,6 +358,30 @@ export default function ClientDashboard() {
     },
   });
 
+  const { toast } = useToast();
+
+  const markAsPaidMutation = useMutation({
+    mutationFn: async (requestId: string) => {
+      return await apiRequest("POST", `/api/requests/${requestId}/mark-as-paid`, {
+        clientId: user.id,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Succès",
+        description: "Le paiement a été confirmé",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Échec de la confirmation du paiement",
+      });
+    },
+  });
+
   const handleSubmitRating = () => {
     if (ratingValue > 0 && ratingRequestId) {
       completeWithRatingMutation.mutate({ requestId: ratingRequestId, rating: ratingValue });
@@ -380,8 +405,11 @@ export default function ClientDashboard() {
     );
   }
 
-  const activeRequests = requests.filter((r: any) => r.status === "open" || r.status === "accepted");
-  const completedRequests = requests.filter((r: any) => r.status === "completed");
+  const activeRequests = requests.filter((r: any) => 
+    (r.status === "open" || r.status === "accepted") && r.paymentStatus !== "paid"
+  );
+  const completedRequests = requests.filter((r: any) => r.status === "completed" || r.paymentStatus === "paid");
+  const paymentPendingRequests = requests.filter((r: any) => r.paymentStatus === "awaiting_payment");
 
   return (
     <div className="min-h-screen bg-background">
@@ -404,10 +432,14 @@ export default function ClientDashboard() {
           }} />
         ) : (
           <Tabs defaultValue="active" className="w-full">
-            <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsList className="grid w-full max-w-3xl grid-cols-3">
               <TabsTrigger value="active" data-testid="tab-active">
                 <Package className="mr-2 h-4 w-4" />
                 Actives
+              </TabsTrigger>
+              <TabsTrigger value="to-pay" data-testid="tab-to-pay">
+                <CreditCard className="mr-2 h-4 w-4" />
+                À payer ({paymentPendingRequests.length})
               </TabsTrigger>
               <TabsTrigger value="completed" data-testid="tab-completed">
                 Terminées
@@ -440,6 +472,93 @@ export default function ClientDashboard() {
                   >
                     Créer une demande
                   </Button>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="to-pay" className="mt-6">
+              {paymentPendingRequests.length === 0 ? (
+                <div className="text-center py-12">
+                  <CreditCard className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">
+                    Aucune commande à payer
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {paymentPendingRequests.map((request: any) => {
+                    const acceptedOffer = request.acceptedOfferId 
+                      ? users.find((u: any) => {
+                          // Find the transporter through the accepted offer
+                          return u.role === "transporter";
+                        })
+                      : null;
+
+                    return (
+                      <div key={request.id} className="p-4 rounded-lg border space-y-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <p className="font-semibold text-lg">{request.referenceId}</p>
+                              <Badge variant="default" className="bg-blue-600">
+                                À facturer
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              {request.fromCity} → {request.toCity}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <p className="text-muted-foreground">Type de marchandise</p>
+                            <p className="font-medium">{request.goodsType}</p>
+                          </div>
+                          {request.estimatedWeight && (
+                            <div>
+                              <p className="text-muted-foreground">Poids estimé</p>
+                              <p className="font-medium">{request.estimatedWeight}</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {request.description && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">Description</p>
+                            <p className="text-sm">{request.description}</p>
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-2 pt-2 border-t">
+                          {request.acceptedOfferId && (
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => handleViewTransporter(request.id)}
+                              data-testid={`button-view-transporter-payment-${request.id}`}
+                              className="gap-2"
+                            >
+                              <Info className="h-4 w-4" />
+                              <span className="hidden sm:inline">Infos transporteur</span>
+                              <span className="sm:hidden">Infos</span>
+                            </Button>
+                          )}
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => markAsPaidMutation.mutate(request.id)}
+                            disabled={markAsPaidMutation.isPending}
+                            className="gap-2"
+                            data-testid={`button-mark-paid-${request.id}`}
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                            Marquer comme payé
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </TabsContent>
