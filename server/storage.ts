@@ -7,7 +7,8 @@ import {
   type AdminSettings, type InsertAdminSettings,
   type Notification, type InsertNotification,
   type Rating, type InsertRating,
-  type EmptyReturn, type InsertEmptyReturn
+  type EmptyReturn, type InsertEmptyReturn,
+  type Contract, type InsertContract
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -73,6 +74,13 @@ export interface IStorage {
   getEmptyReturnsByTransporter(transporterId: string): Promise<EmptyReturn[]>;
   updateEmptyReturn(id: string, updates: Partial<EmptyReturn>): Promise<EmptyReturn | undefined>;
   expireOldReturns(): Promise<void>;
+  
+  // Contract operations
+  createContract(contract: InsertContract): Promise<Contract>;
+  getAllContracts(): Promise<Contract[]>;
+  getContractById(id: string): Promise<Contract | undefined>;
+  updateContract(id: string, updates: Partial<Contract>): Promise<Contract | undefined>;
+  getContractByRequestId(requestId: string): Promise<Contract | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -84,6 +92,7 @@ export class MemStorage implements IStorage {
   private notifications: Map<string, Notification>;
   private ratings: Map<string, Rating>;
   private emptyReturns: Map<string, EmptyReturn>;
+  private contracts: Map<string, Contract>;
   private adminSettings: AdminSettings;
   private requestCounter: number;
 
@@ -96,6 +105,7 @@ export class MemStorage implements IStorage {
     this.notifications = new Map();
     this.ratings = new Map();
     this.emptyReturns = new Map();
+    this.contracts = new Map();
     this.requestCounter = 1;
     this.adminSettings = {
       id: randomUUID(),
@@ -695,6 +705,41 @@ export class MemStorage implements IStorage {
         }
       }
     }
+  }
+
+  // Contract operations
+  async createContract(contract: InsertContract): Promise<Contract> {
+    const newContract: Contract = {
+      id: randomUUID(),
+      ...contract,
+      status: "in_progress",
+      createdAt: new Date(),
+    };
+    this.contracts.set(newContract.id, newContract);
+    return newContract;
+  }
+
+  async getAllContracts(): Promise<Contract[]> {
+    return Array.from(this.contracts.values());
+  }
+
+  async getContractById(id: string): Promise<Contract | undefined> {
+    return this.contracts.get(id);
+  }
+
+  async updateContract(id: string, updates: Partial<Contract>): Promise<Contract | undefined> {
+    const contract = this.contracts.get(id);
+    if (!contract) return undefined;
+
+    const updatedContract = { ...contract, ...updates };
+    this.contracts.set(id, updatedContract);
+    return updatedContract;
+  }
+
+  async getContractByRequestId(requestId: string): Promise<Contract | undefined> {
+    return Array.from(this.contracts.values()).find(
+      (contract) => contract.requestId === requestId
+    );
   }
 }
 
