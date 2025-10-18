@@ -121,6 +121,19 @@ export const emptyReturns = pgTable("empty_returns", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Contracts - Generated when client accepts an offer
+export const contracts = pgTable("contracts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  requestId: varchar("request_id").notNull().references(() => transportRequests.id),
+  offerId: varchar("offer_id").notNull().references(() => offers.id),
+  clientId: varchar("client_id").notNull().references(() => users.id),
+  transporterId: varchar("transporter_id").notNull().references(() => users.id),
+  referenceId: text("reference_id").notNull(), // Copy of request reference for easy display
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(), // Agreed amount
+  status: text("status").default("in_progress"), // in_progress, marked_paid_transporter, marked_paid_client, completed
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertOtpCodeSchema = createInsertSchema(otpCodes).omit({ id: true, createdAt: true, verified: true });
@@ -138,6 +151,7 @@ export const insertRatingSchema = createInsertSchema(ratings).omit({ id: true, c
 export const insertEmptyReturnSchema = createInsertSchema(emptyReturns).omit({ id: true, createdAt: true, status: true }).extend({
   returnDate: z.coerce.date(), // Accept ISO string and coerce to Date
 });
+export const insertContractSchema = createInsertSchema(contracts).omit({ id: true, createdAt: true, status: true });
 
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -158,3 +172,5 @@ export type InsertRating = z.infer<typeof insertRatingSchema>;
 export type Rating = typeof ratings.$inferSelect;
 export type InsertEmptyReturn = z.infer<typeof insertEmptyReturnSchema>;
 export type EmptyReturn = typeof emptyReturns.$inferSelect;
+export type InsertContract = z.infer<typeof insertContractSchema>;
+export type Contract = typeof contracts.$inferSelect;
