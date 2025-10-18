@@ -379,14 +379,24 @@ export default function ClientDashboard() {
         paymentReceipt: receipt,
       });
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       toast({
         title: "Succès",
-        description: "Le paiement a été confirmé et envoyé pour validation",
+        description: "Merci ! Veuillez maintenant évaluer le transporteur",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+      
+      // Close payment dialog
       setShowPaymentDialog(false);
       setPaymentReceipt("");
+      
+      // Open rating dialog automatically with the same request
+      setRatingRequestId(variables.requestId);
+      setRatingValue(0);
+      setHoverRating(0);
+      setShowRatingDialog(true);
+      
+      // Clear payment request ID after everything is set
       setPaymentRequestId("");
     },
     onError: () => {
