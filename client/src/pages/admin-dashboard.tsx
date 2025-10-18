@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCircle, UserCheck, CreditCard, Phone, Eye, TruckIcon, MapPin, Calendar, FileText, MessageSquare, Trash2, Send } from "lucide-react";
+import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCircle, UserCheck, CreditCard, Phone, Eye, TruckIcon, MapPin, Calendar, FileText, MessageSquare, Trash2, Send, Flag } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -160,6 +160,15 @@ export default function AdminDashboard() {
     queryKey: ["/api/admin/clients"],
     queryFn: async () => {
       const response = await fetch("/api/admin/clients");
+      return response.json();
+    },
+  });
+
+  // Fetch all reports
+  const { data: allReports = [], isLoading: reportsLoading } = useQuery({
+    queryKey: ["/api/reports"],
+    queryFn: async () => {
+      const response = await fetch("/api/reports");
       return response.json();
     },
   });
@@ -342,6 +351,29 @@ export default function AdminDashboard() {
     },
   });
 
+  const updateReportMutation = useMutation({
+    mutationFn: async ({ reportId, status, resolution }: { reportId: string; status: string; resolution?: string }) => {
+      return await apiRequest("PATCH", `/api/reports/${reportId}`, {
+        status,
+        resolution,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Signalement mis à jour",
+        description: "Le statut du signalement a été modifié avec succès",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/reports"] });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Échec de la mise à jour du signalement",
+      });
+    },
+  });
+
   // Format trend text
   const formatTrend = (trend: number) => {
     if (trend === 0) return "Aucun changement";
@@ -457,6 +489,15 @@ export default function AdminDashboard() {
             </TabsTrigger>
             <TabsTrigger value="drivers" data-testid="tab-drivers">Transporteurs</TabsTrigger>
             <TabsTrigger value="clients" data-testid="tab-clients">Clients</TabsTrigger>
+            <TabsTrigger value="reports" data-testid="tab-reports">
+              <Flag className="w-4 h-4 mr-1" />
+              Signalements
+              {allReports.filter((r: any) => r.status === "pending").length > 0 && (
+                <Badge variant="destructive" className="ml-2 px-1.5 py-0 h-5 min-w-5 text-xs">
+                  {allReports.filter((r: any) => r.status === "pending").length}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="facturation" data-testid="tab-facturation">Facturation</TabsTrigger>
             <TabsTrigger value="settings" data-testid="tab-settings">Paramètres</TabsTrigger>
             <TabsTrigger value="stats" data-testid="tab-stats">Statistiques</TabsTrigger>
@@ -1417,6 +1458,167 @@ export default function AdminDashboard() {
                       </div>
                     );
                   })()
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="reports" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Flag className="w-5 h-5" />
+                  Tous les signalements
+                  <Badge className="ml-2" data-testid="badge-total-reports">
+                    Total: {allReports.length}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {reportsLoading ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">Chargement...</p>
+                  </div>
+                ) : allReports.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Flag className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">Aucun signalement pour le moment</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Commande</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Signalé par</TableHead>
+                          <TableHead>Utilisateur signalé</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead>Statut</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {allReports.map((report: any) => {
+                          const reporter = users.find((u: any) => u.id === report.reporterId);
+                          const reportedUser = users.find((u: any) => u.id === report.reportedUserId);
+                          const request = allRequests.find((r: any) => r.id === report.requestId);
+
+                          const getReportTypeLabel = (type: string) => {
+                            const types: any = {
+                              "no-show": "Absence",
+                              "payment": "Paiement",
+                              "communication": "Communication",
+                              "incorrect-info": "Infos incorrectes",
+                              "damaged-goods": "Marchandises non conformes",
+                              "other": "Autre"
+                            };
+                            return types[type] || type;
+                          };
+
+                          return (
+                            <TableRow key={report.id}>
+                              <TableCell className="text-sm" data-testid={`text-report-date-${report.id}`}>
+                                {new Date(report.createdAt).toLocaleDateString("fr-FR")}
+                              </TableCell>
+                              <TableCell data-testid={`text-report-request-${report.id}`}>
+                                {request?.referenceId || "N/A"}
+                              </TableCell>
+                              <TableCell data-testid={`text-report-type-${report.id}`}>
+                                <Badge variant="outline">
+                                  {getReportTypeLabel(report.type)}
+                                </Badge>
+                              </TableCell>
+                              <TableCell data-testid={`text-reporter-${report.id}`}>
+                                <div className="space-y-1">
+                                  <p className="font-medium">{reporter?.name || "Inconnu"}</p>
+                                  <Badge variant={report.reporterRole === "client" ? "default" : "secondary"} className="text-xs">
+                                    {report.reporterRole === "client" ? "Client" : "Transporteur"}
+                                  </Badge>
+                                </div>
+                              </TableCell>
+                              <TableCell data-testid={`text-reported-user-${report.id}`}>
+                                <div className="space-y-1">
+                                  <p className="font-medium">{reportedUser?.name || "Inconnu"}</p>
+                                  <p className="text-xs text-muted-foreground">{reportedUser?.phoneNumber}</p>
+                                </div>
+                              </TableCell>
+                              <TableCell className="max-w-xs" data-testid={`text-report-description-${report.id}`}>
+                                <p className="text-sm truncate" title={report.description}>
+                                  {report.description}
+                                </p>
+                              </TableCell>
+                              <TableCell data-testid={`badge-report-status-${report.id}`}>
+                                <Badge
+                                  variant={
+                                    report.status === "pending" ? "destructive" :
+                                    report.status === "resolved" ? "default" :
+                                    "secondary"
+                                  }
+                                >
+                                  {report.status === "pending" ? "En attente" :
+                                   report.status === "resolved" ? "Résolu" :
+                                   "Rejeté"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {report.status === "pending" && (
+                                  <div className="flex gap-2">
+                                    <Button
+                                      size="sm"
+                                      variant="default"
+                                      onClick={() => {
+                                        updateReportMutation.mutate({
+                                          reportId: report.id,
+                                          status: "resolved",
+                                          resolution: "Signalement traité et résolu par l'administrateur"
+                                        });
+                                      }}
+                                      disabled={updateReportMutation.isPending}
+                                      data-testid={`button-resolve-${report.id}`}
+                                    >
+                                      <CheckCircle className="h-4 w-4 mr-1" />
+                                      Résoudre
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      onClick={() => {
+                                        updateReportMutation.mutate({
+                                          reportId: report.id,
+                                          status: "rejected",
+                                          resolution: "Signalement rejeté par l'administrateur"
+                                        });
+                                      }}
+                                      disabled={updateReportMutation.isPending}
+                                      data-testid={`button-reject-${report.id}`}
+                                    >
+                                      <XCircle className="h-4 w-4 mr-1" />
+                                      Rejeter
+                                    </Button>
+                                    {reportedUser && (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleBlockUser(reportedUser.id, report.reporterRole === "client" ? "transporter" : "client")}
+                                        data-testid={`button-block-reported-${report.id}`}
+                                      >
+                                        🔒 Bloquer
+                                      </Button>
+                                    )}
+                                  </div>
+                                )}
+                                {report.status !== "pending" && report.resolution && (
+                                  <p className="text-xs text-muted-foreground">{report.resolution}</p>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
                 )}
               </CardContent>
             </Card>
