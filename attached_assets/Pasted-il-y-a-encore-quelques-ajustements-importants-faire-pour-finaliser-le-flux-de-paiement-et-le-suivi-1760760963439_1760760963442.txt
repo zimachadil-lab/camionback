@@ -1,0 +1,59 @@
+il y a encore quelques ajustements importants à faire pour finaliser le flux de paiement et le suivi des statuts.
+
+🚚 1️⃣ Visibilité côté transporteur
+
+Actuellement, lorsque le transporteur clique sur “Marquer comme à facturer”, la commande disparaît de sa vue.
+👉 Elle doit rester visible dans la rubrique “À traiter”, mais avec un statut mis à jour (“En attente de paiement client” ou “À facturer”).
+
+Le transporteur doit continuer à pouvoir consulter les détails de la commande (trajet, client, date, etc.) jusqu’à ce que le paiement soit validé côté admin.
+
+💳 2️⃣ Popup de paiement côté client
+
+Quand le client clique sur “Marquer comme payé”, il faut afficher une popup avec les instructions de virement et l’upload du reçu.
+📋 Le contenu de la popup doit être :
+
+“Merci d’effectuer le virement sur le compte suivant :
+RIB : 011815000005210001099713
+À l’ordre de : CamionBack.”
+
+“Veuillez ensuite téléverser votre reçu de paiement ci-dessous.”
+
+Ajouter un champ d’upload photo (reçu de paiement) obligatoire.
+
+Une fois le reçu téléversé, l’action doit générer une nouvelle ligne côté Admin, dans une rubrique “À payer”.
+
+🧾 3️⃣ Nouvelle vue côté Admin : “À payer”
+
+Créer une nouvelle section dans le panneau admin appelée “À payer”.
+
+Chaque ligne doit contenir :
+
+Numéro de commande
+
+Nom et numéro de téléphone du client
+
+Nom et numéro de téléphone du transporteur
+
+Montant à verser au transporteur (prix net sans commission)
+
+Statut actuel (En attente / Payé)
+
+Reçu de paiement client (aperçu cliquable)
+
+L’administrateur doit pouvoir cliquer sur un bouton “Marquer comme payé”, qui :
+
+Met à jour le statut de la commande sur “Payée” côté admin, client et transporteur.
+
+Retire la commande de la liste “À payer”.
+
+Et la classe dans “Commandes payées” (ou rubrique équivalente).
+
+🔁 4️⃣ Résumé du flux attendu
+
+Transporteur → “Marquer comme à facturer” → la commande reste visible dans “À traiter”.
+
+Client → “Marquer comme payé” → popup avec instructions + upload du reçu.
+
+Admin → voit la commande dans la nouvelle vue “À payer” → clique sur “Marquer comme payé”.
+
+Le statut devient “Payé” pour toutes les parties, et la commande quitte les vues actives.

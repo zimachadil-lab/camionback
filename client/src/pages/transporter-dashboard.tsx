@@ -408,8 +408,8 @@ export default function TransporterDashboard() {
                             <div className="flex items-center gap-2 mb-1">
                               <h3 className="text-lg font-semibold">{request.referenceId}</h3>
                               {isMarkedForBilling && (
-                                <Badge variant="default" className="bg-blue-600">
-                                  À facturer
+                                <Badge variant="default" className="bg-orange-600">
+                                  En attente de paiement client
                                 </Badge>
                               )}
                             </div>
