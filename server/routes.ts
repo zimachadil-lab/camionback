@@ -1202,6 +1202,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Assign order to empty return
+  app.post("/api/empty-returns/:emptyReturnId/assign", async (req, res) => {
+    try {
+      const { emptyReturnId } = req.params;
+      const { requestId } = req.body;
+
+      if (!requestId) {
+        return res.status(400).json({ error: "requestId requis" });
+      }
+
+      const emptyReturn = await storage.updateEmptyReturn(emptyReturnId, { status: "assigned" });
+      if (!emptyReturn) {
+        return res.status(404).json({ error: "Retour à vide non trouvé" });
+      }
+
+      const request = await storage.getTransportRequest(requestId);
+      if (!request) {
+        return res.status(404).json({ error: "Demande non trouvée" });
+      }
+
+      // Create an automatic offer from the transporter
+      const offer = await storage.createOffer({
+        requestId,
+        transporterId: emptyReturn.transporterId,
+        amount: "0", // Price will be set by transporter if needed
+        message: `Affectation automatique pour retour à vide (${emptyReturn.fromCity} → ${emptyReturn.toCity})`,
+      });
+
+      // Accept the offer automatically
+      await storage.updateOffer(offer.id, { status: "accepted" });
+      await storage.updateTransportRequest(requestId, {
+        status: "accepted",
+        acceptedOfferId: offer.id,
+      });
+
+      // Create notification for transporter
+      await storage.createNotification({
+        userId: emptyReturn.transporterId,
+        type: "order_assigned",
+        title: "Commande affectée",
+        message: "Une commande vous a été affectée pour votre retour à vide",
+        relatedId: requestId,
+      });
+
+      res.json({ success: true, offer });
+    } catch (error) {
+      console.error("Error assigning order:", error);
+      res.status(500).json({ error: "Échec de l'affectation de la commande" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // WebSocket server for real-time chat (using separate path to avoid Vite HMR conflict)

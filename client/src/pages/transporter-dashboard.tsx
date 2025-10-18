@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, Image as ImageIcon, Clock } from "lucide-react";
+import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, Image as ImageIcon, Clock, Calendar } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { RequestCard } from "@/components/transporter/request-card";
 import { OfferForm } from "@/components/transporter/offer-form";
@@ -36,6 +36,10 @@ export default function TransporterDashboard() {
   const [selectedReferenceId, setSelectedReferenceId] = useState("");
   const [clientDetailsOpen, setClientDetailsOpen] = useState(false);
   const [selectedClientDetails, setSelectedClientDetails] = useState<any>(null);
+  const [announceReturnOpen, setAnnounceReturnOpen] = useState(false);
+  const [returnFromCity, setReturnFromCity] = useState("");
+  const [returnToCity, setReturnToCity] = useState("");
+  const [returnDate, setReturnDate] = useState("");
 
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
 
@@ -193,6 +197,33 @@ export default function TransporterDashboard() {
     },
   });
 
+  const announceReturnMutation = useMutation({
+    mutationFn: async (data: { fromCity: string; toCity: string; returnDate: string }) => {
+      return await apiRequest("POST", "/api/empty-returns", {
+        transporterId: user.id,
+        ...data,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Succès",
+        description: "Votre retour à vide a été annoncé",
+      });
+      setAnnounceReturnOpen(false);
+      // Reset form fields
+      setReturnFromCity("");
+      setReturnToCity("");
+      setReturnDate("");
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Échec de l'annonce du retour",
+      });
+    },
+  });
+
   const handleDeclineRequest = (requestId: string) => {
     if (confirm("Voulez-vous vraiment masquer cette commande ? Elle ne sera plus visible dans votre liste.")) {
       declineRequestMutation.mutate(requestId);
@@ -232,6 +263,7 @@ export default function TransporterDashboard() {
     <div className="min-h-screen bg-background">
       <Header
         user={user}
+        onAnnounceReturn={() => setAnnounceReturnOpen(true)}
         onLogout={handleLogout}
       />
       
@@ -636,6 +668,95 @@ export default function TransporterDashboard() {
               </Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Announce Empty Return Dialog */}
+      <Dialog open={announceReturnOpen} onOpenChange={setAnnounceReturnOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Annoncer un retour à vide</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Ville de départ</label>
+              <Select value={returnFromCity} onValueChange={setReturnFromCity}>
+                <SelectTrigger data-testid="select-return-from-city">
+                  <SelectValue placeholder="Sélectionner la ville de départ" />
+                </SelectTrigger>
+                <SelectContent>
+                  {moroccanCities.slice(1).map((city) => (
+                    <SelectItem key={city} value={city}>
+                      {city}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Ville d'arrivée</label>
+              <Select value={returnToCity} onValueChange={setReturnToCity}>
+                <SelectTrigger data-testid="select-return-to-city">
+                  <SelectValue placeholder="Sélectionner la ville d'arrivée" />
+                </SelectTrigger>
+                <SelectContent>
+                  {moroccanCities.slice(1).map((city) => (
+                    <SelectItem key={city} value={city}>
+                      {city}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Date de retour</label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="date"
+                  value={returnDate}
+                  onChange={(e) => setReturnDate(e.target.value)}
+                  className="pl-10"
+                  data-testid="input-return-date"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setAnnounceReturnOpen(false)}
+                className="flex-1"
+                data-testid="button-cancel-return"
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={() => {
+                  if (!returnFromCity || !returnToCity || !returnDate) {
+                    toast({
+                      variant: "destructive",
+                      title: "Erreur",
+                      description: "Veuillez remplir tous les champs",
+                    });
+                    return;
+                  }
+                  announceReturnMutation.mutate({
+                    fromCity: returnFromCity,
+                    toCity: returnToCity,
+                    returnDate,
+                  });
+                }}
+                disabled={announceReturnMutation.isPending}
+                className="flex-1 bg-[#00d4b2] hover:bg-[#00d4b2] border border-[#00d4b2]"
+                data-testid="button-submit-return"
+              >
+                {announceReturnMutation.isPending ? "En cours..." : "Annoncer"}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

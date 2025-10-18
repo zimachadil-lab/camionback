@@ -6,12 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCircle, UserCheck, CreditCard, Phone, Eye } from "lucide-react";
+import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCircle, UserCheck, CreditCard, Phone, Eye, TruckIcon } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { KpiCard } from "@/components/admin/kpi-card";
 import { AddTransporterForm } from "@/components/admin/add-transporter-form";
-import { useQuery } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -28,6 +28,8 @@ export default function AdminDashboard() {
   const [commissionRate, setCommissionRate] = useState("10");
   const [selectedReceipt, setSelectedReceipt] = useState<string>("");
   const [showReceiptDialog, setShowReceiptDialog] = useState(false);
+  const [assignOrderDialogOpen, setAssignOrderDialogOpen] = useState(false);
+  const [selectedEmptyReturn, setSelectedEmptyReturn] = useState<any>(null);
   const { toast } = useToast();
 
   const user = JSON.parse(localStorage.getItem("camionback_user") || "{}");
@@ -80,6 +82,15 @@ export default function AdminDashboard() {
     queryKey: ["/api/offers/all"],
     queryFn: async () => {
       const response = await fetch("/api/offers");
+      return response.json();
+    },
+  });
+
+  // Fetch active empty returns
+  const { data: emptyReturns = [], isLoading: emptyReturnsLoading } = useQuery({
+    queryKey: ["/api/empty-returns"],
+    queryFn: async () => {
+      const response = await fetch("/api/empty-returns");
       return response.json();
     },
   });
@@ -163,6 +174,31 @@ export default function AdminDashboard() {
       });
     }
   };
+
+  const assignOrderMutation = useMutation({
+    mutationFn: async ({ emptyReturnId, requestId }: { emptyReturnId: string; requestId: string }) => {
+      return await apiRequest("POST", `/api/empty-returns/${emptyReturnId}/assign`, {
+        requestId,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Commande affectée",
+        description: "La commande a été affectée au transporteur avec succès",
+      });
+      setAssignOrderDialogOpen(false);
+      setSelectedEmptyReturn(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/empty-returns"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Échec de l'affectation de la commande",
+      });
+    },
+  });
 
   // Mock KPI data
   const kpis = {
@@ -268,7 +304,7 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs defaultValue="requests" className="w-full">
-          <TabsList className="grid w-full max-w-4xl grid-cols-6">
+          <TabsList className="grid w-full max-w-5xl grid-cols-7 text-xs sm:text-sm">
             <TabsTrigger value="requests" data-testid="tab-requests">Demandes</TabsTrigger>
             <TabsTrigger value="to-pay" data-testid="tab-to-pay">
               À payer
@@ -283,6 +319,15 @@ export default function AdminDashboard() {
               {pendingDrivers.length > 0 && (
                 <Badge variant="destructive" className="ml-2 px-1.5 py-0 h-5 min-w-5 text-xs">
                   {pendingDrivers.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="empty-returns" data-testid="tab-empty-returns">
+              <TruckIcon className="w-4 h-4 mr-1" />
+              Retours
+              {emptyReturns.length > 0 && (
+                <Badge className="ml-2 px-1.5 py-0 h-5 min-w-5 text-xs bg-[#00d4b2]">
+                  {emptyReturns.length}
                 </Badge>
               )}
             </TabsTrigger>
@@ -679,6 +724,81 @@ export default function AdminDashboard() {
               </Card>
             </div>
           </TabsContent>
+
+          <TabsContent value="empty-returns" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TruckIcon className="w-5 h-5" />
+                  Retours à vide annoncés
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {emptyReturnsLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Chargement...</p>
+                  </div>
+                ) : emptyReturns.length === 0 ? (
+                  <div className="text-center py-8">
+                    <TruckIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">Aucun retour à vide annoncé</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Transporteur</TableHead>
+                        <TableHead>Téléphone</TableHead>
+                        <TableHead>De</TableHead>
+                        <TableHead>Vers</TableHead>
+                        <TableHead>Date de retour</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {emptyReturns.map((emptyReturn: any) => {
+                        const transporter = users.find((u: any) => u.id === emptyReturn.transporterId);
+                        return (
+                          <TableRow key={emptyReturn.id}>
+                            <TableCell className="font-medium">
+                              {transporter?.name || "Inconnu"}
+                            </TableCell>
+                            <TableCell>
+                              <a 
+                                href={`tel:${transporter?.phoneNumber}`}
+                                className="text-primary hover:underline"
+                              >
+                                {transporter?.phoneNumber || "N/A"}
+                              </a>
+                            </TableCell>
+                            <TableCell>{emptyReturn.fromCity}</TableCell>
+                            <TableCell>{emptyReturn.toCity}</TableCell>
+                            <TableCell>
+                              {new Date(emptyReturn.returnDate).toLocaleDateString("fr-FR")}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                size="sm"
+                                className="bg-[#00d4b2] hover:bg-[#00d4b2] border border-[#00d4b2]"
+                                onClick={() => {
+                                  setSelectedEmptyReturn(emptyReturn);
+                                  setAssignOrderDialogOpen(true);
+                                }}
+                                data-testid={`button-assign-order-${emptyReturn.id}`}
+                              >
+                                Affecter une commande
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
 
@@ -703,6 +823,84 @@ export default function AdminDashboard() {
                 alt="Reçu de paiement"
                 className="w-full h-auto max-h-[70vh] object-contain rounded-lg border"
               />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Order Dialog */}
+      <Dialog open={assignOrderDialogOpen} onOpenChange={setAssignOrderDialogOpen}>
+        <DialogContent className="max-w-[90vw] sm:max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Affecter une commande</DialogTitle>
+            <DialogDescription>
+              Sélectionnez une commande ouverte à affecter au transporteur
+              {selectedEmptyReturn && (
+                <span className="block mt-2 text-sm">
+                  Retour: <strong>{selectedEmptyReturn.fromCity} → {selectedEmptyReturn.toCity}</strong>
+                  {" "}le{" "}
+                  <strong>{new Date(selectedEmptyReturn.returnDate).toLocaleDateString("fr-FR")}</strong>
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4">
+            {allRequests.filter((req: any) => req.status === "open").length === 0 ? (
+              <div className="text-center py-8">
+                <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">Aucune commande ouverte disponible</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {allRequests
+                  .filter((req: any) => req.status === "open")
+                  .map((request: any) => {
+                    const client = users.find((u: any) => u.id === request.clientId);
+                    return (
+                      <Card 
+                        key={request.id}
+                        className="hover-elevate cursor-pointer"
+                        onClick={() => {
+                          if (selectedEmptyReturn) {
+                            assignOrderMutation.mutate({
+                              emptyReturnId: selectedEmptyReturn.id,
+                              requestId: request.id,
+                            });
+                          }
+                        }}
+                        data-testid={`card-assign-request-${request.id}`}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-start gap-4">
+                            <div className="flex-1 space-y-2">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline">Réf: {request.referenceId}</Badge>
+                                <span className="text-sm text-muted-foreground">
+                                  {client?.name || "Client inconnu"}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm">
+                                <span className="font-medium">{request.fromCity}</span>
+                                <span className="text-muted-foreground">→</span>
+                                <span className="font-medium">{request.toCity}</span>
+                              </div>
+                              <p className="text-sm text-muted-foreground line-clamp-2">
+                                {request.description}
+                              </p>
+                            </div>
+                            <Button
+                              size="sm"
+                              className="bg-[#00d4b2] hover:bg-[#00d4b2] border border-[#00d4b2]"
+                              disabled={assignOrderMutation.isPending}
+                            >
+                              {assignOrderMutation.isPending ? "Affectation..." : "Affecter"}
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+              </div>
             )}
           </div>
         </DialogContent>

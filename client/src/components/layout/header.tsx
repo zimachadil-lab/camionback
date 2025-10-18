@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu, User, Plus, LogOut, FileText, Clock, Receipt, Package, Star } from "lucide-react";
+import { Menu, User, Plus, LogOut, FileText, Clock, Receipt, Package, Star, TruckIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { MessagesBadge } from "@/components/chat/messages-badge";
@@ -20,10 +20,11 @@ interface HeaderProps {
     role: string;
   };
   onNewRequest?: () => void;
+  onAnnounceReturn?: () => void;
   onLogout: () => void;
 }
 
-export function Header({ user, onNewRequest, onLogout }: HeaderProps) {
+export function Header({ user, onNewRequest, onAnnounceReturn, onLogout }: HeaderProps) {
   const [location, navigate] = useLocation();
 
   const getMenuItems = () => {
@@ -93,6 +94,19 @@ export function Header({ user, onNewRequest, onLogout }: HeaderProps) {
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline">Nouvelle demande</span>
               <span className="sm:hidden">Nouveau</span>
+            </Button>
+          )}
+
+          {user.role === "transporter" && onAnnounceReturn && (
+            <Button
+              onClick={onAnnounceReturn}
+              size="default"
+              className="gap-2 bg-[#00d4b2] hover:bg-[#00d4b2] border border-[#00d4b2]"
+              data-testid="button-announce-return-header"
+            >
+              <TruckIcon className="h-4 w-4" />
+              <span className="hidden sm:inline">Annoncer un retour</span>
+              <span className="sm:hidden">Retour</span>
             </Button>
           )}
 
