@@ -1,0 +1,71 @@
+🚚 1️⃣ Consultation des informations du transporteur après validation
+
+Lorsqu’un client accepte une offre, la popup actuelle s’affiche correctement avec les infos du transporteur (nom, téléphone, message de confirmation).
+
+Cependant, une fois cette popup fermée, le client ne peut plus revoir ces informations.
+👉 Solution proposée :
+
+Sur le tableau de bord client, lorsque le statut d’une commande passe à “Acceptée”, ajouter un petit bouton à côté du statut, nommé par exemple :
+“Infos transporteur” ou “Détails de l’offre”.
+
+En cliquant dessus, une popup identique à celle affichée lors de l’acceptation s’ouvre à nouveau.
+
+Cette popup doit afficher :
+
+Nom du transporteur
+
+Ville (si disponible)
+
+Numéro de téléphone (cliquable → appel direct sur mobile)
+
+Date et heure d’acceptation
+
+Message de confirmation :
+
+“Vous pouvez contacter directement le transporteur pour finaliser les détails du transport.”
+
+🔄 2️⃣ Mise à jour du statut d’une commande côté client
+
+Une fois une commande acceptée, le client doit pouvoir mettre à jour manuellement le statut.
+
+Ajouter un petit bouton ou menu déroulant “Mettre à jour le statut” sur chaque commande acceptée, avec les options :
+
+✅ Terminée → déplace la commande dans la rubrique “Commandes terminées” (rubrique déjà existante).
+
+🔁 Republier → rend la commande à nouveau visible pour tous les transporteurs.
+
+💡 Détails du comportement :
+
+Si le client choisit Terminée, la commande n’est plus visible sur le tableau de bord principal (elle va dans “Terminées”).
+
+Si le client choisit Republier, la commande repasse au statut “Active” et s’affiche à nouveau sur le tableau de bord des transporteurs.
+
+Lors d’une republication, tous les transporteurs (y compris ceux ayant déjà proposé avant) peuvent soumettre une nouvelle offre.
+
+🚫 3️⃣ Visibilité côté transporteurs
+
+Dès qu’un client choisit un transporteur, la commande concernée doit disparaître de la liste “Commandes disponibles” pour tous les autres transporteurs.
+
+Elle doit rester visible uniquement pour :
+
+Le client (dans son tableau de bord avec statut “Acceptée”),
+
+Et le transporteur sélectionné (dans sa section “Mes offres acceptées”).
+
+Si le client republie la commande, elle redevient visible pour tous les transporteurs.
+
+✅ Résumé du flux attendu :
+
+Client accepte une offre → popup avec infos du transporteur.
+
+Commande passe à “Acceptée” + bouton “Infos transporteur” disponible.
+
+Client peut ensuite :
+
+Marquer comme “Terminée” (déplacée dans “Terminées”),
+
+Ou “Republier” (visible à nouveau pour tous les transporteurs).
+
+Tant que la commande est acceptée, elle n’apparaît plus pour les autres transporteurs.
+
+Après republication, elle réapparaît pour tous.

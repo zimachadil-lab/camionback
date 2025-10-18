@@ -63,6 +63,33 @@ Preferred communication style: Simple, everyday language.
 
 **Notification System:** In-app notifications with badge counter, dedicated notifications page, automatic notification creation on offer events.
 
+### Request Status Management
+
+**Client Request Workflow:**
+1. **Open Status:** Client creates request → appears in transporters' "Disponibles" tab
+2. **Accepted Status:** Client accepts offer → request status = "accepted", acceptedOfferId set
+   - Badge "Acceptée" displayed in client dashboard
+   - Button "Infos transporteur" shows transporter details popup (name, city, phone, price, commission)
+   - Menu "Mettre à jour" with options: "Terminée" and "Republier"
+3. **Completed Status:** Client marks request as completed → status = "completed"
+   - Request moves to "Terminées" tab
+   - Transporter info and republish buttons remain available
+4. **Republish:** Client republishes completed/accepted request → status reset to "open"
+   - All previous offers deleted (via `deleteOffersByRequest`)
+   - acceptedOfferId reset to null
+   - Request becomes visible to all transporters again in "Disponibles"
+   - All transporters (including those who previously submitted offers) can submit new offers
+
+**Backend Endpoints:**
+- GET `/api/requests/:id/accepted-transporter` - Retrieves accepted transporter info with commission calculation
+- POST `/api/requests/:id/complete` - Marks accepted request as completed
+- POST `/api/requests/:id/republish` - Republishes accepted/completed request, deletes all offers, resets to open status
+
+**Key Implementation Details:**
+- `deleteOffersByRequest(requestId)` method in storage layer ensures clean slate for republished requests
+- Transporter visibility in "Disponibles" filtered by existing offers (via `hasOfferForRequest`)
+- Republishing removes this filter by deleting all offers, allowing fresh bidding
+
 ### File Upload & Storage
 
 **Implementation:** Base64 encoding for request photos, Multer middleware for truck photos. 

@@ -37,6 +37,7 @@ export interface IStorage {
   getOffersByRequest(requestId: string): Promise<Offer[]>;
   getOffersByTransporter(transporterId: string): Promise<Offer[]>;
   updateOffer(id: string, updates: Partial<Offer>): Promise<Offer | undefined>;
+  deleteOffersByRequest(requestId: string): Promise<void>;
   
   // Chat operations
   createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
@@ -292,6 +293,16 @@ export class MemStorage implements IStorage {
     const updated = { ...offer, ...updates };
     this.offers.set(id, updated);
     return updated;
+  }
+
+  async deleteOffersByRequest(requestId: string): Promise<void> {
+    const offersToDelete = Array.from(this.offers.entries())
+      .filter(([_, offer]) => offer.requestId === requestId)
+      .map(([id, _]) => id);
+    
+    for (const offerId of offersToDelete) {
+      this.offers.delete(offerId);
+    }
   }
 
   filterPhoneNumbers(message: string): string {

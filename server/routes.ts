@@ -361,6 +361,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get accepted transporter info for a request
+  app.get("/api/requests/:id/accepted-transporter", async (req, res) => {
+    try {
+      const request = await storage.getTransportRequest(req.params.id);
+      if (!request) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+
+      if (!request.acceptedOfferId) {
+        return res.status(400).json({ error: "No accepted offer for this request" });
+      }
+
+      const offer = await storage.getOffer(request.acceptedOfferId);
+      if (!offer) {
+        return res.status(404).json({ error: "Accepted offer not found" });
+      }
+
+      const transporter = await storage.getUser(offer.transporterId);
+      if (!transporter) {
+        return res.status(404).json({ error: "Transporter not found" });
+      }
+
+      // Get commission from settings
+      const settings = await storage.getAdminSettings();
+      const commissionRate = parseFloat(settings?.commissionPercentage || "10");
+      const offerAmount = parseFloat(offer.amount);
+      const commissionAmount = (offerAmount * commissionRate) / 100;
+      const totalWithCommission = offerAmount + commissionAmount;
+
+      res.json({
+        transporterName: transporter.name,
+        transporterPhone: transporter.phoneNumber,
+        transporterCity: transporter.city,
+        offerAmount: offerAmount,
+        commission: commissionAmount,
+        total: totalWithCommission,
+        acceptedAt: offer.createdAt,
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch transporter info" });
+    }
+  });
+
+  // Republish a request (reset to open status)
+  app.post("/api/requests/:id/republish", async (req, res) => {
+    try {
+      const request = await storage.getTransportRequest(req.params.id);
+      if (!request) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+
+      if (request.status !== "accepted" && request.status !== "completed") {
+        return res.status(400).json({ error: "Only accepted or completed requests can be republished" });
+      }
+
+      // Delete all offers associated with this request
+      await storage.deleteOffersByRequest(req.params.id);
+
+      // Reset request to open status
+      const updatedRequest = await storage.updateTransportRequest(req.params.id, {
+        status: "open",
+        acceptedOfferId: null,
+      });
+
+      res.json({ success: true, request: updatedRequest });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to republish request" });
+    }
+  });
+
+  // Mark a request as completed
+  app.post("/api/requests/:id/complete", async (req, res) => {
+    try {
+      const request = await storage.getTransportRequest(req.params.id);
+      if (!request) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+
+      if (request.status !== "accepted") {
+        return res.status(400).json({ error: "Only accepted requests can be marked as completed" });
+      }
+
+      const updatedRequest = await storage.updateTransportRequest(req.params.id, {
+        status: "completed",
+      });
+
+      res.json({ success: true, request: updatedRequest });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to complete request" });
+    }
+  });
+
   // Offer routes
   app.post("/api/offers", async (req, res) => {
     try {
