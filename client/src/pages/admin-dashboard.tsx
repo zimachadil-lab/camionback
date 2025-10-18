@@ -349,7 +349,7 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs defaultValue="requests" className="w-full">
-          <TabsList className="grid w-full max-w-6xl grid-cols-11 text-xs sm:text-sm">
+          <TabsList className="grid w-full max-w-6xl grid-cols-12 text-xs sm:text-sm">
             <TabsTrigger value="requests" data-testid="tab-requests">Demandes</TabsTrigger>
             <TabsTrigger value="offers" data-testid="tab-offers">
               Offres
@@ -402,6 +402,7 @@ export default function AdminDashboard() {
               )}
             </TabsTrigger>
             <TabsTrigger value="drivers" data-testid="tab-drivers">Transporteurs</TabsTrigger>
+            <TabsTrigger value="clients" data-testid="tab-clients">Clients</TabsTrigger>
             <TabsTrigger value="facturation" data-testid="tab-facturation">Facturation</TabsTrigger>
             <TabsTrigger value="settings" data-testid="tab-settings">Paramètres</TabsTrigger>
             <TabsTrigger value="stats" data-testid="tab-stats">Statistiques</TabsTrigger>
