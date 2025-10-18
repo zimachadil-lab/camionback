@@ -1,228 +1,61 @@
 # CamionBack - Logistics Marketplace Platform
 
 ## Overview
-
-CamionBack is a full-stack logistics marketplace web application for the Moroccan market, connecting clients needing transportation services (furniture, freight, deliveries) with independent transporters. The platform features a mobile-first design, dark teal theme, French language interface, and phone-based PIN authentication with bcrypt hashing. It supports three user roles: Clients, Transporters, and Administrators, enabling clients to create requests, transporters to offer services, and administrators to manage and validate the platform.
+CamionBack is a full-stack logistics marketplace web application designed for the Moroccan market. It connects clients requiring transportation services (e.g., furniture, freight) with independent transporters. The platform supports three user roles: Clients, Transporters, and Administrators, enabling clients to create transportation requests, transporters to offer services, and administrators to manage and validate platform activities. Key features include a mobile-first design, a dark teal theme, a French language interface, and phone-based PIN authentication. The project aims to streamline logistics operations and create a robust, user-friendly platform for the Moroccan transport sector.
 
 ## User Preferences
-
 Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
-### Frontend Architecture
+### Frontend
+The frontend is built with React 18, TypeScript, Vite, Wouter for routing, TanStack Query for server state management, and Tailwind CSS for styling. It utilizes Shadcn/ui for components, Radix UI for accessibility, and React Hook Form with Zod for form handling. The design is mobile-first, featuring a dark theme with a dark teal palette and a French language interface.
 
-**Technology Stack:** React 18, TypeScript, Vite, Wouter (routing), TanStack Query (server state), Shadcn/ui (components), Tailwind CSS (styling).
+### Backend
+The backend uses Express.js with TypeScript, ES Modules, and `tsx` for development. It provides RESTful API endpoints in JSON format, employs session-based authentication, and uses Multer for multipart form data handling (5MB limit). The architecture emphasizes separation of concerns with an abstraction layer for storage.
 
-**Design System:** Mobile-first, dark theme with a dark teal palette, French language interface, custom CSS for theming, Radix UI for accessibility.
-
-**State Management:** React hooks/context (local UI), React Query (API data), localStorage (authentication), React Hook Form with Zod (forms).
-
-### Backend Architecture
-
-**Framework & Runtime:** Express.js with TypeScript, ES Modules, `tsx` for hot reloading, esbuild for production.
-
-**API Design:** RESTful endpoints (`/api`), JSON format, session-based authentication, logging middleware, Multer for multipart form data (5MB limit).
-
-**Architecture Patterns:** Storage abstraction layer (`IStorage`), in-memory storage (`MemStorage`) for development, separation of concerns (routes, storage, business logic).
-
-### Data Storage Solutions
-
-**Database:** PostgreSQL (configured for Neon serverless) with Drizzle ORM for type-safe queries and migrations.
-
-**Schema Design:** Key tables for users (multi-role with passwordHash, city, status fields), transport requests (CMD-2025-XXXXX format), offers, notifications, chat messages (with filtering), and admin settings.
+### Data Storage
+PostgreSQL, configured for Neon serverless, is used as the primary database, with Drizzle ORM for type-safe queries and migrations. The schema supports multi-role users, detailed transport requests, offers, notifications, and chat messages.
 
 ### Authentication & Authorization
-
-**Authentication Method:** Phone number-based PIN verification (6-digit codes with bcrypt hashing) supporting Moroccan phone formats (+212 + 9 digits, displayed with spaces: 6 12 34 56 78).
-
-**Registration Flow:** 
-1. Enter phone number → check if exists
-2. New users: create 6-digit PIN (bcrypt hashed) → select role (Client/Transporter)
-3. Transporters: complete profile (name, city, truck photo) → status set to "pending"
-4. Admin validation required for transporters before accessing features
-5. Existing users: enter PIN to login
-
-**Session Management:** localStorage-based user session persistence with automatic status refresh, role-based access control (client/transporter/admin), status-based feature access for transporters (pending/validated). Logout functionality uses `window.location.href` for complete session clearing and state reset.
-
-**User Data Refresh System:**
-- Dashboards automatically call GET `/api/auth/me/:userId` on mount to fetch latest user data from database
-- Updates localStorage and React state with fresh data (critical for status changes)
-- Ensures transporters see validation status updates immediately after admin approval
-
-**Admin Validation Workflow:** 
-- New transporters have "pending" status after profile completion
-- Admin validates transporters via dedicated validation tab in dashboard (`/admin` route)
-- Validation changes status to "validated", enabling full platform access
-- Status updates are immediately visible to transporters upon next dashboard load (via auto-refresh)
-- Rejection removes transporter from pending queue
+Authentication is phone number-based using 6-digit PIN verification with bcrypt hashing, supporting Moroccan phone formats. User registration allows selection of Client or Transporter roles, with Transporters requiring admin validation before full access. Session persistence is managed via localStorage with role and status-based access control. A user data refresh system ensures timely updates, especially for transporter validation status.
 
 ### Real-time Features
+Real-time chat is implemented via WebSockets (`/ws-chat`) for direct communication between clients and transporters, including message filtering. An in-app notification system provides alerts for offer events, payment workflow updates, and new chat messages, with a badge counter and dedicated notification page.
 
-**WebSocket Integration:** WebSocketServer at `/ws-chat` for real-time chat between clients and transporters per request. Includes message filtering for sensitive information (phone numbers, URLs) and proper lifecycle management.
-
-**Notification System:** In-app notifications with badge counter, dedicated notifications page, automatic notification creation on offer events and payment workflow events.
-
-**Notification Types:**
-- `offer_received` - Client receives notification when transporter submits offer
-- `offer_accepted` - Transporter receives notification when client accepts offer
-- `payment_request` - Client receives notification when transporter marks request for billing
-- `payment_confirmed` - Transporter receives notification when client confirms payment
-- `message_received` - User receives notification for new chat messages
-
-### Request Status Management
-
-**Client Request Workflow:**
-1. **Open Status:** Client creates request → appears in transporters' "Disponibles" tab
-2. **Accepted Status:** Client accepts offer → request status = "accepted", acceptedOfferId set
-   - Badge "Acceptée" displayed in client dashboard
-   - Button "Infos transporteur" shows transporter details popup (name, city, phone, price, commission)
-   - Menu "Mettre à jour" with options: "Terminée" and "Republier"
-3. **Completed Status:** Client marks request as completed → status = "completed"
-   - Request moves to "Terminées" tab
-   - Transporter info and republish buttons remain available
-4. **Republish:** Client republishes completed/accepted request → status reset to "open"
-   - All previous offers deleted (via `deleteOffersByRequest`)
-   - acceptedOfferId reset to null
-   - Request becomes visible to all transporters again in "Disponibles"
-   - All transporters (including those who previously submitted offers) can submit new offers
-
-**Backend Endpoints:**
-- GET `/api/requests/:id/accepted-transporter` - Retrieves accepted transporter info with commission calculation
-- POST `/api/requests/:id/complete` - Marks accepted request as completed with transporter rating (1-5 stars)
-- POST `/api/requests/:id/republish` - Republishes accepted/completed request, deletes all offers, resets to open status
-
-**Key Implementation Details:**
-- `deleteOffersByRequest(requestId)` method in storage layer ensures clean slate for republished requests
-- Transporter visibility in "Disponibles" filtered by existing offers (via `hasOfferForRequest`)
-- Republishing removes this filter by deleting all offers, allowing fresh bidding
-
-### Payment Workflow System
-
-**Complete Payment Flow (pending → awaiting_payment → paid):**
-
-1. **Transporter Dashboard - "À traiter" Tab:**
-   - Shows accepted requests (status="accepted") assigned to the transporter
-   - Displays count badge with number of accepted orders
-   - Request cards show: reference ID, route, goods type, weight, description
-   - "Voir les détails" button opens dialog with client contact information (name, city, clickable phone number, route)
-   - "Marquer comme à facturer" button changes paymentStatus to "awaiting_payment"
-   - Blue "À facturer" badge appears when paymentStatus="awaiting_payment"
-
-2. **Client Dashboard - "À payer" Tab:**
-   - Shows requests awaiting payment (paymentStatus="awaiting_payment")
-   - Displays count badge with number of payment pending requests
-   - Request cards show: reference ID, blue "À facturer" badge, route, goods details
-   - "Infos transporteur" button shows transporter details
-   - "Marquer comme payé" button changes paymentStatus to "paid" and sets paymentDate
-   - After payment, request moves to "Terminées" tab (removed from both "Actives" and "À payer")
-
-3. **Dashboard Filtering Logic:**
-   - **Actives**: (status="open" OR status="accepted") AND paymentStatus != "paid"
-   - **À payer**: paymentStatus="awaiting_payment"
-   - **Terminées**: status="completed" OR paymentStatus="paid"
-
-**Backend Endpoints:**
-- POST `/api/requests/:id/mark-for-billing` - Transporter marks accepted request for billing
-  - Authorization: validates transporterId matches accepted offer owner
-  - Changes paymentStatus: "pending" → "awaiting_payment"
-  - NOTE: Basic authorization check; production should use session/JWT authentication
-  
-- POST `/api/requests/:id/mark-as-paid` - Client confirms payment
-  - Authorization: validates clientId matches request owner
-  - Changes paymentStatus: "awaiting_payment" → "paid"
-  - Sets paymentDate to current timestamp
-  - NOTE: Basic authorization check; production should use session/JWT authentication
-
-**Database Schema:**
-- `transportRequests.paymentStatus`: text field (pending, awaiting_payment, paid)
-- `transportRequests.paymentReceipt`: text field for base64 payment receipt (optional)
-- `transportRequests.paymentDate`: timestamp field (set when marked as paid)
+### Request and Payment Workflow
+**Client Request Workflow:** Requests progress through 'Open', 'Accepted', and 'Completed' statuses. Clients can accept offers, mark requests as complete, and republish requests, which resets their status and deletes previous offers.
+**Payment Workflow:** A comprehensive payment flow includes statuses: 'pending' (initial), 'awaiting_payment' (transporter marks for billing), 'pending_admin_validation' (client uploads receipt), and 'paid' (admin validates payment). This involves interactions across Transporter, Client, and Admin dashboards, with receipt upload functionality (JPEG, PNG, WebP; max 5MB) and admin validation.
 
 ### Transporter Rating System
-
-**Rating Workflow:**
-1. Client marks request as "Terminée" → Rating dialog appears
-2. Client rates transporter (1-5 stars, mandatory)
-3. Backend calculates new average: `((currentRating * totalRatings) + newRating) / (totalRatings + 1)`
-4. Transporter stats updated: `rating`, `totalRatings`, `totalTrips`
-5. Request status changes to "completed"
-
-**Rating Display:**
-- Offer cards show: 5 yellow stars (filled according to rating) + average score (e.g., "4.3") + trip count (e.g., "12 courses réalisées")
-- Rating scale: decimal (3,2) precision
-- Stats tracked: `totalRatings` (number of reviews), `totalTrips` (completed orders), `rating` (weighted average)
-
-**Database Schema:**
-- `users.rating`: decimal (average rating for transporters)
-- `users.totalRatings`: integer (number of ratings received)
-- `users.totalTrips`: integer (number of completed trips)
+Clients can rate transporters (1-5 stars) upon request completion. The system calculates and updates average ratings, total ratings, and total completed trips for transporters. Ratings are displayed on offer cards with decimal precision.
 
 ### Mobile Responsive Design
+The platform features a mobile-first design with responsive adaptations using Tailwind CSS breakpoints (primarily `sm` at 640px). This includes dynamic sizing for popups and dialogs, adaptive button layouts and text, and optimized photo galleries for various screen sizes.
 
-**Mobile-First Adaptations:**
-- Popups/Dialogs: `max-w-[90vw] sm:max-w-md` or `max-w-[95vw] sm:max-w-4xl` for responsive sizing on small screens
-- Button layouts: `flex-col sm:flex-row` to stack vertically on mobile
-- Button text: adaptive labels (e.g., "Infos transporteur" → "Infos" on small screens using `sm:hidden` / `hidden sm:inline`)
-- Button widths: `w-full sm:w-auto` for full-width buttons on mobile
-- No horizontal scrolling required for any UI elements
-
-**Tailwind Breakpoint Usage:**
-- Default Tailwind `sm` breakpoint (640px) used for all responsive adaptations
-- Pattern: `sm:hidden` for content visible only on mobile (<640px), `hidden sm:inline` for content visible on desktop (≥640px)
-- Applied in: NotificationsPage ("Marquer comme lu" vs "Tout marquer comme lu"), ClientDashboard ("Infos" vs "Infos transporteur")
-
-**PhotoGalleryDialog Responsive Enhancements:**
-- Dialog width: `max-w-[95vw] sm:max-w-4xl` to prevent overflow on mobile
-- Navigation controls: `h-8 w-8 sm:h-10 sm:w-10` with icons `h-5 w-5 sm:h-6 sm:w-6`
-- Image scaling: `object-cover` on mobile for better aspect ratio, `object-contain` on desktop for full view
-- Miniatures: `w-16 h-16 sm:w-20 sm:h-20` for smaller thumbnails on mobile
-- Counter: `text-xs sm:text-sm` for compact display
-- Background opacity: `bg-background/90` for better contrast with navigation arrows
-
-**MessagesPage Navigation:**
-- Header component added with back button (ArrowLeft icon)
-- Back button navigates to "/" using wouter's `useLocation` hook
-- Container: `p-4 md:p-6 max-w-4xl mx-auto` for consistent responsive layout
-
-### File Upload & Storage
-
-**Implementation:** Base64 encoding for request photos, Multer middleware for truck photos. 
-
-**Request Photos (Client → Transporter):**
-- Client uploads photos via file input during request creation
-- Photos converted to base64 using FileReader API
-- Stored as text array in transportRequests.photos field
-- Transporter views photos via PhotoGalleryDialog modal with carousel navigation
-- "Voir les photos (N)" button shows photo count
-- Gallery includes previous/next navigation and photo counter (e.g., "1 / 2")
-
-**Truck Photos (Transporter Profile):** Multer middleware for multipart form uploads, in-memory storage with a 5MB limit.
+### File Upload
+Base64 encoding is used for client-uploaded request photos, stored as text in the database and displayed via a PhotoGalleryDialog. Transporter truck photos are handled via Multer middleware with in-memory storage.
 
 ## External Dependencies
 
-### UI Component Libraries
+### UI/Styling
 - **Radix UI**: Headless, accessible component primitives.
 - **Shadcn/ui**: Pre-built, Tailwind-styled components.
 - **Lucide React**: Icon library.
+- **Tailwind CSS**: Utility-first CSS framework.
+
+### Backend Services
+- **Twilio API**: For SMS OTP delivery.
+- **Neon Database**: Serverless PostgreSQL hosting.
+
+### Data Management
+- **Drizzle ORM**: Type-safe SQL query builder for PostgreSQL.
+- **Drizzle Zod**: Schema-to-validation generation.
+- **TanStack React Query**: Server state management and caching.
+
+### Utilities
+- **Wouter**: Lightweight client-side routing.
 - **React Hook Form**: Form state management with validation.
 - **Zod**: Schema validation.
 - **date-fns**: Date manipulation.
-
-### Backend Services & APIs
-- **Twilio API**: Configured for SMS OTP delivery.
-- **Neon Database**: Serverless PostgreSQL hosting.
-
-### Database & ORM
-- **Drizzle ORM**: Type-safe SQL query builder for PostgreSQL.
-- **Drizzle Zod**: Schema-to-validation generation.
-
-### Styling & Design
-- **Tailwind CSS**: Utility-first CSS framework.
-
-### State Management & Data Fetching
-- **TanStack React Query**: Server state management and caching.
-- **Wouter**: Lightweight client-side routing.
-
-### Additional Features
 - **Embla Carousel**: Carousel/slider for photo galleries.
