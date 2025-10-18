@@ -226,6 +226,7 @@ export class MemStorage implements IStorage {
         completedOrders,
         averageRating: Number(averageRating.toFixed(2)),
         registrationDate: client.createdAt,
+        accountStatus: client.accountStatus || "active",
       };
     });
   }

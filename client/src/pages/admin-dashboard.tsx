@@ -273,6 +273,50 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleBlockUser = async (userId: string, userType: string) => {
+    if (!confirm(`Voulez-vous bloquer ce ${userType === "client" ? "client" : "transporteur"} ? Il ne pourra plus se connecter ni utiliser la plateforme.`)) {
+      return;
+    }
+
+    try {
+      await apiRequest("POST", `/api/admin/block-user/${userId}`, {});
+
+      toast({
+        title: "Utilisateur bloqué",
+        description: "L'utilisateur a été bloqué avec succès et a reçu une notification.",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/transporters"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/clients"] });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Échec du blocage de l'utilisateur",
+      });
+    }
+  };
+
+  const handleUnblockUser = async (userId: string, userType: string) => {
+    try {
+      await apiRequest("POST", `/api/admin/unblock-user/${userId}`, {});
+
+      toast({
+        title: "Utilisateur débloqué",
+        description: "L'utilisateur a été débloqué avec succès et peut à nouveau utiliser la plateforme.",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/transporters"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/clients"] });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Échec du déblocage de l'utilisateur",
+      });
+    }
+  };
+
   const assignOrderMutation = useMutation({
     mutationFn: async ({ emptyReturnId, requestId }: { emptyReturnId: string; requestId: string }) => {
       return await apiRequest("POST", `/api/empty-returns/${emptyReturnId}/assign`, {
@@ -1143,6 +1187,8 @@ export default function AdminDashboard() {
                               <TableHead>Trajets</TableHead>
                               <TableHead>Commissions</TableHead>
                               <TableHead>Dernière activité</TableHead>
+                              <TableHead>Statut</TableHead>
+                              <TableHead>Action</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -1188,6 +1234,35 @@ export default function AdminDashboard() {
                                   {transporter.lastActivity 
                                     ? new Date(transporter.lastActivity).toLocaleDateString("fr-FR")
                                     : "Aucune"}
+                                </TableCell>
+                                <TableCell>
+                                  <Badge 
+                                    variant={transporter.accountStatus === "active" ? "default" : "destructive"}
+                                    data-testid={`badge-status-${transporter.id}`}
+                                  >
+                                    {transporter.accountStatus === "active" ? "Actif" : "Bloqué"}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  {transporter.accountStatus === "active" ? (
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      onClick={() => handleBlockUser(transporter.id, "transporter")}
+                                      data-testid={`button-block-${transporter.id}`}
+                                    >
+                                      🔒 Bloquer
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      size="sm"
+                                      variant="default"
+                                      onClick={() => handleUnblockUser(transporter.id, "transporter")}
+                                      data-testid={`button-unblock-${transporter.id}`}
+                                    >
+                                      🔓 Débloquer
+                                    </Button>
+                                  )}
                                 </TableCell>
                               </TableRow>
                             ))}
@@ -1264,6 +1339,8 @@ export default function AdminDashboard() {
                               <TableHead>Commandes complétées</TableHead>
                               <TableHead>Satisfaction</TableHead>
                               <TableHead>Date d'inscription</TableHead>
+                              <TableHead>Statut</TableHead>
+                              <TableHead>Action</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -1303,6 +1380,35 @@ export default function AdminDashboard() {
                                   {client.registrationDate 
                                     ? new Date(client.registrationDate).toLocaleDateString("fr-FR")
                                     : "N/A"}
+                                </TableCell>
+                                <TableCell>
+                                  <Badge 
+                                    variant={client.accountStatus === "active" ? "default" : "destructive"}
+                                    data-testid={`badge-client-status-${client.id}`}
+                                  >
+                                    {client.accountStatus === "active" ? "Actif" : "Bloqué"}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  {client.accountStatus === "active" ? (
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      onClick={() => handleBlockUser(client.id, "client")}
+                                      data-testid={`button-block-client-${client.id}`}
+                                    >
+                                      🔒 Bloquer
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      size="sm"
+                                      variant="default"
+                                      onClick={() => handleUnblockUser(client.id, "client")}
+                                      data-testid={`button-unblock-client-${client.id}`}
+                                    >
+                                      🔓 Débloquer
+                                    </Button>
+                                  )}
                                 </TableCell>
                               </TableRow>
                             ))}
