@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +44,7 @@ export function RequestCard({
 }: RequestCardProps) {
   const [photoGalleryOpen, setPhotoGalleryOpen] = useState(false);
   const [showValidationWarning, setShowValidationWarning] = useState(false);
+  const hasTrackedView = useRef(false);
   
   const dateTime = typeof request.dateTime === 'string' 
     ? new Date(request.dateTime) 
@@ -64,9 +65,16 @@ export function RequestCard({
   };
 
   const handleViewPhotos = () => {
-    onTrackView?.();
     setPhotoGalleryOpen(true);
   };
+
+  // Track view when card is mounted (only once)
+  useEffect(() => {
+    if (onTrackView && !hasTrackedView.current) {
+      hasTrackedView.current = true;
+      onTrackView();
+    }
+  }, [request.id, onTrackView]);
 
   return (
     <>

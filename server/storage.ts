@@ -179,7 +179,8 @@ export class MemStorage implements IStorage {
     const referenceId = this.generateReferenceId();
     const request: TransportRequest = {
       ...insertRequest,
-      estimatedWeight: insertRequest.estimatedWeight ?? null,
+      dateFlexible: insertRequest.dateFlexible ?? false,
+      invoiceRequired: insertRequest.invoiceRequired ?? false,
       budget: insertRequest.budget ?? null,
       photos: insertRequest.photos ?? null,
       id,
@@ -189,6 +190,8 @@ export class MemStorage implements IStorage {
       paymentStatus: "pending",
       paymentReceipt: null,
       paymentDate: null,
+      viewCount: 0,
+      declinedBy: [],
       createdAt: new Date(),
     };
     this.transportRequests.set(id, request);
