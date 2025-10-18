@@ -1142,6 +1142,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Send SMS to transporter about offer acceptance
+      if (transporter?.phoneNumber && request?.referenceId) {
+        await sendOfferAcceptedSMS(transporter.phoneNumber, request.referenceId);
+      }
+
       res.json({ 
         success: true,
         commission: commissionAmount,
