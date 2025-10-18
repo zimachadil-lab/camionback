@@ -131,6 +131,24 @@ export default function AdminDashboard() {
     },
   });
 
+  // Fetch admin statistics
+  const { data: adminStats } = useQuery({
+    queryKey: ["/api/admin/stats"],
+    queryFn: async () => {
+      const response = await fetch("/api/admin/stats");
+      return response.json();
+    },
+  });
+
+  // Fetch transporters with stats
+  const { data: transportersWithStats = [] } = useQuery({
+    queryKey: ["/api/admin/transporters"],
+    queryFn: async () => {
+      const response = await fetch("/api/admin/transporters");
+      return response.json();
+    },
+  });
+
   // Calculate contract statistics
   const activeContracts = contracts.filter(
     (c: any) => c.status === "in_progress" || c.status === "marked_paid_transporter" || c.status === "marked_paid_client"
@@ -265,56 +283,11 @@ export default function AdminDashboard() {
     },
   });
 
-  // Mock KPI data
-  const kpis = {
-    activeClients: 124,
-    activeDrivers: 87,
-    totalRequests: 456,
-    completedRequests: 342,
-    totalCommissions: "45,680",
-    conversionRate: "75%",
-  };
-
-  // Mock requests with offers
-  const mockRequests = [
-    {
-      id: "1",
-      referenceId: "CMD-2025-00145",
-      clientName: "Mohammed Ali",
-      fromCity: "Casablanca",
-      toCity: "Marrakech",
-      status: "open",
-      offers: [
-        { id: "o1", transporterName: "Ahmed Transport", amount: "800", accepted: false },
-        { id: "o2", transporterName: "Youssef Logistics", amount: "750", accepted: false },
-      ]
-    },
-    {
-      id: "2",
-      referenceId: "CMD-2025-00146",
-      clientName: "Fatima Zahra",
-      fromCity: "Rabat",
-      toCity: "Fès",
-      status: "accepted",
-      offers: [
-        { id: "o3", transporterName: "Hassan Transport", amount: "600", accepted: true },
-      ]
-    }
-  ];
-
-  // Mock top drivers
-  const topDrivers = [
-    { id: "1", name: "Ahmed Transport", rating: 4.8, trips: 156, commissions: "15,400 MAD" },
-    { id: "2", name: "Youssef Logistics", rating: 4.7, trips: 143, commissions: "14,200 MAD" },
-    { id: "3", name: "Hassan Transport", rating: 4.6, trips: 128, commissions: "12,800 MAD" },
-  ];
-
-  const handleRejectOffer = (offerId: string) => {
-    console.log("Rejecting offer:", offerId);
-  };
-
-  const handleUpdateCommission = () => {
-    console.log("Updating commission to:", commissionRate);
+  // Format trend text
+  const formatTrend = (trend: number) => {
+    if (trend === 0) return "Aucun changement";
+    const sign = trend > 0 ? "+" : "";
+    return `${sign}${trend}% ce mois`;
   };
 
   return (
@@ -342,41 +315,31 @@ export default function AdminDashboard() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <KpiCard
             title="Clients actifs"
-            value={kpis.activeClients}
+            value={adminStats?.activeClients || 0}
             icon={Users}
-            trend="+12% ce mois"
-            trendUp={true}
+            trend={adminStats?.activeClientsTrend !== undefined ? formatTrend(adminStats.activeClientsTrend) : "..."}
+            trendUp={adminStats?.activeClientsTrend ? adminStats.activeClientsTrend > 0 : undefined}
           />
           <KpiCard
             title="Transporteurs actifs"
-            value={kpis.activeDrivers}
+            value={adminStats?.activeDrivers || 0}
             icon={Users}
-            trend="+8% ce mois"
-            trendUp={true}
+            trend={adminStats?.activeDriversTrend !== undefined ? formatTrend(adminStats.activeDriversTrend) : "..."}
+            trendUp={adminStats?.activeDriversTrend ? adminStats.activeDriversTrend > 0 : undefined}
           />
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Contrats</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{contracts.length}</div>
-              <div className="flex items-center gap-2 mt-2">
-                <Badge className="bg-blue-600 text-xs" data-testid="badge-active-contracts">
-                  {activeContracts} actifs
-                </Badge>
-                <Badge className="bg-green-600 text-xs" data-testid="badge-completed-contracts">
-                  {completedContracts} terminés
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
+          <KpiCard
+            title="Demandes totales"
+            value={adminStats?.totalRequests || 0}
+            icon={Package}
+            trend=""
+            trendUp={undefined}
+          />
           <KpiCard
             title="Commissions totales"
-            value={`${kpis.totalCommissions} MAD`}
+            value={`${adminStats?.totalCommissions?.toLocaleString("fr-MA") || 0} MAD`}
             icon={DollarSign}
-            trend="+15% ce mois"
-            trendUp={true}
+            trend={adminStats?.commissionsTrend !== undefined ? formatTrend(adminStats.commissionsTrend) : "..."}
+            trendUp={adminStats?.commissionsTrend ? adminStats.commissionsTrend > 0 : undefined}
           />
         </div>
 
@@ -975,169 +938,87 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="requests" className="mt-6 space-y-6">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher par ID ou client..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-                data-testid="input-search-admin"
-              />
-            </div>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Toutes les demandes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  {mockRequests.map((request) => (
-                    <div key={request.id} className="border-b pb-6 last:border-0">
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <Badge variant="outline" className="mb-2">
-                            {request.referenceId}
-                          </Badge>
-                          <p className="font-semibold">{request.clientName}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {request.fromCity} → {request.toCity}
-                          </p>
-                        </div>
-                        <Badge variant={request.status === "open" ? "default" : "secondary"}>
-                          {request.status === "open" ? "Ouverte" : "Acceptée"}
-                        </Badge>
-                      </div>
-
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium">
-                          Offres reçues ({request.offers.length})
-                        </p>
-                        {request.offers.map((offer) => (
-                          <div
-                            key={offer.id}
-                            className="flex items-center justify-between p-3 rounded-lg bg-muted"
-                          >
-                            <div>
-                              <p className="font-medium">{offer.transporterName}</p>
-                              <p className="text-lg font-bold text-primary">
-                                {offer.amount} MAD
-                              </p>
-                            </div>
-                            {offer.accepted ? (
-                              <Badge className="bg-green-600">Acceptée</Badge>
-                            ) : (
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleValidatePayment(offer.id)}
-                                  data-testid={`button-validate-${offer.id}`}
-                                >
-                                  <CheckCircle className="h-4 w-4 mr-1" />
-                                  Valider
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() => handleRejectOffer(offer.id)}
-                                  data-testid={`button-reject-${offer.id}`}
-                                >
-                                  <XCircle className="h-4 w-4 mr-1" />
-                                  Rejeter
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           <TabsContent value="drivers" className="mt-6">
             <Card>
               <CardHeader>
-                <CardTitle>Meilleurs transporteurs</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  Tous les transporteurs
+                  <Badge className="ml-2" data-testid="badge-total-transporters">
+                    Total: {transportersWithStats.length}
+                  </Badge>
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nom</TableHead>
-                      <TableHead>Note</TableHead>
-                      <TableHead>Trajets</TableHead>
-                      <TableHead>Commissions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {topDrivers.map((driver) => (
-                      <TableRow key={driver.id}>
-                        <TableCell className="font-medium">{driver.name}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <TrendingUp className="h-4 w-4 text-yellow-400" />
-                            {driver.rating}
-                          </div>
-                        </TableCell>
-                        <TableCell>{driver.trips}</TableCell>
-                        <TableCell className="text-primary font-semibold">
-                          {driver.commissions}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="settings" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Paramètres de commission</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">
-                    Pourcentage de commission (%)
-                  </label>
-                  <div className="flex gap-4">
-                    <Input
-                      type="number"
-                      value={commissionRate}
-                      onChange={(e) => setCommissionRate(e.target.value)}
-                      className="max-w-32"
-                      data-testid="input-commission-rate"
-                    />
-                    <Button 
-                      onClick={handleUpdateCommission}
-                      data-testid="button-update-commission"
-                    >
-                      Mettre à jour
-                    </Button>
+                {transportersWithStats.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">Aucun transporteur validé</p>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Commission actuelle: {commissionRate}% du montant total
-                  </p>
-                </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Nom</TableHead>
+                          <TableHead>Ville</TableHead>
+                          <TableHead>Téléphone</TableHead>
+                          <TableHead>Note</TableHead>
+                          <TableHead>Trajets</TableHead>
+                          <TableHead>Commissions</TableHead>
+                          <TableHead>Dernière activité</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {transportersWithStats.map((transporter: any) => (
+                          <TableRow key={transporter.id}>
+                            <TableCell className="font-medium">{transporter.name}</TableCell>
+                            <TableCell>{transporter.city}</TableCell>
+                            <TableCell>
+                              <a 
+                                href={`tel:${transporter.phoneNumber}`}
+                                className="text-primary hover:underline"
+                              >
+                                {transporter.phoneNumber}
+                              </a>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                ⭐ {transporter.rating.toFixed(1)}
+                                <span className="text-xs text-muted-foreground ml-1">
+                                  ({transporter.totalRatings})
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell>{transporter.totalTrips}</TableCell>
+                            <TableCell className="text-primary font-semibold">
+                              {transporter.totalCommissions.toLocaleString("fr-MA")} MAD
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {transporter.lastActivity 
+                                ? new Date(transporter.lastActivity).toLocaleDateString("fr-FR")
+                                : "Aucune"}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="stats" className="mt-6">
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <Card>
                 <CardHeader>
                   <CardTitle>Taux de conversion</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-4xl font-bold text-primary mb-2">
-                    {kpis.conversionRate}
+                    {adminStats?.conversionRate || 0}%
                   </div>
                   <p className="text-sm text-muted-foreground">
                     Offres acceptées / Total des offres
@@ -1151,10 +1032,66 @@ export default function AdminDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-4xl font-bold text-primary mb-2">
-                    {kpis.completedRequests}
+                    {adminStats?.completedRequests || 0}
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Sur {kpis.totalRequests} demandes totales
+                    Sur {adminStats?.totalRequests || 0} demandes totales
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Satisfaction transporteurs</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-4xl font-bold text-primary mb-2">
+                    ⭐ {adminStats?.averageRating || 0} / 5
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Moyenne des notes clients
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Durée moyenne</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-4xl font-bold text-primary mb-2">
+                    ⏱️ {adminStats?.averageProcessingTime || 0} j
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Traitement des commandes
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Montant moyen</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-4xl font-bold text-primary mb-2">
+                    {adminStats?.averageAmount?.toLocaleString("fr-MA") || 0} MAD
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Par mission complétée
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Paiements en attente</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-4xl font-bold text-primary mb-2">
+                    {adminStats?.pendingPaymentsTotal?.toLocaleString("fr-MA") || 0} MAD
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {adminStats?.pendingPaymentsCount || 0} commande(s)
                   </p>
                 </CardContent>
               </Card>
