@@ -30,6 +30,8 @@ export default function AdminDashboard() {
   const [showReceiptDialog, setShowReceiptDialog] = useState(false);
   const [assignOrderDialogOpen, setAssignOrderDialogOpen] = useState(false);
   const [selectedEmptyReturn, setSelectedEmptyReturn] = useState<any>(null);
+  const [selectedContract, setSelectedContract] = useState<any>(null);
+  const [contractDetailsOpen, setContractDetailsOpen] = useState(false);
   const { toast } = useToast();
 
   const user = JSON.parse(localStorage.getItem("camionback_user") || "{}");
@@ -91,6 +93,15 @@ export default function AdminDashboard() {
     queryKey: ["/api/empty-returns"],
     queryFn: async () => {
       const response = await fetch("/api/empty-returns");
+      return response.json();
+    },
+  });
+
+  // Fetch all contracts
+  const { data: contracts = [] } = useQuery({
+    queryKey: ["/api/contracts"],
+    queryFn: async () => {
+      const response = await fetch("/api/contracts");
       return response.json();
     },
   });
@@ -325,13 +336,21 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs defaultValue="requests" className="w-full">
-          <TabsList className="grid w-full max-w-5xl grid-cols-8 text-xs sm:text-sm">
+          <TabsList className="grid w-full max-w-5xl grid-cols-9 text-xs sm:text-sm">
             <TabsTrigger value="requests" data-testid="tab-requests">Demandes</TabsTrigger>
             <TabsTrigger value="offers" data-testid="tab-offers">
               Offres
               {allOffers.length > 0 && (
                 <Badge className="ml-2 px-1.5 py-0 h-5 min-w-5 text-xs">
                   {allOffers.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="contracts" data-testid="tab-contracts">
+              Contrats
+              {contracts.length > 0 && (
+                <Badge className="ml-2 px-1.5 py-0 h-5 min-w-5 text-xs">
+                  {contracts.length}
                 </Badge>
               )}
             </TabsTrigger>
@@ -468,6 +487,111 @@ export default function AdminDashboard() {
                                     Accepter l'offre
                                   </Button>
                                 )}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="contracts" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="w-5 h-5" />
+                  Contrats
+                  <Badge className="ml-2">
+                    Total: {contracts.length}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {contracts.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">Aucun contrat pour le moment</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>N° Commande</TableHead>
+                          <TableHead>Client</TableHead>
+                          <TableHead>Transporteur</TableHead>
+                          <TableHead>Montant</TableHead>
+                          <TableHead>Date création</TableHead>
+                          <TableHead>Statut</TableHead>
+                          <TableHead className="text-right">Action</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {contracts.map((contract: any) => {
+                          const client = users.find((u: any) => u.id === contract.clientId);
+                          const transporter = users.find((u: any) => u.id === contract.transporterId);
+                          
+                          const formatDate = (dateStr: string) => {
+                            if (!dateStr) return "N/A";
+                            try {
+                              const date = new Date(dateStr);
+                              return date.toLocaleDateString("fr-FR");
+                            } catch {
+                              return "N/A";
+                            }
+                          };
+
+                          const getStatusBadge = (status: string) => {
+                            if (status === "in_progress") return <Badge className="bg-blue-600">En cours d'exécution</Badge>;
+                            if (status === "marked_paid_transporter") return <Badge className="bg-yellow-600">Payé côté transporteur</Badge>;
+                            if (status === "marked_paid_client") return <Badge className="bg-orange-600">Payé côté client</Badge>;
+                            if (status === "completed") return <Badge className="bg-green-600">Terminé</Badge>;
+                            return <Badge variant="secondary">Inconnu</Badge>;
+                          };
+
+                          return (
+                            <TableRow key={contract.id}>
+                              <TableCell className="font-medium" data-testid={`text-contract-ref-${contract.id}`}>
+                                {contract.referenceId || "N/A"}
+                              </TableCell>
+                              <TableCell data-testid={`text-contract-client-${contract.id}`}>
+                                <div className="flex flex-col">
+                                  <span>{client?.name || "N/A"}</span>
+                                  <span className="text-xs text-muted-foreground">{client?.phoneNumber || ""}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell data-testid={`text-contract-transporter-${contract.id}`}>
+                                <div className="flex flex-col">
+                                  <span>{transporter?.name || "N/A"}</span>
+                                  <span className="text-xs text-muted-foreground">{transporter?.phoneNumber || ""}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="font-semibold" data-testid={`text-contract-amount-${contract.id}`}>
+                                {contract.amount} MAD
+                              </TableCell>
+                              <TableCell data-testid={`text-contract-date-${contract.id}`}>
+                                {formatDate(contract.createdAt)}
+                              </TableCell>
+                              <TableCell data-testid={`badge-contract-status-${contract.id}`}>
+                                {getStatusBadge(contract.status)}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="hover:bg-[#3498db]/10"
+                                  onClick={() => {
+                                    setSelectedContract(contract);
+                                    setContractDetailsOpen(true);
+                                  }}
+                                  data-testid={`button-view-contract-${contract.id}`}
+                                >
+                                  <Eye className="w-5 h-5 text-[#3498db]" />
+                                </Button>
                               </TableCell>
                             </TableRow>
                           );
