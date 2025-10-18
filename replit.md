@@ -61,7 +61,14 @@ Preferred communication style: Simple, everyday language.
 
 **WebSocket Integration:** WebSocketServer at `/ws-chat` for real-time chat between clients and transporters per request. Includes message filtering for sensitive information (phone numbers, URLs) and proper lifecycle management.
 
-**Notification System:** In-app notifications with badge counter, dedicated notifications page, automatic notification creation on offer events.
+**Notification System:** In-app notifications with badge counter, dedicated notifications page, automatic notification creation on offer events and payment workflow events.
+
+**Notification Types:**
+- `offer_received` - Client receives notification when transporter submits offer
+- `offer_accepted` - Transporter receives notification when client accepts offer
+- `payment_request` - Client receives notification when transporter marks request for billing
+- `payment_confirmed` - Transporter receives notification when client confirms payment
+- `message_received` - User receives notification for new chat messages
 
 ### Request Status Management
 

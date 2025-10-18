@@ -527,6 +527,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymentStatus: "awaiting_payment",
       });
 
+      // Create notification for client
+      if (request.acceptedOfferId && request.clientId) {
+        const acceptedOffer = await storage.getOffer(request.acceptedOfferId);
+        const transporter = acceptedOffer ? await storage.getUser(acceptedOffer.transporterId) : null;
+        
+        if (transporter) {
+          try {
+            await storage.createNotification({
+              userId: request.clientId,
+              type: "payment_request",
+              title: "Paiement requis",
+              message: `Le transporteur ${transporter.name || "votre transporteur"} a marqué la commande ${request.referenceId} comme prête pour facturation. Veuillez confirmer le paiement.`,
+              relatedId: request.id,
+            });
+          } catch (notifError) {
+            console.error("Failed to create payment request notification:", notifError);
+            // Continue anyway - notification failure shouldn't block the payment status update
+          }
+        }
+      }
+
       res.json({ 
         success: true, 
         request: updatedRequest
@@ -562,6 +583,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymentStatus: "paid",
         paymentDate: new Date(),
       });
+
+      // Create notification for transporter
+      if (request.acceptedOfferId && request.clientId) {
+        const acceptedOffer = await storage.getOffer(request.acceptedOfferId);
+        const client = await storage.getUser(request.clientId);
+        
+        if (acceptedOffer && client) {
+          try {
+            await storage.createNotification({
+              userId: acceptedOffer.transporterId,
+              type: "payment_confirmed",
+              title: "Paiement confirmé",
+              message: `Le client ${client.name || "votre client"} a confirmé le paiement pour la commande ${request.referenceId}. La transaction est terminée.`,
+              relatedId: request.id,
+            });
+          } catch (notifError) {
+            console.error("Failed to create payment confirmed notification:", notifError);
+            // Continue anyway - notification failure shouldn't block the payment status update
+          }
+        }
+      }
 
       res.json({ 
         success: true, 
