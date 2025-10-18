@@ -48,7 +48,12 @@ export default function AdminDashboard() {
   const [conversationDialogOpen, setConversationDialogOpen] = useState(false);
   const [deleteConversationId, setDeleteConversationId] = useState<string | null>(null);
   const [adminMessage, setAdminMessage] = useState("");
-  const { toast } = useToast();
+  const [transporterSearch, setTransporterSearch] = useState("");
+  const [transporterCityFilter, setTransporterCityFilter] = useState("all");
+  const [assignOrderSearch, setAssignOrderSearch] = useState("");
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+  const [invoiceDetailsOpen, setInvoiceDetailsOpen] = useState(false);
+  const { toast} = useToast();
 
   const user = JSON.parse(localStorage.getItem("camionback_user") || "{}");
 
@@ -397,9 +402,107 @@ export default function AdminDashboard() {
               )}
             </TabsTrigger>
             <TabsTrigger value="drivers" data-testid="tab-drivers">Transporteurs</TabsTrigger>
+            <TabsTrigger value="facturation" data-testid="tab-facturation">Facturation</TabsTrigger>
             <TabsTrigger value="settings" data-testid="tab-settings">Paramètres</TabsTrigger>
             <TabsTrigger value="stats" data-testid="tab-stats">Statistiques</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="requests" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="w-5 h-5" />
+                  Toutes les demandes
+                  <Badge className="ml-2" data-testid="badge-total-requests">
+                    Total: {allRequests.length}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {allRequests.length === 0 ? (
+                  <div className="text-center py-8">
+                    <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">Aucune demande pour le moment</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Référence</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Client</TableHead>
+                          <TableHead>De → Vers</TableHead>
+                          <TableHead>Date souhaitée</TableHead>
+                          <TableHead>Prix estimé</TableHead>
+                          <TableHead>Statut</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {allRequests.map((request: any) => {
+                          const client = users.find((u: any) => u.id === request.clientId);
+                          const formatDate = (dateStr: string) => {
+                            if (!dateStr) return "N/A";
+                            try {
+                              const date = new Date(dateStr);
+                              return date.toLocaleDateString("fr-FR");
+                            } catch {
+                              return "N/A";
+                            }
+                          };
+
+                          const getStatusBadge = (status: string) => {
+                            if (status === "open") return <Badge variant="default">Ouverte</Badge>;
+                            if (status === "accepted") return <Badge className="bg-blue-600">Acceptée</Badge>;
+                            if (status === "completed") return <Badge className="bg-green-600">Complétée</Badge>;
+                            return <Badge variant="secondary">{status}</Badge>;
+                          };
+
+                          return (
+                            <TableRow key={request.id}>
+                              <TableCell className="font-medium">{request.referenceId}</TableCell>
+                              <TableCell>{formatDate(request.createdAt)}</TableCell>
+                              <TableCell>
+                                <div>
+                                  <p className="font-medium">{client?.name || "Inconnu"}</p>
+                                  <a 
+                                    href={`tel:${client?.phoneNumber}`}
+                                    className="text-xs text-primary hover:underline"
+                                  >
+                                    {client?.phoneNumber}
+                                  </a>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-sm">
+                                  {request.fromCity} → {request.toCity}
+                                </div>
+                              </TableCell>
+                              <TableCell>{formatDate(request.desiredDate)}</TableCell>
+                              <TableCell className="font-semibold text-primary">
+                                {request.estimatedPrice?.toLocaleString("fr-MA")} MAD
+                              </TableCell>
+                              <TableCell>{getStatusBadge(request.status)}</TableCell>
+                              <TableCell className="text-right">
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost"
+                                  data-testid={`button-view-request-${request.id}`}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="offers" className="mt-6">
             <Card>
@@ -836,6 +939,8 @@ export default function AdminDashboard() {
                         <TableHead>Client</TableHead>
                         <TableHead>Transporteur</TableHead>
                         <TableHead>Montant net</TableHead>
+                        <TableHead>Total client</TableHead>
+                        <TableHead>Commission</TableHead>
                         <TableHead>Reçu</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
@@ -856,8 +961,13 @@ export default function AdminDashboard() {
 
                         // Calculate net amount (base amount that transporter gets, without commission)
                         const netAmount = acceptedOffer 
-                          ? parseFloat(acceptedOffer.amount).toFixed(2)
-                          : "N/A";
+                          ? parseFloat(acceptedOffer.amount)
+                          : 0;
+
+                        // Calculate commission and total
+                        const commissionPercentage = adminSettings?.commissionPercentage || 10;
+                        const commissionAmount = netAmount * (commissionPercentage / 100);
+                        const totalClientAmount = netAmount + commissionAmount;
 
                         return (
                           <TableRow key={request.id}>
@@ -885,7 +995,13 @@ export default function AdminDashboard() {
                               </div>
                             </TableCell>
                             <TableCell>
-                              <span className="font-semibold">{netAmount} MAD</span>
+                              <span className="font-semibold">{netAmount.toFixed(2)} MAD</span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-semibold text-primary">{totalClientAmount.toFixed(2)} MAD</span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-semibold text-green-600">{commissionAmount.toFixed(2)} MAD</span>
                             </TableCell>
                             <TableCell>
                               {request.paymentReceipt ? (
@@ -946,65 +1062,129 @@ export default function AdminDashboard() {
                   <Users className="w-5 h-5" />
                   Tous les transporteurs
                   <Badge className="ml-2" data-testid="badge-total-transporters">
-                    Total: {transportersWithStats.length}
+                    Total: {transportersWithStats.filter((t: any) => {
+                      const searchLower = transporterSearch.toLowerCase();
+                      const matchesSearch = !transporterSearch || 
+                        t.name.toLowerCase().includes(searchLower) || 
+                        t.phoneNumber.includes(transporterSearch);
+                      const matchesCity = transporterCityFilter === "all" || t.city === transporterCityFilter;
+                      return matchesSearch && matchesCity;
+                    }).length}
                   </Badge>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
+                <div className="flex gap-4 flex-wrap">
+                  <div className="relative flex-1 min-w-[200px]">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Rechercher par nom ou téléphone..."
+                      value={transporterSearch}
+                      onChange={(e) => setTransporterSearch(e.target.value)}
+                      className="pl-10"
+                      data-testid="input-search-transporter"
+                    />
+                  </div>
+                  <Select value={transporterCityFilter} onValueChange={setTransporterCityFilter}>
+                    <SelectTrigger className="w-[200px]" data-testid="select-city-filter">
+                      <SelectValue placeholder="Filtrer par ville" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Toutes les villes</SelectItem>
+                      {Array.from(new Set(transportersWithStats.map((t: any) => t.city))).map((city: any) => (
+                        <SelectItem key={city} value={city}>{city}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {transportersWithStats.length === 0 ? (
                   <div className="text-center py-8">
                     <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                     <p className="text-muted-foreground">Aucun transporteur validé</p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Nom</TableHead>
-                          <TableHead>Ville</TableHead>
-                          <TableHead>Téléphone</TableHead>
-                          <TableHead>Note</TableHead>
-                          <TableHead>Trajets</TableHead>
-                          <TableHead>Commissions</TableHead>
-                          <TableHead>Dernière activité</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {transportersWithStats.map((transporter: any) => (
-                          <TableRow key={transporter.id}>
-                            <TableCell className="font-medium">{transporter.name}</TableCell>
-                            <TableCell>{transporter.city}</TableCell>
-                            <TableCell>
-                              <a 
-                                href={`tel:${transporter.phoneNumber}`}
-                                className="text-primary hover:underline"
-                              >
-                                {transporter.phoneNumber}
-                              </a>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-1">
-                                ⭐ {transporter.rating.toFixed(1)}
-                                <span className="text-xs text-muted-foreground ml-1">
-                                  ({transporter.totalRatings})
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell>{transporter.totalTrips}</TableCell>
-                            <TableCell className="text-primary font-semibold">
-                              {transporter.totalCommissions.toLocaleString("fr-MA")} MAD
-                            </TableCell>
-                            <TableCell className="text-sm text-muted-foreground">
-                              {transporter.lastActivity 
-                                ? new Date(transporter.lastActivity).toLocaleDateString("fr-FR")
-                                : "Aucune"}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
+                  (() => {
+                    const filteredTransporters = transportersWithStats.filter((t: any) => {
+                      const searchLower = transporterSearch.toLowerCase();
+                      const matchesSearch = !transporterSearch || 
+                        t.name.toLowerCase().includes(searchLower) || 
+                        t.phoneNumber.includes(transporterSearch);
+                      const matchesCity = transporterCityFilter === "all" || t.city === transporterCityFilter;
+                      return matchesSearch && matchesCity;
+                    });
+
+                    return filteredTransporters.length === 0 ? (
+                      <div className="text-center py-8">
+                        <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground">Aucun transporteur trouvé avec ces critères</p>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Photo camion</TableHead>
+                              <TableHead>Nom</TableHead>
+                              <TableHead>Ville</TableHead>
+                              <TableHead>Téléphone</TableHead>
+                              <TableHead>Note</TableHead>
+                              <TableHead>Trajets</TableHead>
+                              <TableHead>Commissions</TableHead>
+                              <TableHead>Dernière activité</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {filteredTransporters.map((transporter: any) => (
+                              <TableRow key={transporter.id}>
+                                <TableCell>
+                                  {transporter.truckPhoto ? (
+                                    <img 
+                                      src={transporter.truckPhoto} 
+                                      alt="Camion" 
+                                      className="w-16 h-16 object-cover rounded"
+                                      data-testid={`img-truck-${transporter.id}`}
+                                    />
+                                  ) : (
+                                    <div className="w-16 h-16 bg-muted rounded flex items-center justify-center">
+                                      <TruckIcon className="w-8 h-8 text-muted-foreground" />
+                                    </div>
+                                  )}
+                                </TableCell>
+                                <TableCell className="font-medium">{transporter.name}</TableCell>
+                                <TableCell>{transporter.city}</TableCell>
+                                <TableCell>
+                                  <a 
+                                    href={`tel:${transporter.phoneNumber}`}
+                                    className="text-primary hover:underline"
+                                  >
+                                    {transporter.phoneNumber}
+                                  </a>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-1">
+                                    ⭐ {transporter.rating.toFixed(1)}
+                                    <span className="text-xs text-muted-foreground ml-1">
+                                      ({transporter.totalRatings})
+                                    </span>
+                                  </div>
+                                </TableCell>
+                                <TableCell>{transporter.totalTrips}</TableCell>
+                                <TableCell className="text-primary font-semibold">
+                                  {transporter.totalCommissions.toLocaleString("fr-MA")} MAD
+                                </TableCell>
+                                <TableCell className="text-sm text-muted-foreground">
+                                  {transporter.lastActivity 
+                                    ? new Date(transporter.lastActivity).toLocaleDateString("fr-FR")
+                                    : "Aucune"}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    );
+                  })()
                 )}
               </CardContent>
             </Card>
@@ -1096,6 +1276,203 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="facturation" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="w-5 h-5" />
+                  Historique des paiements
+                  <Badge className="ml-2" data-testid="badge-total-invoices">
+                    Total: {allRequests.filter((r: any) => r.paymentStatus === "paid").length}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {(() => {
+                  const paidRequests = allRequests.filter((r: any) => r.paymentStatus === "paid");
+                  
+                  if (paidRequests.length === 0) {
+                    return (
+                      <div className="text-center py-8">
+                        <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground">Aucun paiement validé pour le moment</p>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Référence</TableHead>
+                            <TableHead>Date validation</TableHead>
+                            <TableHead>Client</TableHead>
+                            <TableHead>Transporteur</TableHead>
+                            <TableHead>Total client</TableHead>
+                            <TableHead>Commission</TableHead>
+                            <TableHead>Statut</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {paidRequests.map((request: any) => {
+                            const client = users.find((u: any) => u.id === request.clientId);
+                            const acceptedOffer = request.acceptedOfferId 
+                              ? allOffers.find((o: any) => o.id === request.acceptedOfferId)
+                              : null;
+                            const transporter = acceptedOffer 
+                              ? users.find((u: any) => u.id === acceptedOffer.transporterId)
+                              : null;
+
+                            const netAmount = acceptedOffer ? parseFloat(acceptedOffer.amount) : 0;
+                            const commissionPercentage = adminSettings?.commissionPercentage || 10;
+                            const commissionAmount = netAmount * (commissionPercentage / 100);
+                            const totalClientAmount = netAmount + commissionAmount;
+
+                            return (
+                              <TableRow key={request.id}>
+                                <TableCell className="font-medium">{request.referenceId}</TableCell>
+                                <TableCell>
+                                  {request.updatedAt 
+                                    ? new Date(request.updatedAt).toLocaleDateString("fr-FR")
+                                    : "N/A"}
+                                </TableCell>
+                                <TableCell>
+                                  <div>
+                                    <p className="font-medium">{client?.name || "Inconnu"}</p>
+                                    <a 
+                                      href={`tel:${client?.phoneNumber}`}
+                                      className="text-xs text-primary hover:underline"
+                                    >
+                                      {client?.phoneNumber}
+                                    </a>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div>
+                                    <p className="font-medium">{transporter?.name || "Inconnu"}</p>
+                                    <a 
+                                      href={`tel:${transporter?.phoneNumber}`}
+                                      className="text-xs text-primary hover:underline"
+                                    >
+                                      {transporter?.phoneNumber}
+                                    </a>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <span className="font-semibold text-primary">
+                                    {totalClientAmount.toFixed(2)} MAD
+                                  </span>
+                                </TableCell>
+                                <TableCell>
+                                  <span className="font-semibold text-green-600">
+                                    {commissionAmount.toFixed(2)} MAD
+                                  </span>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge className="bg-green-600">Payé</Badge>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      setSelectedInvoice(request);
+                                      setInvoiceDetailsOpen(true);
+                                    }}
+                                    data-testid={`button-view-invoice-${request.id}`}
+                                  >
+                                    <Eye className="w-5 h-5 text-[#3498db]" />
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="settings" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="w-5 h-5" />
+                  Paramètres de commission
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium block mb-2">
+                      Pourcentage de commission CamionBack (%)
+                    </label>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Ce pourcentage est automatiquement ajouté au prix du transporteur pour calculer le montant total que le client doit payer.
+                    </p>
+                  </div>
+                  
+                  <div className="flex gap-4 items-end">
+                    <div className="flex-1 max-w-xs space-y-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        value={commissionRate}
+                        onChange={(e) => setCommissionRate(e.target.value)}
+                        data-testid="input-commission-rate"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Commission actuelle: {adminSettings?.commissionPercentage || commissionRate}%
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={async () => {
+                        try {
+                          await apiRequest("PATCH", "/api/admin/settings", {
+                            commissionPercentage: parseFloat(commissionRate)
+                          });
+                          toast({
+                            title: "Commission mise à jour",
+                            description: `Le taux de commission est maintenant de ${commissionRate}%`,
+                          });
+                          queryClient.invalidateQueries({ queryKey: ["/api/admin/settings"] });
+                        } catch (error) {
+                          toast({
+                            variant: "destructive",
+                            title: "Erreur",
+                            description: "Échec de la mise à jour de la commission",
+                          });
+                        }
+                      }}
+                      data-testid="button-update-commission"
+                    >
+                      <DollarSign className="w-4 h-4 mr-2" />
+                      Mettre à jour
+                    </Button>
+                  </div>
+
+                  <div className="bg-muted/50 rounded-lg p-4 mt-6">
+                    <h4 className="font-medium mb-2">Exemple de calcul</h4>
+                    <div className="text-sm space-y-1">
+                      <p>Prix transporteur: <strong>1000 MAD</strong></p>
+                      <p>Commission ({commissionRate}%): <strong>{(1000 * parseFloat(commissionRate || "0") / 100).toFixed(2)} MAD</strong></p>
+                      <p className="pt-2 border-t border-border mt-2">
+                        Total client: <strong className="text-primary">{(1000 + (1000 * parseFloat(commissionRate || "0") / 100)).toFixed(2)} MAD</strong>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="empty-returns" className="mt-6">
@@ -1217,17 +1594,47 @@ export default function AdminDashboard() {
               )}
             </DialogDescription>
           </DialogHeader>
-          <div className="mt-4">
-            {allRequests.filter((req: any) => req.status === "open").length === 0 ? (
-              <div className="text-center py-8">
-                <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Aucune commande ouverte disponible</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {allRequests
-                  .filter((req: any) => req.status === "open")
-                  .map((request: any) => {
+          <div className="mt-4 space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher par référence (CMD-XXXX)..."
+                value={assignOrderSearch}
+                onChange={(e) => setAssignOrderSearch(e.target.value)}
+                className="pl-10"
+                data-testid="input-search-assign-order"
+              />
+            </div>
+
+            {(() => {
+              const openRequests = allRequests
+                .filter((req: any) => req.status === "open")
+                .filter((req: any) => 
+                  !assignOrderSearch || 
+                  req.referenceId.toLowerCase().includes(assignOrderSearch.toLowerCase())
+                );
+
+              if (allRequests.filter((req: any) => req.status === "open").length === 0) {
+                return (
+                  <div className="text-center py-8">
+                    <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">Aucune commande ouverte disponible</p>
+                  </div>
+                );
+              }
+
+              if (openRequests.length === 0 && assignOrderSearch) {
+                return (
+                  <div className="text-center py-8">
+                    <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">Aucune commande trouvée avec cette référence</p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-3">
+                  {openRequests.map((request: any) => {
                     const client = users.find((u: any) => u.id === request.clientId);
                     return (
                       <Card 
@@ -1273,8 +1680,9 @@ export default function AdminDashboard() {
                       </Card>
                     );
                   })}
-              </div>
-            )}
+                </div>
+              );
+            })()}
           </div>
         </DialogContent>
       </Dialog>
@@ -1679,6 +2087,158 @@ export default function AdminDashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Invoice Details Dialog */}
+      <Dialog open={invoiceDetailsOpen} onOpenChange={setInvoiceDetailsOpen}>
+        <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Détails de la facture</DialogTitle>
+            <DialogDescription>
+              Informations complètes sur le paiement validé
+            </DialogDescription>
+          </DialogHeader>
+          {selectedInvoice && (() => {
+            const client = users.find((u: any) => u.id === selectedInvoice.clientId);
+            const acceptedOffer = selectedInvoice.acceptedOfferId 
+              ? allOffers.find((o: any) => o.id === selectedInvoice.acceptedOfferId)
+              : null;
+            const transporter = acceptedOffer 
+              ? users.find((u: any) => u.id === acceptedOffer.transporterId)
+              : null;
+
+            const netAmount = acceptedOffer ? parseFloat(acceptedOffer.amount) : 0;
+            const commissionPercentage = adminSettings?.commissionPercentage || 10;
+            const commissionAmount = netAmount * (commissionPercentage / 100);
+            const totalClientAmount = netAmount + commissionAmount;
+
+            return (
+              <div className="mt-4 space-y-6">
+                {/* Header */}
+                <div className="flex items-center justify-between pb-4 border-b">
+                  <div>
+                    <h3 className="text-lg font-semibold">Facture {selectedInvoice.referenceId}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Payé le {selectedInvoice.updatedAt 
+                        ? new Date(selectedInvoice.updatedAt).toLocaleDateString("fr-FR")
+                        : "N/A"}
+                    </p>
+                  </div>
+                  <Badge className="bg-green-600">Payé</Badge>
+                </div>
+
+                {/* Parties */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm text-muted-foreground">Client</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="font-medium">{client?.name || "Inconnu"}</p>
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
+                        <Phone className="w-3 h-3" />
+                        <a href={`tel:${client?.phoneNumber}`} className="hover:underline">
+                          {client?.phoneNumber}
+                        </a>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm text-muted-foreground">Transporteur</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="font-medium">{transporter?.name || "Inconnu"}</p>
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
+                        <Phone className="w-3 h-3" />
+                        <a href={`tel:${transporter?.phoneNumber}`} className="hover:underline">
+                          {transporter?.phoneNumber}
+                        </a>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Financial Details */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Détails financiers</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex justify-between items-center pb-2 border-b">
+                      <span className="text-muted-foreground">Montant transporteur</span>
+                      <span className="font-semibold">{netAmount.toFixed(2)} MAD</span>
+                    </div>
+                    <div className="flex justify-between items-center pb-2 border-b">
+                      <span className="text-muted-foreground">Commission CamionBack ({commissionPercentage}%)</span>
+                      <span className="font-semibold text-green-600">{commissionAmount.toFixed(2)} MAD</span>
+                    </div>
+                    <div className="flex justify-between items-center pt-2">
+                      <span className="font-semibold text-lg">Total payé par le client</span>
+                      <span className="font-bold text-xl text-primary">{totalClientAmount.toFixed(2)} MAD</span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Transport Details */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Détails du transport</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">De</p>
+                        <p className="font-medium">{selectedInvoice.fromCity}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Vers</p>
+                        <p className="font-medium">{selectedInvoice.toCity}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Date souhaitée</p>
+                        <p className="font-medium">
+                          {new Date(selectedInvoice.desiredDate).toLocaleDateString("fr-FR")}
+                        </p>
+                      </div>
+                      {acceptedOffer && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">Date de prise en charge</p>
+                          <p className="font-medium">
+                            {new Date(acceptedOffer.pickupDate).toLocaleDateString("fr-FR")}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    {selectedInvoice.description && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Description</p>
+                        <p className="text-sm mt-1">{selectedInvoice.description}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Payment Receipt */}
+                {selectedInvoice.paymentReceipt && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Reçu de paiement</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <img
+                        src={selectedInvoice.paymentReceipt}
+                        alt="Reçu de paiement"
+                        className="w-full h-auto max-h-[400px] object-contain rounded-lg border"
+                      />
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

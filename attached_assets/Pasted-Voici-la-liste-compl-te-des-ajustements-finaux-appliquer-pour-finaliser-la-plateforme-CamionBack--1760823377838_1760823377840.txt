@@ -1,0 +1,139 @@
+Voici la liste complète des ajustements finaux à appliquer pour finaliser la plateforme CamionBack — à la fois sur la partie Admin et Interface client.
+
+🧭 1️⃣ — Côté ADMIN
+🔹 A. Vue “Demandes”
+
+Actuellement, aucune commande ne s’affiche dans cette vue.
+👉 Corrige l’affichage pour que toutes les commandes publiées par les clients apparaissent bien ici avec leurs informations complètes (référence, date, client, statut, etc.).
+
+🔹 B. Vue “Transporteurs”
+
+Photo du camion :
+
+Ajouter l’affichage de la photo du camion pour chaque transporteur, exactement comme elle apparaît dans la vue “Validation”.
+
+Recherche et filtre :
+
+Ajouter une barre de recherche permettant de retrouver un transporteur par nom ou numéro de téléphone.
+
+Ajouter un filtre par ville (menu déroulant) pour filtrer les transporteurs selon leur ville de résidence.
+
+🔹 C. Vue “Retours” (popup “Affecter une commande”)
+
+Dans la popup “Affecter une commande”, merci d’ajouter la possibilité de rechercher une commande par référence (CMD-XXXX) avant de la sélectionner pour affectation.
+
+Cela facilitera le travail admin lorsqu’il y a beaucoup de commandes actives.
+
+🔹 D. Vue “Messages”
+
+L’icône œil 👁️ ne fonctionne pas actuellement :
+
+Corrige la fonctionnalité pour que le clic ouvre bien la popup d’affichage des messages.
+
+La popup doit montrer toute la conversation client ↔ transporteur et permettre à l’admin d’intervenir (envoyer un message “Admin CamionBack” comme prévu).
+
+Corrige la page vide actuelle.
+
+🔹 E. Vue “Paramètres”
+
+Le paramétrage de la commission CamionBack a disparu.
+
+Merci de réactiver le module de modification du taux de commission (ex : 10%) afin que l’admin puisse ajuster le taux à tout moment.
+
+Ce paramètre doit être directement lié au calcul automatique du total client et du montant net transporteur.
+
+🔹 F. Vue “À payer”
+
+Ajouter deux nouvelles colonnes :
+
+Total payé par le client (montant total de la commande payée).
+
+Commission CamionBack (MAD) (le montant correspondant à la marge générée sur cette commande).
+
+👉 Ces deux colonnes doivent afficher les valeurs réelles calculées selon les paiements enregistrés.
+
+🔹 G. Nouvelle vue “Facturation” (nouvelle section Admin)
+
+Créer une nouvelle vue intitulée “Facturation”, qui affichera l’historique complet des commandes payées.
+
+Fonctionnalité :
+
+Chaque fois qu’un admin clique sur “Marquer comme payé” dans la vue “À payer”,
+→ la commande concernée est transférée automatiquement vers la vue “Facturation”.
+
+Contenu de la vue :
+
+Chaque ligne doit afficher :
+
+Référence de la commande
+
+Date du paiement
+
+Nom et téléphone du client
+
+Nom et téléphone du transporteur
+
+Montant payé par le client
+
+Commission CamionBack
+
+Statut (“Payé”)
+
+Icône œil 👁️ à droite → ouvre la popup de détails (identique à celle de la vue “Contrats”)
+
+Popup de détail :
+
+Montre toutes les informations de la commande :
+
+Données du formulaire, photos, montant total, reçu du paiement, etc.
+
+Permet à l’admin de visualiser la trace complète du paiement et de conserver l’historique comptable.
+
+👥 2️⃣ — Côté CLIENT
+🔹 A. Bouton “Décliner l’offre”
+
+Le bouton “Décliner” n’apparaît pas actuellement sur la liste des offres reçues.
+👉 Merci de le rajouter à côté du bouton “Choisir cette offre”, avec un design rouge (#e74c3c), et qu’il retire immédiatement l’offre déclinée de la liste, tout en notifiant le transporteur que son offre a été refusée.
+
+🔹 B. Popup d’offre acceptée
+
+Supprimer la ligne affichant :
+
+“Commission CamionBack : XX.XX MAD”
+
+Conserver uniquement :
+
+“Total à payer : XXX MAD”
+
+👉 Le client ne doit jamais voir le mot “commission” nulle part sur son interface.
+
+🎨 3️⃣ — Design & cohérence
+
+Conserver le thème visuel actuel, avec un bon alignement des icônes et tableaux.
+
+Veiller à ce que toutes les nouvelles rubriques (“Facturation”, “Messages”, “Paramètres”, etc.) soient bien accessibles depuis le menu latéral Admin.
+
+Vérifier la responsivité mobile (en particulier pour les popups et tableaux).
+
+✅ 4️⃣ — Résumé global des actions
+ADMIN :
+
+Corriger affichage des commandes (vue “Demandes”).
+
+Ajouter photo camion + filtres + recherche (vue “Transporteurs”).
+
+Recherche par référence dans la popup “Affecter une commande”.
+
+Corriger affichage des messages (vue “Messages”).
+
+Réactiver le paramètre de commission (vue “Paramètres”).
+
+Ajouter colonnes Total & Commission (vue “À payer”).
+
+Créer la nouvelle vue “Facturation” (historique des paiements).
+
+CLIENT :
+
+Ajouter bouton “Décliner l’offre” (avec suppression instantanée et notification).
+
+Supprimer la ligne “Commission CamionBack” dans la popup offre acceptée.

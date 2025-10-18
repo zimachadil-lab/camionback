@@ -1008,6 +1008,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/offers/:id/decline", async (req, res) => {
+    try {
+      const offer = await storage.getOffer(req.params.id);
+      if (!offer) {
+        return res.status(404).json({ error: "Offer not found" });
+      }
+
+      // Get transporter and request info
+      const transporter = await storage.getUser(offer.transporterId);
+      const request = await storage.getTransportRequest(offer.requestId);
+      const client = request ? await storage.getUser(request.clientId) : null;
+
+      // Update offer status to rejected
+      await storage.updateOffer(req.params.id, { 
+        status: "rejected"
+      });
+
+      // Create notification for transporter
+      await storage.createNotification({
+        userId: offer.transporterId,
+        type: "offer_declined",
+        title: "Offre déclinée",
+        message: `${client?.name || "Le client"} a décliné votre offre de ${offer.amount} MAD pour la demande ${request?.referenceId}.`,
+        relatedId: offer.id
+      });
+
+      res.json({ 
+        success: true
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to decline offer" });
+    }
+  });
+
   // Chat routes
   app.post("/api/chat/messages", async (req, res) => {
     try {

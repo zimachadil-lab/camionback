@@ -20,10 +20,11 @@ interface OfferCardProps {
     status: string;
   };
   onAccept: (offerId: string) => void;
+  onDecline: (offerId: string) => void;
   onChat: () => void;
 }
 
-export function OfferCard({ offer, onAccept, onChat }: OfferCardProps) {
+export function OfferCard({ offer, onAccept, onDecline, onChat }: OfferCardProps) {
   const isAccepted = offer.status === "accepted";
   const isPending = offer.status === "pending";
 
@@ -113,16 +114,26 @@ export function OfferCard({ offer, onAccept, onChat }: OfferCardProps) {
       </CardContent>
 
       <CardFooter className="p-4 pt-0 gap-2 flex-col sm:flex-row">
-        {!isAccepted && (
-          <Button 
-            onClick={() => onAccept(offer.id)} 
-            className="w-full sm:flex-1"
-            size="lg"
-            disabled={!isPending}
-            data-testid={`button-accept-${offer.id}`}
-          >
-            Choisir cette offre
-          </Button>
+        {!isAccepted && isPending && (
+          <>
+            <Button 
+              onClick={() => onAccept(offer.id)} 
+              className="w-full sm:flex-1"
+              size="lg"
+              data-testid={`button-accept-${offer.id}`}
+            >
+              Choisir cette offre
+            </Button>
+            <Button 
+              onClick={() => onDecline(offer.id)} 
+              variant="destructive"
+              className="w-full sm:flex-1"
+              size="lg"
+              data-testid={`button-decline-${offer.id}`}
+            >
+              Décliner
+            </Button>
+          </>
         )}
         <Button 
           onClick={onChat} 

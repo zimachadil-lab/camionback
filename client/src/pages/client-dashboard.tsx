@@ -70,7 +70,7 @@ const editRequestSchema = z.object({
   budget: z.string().optional(),
 });
 
-function RequestWithOffers({ request, onAcceptOffer, onChat, onDelete, onViewTransporter, onUpdateStatus, users }: any) {
+function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onDelete, onViewTransporter, onUpdateStatus, users }: any) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showOffersDialog, setShowOffersDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -334,6 +334,9 @@ function RequestWithOffers({ request, onAcceptOffer, onChat, onDelete, onViewTra
                     onAccept={(offerId) => {
                       onAcceptOffer(offerId);
                       setShowOffersDialog(false);
+                    }}
+                    onDecline={(offerId) => {
+                      onDeclineOffer(offerId);
                     }}
                     onChat={() => {
                       onChat(offer.transporterId, offer.transporterName, request.id);
@@ -667,6 +670,33 @@ export default function ClientDashboard() {
     },
   });
 
+  const declineOfferMutation = useMutation({
+    mutationFn: async (offerId: string) => {
+      const response = await fetch(`/api/offers/${offerId}/decline`, {
+        method: "POST",
+      });
+      if (!response.ok) {
+        throw new Error("Failed to decline offer");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/offers"] });
+      toast({
+        title: "Offre déclinée",
+        description: "L'offre a été déclinée et le transporteur a été notifié.",
+      });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de décliner l'offre",
+      });
+    },
+  });
+
   const deleteRequestMutation = useMutation({
     mutationFn: async (requestId: string) => {
       const response = await fetch(`/api/requests/${requestId}`, {
@@ -720,6 +750,10 @@ export default function ClientDashboard() {
 
   const handleAcceptOffer = (offerId: string) => {
     acceptOfferMutation.mutate(offerId);
+  };
+
+  const handleDeclineOffer = (offerId: string) => {
+    declineOfferMutation.mutate(offerId);
   };
 
   const handleDeleteRequest = (requestId: string) => {
@@ -951,6 +985,7 @@ export default function ClientDashboard() {
                     request={request}
                     users={users}
                     onAcceptOffer={handleAcceptOffer}
+                    onDeclineOffer={handleDeclineOffer}
                     onChat={handleChat}
                     onDelete={handleDeleteRequest}
                     onViewTransporter={handleViewTransporter}
@@ -1163,9 +1198,8 @@ export default function ClientDashboard() {
                 </div>
               </div>
 
-              {contactInfo?.commission && (
-                <div className="text-sm text-muted-foreground border-t pt-3 space-y-1">
-                  <p>Commission CamionBack : {contactInfo.commission.toFixed(2)} MAD</p>
+              {contactInfo?.total && (
+                <div className="text-sm border-t pt-3">
                   <p className="font-semibold text-foreground">Total à payer : {contactInfo.total.toFixed(2)} MAD</p>
                 </div>
               )}
