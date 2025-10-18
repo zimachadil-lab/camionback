@@ -1,0 +1,97 @@
+Je souhaite maintenant ajouter une nouvelle rubrique côté Admin afin de permettre un suivi centralisé de tous les échanges de messages entre clients et transporteurs sur CamionBack.
+
+💬 1️⃣ – Nouvelle rubrique Admin : “Messages”
+🔹 Objectif :
+
+Créer une rubrique intitulée “Messages” dans le panneau d’administration, affichant toutes les conversations actives sur CamionBack, regroupées par commande, avec la possibilité pour l’admin de consulter, intervenir et supprimer des conversations.
+
+🧾 2️⃣ – Structure de la rubrique “Messages”
+
+Chaque ligne de la liste doit contenir :
+
+Référence de la commande (ex : CMD-2025-0101)
+
+Nom du client
+
+Nom du transporteur
+
+Date / heure du dernier message
+
+Nombre total de messages échangés
+
+Aperçu du dernier message (ex : “Merci pour la confirmation…”)
+
+Boutons d’action à droite :
+
+👁️ Icône “œil” → permet d’ouvrir la conversation dans une popup.
+
+🗑️ Icône “corbeille” → permet de supprimer la conversation en un clic.
+
+La liste doit être triée par date du dernier message (le plus récent en haut).
+
+👁️ 3️⃣ – Fonction du bouton “œil”
+
+Lorsqu’on clique sur l’icône 👁️, une popup complète s’ouvre affichant :
+
+L’ensemble des messages échangés entre le client et le transporteur pour la commande correspondante.
+
+Les messages doivent être affichés dans l’ordre chronologique, avec une bulle de discussion claire par expéditeur :
+
+🟦 Messages client
+
+🟩 Messages transporteur
+
+🟧 Messages Admin CamionBack (couleur différente pour bien distinguer).
+
+🔹 Fonctionnalité d’intervention :
+
+Dans cette popup, l’administrateur doit pouvoir envoyer un message directement dans la conversation sous le nom “Admin CamionBack”, en tapant dans un champ texte + bouton “Envoyer”.
+Le message s’ajoute instantanément à la conversation et s’affiche avec une bulle de couleur spécifique (ex : orange).
+
+🗑️ 4️⃣ – Fonction du bouton “Supprimer la conversation”
+
+Lorsqu’un admin clique sur la corbeille 🗑️ :
+
+Une boîte de confirmation s’affiche :
+
+“Souhaitez-vous vraiment supprimer cette conversation ? Cette action est irréversible.”
+
+En confirmant, tous les messages liés à la commande concernée sont supprimés définitivement de la base.
+
+La ligne correspondante est retirée immédiatement de la liste.
+
+📊 5️⃣ – Informations techniques
+
+Les conversations doivent être regroupées par référence de commande (requestId ou équivalent).
+
+Chaque ligne affiche la date du dernier message envoyé et le nombre total de messages.
+
+Les données doivent se rafraîchir automatiquement (ou via un bouton “Rafraîchir”).
+
+Prévoir pagination (ou scroll infini) si le volume est important.
+
+🎨 6️⃣ – Design
+
+Style homogène avec les autres rubriques Admin (même thème bleu foncé / blanc).
+
+Tableau responsive et lisible sur desktop.
+
+Boutons d’action visibles et espacés.
+
+Popup large, scroll vertical pour les conversations longues.
+
+✅ 7️⃣ – Résumé global
+
+Nouvelle rubrique Admin : “Messages”
+
+Liste de toutes les conversations, triées par date du dernier message.
+
+Deux actions principales :
+
+👁️ Voir la conversation complète et intervenir comme “Admin CamionBack”.
+
+🗑️ Supprimer la conversation en un clic.
+
+Messages Admin affichés avec une couleur distincte.
+
+Données regroupées par commande, mise à jour automatique.

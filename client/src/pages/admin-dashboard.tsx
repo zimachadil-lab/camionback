@@ -6,8 +6,19 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCircle, UserCheck, CreditCard, Phone, Eye, TruckIcon, MapPin, Calendar, FileText } from "lucide-react";
+import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCircle, UserCheck, CreditCard, Phone, Eye, TruckIcon, MapPin, Calendar, FileText, MessageSquare, Trash2, Send } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Header } from "@/components/layout/header";
 import { KpiCard } from "@/components/admin/kpi-card";
 import { AddTransporterForm } from "@/components/admin/add-transporter-form";
@@ -33,6 +44,10 @@ export default function AdminDashboard() {
   const [selectedEmptyReturn, setSelectedEmptyReturn] = useState<any>(null);
   const [selectedContract, setSelectedContract] = useState<any>(null);
   const [contractDetailsOpen, setContractDetailsOpen] = useState(false);
+  const [selectedConversation, setSelectedConversation] = useState<any>(null);
+  const [conversationDialogOpen, setConversationDialogOpen] = useState(false);
+  const [deleteConversationId, setDeleteConversationId] = useState<string | null>(null);
+  const [adminMessage, setAdminMessage] = useState("");
   const { toast } = useToast();
 
   const user = JSON.parse(localStorage.getItem("camionback_user") || "{}");
@@ -103,6 +118,15 @@ export default function AdminDashboard() {
     queryKey: ["/api/contracts"],
     queryFn: async () => {
       const response = await fetch("/api/contracts");
+      return response.json();
+    },
+  });
+
+  // Fetch all conversations (admin)
+  const { data: conversations = [] } = useQuery({
+    queryKey: ["/api/admin/conversations"],
+    queryFn: async () => {
+      const response = await fetch("/api/admin/conversations");
       return response.json();
     },
   });
@@ -357,7 +381,7 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs defaultValue="requests" className="w-full">
-          <TabsList className="grid w-full max-w-5xl grid-cols-9 text-xs sm:text-sm">
+          <TabsList className="grid w-full max-w-5xl grid-cols-10 text-xs sm:text-sm">
             <TabsTrigger value="requests" data-testid="tab-requests">Demandes</TabsTrigger>
             <TabsTrigger value="offers" data-testid="tab-offers">
               Offres
@@ -372,6 +396,15 @@ export default function AdminDashboard() {
               {contracts.length > 0 && (
                 <Badge className="ml-2 px-1.5 py-0 h-5 min-w-5 text-xs">
                   {contracts.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="messages" data-testid="tab-messages">
+              <MessageSquare className="w-4 h-4 mr-1" />
+              Messages
+              {conversations.length > 0 && (
+                <Badge className="ml-2 px-1.5 py-0 h-5 min-w-5 text-xs" data-testid="badge-messages-count">
+                  {conversations.length}
                 </Badge>
               )}
             </TabsTrigger>
@@ -613,6 +646,120 @@ export default function AdminDashboard() {
                                 >
                                   <Eye className="w-5 h-5 text-[#3498db]" />
                                 </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="messages" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5" />
+                  Messages
+                  <Badge className="ml-2" data-testid="badge-total-conversations">
+                    Total: {conversations.length}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {conversations.length === 0 ? (
+                  <div className="text-center py-8">
+                    <MessageSquare className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">Aucune conversation pour le moment</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>N° Commande</TableHead>
+                          <TableHead>Client</TableHead>
+                          <TableHead>Transporteur</TableHead>
+                          <TableHead>Dernier message</TableHead>
+                          <TableHead>Nb messages</TableHead>
+                          <TableHead>Aperçu</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {conversations.map((conv: any) => {
+                          const formatDate = (dateStr: string | Date) => {
+                            if (!dateStr) return "N/A";
+                            try {
+                              const date = new Date(dateStr);
+                              return date.toLocaleString("fr-FR", {
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              });
+                            } catch {
+                              return "N/A";
+                            }
+                          };
+
+                          const truncateMessage = (msg: string, maxLength = 50) => {
+                            if (!msg) return "";
+                            return msg.length > maxLength ? msg.substring(0, maxLength) + "..." : msg;
+                          };
+
+                          return (
+                            <TableRow key={conv.requestId}>
+                              <TableCell className="font-medium" data-testid={`text-conv-ref-${conv.requestId}`}>
+                                {conv.referenceId || "N/A"}
+                              </TableCell>
+                              <TableCell data-testid={`text-conv-client-${conv.requestId}`}>
+                                {conv.clientName || "N/A"}
+                              </TableCell>
+                              <TableCell data-testid={`text-conv-transporter-${conv.requestId}`}>
+                                {conv.transporterName || "N/A"}
+                              </TableCell>
+                              <TableCell data-testid={`text-conv-date-${conv.requestId}`}>
+                                {formatDate(conv.lastMessage.createdAt)}
+                              </TableCell>
+                              <TableCell data-testid={`text-conv-count-${conv.requestId}`}>
+                                <Badge variant="secondary">{conv.messageCount}</Badge>
+                              </TableCell>
+                              <TableCell className="max-w-xs" data-testid={`text-conv-preview-${conv.requestId}`}>
+                                <span className="text-sm text-muted-foreground italic">
+                                  "{truncateMessage(conv.lastMessage.text)}"
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-2">
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="hover:bg-[#3498db]/10"
+                                    onClick={() => {
+                                      setSelectedConversation(conv);
+                                      setConversationDialogOpen(true);
+                                    }}
+                                    data-testid={`button-view-conversation-${conv.requestId}`}
+                                  >
+                                    <Eye className="w-5 h-5 text-[#3498db]" />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="hover:bg-destructive/10"
+                                    onClick={() => {
+                                      setDeleteConversationId(conv.requestId);
+                                    }}
+                                    data-testid={`button-delete-conversation-${conv.requestId}`}
+                                  >
+                                    <Trash2 className="w-5 h-5 text-destructive" />
+                                  </Button>
+                                </div>
                               </TableCell>
                             </TableRow>
                           );
@@ -1424,6 +1571,177 @@ export default function AdminDashboard() {
           })()}
         </DialogContent>
       </Dialog>
+
+      {/* Conversation View Dialog */}
+      <Dialog open={conversationDialogOpen} onOpenChange={setConversationDialogOpen}>
+        <DialogContent className="max-w-[95vw] sm:max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              Conversation - {selectedConversation?.referenceId}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedConversation?.clientName} ↔ {selectedConversation?.transporterName}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedConversation && (() => {
+            const { data: messages = [] } = useQuery({
+              queryKey: ["/api/chat/messages", selectedConversation.requestId],
+              queryFn: async () => {
+                const response = await fetch(`/api/chat/messages?requestId=${selectedConversation.requestId}`);
+                return response.json();
+              },
+              enabled: conversationDialogOpen,
+            });
+
+            const sendAdminMessage = async () => {
+              if (!adminMessage.trim()) return;
+              
+              try {
+                await apiRequest("POST", "/api/chat/messages", {
+                  requestId: selectedConversation.requestId,
+                  senderId: user.id,
+                  receiverId: selectedConversation.clientId,
+                  message: adminMessage,
+                  senderType: "admin",
+                });
+                
+                toast({
+                  title: "Message envoyé",
+                  description: "Votre message a été envoyé avec succès",
+                });
+                
+                setAdminMessage("");
+                queryClient.invalidateQueries({ queryKey: ["/api/chat/messages", selectedConversation.requestId] });
+              } catch (error) {
+                toast({
+                  variant: "destructive",
+                  title: "Erreur",
+                  description: "Échec de l'envoi du message",
+                });
+              }
+            };
+
+            const getMessageBubbleStyle = (message: any) => {
+              if (message.senderType === "admin") {
+                return "bg-orange-500/20 border-orange-500/40 ml-4 mr-4";
+              } else if (message.senderId === selectedConversation.clientId) {
+                return "bg-blue-500/20 border-blue-500/40 ml-0 mr-auto";
+              } else {
+                return "bg-green-500/20 border-green-500/40 ml-auto mr-0";
+              }
+            };
+
+            const getSenderLabel = (message: any) => {
+              if (message.senderType === "admin") {
+                return "Admin CamionBack";
+              } else if (message.senderId === selectedConversation.clientId) {
+                return selectedConversation.clientName;
+              } else {
+                return selectedConversation.transporterName;
+              }
+            };
+
+            return (
+              <div className="flex flex-col gap-4 flex-1">
+                {/* Messages list */}
+                <div className="flex-1 overflow-y-auto max-h-[50vh] space-y-3 p-4 border rounded-lg">
+                  {messages.length === 0 ? (
+                    <p className="text-center text-muted-foreground">Aucun message</p>
+                  ) : (
+                    messages.map((message: any) => (
+                      <div
+                        key={message.id}
+                        className={`p-3 rounded-lg border max-w-[80%] ${getMessageBubbleStyle(message)}`}
+                        data-testid={`message-${message.id}`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-semibold" data-testid={`message-sender-${message.id}`}>
+                            {getSenderLabel(message)}
+                          </span>
+                          <span className="text-xs text-muted-foreground" data-testid={`message-time-${message.id}`}>
+                            {new Date(message.createdAt).toLocaleString("fr-FR", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                        </div>
+                        <p className="text-sm" data-testid={`message-text-${message.id}`}>{message.message}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Admin message input */}
+                <div className="flex gap-2">
+                  <Textarea
+                    placeholder="Envoyer un message en tant qu'Admin CamionBack..."
+                    value={adminMessage}
+                    onChange={(e) => setAdminMessage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        sendAdminMessage();
+                      }
+                    }}
+                    className="flex-1"
+                    data-testid="textarea-admin-message"
+                  />
+                  <Button
+                    onClick={sendAdminMessage}
+                    disabled={!adminMessage.trim()}
+                    data-testid="button-send-admin-message"
+                  >
+                    <Send className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Conversation Confirmation */}
+      <AlertDialog open={!!deleteConversationId} onOpenChange={(open) => !open && setDeleteConversationId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer la conversation ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Souhaitez-vous vraiment supprimer cette conversation ? Cette action est irréversible et supprimera tous les messages liés à cette commande.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (!deleteConversationId) return;
+                
+                try {
+                  await apiRequest("DELETE", `/api/chat/conversation/${deleteConversationId}`, {});
+                  
+                  toast({
+                    title: "Conversation supprimée",
+                    description: "La conversation a été supprimée avec succès",
+                  });
+                  
+                  setDeleteConversationId(null);
+                  queryClient.invalidateQueries({ queryKey: ["/api/admin/conversations"] });
+                } catch (error) {
+                  toast({
+                    variant: "destructive",
+                    title: "Erreur",
+                    description: "Échec de la suppression de la conversation",
+                  });
+                }
+              }}
+              className="bg-destructive hover:bg-destructive/90"
+              data-testid="button-confirm-delete"
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

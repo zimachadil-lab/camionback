@@ -77,6 +77,7 @@ export const chatMessages = pgTable("chat_messages", {
   message: text("message").notNull(),
   filteredMessage: text("filtered_message"), // Message after phone/link filtering
   isRead: boolean("is_read").default(false),
+  senderType: text("sender_type"), // 'client', 'transporter', or 'admin'
   createdAt: timestamp("created_at").defaultNow(),
 });
 

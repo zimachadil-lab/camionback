@@ -51,6 +51,8 @@ export interface IStorage {
   getUserConversations(userId: string): Promise<any[]>;
   markMessagesAsRead(userId: string, requestId: string): Promise<void>;
   getUnreadMessagesCount(userId: string): Promise<number>;
+  deleteMessagesByRequestId(requestId: string): Promise<void>;
+  getAdminConversations(): Promise<any[]>;
   
   // Admin settings
   getAdminSettings(): Promise<AdminSettings | undefined>;
@@ -425,6 +427,7 @@ export class MemStorage implements IStorage {
       id,
       filteredMessage: filteredMessage !== insertMessage.message ? filteredMessage : null,
       isRead: false,
+      senderType: (insertMessage as any).senderType ?? null,
       createdAt: new Date(),
     };
     this.chatMessages.set(id, message);
@@ -555,6 +558,79 @@ export class MemStorage implements IStorage {
     return Array.from(this.chatMessages.values())
       .filter((msg) => msg.receiverId === userId && !msg.isRead)
       .length;
+  }
+
+  async deleteMessagesByRequestId(requestId: string): Promise<void> {
+    const messagesToDelete = Array.from(this.chatMessages.entries())
+      .filter(([_, msg]) => msg.requestId === requestId)
+      .map(([id, _]) => id);
+    
+    for (const messageId of messagesToDelete) {
+      this.chatMessages.delete(messageId);
+    }
+  }
+
+  async getAdminConversations(): Promise<any[]> {
+    // Group messages by requestId
+    const conversationMap = new Map<string, ChatMessage[]>();
+    
+    for (const message of Array.from(this.chatMessages.values())) {
+      if (!conversationMap.has(message.requestId)) {
+        conversationMap.set(message.requestId, []);
+      }
+      conversationMap.get(message.requestId)!.push(message);
+    }
+
+    // Build conversation summaries
+    const conversations: any[] = [];
+    
+    for (const [requestId, messages] of Array.from(conversationMap.entries())) {
+      const request = this.transportRequests.get(requestId);
+      if (!request) continue;
+
+      // Sort messages by date
+      const sortedMessages = messages.sort((a: ChatMessage, b: ChatMessage) => {
+        const aTime = a.createdAt?.getTime() ?? 0;
+        const bTime = b.createdAt?.getTime() ?? 0;
+        return aTime - bTime;
+      });
+
+      const lastMessage = sortedMessages[sortedMessages.length - 1];
+      const client = this.users.get(request.clientId);
+      const clientName = client?.name || client?.phoneNumber || "Client inconnu";
+
+      // Find transporter from accepted offer
+      let transporterName = "Transporteur inconnu";
+      let transporterId = null;
+      if (request.acceptedOfferId) {
+        const offer = this.offers.get(request.acceptedOfferId);
+        if (offer) {
+          transporterId = offer.transporterId;
+          const transporter = this.users.get(offer.transporterId);
+          transporterName = transporter?.name || transporter?.phoneNumber || "Transporteur inconnu";
+        }
+      }
+
+      conversations.push({
+        requestId,
+        referenceId: request.referenceId,
+        clientId: request.clientId,
+        clientName,
+        transporterId,
+        transporterName,
+        messageCount: messages.length,
+        lastMessage: {
+          text: lastMessage.message,
+          createdAt: lastMessage.createdAt,
+          senderType: lastMessage.senderType,
+        },
+      });
+    }
+
+    // Sort by last message date (most recent first)
+    return conversations.sort((a, b) => 
+      (b.lastMessage.createdAt?.getTime() ?? 0) - (a.lastMessage.createdAt?.getTime() ?? 0)
+    );
   }
 
   async getAdminSettings(): Promise<AdminSettings | undefined> {

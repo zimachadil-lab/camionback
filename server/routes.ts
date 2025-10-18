@@ -1090,6 +1090,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete conversation (admin)
+  app.delete("/api/chat/conversation/:requestId", async (req, res) => {
+    try {
+      const { requestId } = req.params;
+      
+      if (!requestId) {
+        return res.status(400).json({ error: "requestId required" });
+      }
+      
+      await storage.deleteMessagesByRequestId(requestId);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete conversation" });
+    }
+  });
+
   // Admin routes
   app.get("/api/admin/settings", async (req, res) => {
     try {
@@ -1125,6 +1141,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(stats);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch stats" });
+    }
+  });
+
+  // Get all conversations (admin)
+  app.get("/api/admin/conversations", async (req, res) => {
+    try {
+      const conversations = await storage.getAdminConversations();
+      res.json(conversations);
+    } catch (error) {
+      console.error('[DEBUG] Error fetching admin conversations:', error);
+      res.status(500).json({ error: "Failed to fetch conversations" });
     }
   });
 
