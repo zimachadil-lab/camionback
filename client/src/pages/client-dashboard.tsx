@@ -67,15 +67,15 @@ function RequestWithOffers({ request, onAcceptOffer, onChat, onDelete, onViewTra
               {request.fromCity} → {request.toCity}
             </p>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2">
             {isAccepted && (
               <>
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   size="sm"
                   onClick={() => onViewTransporter(request.id)}
                   data-testid={`button-view-transporter-${request.id}`}
-                  className="gap-2 flex-1 sm:flex-none"
+                  className="gap-2"
                 >
                   <Info className="h-4 w-4" />
                   <span className="hidden xs:inline">Infos transporteur</span>
@@ -84,12 +84,13 @@ function RequestWithOffers({ request, onAcceptOffer, onChat, onDelete, onViewTra
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       size="sm"
                       data-testid={`button-update-status-${request.id}`}
-                      className="flex-1 sm:flex-none"
+                      className="gap-2"
                     >
-                      Mettre à jour
+                      <RotateCcw className="h-4 w-4" />
+                      Statut
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
@@ -118,6 +119,7 @@ function RequestWithOffers({ request, onAcceptOffer, onChat, onDelete, onViewTra
               size="icon"
               onClick={() => setShowDeleteDialog(true)}
               data-testid={`button-delete-${request.id}`}
+              className="text-destructive hover:text-destructive"
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -466,31 +468,42 @@ export default function ClientDashboard() {
                             {request.fromCity} → {request.toCity}
                           </p>
                         </div>
-                        {request.acceptedOfferId && (
-                          <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleViewTransporter(request.id)}
-                              data-testid={`button-view-transporter-completed-${request.id}`}
-                              className="gap-2 flex-1 sm:flex-none"
-                            >
-                              <Info className="h-4 w-4" />
-                              <span className="hidden xs:inline">Infos transporteur</span>
-                              <span className="xs:hidden">Infos</span>
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleUpdateStatus(request.id, "republish")}
-                              data-testid={`button-republish-completed-${request.id}`}
-                              className="gap-2 flex-1 sm:flex-none"
-                            >
-                              <RotateCcw className="h-4 w-4" />
-                              Republier
-                            </Button>
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {request.acceptedOfferId && (
+                            <>
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => handleViewTransporter(request.id)}
+                                data-testid={`button-view-transporter-completed-${request.id}`}
+                                className="gap-2"
+                              >
+                                <Info className="h-4 w-4" />
+                                <span className="hidden xs:inline">Infos transporteur</span>
+                                <span className="xs:hidden">Infos</span>
+                              </Button>
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => handleUpdateStatus(request.id, "republish")}
+                                data-testid={`button-republish-completed-${request.id}`}
+                                className="gap-2"
+                              >
+                                <RotateCcw className="h-4 w-4" />
+                                Republier
+                              </Button>
+                            </>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteRequest(request.id)}
+                            data-testid={`button-delete-completed-${request.id}`}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))}
