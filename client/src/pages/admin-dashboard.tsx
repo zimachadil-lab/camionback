@@ -107,6 +107,14 @@ export default function AdminDashboard() {
     },
   });
 
+  // Calculate contract statistics
+  const activeContracts = contracts.filter(
+    (c: any) => c.status === "in_progress" || c.status === "marked_paid_transporter" || c.status === "marked_paid_client"
+  ).length;
+  const completedContracts = contracts.filter(
+    (c: any) => c.status === "completed"
+  ).length;
+
   // Filter requests pending admin validation
   const pendingPayments = allRequests.filter(
     (req: any) => req.paymentStatus === "pending_admin_validation"
@@ -322,11 +330,23 @@ export default function AdminDashboard() {
             trend="+8% ce mois"
             trendUp={true}
           />
-          <KpiCard
-            title="Demandes totales"
-            value={kpis.totalRequests}
-            icon={Package}
-          />
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Contrats</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{contracts.length}</div>
+              <div className="flex items-center gap-2 mt-2">
+                <Badge className="bg-blue-600 text-xs" data-testid="badge-active-contracts">
+                  {activeContracts} actifs
+                </Badge>
+                <Badge className="bg-green-600 text-xs" data-testid="badge-completed-contracts">
+                  {completedContracts} terminés
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
           <KpiCard
             title="Commissions totales"
             value={`${kpis.totalCommissions} MAD`}
