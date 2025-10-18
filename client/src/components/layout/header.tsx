@@ -34,6 +34,7 @@ export function Header({ user, onNewRequest, onLogout }: HeaderProps) {
     } else if (user.role === "transporter") {
       return [
         { label: "Tableau de bord", icon: Package, href: "/" },
+        { label: "Paiements reçus", icon: Receipt, href: "/transporter/payments" },
       ];
     } else if (user.role === "admin") {
       return [

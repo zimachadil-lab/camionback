@@ -308,11 +308,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/requests", async (req, res) => {
     try {
-      const { clientId, status, transporterId, accepted } = req.query;
+      const { clientId, status, transporterId, accepted, payments } = req.query;
       
       let requests;
       if (clientId) {
         requests = await storage.getRequestsByClient(clientId as string);
+      } else if (payments === "true" && transporterId) {
+        requests = await storage.getPaymentsByTransporter(transporterId as string);
       } else if (accepted === "true" && transporterId) {
         requests = await storage.getAcceptedRequestsByTransporter(transporterId as string);
       } else if (status === "open") {

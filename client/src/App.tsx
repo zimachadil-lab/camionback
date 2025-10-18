@@ -9,6 +9,7 @@ import MessagesPage from "@/pages/messages-page";
 import SelectRole from "@/pages/select-role";
 import CompleteProfile from "@/pages/complete-profile";
 import AdminDashboard from "@/pages/admin-dashboard";
+import TransporterPayments from "@/pages/transporter-payments";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -20,6 +21,7 @@ function Router() {
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/notifications" component={NotificationsPage} />
       <Route path="/messages" component={MessagesPage} />
+      <Route path="/transporter/payments" component={TransporterPayments} />
       <Route component={NotFound} />
     </Switch>
   );

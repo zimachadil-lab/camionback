@@ -30,6 +30,7 @@ export interface IStorage {
   getRequestsByClient(clientId: string): Promise<TransportRequest[]>;
   getOpenRequests(): Promise<TransportRequest[]>;
   getAcceptedRequestsByTransporter(transporterId: string): Promise<TransportRequest[]>;
+  getPaymentsByTransporter(transporterId: string): Promise<TransportRequest[]>;
   updateTransportRequest(id: string, updates: Partial<TransportRequest>): Promise<TransportRequest | undefined>;
   
   // Offer operations
@@ -225,7 +226,10 @@ export class MemStorage implements IStorage {
     
     for (const request of Array.from(this.transportRequests.values())) {
       // Only include requests with accepted status and an accepted offer
-      if (request.status === "accepted" && request.acceptedOfferId) {
+      // Exclude requests with paymentStatus 'pending_admin_validation' or 'paid' (moved to payments tab)
+      if (request.status === "accepted" && request.acceptedOfferId && 
+          request.paymentStatus !== "pending_admin_validation" && 
+          request.paymentStatus !== "paid") {
         const offer = await this.getOffer(request.acceptedOfferId);
         // Check if the accepted offer belongs to this transporter
         if (offer && offer.transporterId === transporterId) {
@@ -235,6 +239,24 @@ export class MemStorage implements IStorage {
     }
     
     return acceptedRequests;
+  }
+
+  async getPaymentsByTransporter(transporterId: string): Promise<TransportRequest[]> {
+    const paymentRequests: TransportRequest[] = [];
+    
+    for (const request of Array.from(this.transportRequests.values())) {
+      // Include requests with paymentStatus 'pending_admin_validation' or 'paid'
+      if (request.acceptedOfferId && 
+          (request.paymentStatus === "pending_admin_validation" || request.paymentStatus === "paid")) {
+        const offer = await this.getOffer(request.acceptedOfferId);
+        // Check if the accepted offer belongs to this transporter
+        if (offer && offer.transporterId === transporterId) {
+          paymentRequests.push(request);
+        }
+      }
+    }
+    
+    return paymentRequests;
   }
 
   async updateTransportRequest(id: string, updates: Partial<TransportRequest>): Promise<TransportRequest | undefined> {
