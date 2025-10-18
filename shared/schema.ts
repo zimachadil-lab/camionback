@@ -39,8 +39,9 @@ export const transportRequests = pgTable("transport_requests", {
   toCity: text("to_city").notNull(),
   description: text("description").notNull(),
   goodsType: text("goods_type").notNull(),
-  estimatedWeight: text("estimated_weight"),
   dateTime: timestamp("date_time").notNull(),
+  dateFlexible: boolean("date_flexible").default(false), // Whether date is flexible
+  invoiceRequired: boolean("invoice_required").default(false), // Whether TTC invoice is needed
   budget: decimal("budget", { precision: 10, scale: 2 }),
   photos: text("photos").array(),
   status: text("status").default("open"), // open, accepted, completed, cancelled
@@ -48,6 +49,8 @@ export const transportRequests = pgTable("transport_requests", {
   paymentStatus: text("payment_status").default("pending"), // pending, awaiting_payment, pending_admin_validation, paid
   paymentReceipt: text("payment_receipt"), // Client's payment receipt photo (base64)
   paymentDate: timestamp("payment_date"),
+  viewCount: integer("view_count").default(0), // Number of times request was viewed
+  declinedBy: text("declined_by").array().default(sql`ARRAY[]::text[]`), // IDs of transporters who declined
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -109,7 +112,7 @@ export const ratings = pgTable("ratings", {
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertOtpCodeSchema = createInsertSchema(otpCodes).omit({ id: true, createdAt: true, verified: true });
-export const insertTransportRequestSchema = createInsertSchema(transportRequests).omit({ id: true, createdAt: true, referenceId: true, status: true, acceptedOfferId: true, paymentStatus: true, paymentReceipt: true, paymentDate: true }).extend({
+export const insertTransportRequestSchema = createInsertSchema(transportRequests).omit({ id: true, createdAt: true, referenceId: true, status: true, acceptedOfferId: true, paymentStatus: true, paymentReceipt: true, paymentDate: true, viewCount: true, declinedBy: true }).extend({
   dateTime: z.coerce.date(), // Accept ISO string and coerce to Date
 });
 export const insertOfferSchema = createInsertSchema(offers).omit({ id: true, createdAt: true, status: true, paymentProofUrl: true, paymentValidated: true });

@@ -1,0 +1,67 @@
+Je souhaite maintenant ajouter plusieurs optimisations à la liste des commandes côté transporteur, ainsi que quelques petits ajustements sur le formulaire client.
+
+🚛 1️⃣ – Affichage du nombre de commandes disponibles
+
+Sur la page principale côté transporteur, à côté du titre “Disponibles”,
+➜ afficher le nombre total de commandes disponibles.
+
+Exemple :
+
+Disponibles (12)
+
+Le chiffre doit être affiché en vert vif (pour attirer l’attention) et se mettre à jour automatiquement à chaque actualisation.
+
+❌ 2️⃣ – Bouton “Décliner la demande”
+
+Ajouter un bouton rouge “Décliner” à côté du bouton “Envoyer une offre” sur chaque commande.
+
+Lorsqu’un transporteur clique sur ce bouton :
+
+La commande doit disparaître définitivement de sa liste de commandes disponibles.
+
+Elle ne doit plus jamais réapparaître pour ce transporteur, même après rafraîchissement.
+
+Cela permettra d’éviter de voir des demandes non pertinentes ou déjà refusées.
+
+🧾 3️⃣ – Ajustements sur le formulaire client
+
+Merci d’ajuster le formulaire de création de commande côté client comme suit :
+
+Retirer complètement le champ “Poids estimé” (ce champ n’est plus nécessaire).
+
+Sous le champ “Date souhaitée”, ajouter deux cases à cocher côte à côte sur la même ligne :
+
+☑️ Date flexible
+
+☑️ Besoin d’une facture TTC
+
+Si la case est décochée → la valeur est “Non”.
+
+Ces informations doivent apparaître sur la commande visible côté transporteur.
+Exemple affichage :
+
+📅 Date : 25 octobre 2025 (Flexible)
+🧾 Facture TTC : Oui
+
+📈 4️⃣ – Nouvelles informations sur les commandes (côté transporteur)
+
+Merci d’ajouter dans la carte ou la ligne de chaque commande côté transporteur :
+
+Le nombre d’offres reçues par le client (exemple : “Déjà 3 offres reçues”).
+
+Le nombre de vues sur la commande (exemple : “12 vues”).
+
+Ces deux informations doivent être mises à jour dynamiquement et visibles de manière claire (petite ligne sous le trajet par exemple).
+
+👁️ 5️⃣ – Nombre de vues côté client
+
+Ajouter également sur la file des commandes côté client l’information :
+
+“Nombre de vues : X”
+pour que le client puisse savoir combien de transporteurs ont consulté sa demande.
+
+📅 6️⃣ – Date de création de la commande
+
+Sur la liste des commandes côté transporteur, afficher également la date de création de chaque commande (petit texte en gris clair sous le titre).
+
+Exemple : “Créée le : 17 octobre 2025”
