@@ -605,19 +605,11 @@ export default function ClientDashboard() {
                 </div>
               </div>
 
-              {transporterInfo?.commission && (
-                <div className="border-t pt-3 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Montant offre</span>
-                    <span className="font-medium text-foreground">{transporterInfo.offerAmount.toFixed(2)} MAD</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Commission CamionBack</span>
-                    <span className="font-medium text-foreground">{transporterInfo.commission.toFixed(2)} MAD</span>
-                  </div>
-                  <div className="flex justify-between border-t pt-2">
-                    <span className="font-semibold text-foreground">Total à payer</span>
-                    <span className="font-bold text-primary">{transporterInfo.total.toFixed(2)} MAD</span>
+              {transporterInfo?.totalAmount && (
+                <div className="border-t pt-3">
+                  <div className="flex justify-between">
+                    <span className="font-semibold text-foreground">Montant</span>
+                    <span className="font-bold text-primary text-xl">{transporterInfo.totalAmount.toFixed(2)} MAD</span>
                   </div>
                 </div>
               )}

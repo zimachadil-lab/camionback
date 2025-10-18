@@ -29,6 +29,7 @@ export interface IStorage {
   getAllTransportRequests(): Promise<TransportRequest[]>;
   getRequestsByClient(clientId: string): Promise<TransportRequest[]>;
   getOpenRequests(): Promise<TransportRequest[]>;
+  getAcceptedRequestsByTransporter(transporterId: string): Promise<TransportRequest[]>;
   updateTransportRequest(id: string, updates: Partial<TransportRequest>): Promise<TransportRequest | undefined>;
   
   // Offer operations
@@ -176,6 +177,9 @@ export class MemStorage implements IStorage {
       referenceId,
       status: "open",
       acceptedOfferId: null,
+      paymentStatus: "pending",
+      paymentReceipt: null,
+      paymentDate: null,
       createdAt: new Date(),
     };
     this.transportRequests.set(id, request);
@@ -214,6 +218,23 @@ export class MemStorage implements IStorage {
     }
     
     return openRequests;
+  }
+
+  async getAcceptedRequestsByTransporter(transporterId: string): Promise<TransportRequest[]> {
+    const acceptedRequests: TransportRequest[] = [];
+    
+    for (const request of Array.from(this.transportRequests.values())) {
+      // Only include requests with accepted status and an accepted offer
+      if (request.status === "accepted" && request.acceptedOfferId) {
+        const offer = await this.getOffer(request.acceptedOfferId);
+        // Check if the accepted offer belongs to this transporter
+        if (offer && offer.transporterId === transporterId) {
+          acceptedRequests.push(request);
+        }
+      }
+    }
+    
+    return acceptedRequests;
   }
 
   async updateTransportRequest(id: string, updates: Partial<TransportRequest>): Promise<TransportRequest | undefined> {

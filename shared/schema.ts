@@ -45,6 +45,9 @@ export const transportRequests = pgTable("transport_requests", {
   photos: text("photos").array(),
   status: text("status").default("open"), // open, accepted, completed, cancelled
   acceptedOfferId: varchar("accepted_offer_id"),
+  paymentStatus: text("payment_status").default("pending"), // pending, awaiting_payment, paid
+  paymentReceipt: text("payment_receipt"), // Client's payment receipt photo (base64)
+  paymentDate: timestamp("payment_date"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -95,7 +98,7 @@ export const notifications = pgTable("notifications", {
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertOtpCodeSchema = createInsertSchema(otpCodes).omit({ id: true, createdAt: true, verified: true });
-export const insertTransportRequestSchema = createInsertSchema(transportRequests).omit({ id: true, createdAt: true, referenceId: true, status: true, acceptedOfferId: true }).extend({
+export const insertTransportRequestSchema = createInsertSchema(transportRequests).omit({ id: true, createdAt: true, referenceId: true, status: true, acceptedOfferId: true, paymentStatus: true, paymentReceipt: true, paymentDate: true }).extend({
   dateTime: z.coerce.date(), // Accept ISO string and coerce to Date
 });
 export const insertOfferSchema = createInsertSchema(offers).omit({ id: true, createdAt: true, status: true, paymentProofUrl: true, paymentValidated: true });

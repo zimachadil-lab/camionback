@@ -1,0 +1,117 @@
+Nous allons mettre à jour le système de gestion des offres, paiements et commissions sur CamionBack pour correspondre à la logique réelle de fonctionnement.
+
+Merci d’implémenter les points suivants dans l’ordre :
+
+💰 1️⃣ Gestion de la commission invisible (markup automatique)
+
+Lorsqu’un transporteur soumet une offre (ex : 400 MAD), le client doit voir le montant incluant la commission automatiquement calculée selon le taux paramétré (par défaut 10%).
+
+Exemple :
+
+Transporteur propose 400 MAD → le client voit 440 MAD.
+
+Le mot “commission” ne doit jamais apparaître dans l’interface client ni dans les messages.
+
+Le transporteur continue à voir uniquement sa proposition nette (sans majoration).
+
+Ce taux de commission doit pouvoir être modifié dans les paramètres Admin (commissionRate).
+
+🚚 2️⃣ Nouvelle file “À traiter” côté transporteur
+
+Une fois que le client accepte une offre, la commande doit apparaître dans une nouvelle section côté transporteur, intitulée “À traiter”.
+
+Chaque commande dans cette file doit afficher :
+
+Numéro de commande
+
+Détails (trajet, poids, date, etc.)
+
+Coordonnées du client (visibles uniquement après acceptation)
+
+Un bouton “Voir les détails” qui ouvre la popup avec les informations de contact du client.
+
+Ajouter un bouton “Marquer comme à facturer”, permettant au transporteur de signaler que la mission est terminée et prête à être payée.
+
+🧾 3️⃣ File de gestion côté Admin
+
+Ajouter une nouvelle rubrique côté Admin : “Paiements transporteurs”.
+
+Elle doit afficher toutes les commandes marquées “à facturer” par les transporteurs, avec :
+
+Nom du transporteur
+
+Montant à verser (prix net sans commission)
+
+Date de la commande
+
+Statut du paiement (en attente / payé)
+
+L’admin doit pouvoir changer le statut via un bouton “Marquer comme payé”.
+
+Une fois marqué comme payé :
+
+Le statut côté client et transporteur passe à “Payé”.
+
+💳 4️⃣ Paiement côté client
+
+Sur la rubrique “Commandes terminées” côté client, ajouter un bouton “Payer cette facture”.
+
+En cliquant dessus, une popup s’ouvre avec les éléments suivants :
+
+Texte d’instructions :
+
+“Merci d’effectuer le virement sur le compte suivant :
+RIB : 011815000005210001099713
+À l’ordre de : CamionBack.”
+
+Un champ pour ajouter le reçu de paiement (upload photo).
+
+L’administrateur doit pouvoir consulter le reçu uploadé, le vérifier et ensuite valider le paiement (changement de statut vers “Payé”).
+
+📂 5️⃣ Nouvelle rubrique “Mes factures” côté transporteur
+
+Ajouter une section “Mes factures” dans le menu transporteur.
+
+Chaque ligne doit afficher :
+
+Numéro de commande
+
+Montant
+
+Statut (En attente / Payée)
+
+Date de paiement (si disponible).
+
+Permettre au transporteur de filtrer ou trier ses factures.
+
+⭐ 6️⃣ Rubrique “Mes avis clients” côté transporteur
+
+Ajouter une nouvelle rubrique dans le menu transporteur, nommée “Mes avis clients”.
+
+Cette section doit lister :
+
+Le numéro de commande
+
+La note (étoiles) laissée par le client
+
+Un résumé du trajet (ville départ → arrivée).
+
+Ces notes doivent correspondre à celles attribuées par le client à la fin de chaque commande terminée.
+
+En haut de la page, afficher un résumé global du type :
+
+“⭐ Moyenne : 4.7 / 5 — sur 23 livraisons.”
+
+🔁 7️⃣ Synchronisation des statuts
+
+Lorsqu’une commande change de statut :
+
+Client : voit “Acceptée” → “Terminée” → “Payée”.
+
+Transporteur : voit “À traiter” → “À facturer” → “Payée”.
+
+Admin : gère la transition “À facturer” → “Payée”.
+
+Les transitions doivent être synchronisées dans toutes les interfaces.
+
+Merci de garder une interface claire et moderne pour chaque nouvelle rubrique ajoutée, avec un design cohérent avec CamionBack (bleu #0a2540, blanc, gris clair).

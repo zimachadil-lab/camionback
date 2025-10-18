@@ -9,6 +9,7 @@ interface OfferCardProps {
     transporterId: string;
     transporterName: string;
     amount: string;
+    clientAmount?: string; // Price with commission (client view)
     message?: string;
     truckPhoto?: string;
     rating: number;
@@ -71,7 +72,7 @@ export function OfferCard({ offer, onAccept, onChat }: OfferCardProps) {
             </div>
 
             <div className="text-2xl font-bold text-primary" data-testid={`text-amount-${offer.id}`}>
-              {offer.amount} MAD
+              {offer.clientAmount || offer.amount} MAD
             </div>
           </div>
         </div>

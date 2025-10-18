@@ -308,11 +308,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/requests", async (req, res) => {
     try {
-      const { clientId, status, transporterId } = req.query;
+      const { clientId, status, transporterId, accepted } = req.query;
       
       let requests;
       if (clientId) {
         requests = await storage.getRequestsByClient(clientId as string);
+      } else if (accepted === "true" && transporterId) {
+        requests = await storage.getAcceptedRequestsByTransporter(transporterId as string);
       } else if (status === "open") {
         requests = await storage.getOpenRequests(transporterId as string | undefined);
       } else {
@@ -383,20 +385,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Transporter not found" });
       }
 
-      // Get commission from settings
+      // Get commission from settings (invisible markup)
       const settings = await storage.getAdminSettings();
       const commissionRate = parseFloat(settings?.commissionPercentage || "10");
       const offerAmount = parseFloat(offer.amount);
-      const commissionAmount = (offerAmount * commissionRate) / 100;
-      const totalWithCommission = offerAmount + commissionAmount;
+      const totalWithCommission = offerAmount * (1 + commissionRate / 100);
 
       res.json({
         transporterName: transporter.name,
         transporterPhone: transporter.phoneNumber,
         transporterCity: transporter.city,
-        offerAmount: offerAmount,
-        commission: commissionAmount,
-        total: totalWithCommission,
+        totalAmount: totalWithCommission, // Only show total to client (commission is invisible)
         acceptedAt: offer.createdAt,
       });
     } catch (error) {
@@ -498,6 +497,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Mark a request as ready for billing (transporter marks as done)
+  app.post("/api/requests/:id/mark-for-billing", async (req, res) => {
+    try {
+      const request = await storage.getTransportRequest(req.params.id);
+      
+      if (!request) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+
+      if (request.status !== "accepted") {
+        return res.status(400).json({ error: "Only accepted requests can be marked for billing" });
+      }
+
+      // Verify the accepted offer belongs to the transporter making this request
+      if (request.acceptedOfferId) {
+        const acceptedOffer = await storage.getOffer(request.acceptedOfferId);
+        const transporterId = req.body.transporterId;
+        
+        if (!acceptedOffer || !transporterId || acceptedOffer.transporterId !== transporterId) {
+          return res.status(403).json({ error: "Unauthorized: only the assigned transporter can mark this request for billing" });
+        }
+      }
+
+      // Update payment status to awaiting_payment
+      const updatedRequest = await storage.updateTransportRequest(req.params.id, {
+        paymentStatus: "awaiting_payment",
+      });
+
+      res.json({ 
+        success: true, 
+        request: updatedRequest
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to mark request for billing" });
+    }
+  });
+
   // Offer routes
   app.post("/api/offers", async (req, res) => {
     try {
@@ -520,12 +556,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const transporter = await storage.getUser(offer.transporterId);
       
       if (request) {
+        // Get commission rate to display price with markup to client
+        const settings = await storage.getAdminSettings();
+        const commissionRate = parseFloat(settings?.commissionPercentage || "10");
+        const clientAmount = (parseFloat(offer.amount) * (1 + commissionRate / 100)).toFixed(2);
+        
         // Create notification for client
         await storage.createNotification({
           userId: request.clientId,
           type: "offer_received",
           title: "Nouvelle offre reçue",
-          message: `${transporter?.name || "Un transporteur"} a soumis une offre de ${offer.amount} MAD pour votre demande ${request.referenceId}`,
+          message: `${transporter?.name || "Un transporteur"} a soumis une offre de ${clientAmount} MAD pour votre demande ${request.referenceId}`,
           relatedId: offer.id
         });
       }
@@ -546,8 +587,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let offers: any[] = [];
       if (requestId) {
         offers = await storage.getOffersByRequest(requestId as string);
+        
+        // Get commission rate for client view
+        const settings = await storage.getAdminSettings();
+        const commissionRate = parseFloat(settings?.commissionPercentage || "10");
+        
+        // Add clientAmount (with commission) for each offer
+        offers = offers.map(offer => ({
+          ...offer,
+          clientAmount: (parseFloat(offer.amount) * (1 + commissionRate / 100)).toFixed(2)
+        }));
       } else if (transporterId) {
         offers = await storage.getOffersByTransporter(transporterId as string);
+        // No commission markup for transporter view
       }
       
       res.json(offers);

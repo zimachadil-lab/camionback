@@ -12,8 +12,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { ChatWindow } from "@/components/chat/chat-window";
 import { PhotoGalleryDialog } from "@/components/transporter/photo-gallery-dialog";
-import { useQuery } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const moroccanCities = [
   "Toutes les villes", "Casablanca", "Rabat", "Marrakech", "Fès", "Tanger", 
@@ -32,6 +34,8 @@ export default function TransporterDashboard() {
   const [photoGalleryOpen, setPhotoGalleryOpen] = useState(false);
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
   const [selectedReferenceId, setSelectedReferenceId] = useState("");
+  const [clientDetailsOpen, setClientDetailsOpen] = useState(false);
+  const [selectedClientDetails, setSelectedClientDetails] = useState<any>(null);
 
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
 
@@ -96,6 +100,15 @@ export default function TransporterDashboard() {
     },
   });
 
+  const { data: acceptedRequests = [], isLoading: acceptedLoading } = useQuery({
+    queryKey: ["/api/requests/accepted", user.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/requests?accepted=true&transporterId=${user.id}`);
+      return response.json();
+    },
+    refetchInterval: 5000,
+  });
+
   const handleMakeOffer = (requestId: string) => {
     setSelectedRequestId(requestId);
     setOfferDialogOpen(true);
@@ -116,6 +129,41 @@ export default function TransporterDashboard() {
     setSelectedReferenceId(referenceId);
     setPhotoGalleryOpen(true);
   };
+
+  const handleViewClientDetails = (request: any) => {
+    const client = users.find((u: any) => u.id === request.clientId);
+    setSelectedClientDetails({
+      ...request,
+      clientName: client?.name,
+      clientPhone: client?.phoneNumber,
+      clientCity: client?.city,
+    });
+    setClientDetailsOpen(true);
+  };
+
+  const { toast } = useToast();
+
+  const markForBillingMutation = useMutation({
+    mutationFn: async (requestId: string) => {
+      return await apiRequest("POST", `/api/requests/${requestId}/mark-for-billing`, {
+        transporterId: user.id,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Succès",
+        description: "La commande a été marquée comme à facturer",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/requests/accepted"] });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Échec de la mise à jour",
+      });
+    },
+  });
 
   const filteredRequests = requests.filter((req: any) => {
     const cityMatch: boolean = selectedCity === "Toutes les villes" || 
@@ -170,7 +218,7 @@ export default function TransporterDashboard() {
         </div>
 
         <Tabs defaultValue="available" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full max-w-3xl grid-cols-3">
             <TabsTrigger value="available" data-testid="tab-available">
               <Search className="mr-2 h-4 w-4" />
               Disponibles
@@ -178,6 +226,10 @@ export default function TransporterDashboard() {
             <TabsTrigger value="my-offers" data-testid="tab-my-offers">
               <Package className="mr-2 h-4 w-4" />
               Mes offres
+            </TabsTrigger>
+            <TabsTrigger value="to-process" data-testid="tab-to-process">
+              <CheckCircle className="mr-2 h-4 w-4" />
+              À traiter ({acceptedRequests.length})
             </TabsTrigger>
           </TabsList>
 
@@ -340,6 +392,119 @@ export default function TransporterDashboard() {
               </div>
             )}
           </TabsContent>
+
+          <TabsContent value="to-process" className="mt-6 space-y-6">
+            {acceptedRequests.length > 0 ? (
+              <div className="space-y-4">
+                {acceptedRequests.map((request: any) => {
+                  const client = users.find((u: any) => u.id === request.clientId);
+                  const isMarkedForBilling = request.paymentStatus === "awaiting_payment";
+
+                  return (
+                    <Card key={request.id} className="hover-elevate">
+                      <CardContent className="p-6 space-y-4">
+                        <div className="flex items-center justify-between flex-wrap gap-3">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="text-lg font-semibold">{request.referenceId}</h3>
+                              {isMarkedForBilling && (
+                                <Badge variant="default" className="bg-blue-600">
+                                  À facturer
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              {request.fromCity} → {request.toCity}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewClientDetails(request)}
+                              className="gap-2"
+                              data-testid={`button-view-client-${request.id}`}
+                            >
+                              <Phone className="h-4 w-4" />
+                              Voir les détails
+                            </Button>
+                            {!isMarkedForBilling && (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => markForBillingMutation.mutate(request.id)}
+                                disabled={markForBillingMutation.isPending}
+                                className="gap-2"
+                                data-testid={`button-mark-billing-${request.id}`}
+                              >
+                                <CheckCircle className="h-4 w-4" />
+                                Marquer comme à facturer
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <p className="text-muted-foreground">Type de marchandise</p>
+                              <p className="font-medium">{request.goodsType}</p>
+                            </div>
+                            {request.estimatedWeight && (
+                              <div>
+                                <p className="text-muted-foreground">Poids estimé</p>
+                                <p className="font-medium">{request.estimatedWeight}</p>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {request.description && (
+                            <div>
+                              <p className="text-sm text-muted-foreground">Description</p>
+                              <p className="text-sm">{request.description}</p>
+                            </div>
+                          )}
+                          
+                          {request.photos && request.photos.length > 0 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewPhotos(request.photos, request.referenceId)}
+                              className="gap-2"
+                              data-testid={`button-view-request-photos-${request.id}`}
+                            >
+                              <ImageIcon className="w-4 h-4" />
+                              Voir les photos ({request.photos.length})
+                            </Button>
+                          )}
+                        </div>
+
+                        {client && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleChat(client.id, client.name, request.id)}
+                            className="gap-2 w-full sm:w-auto"
+                            data-testid={`button-chat-request-${request.id}`}
+                          >
+                            <MessageSquare className="w-4 w-4" />
+                            Envoyer un message au client
+                          </Button>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <CheckCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">
+                  Aucune commande à traiter
+                </p>
+              </div>
+            )}
+          </TabsContent>
         </Tabs>
       </div>
 
@@ -368,6 +533,66 @@ export default function TransporterDashboard() {
         photos={selectedPhotos}
         referenceId={selectedReferenceId}
       />
+
+      <Dialog open={clientDetailsOpen} onOpenChange={setClientDetailsOpen}>
+        <DialogContent className="max-w-[90vw] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl">Détails du client</DialogTitle>
+          </DialogHeader>
+          {selectedClientDetails && (
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Commande</p>
+                <p className="font-semibold text-lg">{selectedClientDetails.referenceId}</p>
+              </div>
+              
+              <div>
+                <p className="text-sm text-muted-foreground">Nom</p>
+                <p className="font-medium">{selectedClientDetails.clientName || "Non spécifié"}</p>
+              </div>
+
+              {selectedClientDetails.clientCity && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Ville</p>
+                  <p className="font-medium">{selectedClientDetails.clientCity}</p>
+                </div>
+              )}
+              
+              <div>
+                <p className="text-sm text-muted-foreground">Téléphone</p>
+                <div className="flex items-center gap-2">
+                  <Phone className="w-4 h-4 text-primary" />
+                  <a 
+                    href={`tel:${selectedClientDetails.clientPhone}`} 
+                    className="font-semibold text-primary hover:underline text-lg"
+                    data-testid="link-client-phone-details"
+                  >
+                    {selectedClientDetails.clientPhone}
+                  </a>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <p className="text-sm text-muted-foreground mb-2">Trajet</p>
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-muted-foreground" />
+                  <p className="font-medium">
+                    {selectedClientDetails.fromCity} → {selectedClientDetails.toCity}
+                  </p>
+                </div>
+              </div>
+
+              <Button
+                onClick={() => setClientDetailsOpen(false)}
+                className="w-full"
+                data-testid="button-close-client-details"
+              >
+                Fermer
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
