@@ -714,6 +714,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Decline a request (transporter declines permanently)
+  app.post("/api/requests/:id/decline", async (req, res) => {
+    try {
+      const requestId = req.params.id;
+      const { transporterId } = req.body;
+
+      if (!transporterId) {
+        return res.status(400).json({ error: "Transporter ID required" });
+      }
+
+      const request = await storage.getTransportRequest(requestId);
+      if (!request) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+
+      // Add transporter to declinedBy array
+      const currentDeclined = request.declinedBy || [];
+      if (!currentDeclined.includes(transporterId)) {
+        const updatedRequest = await storage.updateTransportRequest(requestId, {
+          declinedBy: [...currentDeclined, transporterId],
+        });
+        res.json({ success: true, request: updatedRequest });
+      } else {
+        res.json({ success: true, message: "Already declined" });
+      }
+    } catch (error) {
+      console.error("Failed to decline request:", error);
+      res.status(500).json({ error: "Failed to decline request" });
+    }
+  });
+
+  // Track view of a request
+  app.post("/api/requests/:id/track-view", async (req, res) => {
+    try {
+      const requestId = req.params.id;
+      const request = await storage.getTransportRequest(requestId);
+      
+      if (!request) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+
+      // Increment view count
+      const currentViews = request.viewCount || 0;
+      const updatedRequest = await storage.updateTransportRequest(requestId, {
+        viewCount: currentViews + 1,
+      });
+
+      res.json({ success: true, viewCount: updatedRequest.viewCount });
+    } catch (error) {
+      console.error("Failed to track view:", error);
+      res.status(500).json({ error: "Failed to track view" });
+    }
+  });
+
   // Get ratings for a transporter with request details
   app.get("/api/transporters/:id/ratings", async (req, res) => {
     try {
