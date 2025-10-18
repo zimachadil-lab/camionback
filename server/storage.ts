@@ -608,7 +608,11 @@ export class MemStorage implements IStorage {
   async getRatingsByTransporter(transporterId: string): Promise<Rating[]> {
     return Array.from(this.ratings.values())
       .filter(rating => rating.transporterId === transporterId)
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()); // Most recent first
+      .sort((a, b) => {
+        const aTime = a.createdAt?.getTime() || 0;
+        const bTime = b.createdAt?.getTime() || 0;
+        return bTime - aTime; // Most recent first
+      });
   }
 
   async getRatingByRequestId(requestId: string): Promise<Rating | undefined> {
