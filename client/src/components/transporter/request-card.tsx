@@ -171,21 +171,11 @@ export function RequestCard({
       </CardContent>
 
       {showOfferButton && request.status === "open" && (
-        <CardFooter className="p-4 pt-0 flex flex-col gap-2">
-          <Button 
-            onClick={handleOfferClick} 
-            className="w-full"
-            size="lg"
-            variant={!isUserValidated ? "secondary" : "default"}
-            data-testid={`button-make-offer-${request.id}`}
-          >
-            Faire une offre
-          </Button>
+        <CardFooter className="p-4 pt-0 flex flex-row gap-2">
           {onDecline && (
             <Button 
               onClick={() => onDecline(request.id)} 
-              className="w-full bg-red-600 hover:bg-red-700"
-              size="sm"
+              className="flex-1 bg-red-600 hover:bg-red-700"
               variant="destructive"
               data-testid={`button-decline-${request.id}`}
             >
@@ -193,6 +183,14 @@ export function RequestCard({
               Décliner
             </Button>
           )}
+          <Button 
+            onClick={handleOfferClick} 
+            className="flex-1"
+            variant={!isUserValidated ? "secondary" : "default"}
+            data-testid={`button-make-offer-${request.id}`}
+          >
+            Faire une offre
+          </Button>
         </CardFooter>
       )}
     </Card>
