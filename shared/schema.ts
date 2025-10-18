@@ -17,6 +17,7 @@ export const users = pgTable("users", {
   totalRatings: integer("total_ratings").default(0), // Number of ratings received
   totalTrips: integer("total_trips").default(0), // For transporters
   status: text("status"), // 'pending', 'validated' - for transporters only
+  accountStatus: text("account_status").default("active"), // 'active', 'blocked' - for all users
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -136,6 +137,20 @@ export const contracts = pgTable("contracts", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Reports/Signalements - Users can report issues with completed requests
+export const reports = pgTable("reports", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  requestId: varchar("request_id").notNull().references(() => transportRequests.id),
+  reporterId: varchar("reporter_id").notNull().references(() => users.id), // User who created the report
+  reporterType: text("reporter_type").notNull(), // 'client' or 'transporter'
+  reportedUserId: varchar("reported_user_id").notNull().references(() => users.id), // User being reported
+  reason: text("reason").notNull(), // Motif du signalement
+  details: text("details"), // Détails supplémentaires (facultatif)
+  status: text("status").default("pending"), // pending, treated, rejected
+  adminNotes: text("admin_notes"), // Notes internes de l'admin
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertOtpCodeSchema = createInsertSchema(otpCodes).omit({ id: true, createdAt: true, verified: true });
@@ -154,6 +169,7 @@ export const insertEmptyReturnSchema = createInsertSchema(emptyReturns).omit({ i
   returnDate: z.coerce.date(), // Accept ISO string and coerce to Date
 });
 export const insertContractSchema = createInsertSchema(contracts).omit({ id: true, createdAt: true, status: true });
+export const insertReportSchema = createInsertSchema(reports).omit({ id: true, createdAt: true, status: true, adminNotes: true });
 
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -176,3 +192,5 @@ export type InsertEmptyReturn = z.infer<typeof insertEmptyReturnSchema>;
 export type EmptyReturn = typeof emptyReturns.$inferSelect;
 export type InsertContract = z.infer<typeof insertContractSchema>;
 export type Contract = typeof contracts.$inferSelect;
+export type InsertReport = z.infer<typeof insertReportSchema>;
+export type Report = typeof reports.$inferSelect;
