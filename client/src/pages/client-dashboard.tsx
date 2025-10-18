@@ -364,9 +364,20 @@ export default function ClientDashboard() {
       return response.json();
     },
     onSuccess: () => {
+      toast({
+        title: "Commande terminée",
+        description: "Merci pour votre évaluation ! La commande est maintenant terminée.",
+      });
       queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
       queryClient.invalidateQueries({ queryKey: ["/api/offers"] });
       setShowRatingDialog(false);
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de terminer la commande",
+      });
     },
   });
 
