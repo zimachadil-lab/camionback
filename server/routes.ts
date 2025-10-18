@@ -879,6 +879,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (transporterId) {
         offers = await storage.getOffersByTransporter(transporterId as string);
         // No commission markup for transporter view
+      } else {
+        // Return all offers (for admin view)
+        offers = await storage.getAllOffers();
       }
       
       res.json(offers);
@@ -920,10 +923,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const commissionAmount = (offerAmount * commissionRate) / 100;
       const totalWithCommission = offerAmount + commissionAmount;
 
-      // Update offer status with commission details
+      // Update offer status
       await storage.updateOffer(req.params.id, { 
-        status: "accepted",
-        message: offer.message ? `${offer.message}\n\nCommission CamionBack: ${commissionAmount.toFixed(2)} MAD (${commissionRate}%)\nTotal: ${totalWithCommission.toFixed(2)} MAD` : undefined
+        status: "accepted"
       });
 
       // Update request with accepted offer
@@ -1226,8 +1228,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const offer = await storage.createOffer({
         requestId,
         transporterId: emptyReturn.transporterId,
-        amount: "0", // Price will be set by transporter if needed
-        message: `Affectation automatique pour retour à vide (${emptyReturn.fromCity} → ${emptyReturn.toCity})`,
+        amount: "0",
+        pickupDate: emptyReturn.returnDate,
+        loadType: "return",
       });
 
       // Accept the offer automatically

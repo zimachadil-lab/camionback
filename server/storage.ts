@@ -321,7 +321,6 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const offer: Offer = {
       ...insertOffer,
-      message: insertOffer.message ?? null,
       id,
       status: "pending",
       paymentProofUrl: null,
@@ -361,6 +360,10 @@ export class MemStorage implements IStorage {
     }
     
     return offers;
+  }
+
+  async getAllOffers(): Promise<Offer[]> {
+    return Array.from(this.offers.values());
   }
 
   async hasOfferForRequest(transporterId: string, requestId: string): Promise<boolean> {

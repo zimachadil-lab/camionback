@@ -175,6 +175,27 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleAcceptOfferAsAdmin = async (offerId: string, requestId: string) => {
+    try {
+      await apiRequest("POST", `/api/offers/${offerId}/accept`, { adminAccept: true });
+
+      toast({
+        title: "Offre acceptée",
+        description: "L'offre a été acceptée avec succès. Le transporteur et le client ont été notifiés.",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["/api/offers/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/offers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Échec de l'acceptation de l'offre",
+      });
+    }
+  };
+
   const assignOrderMutation = useMutation({
     mutationFn: async ({ emptyReturnId, requestId }: { emptyReturnId: string; requestId: string }) => {
       return await apiRequest("POST", `/api/empty-returns/${emptyReturnId}/assign`, {
@@ -304,8 +325,16 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs defaultValue="requests" className="w-full">
-          <TabsList className="grid w-full max-w-5xl grid-cols-7 text-xs sm:text-sm">
+          <TabsList className="grid w-full max-w-5xl grid-cols-8 text-xs sm:text-sm">
             <TabsTrigger value="requests" data-testid="tab-requests">Demandes</TabsTrigger>
+            <TabsTrigger value="offers" data-testid="tab-offers">
+              Offres
+              {allOffers.length > 0 && (
+                <Badge className="ml-2 px-1.5 py-0 h-5 min-w-5 text-xs">
+                  {allOffers.length}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="to-pay" data-testid="tab-to-pay">
               À payer
               {pendingPayments.length > 0 && (
@@ -335,6 +364,121 @@ export default function AdminDashboard() {
             <TabsTrigger value="settings" data-testid="tab-settings">Paramètres</TabsTrigger>
             <TabsTrigger value="stats" data-testid="tab-stats">Statistiques</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="offers" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="w-5 h-5" />
+                  Offres transporteurs
+                  <Badge className="ml-2">
+                    Total: {allOffers.length}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {allOffers.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">Aucune offre pour le moment</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>N° Commande</TableHead>
+                          <TableHead>Client</TableHead>
+                          <TableHead>Transporteur</TableHead>
+                          <TableHead>Date client</TableHead>
+                          <TableHead>Date transporteur</TableHead>
+                          <TableHead>Prix initial</TableHead>
+                          <TableHead>Prix proposé</TableHead>
+                          <TableHead>Type chargement</TableHead>
+                          <TableHead>Statut</TableHead>
+                          <TableHead className="text-right">Action</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {allOffers.map((offer: any) => {
+                          const request = allRequests.find((r: any) => r.id === offer.requestId);
+                          const client = users.find((u: any) => u.id === request?.clientId);
+                          const transporter = users.find((u: any) => u.id === offer.transporterId);
+                          
+                          const formatDate = (dateStr: string) => {
+                            if (!dateStr) return "N/A";
+                            try {
+                              const date = new Date(dateStr);
+                              return date.toLocaleDateString("fr-FR");
+                            } catch {
+                              return "N/A";
+                            }
+                          };
+
+                          const getLoadTypeLabel = (loadType: string) => {
+                            if (loadType === "return") return "Retour";
+                            if (loadType === "shared") return "Groupage";
+                            return "N/A";
+                          };
+
+                          const getStatusBadge = (status: string) => {
+                            if (status === "accepted") return <Badge className="bg-green-600">Acceptée</Badge>;
+                            if (status === "rejected") return <Badge variant="destructive">Refusée</Badge>;
+                            if (status === "completed") return <Badge className="bg-blue-600">Complétée</Badge>;
+                            return <Badge variant="secondary">En attente</Badge>;
+                          };
+
+                          return (
+                            <TableRow key={offer.id}>
+                              <TableCell className="font-medium" data-testid={`text-ref-${offer.id}`}>
+                                {request?.referenceId || "N/A"}
+                              </TableCell>
+                              <TableCell data-testid={`text-client-${offer.id}`}>
+                                {client?.phoneNumber || "N/A"}
+                              </TableCell>
+                              <TableCell data-testid={`text-transporter-${offer.id}`}>
+                                {transporter?.phoneNumber || "N/A"}
+                              </TableCell>
+                              <TableCell data-testid={`text-client-date-${offer.id}`}>
+                                {formatDate(request?.dateTime)}
+                              </TableCell>
+                              <TableCell data-testid={`text-transporter-date-${offer.id}`}>
+                                {formatDate(offer.pickupDate)}
+                              </TableCell>
+                              <TableCell data-testid={`text-budget-${offer.id}`}>
+                                {request?.budget ? `${request.budget} MAD` : "N/A"}
+                              </TableCell>
+                              <TableCell className="font-semibold" data-testid={`text-amount-${offer.id}`}>
+                                {offer.amount} MAD
+                              </TableCell>
+                              <TableCell data-testid={`text-load-type-${offer.id}`}>
+                                {getLoadTypeLabel(offer.loadType)}
+                              </TableCell>
+                              <TableCell data-testid={`badge-status-${offer.id}`}>
+                                {getStatusBadge(offer.status)}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {offer.status === "pending" && (
+                                  <Button
+                                    size="sm"
+                                    className="bg-[#00cc88] hover:bg-[#00b377]"
+                                    onClick={() => handleAcceptOfferAsAdmin(offer.id, request?.id)}
+                                    data-testid={`button-accept-offer-${offer.id}`}
+                                  >
+                                    Accepter l'offre
+                                  </Button>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="validation" className="mt-6">
             <Card>

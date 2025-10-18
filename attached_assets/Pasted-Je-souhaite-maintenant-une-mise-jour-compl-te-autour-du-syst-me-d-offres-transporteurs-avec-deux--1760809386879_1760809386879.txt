@@ -1,0 +1,126 @@
+Je souhaite maintenant une mise à jour complète autour du système d’offres transporteurs, avec deux actions principales :
+1️⃣ Simplifier et corriger le formulaire d’envoi d’offre côté transporteur,
+2️⃣ Ajouter une nouvelle rubrique de suivi des offres dans le panneau Admin.
+
+🚛 1️⃣ – Modification du formulaire “Faire une offre” (côté transporteur)
+🔹 Objectif :
+
+Rendre la création d’offres plus simple, claire et cohérente avec le concept CamionBack.
+
+🔹 Ce qu’il faut faire :
+
+Supprimer complètement le champ “Message” du formulaire d’envoi de proposition.
+Ce champ ne doit plus apparaître ni être pris en charge dans la base.
+
+Ajouter deux champs obligatoires à la place :
+
+Date de prise en charge (sélecteur de date – obligatoire)
+
+Permet au transporteur d’indiquer la date à laquelle il peut récupérer la marchandise.
+
+Type de chargement (choix obligatoire entre deux options radio) :
+
+▢ Retour (camion vide qui rentre)
+
+▢ Groupage / Partagé
+
+Le transporteur ne peut pas envoyer son offre sans avoir rempli ces deux champs.
+
+L’interface doit rester compacte et responsive :
+
+Montant (MAD)
+
+Date de prise en charge
+
+Type de chargement (radio)
+
+Bouton “Envoyer l’offre”
+
+💬 2️⃣ – Affichage de ces éléments côté client (dans la liste des offres reçues)
+🔹 Détails :
+
+Chaque offre reçue par le client doit désormais afficher clairement :
+
+Prix proposé
+
+Date proposée pour la prise en charge
+
+Type de chargement (Retour ou Groupage)
+
+🔹 Exemple d’affichage :
+Transporteur : AtlasTrans
+Offre : 500 MAD  
+Date de prise en charge : 22 octobre 2025  
+Type de chargement : Retour (camion vide qui rentre)
+
+
+L’icône 📅 peut précéder la date, et 🚛 peut précéder le type de chargement pour plus de lisibilité.
+
+🧭 3️⃣ – Nouvelle rubrique Admin : “Offres transporteurs” (priorité élevée)
+🔹 Objectif :
+
+Créer une nouvelle page dans le panneau d’administration, intitulée :
+
+“Offres transporteurs”
+
+Cette page doit afficher toutes les offres envoyées par les transporteurs aux clients avec les informations principales, pour permettre à l’administrateur de suivre et éventuellement d’intervenir.
+
+🔹 Données à afficher dans la liste :
+
+Chaque ligne doit contenir :
+
+Référence de la commande (ex : CMD-2025-0123)
+
+Numéro de téléphone du client concerné
+
+Numéro de téléphone du transporteur
+
+Date proposée par le client
+
+Date proposée par le transporteur
+
+Prix initial (budget prévu par le client)
+
+Prix proposé par le transporteur
+
+Type de chargement (Retour / Groupage)
+
+Un bouton CTA “Accepter l’offre” à droite
+
+🔹 Fonction du bouton “Accepter l’offre” :
+
+Quand l’administrateur clique sur “Accepter l’offre” :
+
+L’action doit avoir exactement le même effet que si le client avait accepté l’offre.
+
+Conséquences :
+
+Le transporteur reçoit la notification habituelle d’acceptation.
+
+La commande passe automatiquement au statut “En cours de traitement”.
+
+Le client voit sa commande marquée comme “Offre acceptée”.
+
+Cela permettra à l’admin d’aider le client dans la prise de décision ou d’agir en son nom lors d’un suivi direct.
+
+🔹 Design de la page :
+
+Style homogène avec les autres rubriques Admin.
+
+En-tête fixe avec un compteur global :
+
+Total des offres : 23
+
+Lignes aérées, lecture claire, idéalement triables (par date, prix ou référence).
+
+Bouton “Accepter l’offre” en vert (#00cc88) avec léger effet hover et arrondi.
+
+✅ 4️⃣ – Résumé global
+
+Suppression du champ “Message”.
+
+Ajout des champs “Date de prise en charge” + “Type de chargement”.
+
+Affichage de ces infos côté client dans la liste des offres.
+
+Création d’une rubrique Admin “Offres transporteurs” listant toutes les propositions avec possibilité d’accepter une offre en un clic.

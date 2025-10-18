@@ -3,16 +3,20 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { Calendar, Truck } from "lucide-react";
 
 const offerSchema = z.object({
   amount: z.string().min(1, "Montant requis").refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
     message: "Montant invalide",
   }),
-  message: z.string().optional(),
+  pickupDate: z.string().min(1, "Date de prise en charge requise"),
+  loadType: z.enum(["return", "shared"], {
+    required_error: "Type de chargement requis",
+  }),
 });
 
 type OfferFormData = z.infer<typeof offerSchema>;
@@ -31,7 +35,8 @@ export function OfferForm({ open, onClose, requestId, onSuccess }: OfferFormProp
     resolver: zodResolver(offerSchema),
     defaultValues: {
       amount: "",
-      message: "",
+      pickupDate: "",
+      loadType: undefined,
     },
   });
 
@@ -46,7 +51,8 @@ export function OfferForm({ open, onClose, requestId, onSuccess }: OfferFormProp
           requestId,
           transporterId: user.id,
           amount: data.amount,
-          message: data.message,
+          pickupDate: data.pickupDate,
+          loadType: data.loadType,
         }),
       });
       
@@ -110,17 +116,58 @@ export function OfferForm({ open, onClose, requestId, onSuccess }: OfferFormProp
 
             <FormField
               control={form.control}
-              name="message"
+              name="pickupDate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Message (optionnel)</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    Date de prise en charge
+                  </FormLabel>
                   <FormControl>
-                    <Textarea 
-                      placeholder="Ajoutez un message pour le client..."
-                      className="min-h-24"
-                      data-testid="input-offer-message"
-                      {...field}
+                    <Input 
+                      type="date" 
+                      data-testid="input-offer-pickup-date"
+                      {...field} 
                     />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="loadType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    <Truck className="w-4 h-4" />
+                    Type de chargement
+                  </FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      className="flex flex-col space-y-2"
+                      data-testid="radio-group-load-type"
+                    >
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="return" data-testid="radio-load-type-return" />
+                        </FormControl>
+                        <FormLabel className="font-normal cursor-pointer">
+                          Retour (camion vide qui rentre)
+                        </FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="shared" data-testid="radio-load-type-shared" />
+                        </FormControl>
+                        <FormLabel className="font-normal cursor-pointer">
+                          Groupage / Partagé
+                        </FormLabel>
+                      </FormItem>
+                    </RadioGroup>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

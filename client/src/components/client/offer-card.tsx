@@ -1,7 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Star, Truck, MessageSquare } from "lucide-react";
+import { Star, Truck, MessageSquare, Calendar } from "lucide-react";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 interface OfferCardProps {
   offer: {
@@ -9,8 +11,9 @@ interface OfferCardProps {
     transporterId: string;
     transporterName: string;
     amount: string;
-    clientAmount?: string; // Price with commission (client view)
-    message?: string;
+    clientAmount?: string;
+    pickupDate?: string;
+    loadType?: string;
     truckPhoto?: string;
     rating: number;
     totalTrips: number;
@@ -23,6 +26,22 @@ interface OfferCardProps {
 export function OfferCard({ offer, onAccept, onChat }: OfferCardProps) {
   const isAccepted = offer.status === "accepted";
   const isPending = offer.status === "pending";
+
+  const formatDate = (dateStr: string | undefined) => {
+    if (!dateStr) return "";
+    try {
+      const date = new Date(dateStr);
+      return format(date, "d MMMM yyyy", { locale: fr });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const getLoadTypeLabel = (loadType: string | undefined) => {
+    if (loadType === "return") return "Retour (camion vide qui rentre)";
+    if (loadType === "shared") return "Groupage / Partagé";
+    return "";
+  };
 
   return (
     <Card className="overflow-hidden hover-elevate">
@@ -71,17 +90,26 @@ export function OfferCard({ offer, onAccept, onChat }: OfferCardProps) {
               </span>
             </div>
 
-            <div className="text-2xl font-bold text-primary" data-testid={`text-amount-${offer.id}`}>
+            <div className="text-2xl font-bold text-primary mb-3" data-testid={`text-amount-${offer.id}`}>
               {offer.clientAmount || offer.amount} MAD
+            </div>
+
+            <div className="space-y-1.5 text-sm">
+              {offer.pickupDate && (
+                <div className="flex items-center gap-2 text-foreground" data-testid={`text-pickup-date-${offer.id}`}>
+                  <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  <span>Date de prise en charge : <span className="font-medium">{formatDate(offer.pickupDate)}</span></span>
+                </div>
+              )}
+              {offer.loadType && (
+                <div className="flex items-center gap-2 text-foreground" data-testid={`text-load-type-${offer.id}`}>
+                  <Truck className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  <span>Type de chargement : <span className="font-medium">{getLoadTypeLabel(offer.loadType)}</span></span>
+                </div>
+              )}
             </div>
           </div>
         </div>
-
-        {offer.message && (
-          <p className="text-sm text-muted-foreground border-l-2 border-primary pl-3">
-            {offer.message}
-          </p>
-        )}
       </CardContent>
 
       <CardFooter className="p-4 pt-0 gap-2 flex-col sm:flex-row">

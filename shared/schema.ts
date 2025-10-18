@@ -60,7 +60,8 @@ export const offers = pgTable("offers", {
   requestId: varchar("request_id").notNull().references(() => transportRequests.id),
   transporterId: varchar("transporter_id").notNull().references(() => users.id),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
-  message: text("message"),
+  pickupDate: timestamp("pickup_date").notNull(), // Date proposée pour la prise en charge
+  loadType: text("load_type").notNull(), // 'return' (retour) ou 'shared' (groupage)
   status: text("status").default("pending"), // pending, accepted, rejected, completed
   paymentProofUrl: text("payment_proof_url"), // Transporter uploads payment proof
   paymentValidated: boolean("payment_validated").default(false), // Admin validates
@@ -126,7 +127,10 @@ export const insertOtpCodeSchema = createInsertSchema(otpCodes).omit({ id: true,
 export const insertTransportRequestSchema = createInsertSchema(transportRequests).omit({ id: true, createdAt: true, referenceId: true, status: true, acceptedOfferId: true, paymentStatus: true, paymentReceipt: true, paymentDate: true, viewCount: true, declinedBy: true }).extend({
   dateTime: z.coerce.date(), // Accept ISO string and coerce to Date
 });
-export const insertOfferSchema = createInsertSchema(offers).omit({ id: true, createdAt: true, status: true, paymentProofUrl: true, paymentValidated: true });
+export const insertOfferSchema = createInsertSchema(offers).omit({ id: true, createdAt: true, status: true, paymentProofUrl: true, paymentValidated: true }).extend({
+  pickupDate: z.coerce.date(), // Accept ISO string and coerce to Date
+  loadType: z.enum(["return", "shared"]), // Only allow 'return' or 'shared'
+});
 export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({ id: true, createdAt: true, filteredMessage: true, isRead: true });
 export const insertAdminSettingsSchema = createInsertSchema(adminSettings).omit({ id: true, updatedAt: true });
 export const insertNotificationSchema = createInsertSchema(notifications).omit({ id: true, createdAt: true, read: true });
