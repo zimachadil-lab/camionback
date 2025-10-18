@@ -1,0 +1,160 @@
+Voici un ensemble complet d’évolutions à implémenter sur CamionBack (côté Admin, Client et Transporteur).
+Les points sont classés par priorité :
+
+🚨 1️⃣ – Système de signalement / litige (client & transporteur)
+🔹 Objectif :
+
+Permettre aux clients et transporteurs de signaler un problème à l’équipe CamionBack après la fin d’une mission, avec gestion centralisée côté Admin.
+
+🧍‍♂️ Côté client :
+
+Ajouter un bouton “Signaler un problème” sur chaque commande de la rubrique “Commandes terminées”.
+
+Lorsqu’il clique dessus, afficher une popup avec :
+
+Liste déroulante de motifs :
+
+Le transporteur ne s’est pas présenté
+
+Marchandise abîmée / retard / autre problème
+
+Autre (champ texte libre)
+
+Zone texte libre (facultative)
+
+Bouton “Envoyer le signalement”
+
+Après envoi :
+✅ Message “Votre signalement a été transmis à l’équipe CamionBack.”
+✅ Le signalement est enregistré dans une nouvelle table (Signalements).
+
+🚛 Côté transporteur :
+
+Même principe, bouton “Signaler un client” sur les commandes terminées.
+
+Motifs possibles :
+
+Client absent à la livraison
+
+Refus de paiement / informations incomplètes
+
+Autre (champ libre)
+
+Champ texte libre + bouton “Envoyer le signalement”.
+
+🧰 Côté admin :
+
+Créer une nouvelle vue intitulée “Signalements” dans le menu principal Admin.
+
+Chaque ligne contient :
+| Référence commande | Type (Client/Transporteur) | ID utilisateur | Téléphone | Motif | Détails | Statut | 👁️ |
+
+Par défaut, chaque signalement est en statut “En attente”.
+
+Clic sur l’icône 👁️ → ouvre une popup complète avec tous les détails et un champ pour :
+
+changer le statut (Traité / Rejeté)
+
+ajouter une note interne.
+
+Design : même style que les vues “Contrats” et “Facturation”.
+
+📈 2️⃣ – Tableau de bord admin : statistiques en temps réel
+🔹 Objectif :
+
+Ajouter en haut du tableau de bord une section statistique en temps réel.
+
+Elle doit afficher :
+
+Indicateur	Description
+👥 Visiteurs en ligne (temps réel)	Nombre d’utilisateurs connectés sur le site à cet instant (clients + transporteurs confondus). Peut être basé sur les sessions actives si possible.
+🚛 Transporteurs inscrits	Nombre total de comptes transporteurs.
+📦 Clients inscrits	Nombre total de comptes clients.
+
+🔹 Si possible, ajouter une actualisation automatique toutes les 20 secondes pour la donnée “Visiteurs en ligne”.
+
+🧮 Design :
+
+Style “card” moderne en haut de la page, même ligne que les 4 statistiques existantes.
+
+Couleurs :
+
+Visiteurs : bleu (#3498db)
+
+Transporteurs : vert (#27ae60)
+
+Clients : orange (#f39c12)
+
+🚫 3️⃣ – Blocage des utilisateurs (Admin)
+🔹 Objectif :
+
+Permettre à l’admin de bloquer un transporteur ou un client en un clic, pour désactiver temporairement leur accès sans supprimer leur compte.
+
+🚛 Côté transporteurs (vue Admin “Transporteurs”)
+
+Ajouter à la fin de chaque ligne une icône “verrou” 🔒 ou bouton rouge “Bloquer”.
+
+Lorsqu’un admin clique dessus :
+
+Une popup de confirmation apparaît :
+
+“Voulez-vous bloquer ce transporteur ? Il ne pourra plus se connecter ni envoyer d’offres.”
+
+En confirmant :
+
+Le champ status du transporteur passe à blocked.
+
+Le bouton devient “Débloquer” (icône verte 🔓).
+
+Le transporteur reçoit un message de notification :
+
+“Votre compte CamionBack a été temporairement bloqué. Contactez l’équipe support pour plus d’informations.”
+
+👤 Côté clients (nouvelle vue Admin “Clients”)
+
+Ajouter la même logique :
+
+Bouton “Bloquer” / “Débloquer” en fin de ligne.
+
+Même type de confirmation et changement d’état.
+
+Un client bloqué ne peut plus :
+
+publier de nouvelles commandes,
+
+ni accepter des offres,
+
+et voit un message d’avertissement sur son tableau de bord :
+
+“Votre compte est temporairement désactivé. Merci de contacter le support CamionBack.”
+
+⚙️ Effet côté base :
+
+Ajouter un champ status (active / blocked) pour clients et transporteurs.
+
+Tous les contrôles d’accès doivent vérifier ce statut avant de permettre des actions (connexion, publication, envoi d’offre, etc.).
+
+📦 4️⃣ – Vue Admin “Clients”
+
+Déjà existante, à compléter avec :
+| ID Client | Nom | Téléphone | Nombre commandes publiées | Commandes terminées | Taux de satisfaction | Statut (Actif / Bloqué) | Action (Bloquer / Débloquer) |
+
+Recherche par ID client ou numéro de téléphone.
+
+Filtre par statut ou ville (si disponible).
+
+🧾 5️⃣ – (Préparation pour la 3ᵉ priorité : Amélioration des commandes)
+
+Prévoir dans le code une section pour extension du module “Commandes”, afin d’ajouter de nouvelles actions côté admin ou utilisateur (par exemple : gestion des litiges, facturation directe, ou suivi des trajets).
+
+✅ Résumé global des actions à réaliser
+
+Ajout complet du système de signalement / litige (client, transporteur, admin).
+
+Ajout de statistiques temps réel (visiteurs, transporteurs, clients) sur le tableau de bord.
+
+Possibilité de bloquer / débloquer un client ou transporteur depuis l’admin.
+
+Amélioration de la vue “Clients” (statuts, filtres, recherche).
+
+Préparer la base pour les futures améliorations des commandes.
