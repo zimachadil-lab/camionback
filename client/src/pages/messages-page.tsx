@@ -1,21 +1,29 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, ArrowRight } from "lucide-react";
+import { MessageSquare, ArrowRight, ArrowLeft } from "lucide-react";
 import { ChatWindow } from "@/components/chat/chat-window";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Header } from "@/components/layout/header";
 
 export default function MessagesPage() {
+  const [, navigate] = useLocation();
   const [selectedConversation, setSelectedConversation] = useState<any | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
 
   const userStr = localStorage.getItem("camionback_user");
   const user = userStr ? JSON.parse(userStr) : null;
 
+  const handleLogout = () => {
+    localStorage.removeItem("camionback_user");
+    window.location.href = "/";
+  };
+
   // Fetch conversations
-  const { data: conversations = [], isLoading } = useQuery({
+  const { data: conversations = [], isLoading } = useQuery<any[]>({
     queryKey: [`/api/chat/conversations?userId=${user?.id}`],
     enabled: !!user?.id,
     refetchInterval: 5000, // Refresh every 5 seconds
@@ -62,16 +70,32 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center gap-3 mb-6">
-        <MessageSquare className="w-8 h-8 text-primary" />
-        <div>
-          <h1 className="text-3xl font-bold">Messages</h1>
-          <p className="text-muted-foreground">
-            Consultez vos conversations
-          </p>
+    <div className="min-h-screen bg-background">
+      <Header
+        user={user}
+        onLogout={handleLogout}
+      />
+      
+      <div className="container mx-auto p-4 md:p-6 max-w-4xl space-y-6">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/")}
+            data-testid="button-back"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="flex items-center gap-3">
+            <MessageSquare className="w-8 h-8 text-primary" />
+            <div>
+              <h1 className="text-3xl font-bold">Messages</h1>
+              <p className="text-muted-foreground">
+                Consultez vos conversations
+              </p>
+            </div>
+          </div>
         </div>
-      </div>
 
       {isLoading ? (
         <Card>
@@ -162,6 +186,7 @@ export default function MessagesPage() {
           requestId={selectedConversation.requestId}
         />
       )}
+      </div>
     </div>
   );
 }

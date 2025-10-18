@@ -78,8 +78,8 @@ function RequestWithOffers({ request, onAcceptOffer, onChat, onDelete, onViewTra
                   className="gap-2"
                 >
                   <Info className="h-4 w-4" />
-                  <span className="hidden xs:inline">Infos transporteur</span>
-                  <span className="xs:hidden">Infos</span>
+                  <span className="hidden sm:inline">Infos transporteur</span>
+                  <span className="sm:hidden">Infos</span>
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -479,8 +479,8 @@ export default function ClientDashboard() {
                                 className="gap-2"
                               >
                                 <Info className="h-4 w-4" />
-                                <span className="hidden xs:inline">Infos transporteur</span>
-                                <span className="xs:hidden">Infos</span>
+                                <span className="hidden sm:inline">Infos transporteur</span>
+                                <span className="sm:hidden">Infos</span>
                               </Button>
                               <Button
                                 variant="secondary"

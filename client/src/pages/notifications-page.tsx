@@ -74,7 +74,7 @@ export default function NotificationsPage() {
       />
 
       <div className="container mx-auto p-4 md:p-6 max-w-4xl">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
@@ -85,9 +85,9 @@ export default function NotificationsPage() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="text-3xl font-bold">Notifications</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold">Notifications</h1>
               {unreadCount > 0 && (
-                <p className="text-muted-foreground mt-1">
+                <p className="text-sm text-muted-foreground mt-1">
                   {unreadCount} notification{unreadCount > 1 ? "s" : ""} non lue{unreadCount > 1 ? "s" : ""}
                 </p>
               )}
@@ -101,10 +101,11 @@ export default function NotificationsPage() {
               onClick={() => markAllAsReadMutation.mutate()}
               disabled={markAllAsReadMutation.isPending}
               data-testid="button-mark-all-read"
-              className="gap-2"
+              className="gap-2 w-full sm:w-auto"
             >
               <CheckCheck className="h-4 w-4" />
-              Tout marquer comme lu
+              <span className="hidden sm:inline">Tout marquer comme lu</span>
+              <span className="sm:hidden">Marquer comme lu</span>
             </Button>
           )}
         </div>
