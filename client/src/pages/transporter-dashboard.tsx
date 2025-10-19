@@ -33,7 +33,7 @@ const reportSchema = z.object({
 });
 
 const editOfferSchema = z.object({
-  amount: z.string().min(1, "Montant requis"),
+  amount: z.coerce.number().min(1, "Le montant doit être supérieur à 0"),
   pickupDate: z.string().min(1, "Date de prise en charge requise"),
   loadType: z.enum(["return", "shared"], {
     required_error: "Type de chargement requis",
@@ -279,9 +279,9 @@ export default function TransporterDashboard() {
   });
 
   const updateOfferMutation = useMutation({
-    mutationFn: async (data: { offerId: string; amount: string; pickupDate: string; loadType: string }) => {
+    mutationFn: async (data: { offerId: string; amount: number; pickupDate: string; loadType: string }) => {
       return await apiRequest("PATCH", `/api/offers/${data.offerId}`, {
-        amount: parseFloat(data.amount),
+        amount: data.amount,
         pickupDate: data.pickupDate,
         loadType: data.loadType,
       });
