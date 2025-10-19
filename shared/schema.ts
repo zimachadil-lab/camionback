@@ -175,11 +175,27 @@ export const insertOfferSchema = createInsertSchema(offers).omit({ id: true, cre
   pickupDate: z.coerce.date(), // Accept ISO string and coerce to Date
   loadType: z.enum(["return", "shared"]), // Only allow 'return' or 'shared'
 });
-export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({ id: true, createdAt: true, filteredMessage: true, isRead: true }).extend({
-  messageType: z.enum(["text", "voice"]).default("text"), // Only allow 'text' or 'voice'
-  message: z.string().optional(), // Make message optional for voice messages
-  fileUrl: z.string().optional(), // Make fileUrl optional for text messages
-});
+export const insertChatMessageSchema = createInsertSchema(chatMessages)
+  .omit({ id: true, createdAt: true, filteredMessage: true, isRead: true })
+  .extend({
+    messageType: z.enum(["text", "voice"]).default("text"),
+    message: z.string().optional(),
+    fileUrl: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.messageType === "text") {
+        return !!data.message && data.message.trim().length > 0;
+      }
+      if (data.messageType === "voice") {
+        return !!data.fileUrl && data.fileUrl.trim().length > 0;
+      }
+      return false;
+    },
+    {
+      message: "Text messages require a message field, voice messages require a fileUrl field",
+    }
+  );
 export const insertAdminSettingsSchema = createInsertSchema(adminSettings).omit({ id: true, updatedAt: true });
 export const insertNotificationSchema = createInsertSchema(notifications).omit({ id: true, createdAt: true, read: true });
 export const insertRatingSchema = createInsertSchema(ratings).omit({ id: true, createdAt: true });
