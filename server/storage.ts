@@ -8,9 +8,16 @@ import {
   type Notification, type InsertNotification,
   type Rating, type InsertRating,
   type EmptyReturn, type InsertEmptyReturn,
-  type Contract, type InsertContract
+  type Contract, type InsertContract,
+  type Report, type InsertReport
 } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { db } from './db.js';
+import { 
+  users, otpCodes, transportRequests, offers, chatMessages,
+  adminSettings, notifications, ratings, emptyReturns, contracts, reports
+} from '@shared/schema';
+import { eq, and, or, desc, asc, lte, gte, sql } from 'drizzle-orm';
 
 export interface IStorage {
   // User operations
@@ -934,4 +941,642 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DbStorage implements IStorage {
+  // User operations
+  async getUser(id: string): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getUserByPhone(phoneNumber: string): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.phoneNumber, phoneNumber)).limit(1);
+    return result[0];
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    let clientId = insertUser.clientId;
+    
+    // If role is 'client' and no clientId provided, generate one
+    if (insertUser.role === 'client' && !clientId) {
+      clientId = await this.getNextClientId();
+    }
+    
+    const result = await db.insert(users).values({
+      ...insertUser,
+      clientId,
+    }).returning();
+    return result[0];
+  }
+
+  async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
+    const result = await db.update(users)
+      .set(updates)
+      .where(eq(users.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+
+  async getPendingDrivers(): Promise<User[]> {
+    return await db.select().from(users)
+      .where(and(eq(users.role, 'transporter'), eq(users.status, 'pending')));
+  }
+
+  async getNextClientId(): Promise<string> {
+    const clients = await db.select({ clientId: users.clientId })
+      .from(users)
+      .where(and(eq(users.role, 'client'), sql`${users.clientId} IS NOT NULL`));
+    
+    if (clients.length === 0) {
+      return "C-0001";
+    }
+    
+    const clientNumbers = clients
+      .map(client => {
+        const match = client.clientId?.match(/C-(\d+)/);
+        return match ? parseInt(match[1], 10) : 0;
+      })
+      .filter(num => num > 0);
+    
+    const maxNumber = Math.max(...clientNumbers, 0);
+    const nextNumber = maxNumber + 1;
+    
+    return `C-${nextNumber.toString().padStart(4, '0')}`;
+  }
+
+  async getClientStatistics(): Promise<any[]> {
+    const allUsers = await db.select().from(users).where(eq(users.role, 'client'));
+    const allRequests = await db.select().from(transportRequests);
+    const allRatings = await db.select().from(ratings);
+    
+    return allUsers.map(client => {
+      const clientRequests = allRequests.filter(req => req.clientId === client.id);
+      const totalOrders = clientRequests.length;
+      const completedOrders = clientRequests.filter(
+        req => req.status === "completed" || req.paymentStatus === "paid"
+      ).length;
+      
+      const clientRatings = allRatings.filter(rating => rating.clientId === client.id);
+      const averageRating = clientRatings.length > 0
+        ? clientRatings.reduce((sum, r) => sum + r.score, 0) / clientRatings.length
+        : 0;
+      
+      return {
+        id: client.id,
+        clientId: client.clientId || "N/A",
+        name: client.name || "Non renseigné",
+        phoneNumber: client.phoneNumber,
+        totalOrders,
+        completedOrders,
+        averageRating: Number(averageRating.toFixed(2)),
+        registrationDate: client.createdAt,
+        accountStatus: client.accountStatus || "active",
+      };
+    });
+  }
+
+  async blockUser(userId: string): Promise<User | undefined> {
+    return this.updateUser(userId, { accountStatus: "blocked" });
+  }
+
+  async unblockUser(userId: string): Promise<User | undefined> {
+    return this.updateUser(userId, { accountStatus: "active" });
+  }
+
+  // OTP operations
+  async createOtp(insertOtp: InsertOtpCode): Promise<OtpCode> {
+    const result = await db.insert(otpCodes).values(insertOtp).returning();
+    return result[0];
+  }
+
+  async getOtpByPhone(phoneNumber: string): Promise<OtpCode | undefined> {
+    const result = await db.select().from(otpCodes)
+      .where(eq(otpCodes.phoneNumber, phoneNumber))
+      .orderBy(desc(otpCodes.createdAt))
+      .limit(1);
+    return result[0];
+  }
+
+  async verifyOtp(phoneNumber: string, code: string): Promise<boolean> {
+    const otp = await this.getOtpByPhone(phoneNumber);
+    if (!otp || otp.code !== code || new Date() > otp.expiresAt) {
+      return false;
+    }
+    
+    await db.update(otpCodes)
+      .set({ verified: true })
+      .where(eq(otpCodes.id, otp.id));
+    
+    return true;
+  }
+
+  // Transport request operations
+  async createTransportRequest(insertRequest: InsertTransportRequest): Promise<TransportRequest> {
+    // Generate reference ID
+    const year = new Date().getFullYear();
+    const existingRequests = await db.select({ referenceId: transportRequests.referenceId })
+      .from(transportRequests)
+      .where(sql`${transportRequests.referenceId} LIKE ${`CMD-${year}-%`}`);
+    
+    let maxId = 0;
+    existingRequests.forEach(req => {
+      const match = req.referenceId.match(/CMD-\d{4}-(\d{5})/);
+      if (match) {
+        maxId = Math.max(maxId, parseInt(match[1], 10));
+      }
+    });
+    
+    const referenceId = `CMD-${year}-${String(maxId + 1).padStart(5, '0')}`;
+    
+    const result = await db.insert(transportRequests).values({
+      ...insertRequest,
+      referenceId,
+    }).returning();
+    return result[0];
+  }
+
+  async getTransportRequest(id: string): Promise<TransportRequest | undefined> {
+    const result = await db.select().from(transportRequests)
+      .where(eq(transportRequests.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  async getAllTransportRequests(): Promise<TransportRequest[]> {
+    return await db.select().from(transportRequests);
+  }
+
+  async getRequestsByClient(clientId: string): Promise<TransportRequest[]> {
+    return await db.select().from(transportRequests)
+      .where(eq(transportRequests.clientId, clientId));
+  }
+
+  async getOpenRequests(): Promise<TransportRequest[]> {
+    return await db.select().from(transportRequests)
+      .where(eq(transportRequests.status, 'open'));
+  }
+
+  async getAcceptedRequestsByTransporter(transporterId: string): Promise<TransportRequest[]> {
+    const allOffers = await db.select().from(offers)
+      .where(eq(offers.transporterId, transporterId));
+    
+    const acceptedOfferIds = allOffers.map(o => o.id);
+    
+    if (acceptedOfferIds.length === 0) {
+      return [];
+    }
+    
+    const requests = await db.select().from(transportRequests)
+      .where(
+        and(
+          eq(transportRequests.status, 'accepted'),
+          sql`${transportRequests.acceptedOfferId} IN (${sql.join(acceptedOfferIds.map(id => sql`${id}`), sql`, `)})`,
+          sql`${transportRequests.paymentStatus} NOT IN ('pending_admin_validation', 'paid')`
+        )
+      );
+    
+    return requests;
+  }
+
+  async getPaymentsByTransporter(transporterId: string): Promise<TransportRequest[]> {
+    const allOffers = await db.select().from(offers)
+      .where(eq(offers.transporterId, transporterId));
+    
+    const offerIds = allOffers.map(o => o.id);
+    
+    if (offerIds.length === 0) {
+      return [];
+    }
+    
+    const requests = await db.select().from(transportRequests)
+      .where(
+        and(
+          sql`${transportRequests.acceptedOfferId} IN (${sql.join(offerIds.map(id => sql`${id}`), sql`, `)})`,
+          or(
+            eq(transportRequests.paymentStatus, 'pending_admin_validation'),
+            eq(transportRequests.paymentStatus, 'paid')
+          )
+        )
+      );
+    
+    return requests;
+  }
+
+  async updateTransportRequest(id: string, updates: Partial<TransportRequest>): Promise<TransportRequest | undefined> {
+    const result = await db.update(transportRequests)
+      .set(updates)
+      .where(eq(transportRequests.id, id))
+      .returning();
+    return result[0];
+  }
+
+  // Offer operations
+  async createOffer(insertOffer: InsertOffer): Promise<Offer> {
+    const result = await db.insert(offers).values(insertOffer).returning();
+    return result[0];
+  }
+
+  async getOffer(id: string): Promise<Offer | undefined> {
+    const result = await db.select().from(offers)
+      .where(eq(offers.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  async getOffersByRequest(requestId: string): Promise<Offer[]> {
+    return await db.select().from(offers)
+      .where(eq(offers.requestId, requestId));
+  }
+
+  async getOffersByTransporter(transporterId: string): Promise<Offer[]> {
+    const transporterOffers = await db.select().from(offers)
+      .where(eq(offers.transporterId, transporterId));
+    
+    const filteredOffers: Offer[] = [];
+    
+    for (const offer of transporterOffers) {
+      const request = await this.getTransportRequest(offer.requestId);
+      if (request && 
+          request.paymentStatus !== "pending_admin_validation" && 
+          request.paymentStatus !== "paid") {
+        filteredOffers.push(offer);
+      }
+    }
+    
+    return filteredOffers;
+  }
+
+  async updateOffer(id: string, updates: Partial<Offer>): Promise<Offer | undefined> {
+    const result = await db.update(offers)
+      .set(updates)
+      .where(eq(offers.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteOffersByRequest(requestId: string): Promise<void> {
+    await db.delete(offers).where(eq(offers.requestId, requestId));
+  }
+
+  // Chat operations
+  filterPhoneNumbers(message: string): string {
+    let filtered = message;
+    filtered = filtered.replace(/\+212[\s\-]?\d{9}/g, '[Numéro filtré]');
+    filtered = filtered.replace(/0[67][\s\-]?\d{2}[\s\-]?\d{2}[\s\-]?\d{2}[\s\-]?\d{2}/g, '[Numéro filtré]');
+    filtered = filtered.replace(/https?:\/\/[^\s]+/g, '[Lien filtré]');
+    filtered = filtered.replace(/www\.[^\s]+/g, '[Lien filtré]');
+    return filtered;
+  }
+
+  async createChatMessage(insertMessage: InsertChatMessage): Promise<ChatMessage> {
+    const filteredMessage = this.filterPhoneNumbers(insertMessage.message);
+    const result = await db.insert(chatMessages).values({
+      ...insertMessage,
+      filteredMessage: filteredMessage !== insertMessage.message ? filteredMessage : null,
+    }).returning();
+    return result[0];
+  }
+
+  async getMessagesByRequest(requestId: string): Promise<ChatMessage[]> {
+    return await db.select().from(chatMessages)
+      .where(eq(chatMessages.requestId, requestId))
+      .orderBy(asc(chatMessages.createdAt));
+  }
+
+  async getAllMessages(): Promise<ChatMessage[]> {
+    return await db.select().from(chatMessages);
+  }
+
+  async getUserConversations(userId: string): Promise<any[]> {
+    const allMessages = await db.select().from(chatMessages)
+      .where(or(eq(chatMessages.senderId, userId), eq(chatMessages.receiverId, userId)))
+      .orderBy(asc(chatMessages.createdAt));
+    
+    const conversationsMap = new Map<string, any>();
+    
+    for (const msg of allMessages) {
+      const existing = conversationsMap.get(msg.requestId);
+      const isUnread = msg.receiverId === userId && !msg.isRead;
+      
+      if (!existing) {
+        conversationsMap.set(msg.requestId, {
+          requestId: msg.requestId,
+          lastMessage: msg,
+          unreadCount: isUnread ? 1 : 0,
+          otherUserId: msg.senderId === userId ? msg.receiverId : msg.senderId,
+        });
+      } else {
+        if (msg.createdAt && existing.lastMessage.createdAt && msg.createdAt > existing.lastMessage.createdAt) {
+          existing.lastMessage = msg;
+        }
+        if (isUnread) {
+          existing.unreadCount++;
+        }
+      }
+    }
+    
+    const conversations: any[] = [];
+    
+    for (const conv of Array.from(conversationsMap.values())) {
+      const request = await this.getTransportRequest(conv.requestId);
+      let otherUser = await this.getUser(conv.otherUserId);
+      
+      if (request && !otherUser) {
+        const viewerIsClient = request.clientId === userId;
+        otherUser = {
+          id: conv.otherUserId,
+          name: viewerIsClient ? 'Transporteur' : 'Client',
+          role: viewerIsClient ? 'transporter' : 'client',
+          phoneNumber: '',
+        } as any;
+      }
+      
+      if (request && otherUser) {
+        conversations.push({
+          requestId: conv.requestId,
+          referenceId: request.referenceId,
+          fromCity: request.fromCity,
+          toCity: request.toCity,
+          lastMessage: conv.lastMessage,
+          unreadCount: conv.unreadCount,
+          otherUser: {
+            id: otherUser.id,
+            name: otherUser.name || otherUser.phoneNumber,
+            role: otherUser.role,
+          },
+        });
+      }
+    }
+    
+    return conversations.sort((a, b) => 
+      (b.lastMessage.createdAt?.getTime() || 0) - (a.lastMessage.createdAt?.getTime() || 0)
+    );
+  }
+
+  async markMessagesAsRead(userId: string, requestId: string): Promise<void> {
+    await db.update(chatMessages)
+      .set({ isRead: true })
+      .where(
+        and(
+          eq(chatMessages.requestId, requestId),
+          eq(chatMessages.receiverId, userId),
+          eq(chatMessages.isRead, false)
+        )
+      );
+  }
+
+  async getUnreadMessagesCount(userId: string): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` })
+      .from(chatMessages)
+      .where(and(eq(chatMessages.receiverId, userId), eq(chatMessages.isRead, false)));
+    return Number(result[0]?.count || 0);
+  }
+
+  async deleteMessagesByRequestId(requestId: string): Promise<void> {
+    await db.delete(chatMessages).where(eq(chatMessages.requestId, requestId));
+  }
+
+  async getAdminConversations(): Promise<any[]> {
+    const allMessages = await db.select().from(chatMessages).orderBy(asc(chatMessages.createdAt));
+    const conversationMap = new Map<string, ChatMessage[]>();
+    
+    for (const message of allMessages) {
+      if (!conversationMap.has(message.requestId)) {
+        conversationMap.set(message.requestId, []);
+      }
+      conversationMap.get(message.requestId)!.push(message);
+    }
+    
+    const conversations: any[] = [];
+    
+    for (const [requestId, messages] of Array.from(conversationMap.entries())) {
+      const request = await this.getTransportRequest(requestId);
+      if (!request) continue;
+      
+      const sortedMessages = messages.sort((a, b) => 
+        (a.createdAt?.getTime() || 0) - (b.createdAt?.getTime() || 0)
+      );
+      
+      const lastMessage = sortedMessages[sortedMessages.length - 1];
+      const client = await this.getUser(request.clientId);
+      const clientName = client?.name || client?.phoneNumber || "Client inconnu";
+      
+      let transporterName = "Transporteur inconnu";
+      let transporterId = null;
+      if (request.acceptedOfferId) {
+        const offer = await this.getOffer(request.acceptedOfferId);
+        if (offer) {
+          transporterId = offer.transporterId;
+          const transporter = await this.getUser(offer.transporterId);
+          transporterName = transporter?.name || transporter?.phoneNumber || "Transporteur inconnu";
+        }
+      }
+      
+      conversations.push({
+        requestId,
+        referenceId: request.referenceId,
+        clientId: request.clientId,
+        clientName,
+        transporterId,
+        transporterName,
+        messageCount: messages.length,
+        lastMessage: {
+          text: lastMessage.message,
+          createdAt: lastMessage.createdAt,
+          senderType: lastMessage.senderType,
+        },
+      });
+    }
+    
+    return conversations.sort((a, b) => 
+      (b.lastMessage.createdAt?.getTime() || 0) - (a.lastMessage.createdAt?.getTime() || 0)
+    );
+  }
+
+  // Admin settings
+  async getAdminSettings(): Promise<AdminSettings | undefined> {
+    const result = await db.select().from(adminSettings).limit(1);
+    return result[0];
+  }
+
+  async updateAdminSettings(updates: Partial<AdminSettings>): Promise<AdminSettings> {
+    const existing = await this.getAdminSettings();
+    
+    if (!existing) {
+      const result = await db.insert(adminSettings).values({
+        ...updates,
+        updatedAt: new Date(),
+      }).returning();
+      return result[0];
+    }
+    
+    const result = await db.update(adminSettings)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(adminSettings.id, existing.id))
+      .returning();
+    return result[0];
+  }
+
+  // Notification operations
+  async createNotification(insertNotification: InsertNotification): Promise<Notification> {
+    const result = await db.insert(notifications).values(insertNotification).returning();
+    return result[0];
+  }
+
+  async getNotificationsByUser(userId: string): Promise<Notification[]> {
+    return await db.select().from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt));
+  }
+
+  async getUnreadCount(userId: string): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` })
+      .from(notifications)
+      .where(and(eq(notifications.userId, userId), eq(notifications.read, false)));
+    return Number(result[0]?.count || 0);
+  }
+
+  async markAsRead(id: string): Promise<Notification | undefined> {
+    const result = await db.update(notifications)
+      .set({ read: true })
+      .where(eq(notifications.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async markAllAsRead(userId: string): Promise<void> {
+    await db.update(notifications)
+      .set({ read: true })
+      .where(and(eq(notifications.userId, userId), eq(notifications.read, false)));
+  }
+
+  // Rating operations
+  async createRating(insertRating: InsertRating): Promise<Rating> {
+    const result = await db.insert(ratings).values(insertRating).returning();
+    return result[0];
+  }
+
+  async getRatingsByTransporter(transporterId: string): Promise<Rating[]> {
+    return await db.select().from(ratings)
+      .where(eq(ratings.transporterId, transporterId))
+      .orderBy(desc(ratings.createdAt));
+  }
+
+  async getRatingByRequestId(requestId: string): Promise<Rating | undefined> {
+    const result = await db.select().from(ratings)
+      .where(eq(ratings.requestId, requestId))
+      .limit(1);
+    return result[0];
+  }
+
+  // Empty Return operations
+  async createEmptyReturn(insertEmptyReturn: InsertEmptyReturn): Promise<EmptyReturn> {
+    const result = await db.insert(emptyReturns).values(insertEmptyReturn).returning();
+    return result[0];
+  }
+
+  async getActiveEmptyReturns(): Promise<EmptyReturn[]> {
+    return await db.select().from(emptyReturns)
+      .where(eq(emptyReturns.status, 'active'))
+      .orderBy(asc(emptyReturns.returnDate));
+  }
+
+  async getEmptyReturnsByTransporter(transporterId: string): Promise<EmptyReturn[]> {
+    return await db.select().from(emptyReturns)
+      .where(eq(emptyReturns.transporterId, transporterId))
+      .orderBy(desc(emptyReturns.returnDate));
+  }
+
+  async updateEmptyReturn(id: string, updates: Partial<EmptyReturn>): Promise<EmptyReturn | undefined> {
+    const result = await db.update(emptyReturns)
+      .set(updates)
+      .where(eq(emptyReturns.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async expireOldReturns(): Promise<void> {
+    const now = new Date();
+    const activeReturns = await db.select().from(emptyReturns)
+      .where(eq(emptyReturns.status, 'active'));
+    
+    for (const emptyReturn of activeReturns) {
+      if (emptyReturn.returnDate) {
+        const returnDate = new Date(emptyReturn.returnDate);
+        const expiryDate = new Date(returnDate);
+        expiryDate.setDate(expiryDate.getDate() + 1);
+        
+        if (now >= expiryDate) {
+          await db.update(emptyReturns)
+            .set({ status: 'expired' })
+            .where(eq(emptyReturns.id, emptyReturn.id));
+        }
+      }
+    }
+  }
+
+  // Contract operations
+  async createContract(insertContract: InsertContract): Promise<Contract> {
+    const result = await db.insert(contracts).values(insertContract).returning();
+    return result[0];
+  }
+
+  async getAllContracts(): Promise<Contract[]> {
+    return await db.select().from(contracts);
+  }
+
+  async getContractById(id: string): Promise<Contract | undefined> {
+    const result = await db.select().from(contracts)
+      .where(eq(contracts.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  async updateContract(id: string, updates: Partial<Contract>): Promise<Contract | undefined> {
+    const result = await db.update(contracts)
+      .set(updates)
+      .where(eq(contracts.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async getContractByRequestId(requestId: string): Promise<Contract | undefined> {
+    const result = await db.select().from(contracts)
+      .where(eq(contracts.requestId, requestId))
+      .limit(1);
+    return result[0];
+  }
+
+  // Report operations
+  async createReport(insertReport: InsertReport): Promise<Report> {
+    const result = await db.insert(reports).values(insertReport).returning();
+    return result[0];
+  }
+
+  async getAllReports(): Promise<Report[]> {
+    return await db.select().from(reports);
+  }
+
+  async getReportById(id: string): Promise<Report | undefined> {
+    const result = await db.select().from(reports)
+      .where(eq(reports.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  async updateReport(id: string, updates: Partial<Report>): Promise<Report | undefined> {
+    const result = await db.update(reports)
+      .set(updates)
+      .where(eq(reports.id, id))
+      .returning();
+    return result[0];
+  }
+}
+
+export const storage = new DbStorage();
