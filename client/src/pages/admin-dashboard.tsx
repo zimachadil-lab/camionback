@@ -56,6 +56,8 @@ export default function AdminDashboard() {
   const [invoiceDetailsOpen, setInvoiceDetailsOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [requestDetailDialogOpen, setRequestDetailDialogOpen] = useState(false);
+  const [newCityName, setNewCityName] = useState("");
+  const [editingCity, setEditingCity] = useState<any>(null);
   const { toast} = useToast();
 
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
@@ -205,6 +207,15 @@ export default function AdminDashboard() {
     queryKey: ["/api/reports"],
     queryFn: async () => {
       const response = await fetch("/api/reports");
+      return response.json();
+    },
+  });
+
+  // Fetch all cities
+  const { data: cities = [], isLoading: citiesLoading } = useQuery({
+    queryKey: ["/api/cities"],
+    queryFn: async () => {
+      const response = await fetch("/api/cities");
       return response.json();
     },
   });
@@ -598,7 +609,7 @@ export default function AdminDashboard() {
             {/* Barre de navigation secondaire - Gestion */}
             <div className="bg-muted/30 p-2 rounded-lg">
               <p className="text-xs text-muted-foreground mb-2 px-2 font-medium">Gestion & Configuration</p>
-              <TabsList className="flex lg:grid w-full lg:grid-cols-6 overflow-x-auto text-xs sm:text-sm">
+              <TabsList className="flex lg:grid w-full lg:grid-cols-7 overflow-x-auto text-xs sm:text-sm">
                 <TabsTrigger value="drivers" data-testid="tab-drivers" className="flex-shrink-0">Transporteurs</TabsTrigger>
                 <TabsTrigger value="clients" data-testid="tab-clients" className="flex-shrink-0">Clients</TabsTrigger>
                 <TabsTrigger value="reports" data-testid="tab-reports" className="flex-shrink-0">
@@ -611,6 +622,7 @@ export default function AdminDashboard() {
                   )}
                 </TabsTrigger>
                 <TabsTrigger value="facturation" data-testid="tab-facturation" className="flex-shrink-0">Facturation</TabsTrigger>
+                <TabsTrigger value="cities" data-testid="tab-cities" className="flex-shrink-0">Villes</TabsTrigger>
                 <TabsTrigger value="stats" data-testid="tab-stats" className="flex-shrink-0">Statistiques</TabsTrigger>
                 <TabsTrigger value="settings" data-testid="tab-settings" className="flex-shrink-0">Paramètres</TabsTrigger>
               </TabsList>
@@ -1951,6 +1963,172 @@ export default function AdminDashboard() {
                     </div>
                   );
                 })()}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="cities" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MapPin className="w-5 h-5" />
+                  Gestion des villes
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Add new city form */}
+                <div className="bg-muted/50 p-4 rounded-lg space-y-4">
+                  <h4 className="font-medium">Ajouter une nouvelle ville</h4>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Nom de la ville"
+                      value={editingCity ? editingCity.name : newCityName}
+                      onChange={(e) => editingCity ? setEditingCity({...editingCity, name: e.target.value}) : setNewCityName(e.target.value)}
+                      data-testid="input-city-name"
+                    />
+                    <Button 
+                      onClick={async () => {
+                        const cityName = editingCity ? editingCity.name : newCityName;
+                        if (!cityName.trim()) {
+                          toast({
+                            variant: "destructive",
+                            title: "Erreur",
+                            description: "Le nom de la ville est requis",
+                          });
+                          return;
+                        }
+                        
+                        try {
+                          if (editingCity) {
+                            // Update existing city
+                            await apiRequest("PATCH", `/api/cities/${editingCity.id}`, {
+                              name: cityName.trim()
+                            });
+                            toast({
+                              title: "Ville modifiée",
+                              description: `La ville a été modifiée avec succès`,
+                            });
+                            setEditingCity(null);
+                          } else {
+                            // Create new city
+                            await apiRequest("POST", "/api/cities", {
+                              name: cityName.trim(),
+                              isActive: true
+                            });
+                            toast({
+                              title: "Ville ajoutée",
+                              description: `${cityName} a été ajoutée avec succès`,
+                            });
+                            setNewCityName("");
+                          }
+                          queryClient.invalidateQueries({ queryKey: ["/api/cities"] });
+                        } catch (error: any) {
+                          toast({
+                            variant: "destructive",
+                            title: "Erreur",
+                            description: error.message || "Échec de l'opération",
+                          });
+                        }
+                      }}
+                      data-testid={editingCity ? "button-update-city" : "button-add-city"}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      {editingCity ? "Modifier" : "Ajouter"}
+                    </Button>
+                    {editingCity && (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setEditingCity(null);
+                          setNewCityName("");
+                        }}
+                        data-testid="button-cancel-edit-city"
+                      >
+                        Annuler
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Cities list */}
+                <div>
+                  <h4 className="font-medium mb-4">Liste des villes ({cities.length})</h4>
+                  {citiesLoading ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                      <p className="text-muted-foreground">Chargement...</p>
+                    </div>
+                  ) : cities.length === 0 ? (
+                    <div className="text-center py-8">
+                      <MapPin className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">Aucune ville enregistrée</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Nom</TableHead>
+                            <TableHead>Statut</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {cities.map((city: any) => (
+                            <TableRow key={city.id}>
+                              <TableCell className="font-medium">{city.name}</TableCell>
+                              <TableCell>
+                                <Badge variant={city.isActive ? "default" : "secondary"}>
+                                  {city.isActive ? "Active" : "Inactive"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex gap-2 justify-end">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setEditingCity(city);
+                                      setNewCityName(city.name);
+                                    }}
+                                    data-testid={`button-edit-city-${city.id}`}
+                                  >
+                                    Modifier
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={async () => {
+                                      if (confirm(`Êtes-vous sûr de vouloir supprimer ${city.name} ?`)) {
+                                        try {
+                                          await apiRequest("DELETE", `/api/cities/${city.id}`);
+                                          toast({
+                                            title: "Ville supprimée",
+                                            description: `${city.name} a été supprimée avec succès`,
+                                          });
+                                          queryClient.invalidateQueries({ queryKey: ["/api/cities"] });
+                                        } catch (error) {
+                                          toast({
+                                            variant: "destructive",
+                                            title: "Erreur",
+                                            description: "Échec de la suppression",
+                                          });
+                                        }
+                                      }
+                                    }}
+                                    data-testid={`button-delete-city-${city.id}`}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
