@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,10 +9,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu, User, Plus, LogOut, FileText, Clock, Receipt, Package, Star, TruckIcon } from "lucide-react";
+import { Menu, User, Plus, LogOut, FileText, Clock, Receipt, Package, Star, TruckIcon, CreditCard, HelpCircle, MessageCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { MessagesBadge } from "@/components/chat/messages-badge";
+import { ContactWhatsAppDialog } from "@/components/contact-whatsapp-dialog";
 
 interface HeaderProps {
   user: {
@@ -27,21 +29,28 @@ interface HeaderProps {
 
 export function Header({ user, onNewRequest, onAnnounceReturn, onLogout }: HeaderProps) {
   const [location, navigate] = useLocation();
+  const [showContactDialog, setShowContactDialog] = useState(false);
 
   const getMenuItems = () => {
     if (user.role === "client") {
       return [
         { label: "Mes commandes", icon: Package, href: "/" },
+        { label: "Comment ça marche", icon: HelpCircle, href: "/how-it-works-client" },
+        { label: "Nous contacter", icon: MessageCircle, onClick: () => setShowContactDialog(true) },
       ];
     } else if (user.role === "transporter") {
       return [
         { label: "Tableau de bord", icon: Package, href: "/" },
         { label: "Paiements reçus", icon: Receipt, href: "/transporter/payments" },
         { label: "Mes avis clients", icon: Star, href: "/transporter/ratings" },
+        { label: "Mon RIB", icon: CreditCard, href: "/transporter/rib" },
+        { label: "Comment ça marche", icon: HelpCircle, href: "/how-it-works-transporter" },
+        { label: "Nous contacter", icon: MessageCircle, onClick: () => setShowContactDialog(true) },
       ];
     } else if (user.role === "admin") {
       return [
         { label: "Tableau de bord", icon: Package, href: "/" },
+        { label: "Nous contacter", icon: MessageCircle, onClick: () => setShowContactDialog(true) },
       ];
     }
     return [];
@@ -64,13 +73,13 @@ export function Header({ user, onNewRequest, onAnnounceReturn, onLogout }: Heade
           </div>
 
           <nav className="hidden md:flex items-center gap-1">
-            {menuItems.map((item) => {
+            {menuItems.map((item, idx) => {
               const Icon = item.icon;
-              const isActive = location === item.href;
+              const isActive = item.href && location === item.href;
               return (
                 <Button
-                  key={item.href}
-                  onClick={() => navigate(item.href)}
+                  key={item.href || idx}
+                  onClick={() => item.onClick ? item.onClick() : item.href && navigate(item.href)}
                   variant={isActive ? "secondary" : "ghost"}
                   size="sm"
                   className="gap-2"
@@ -134,13 +143,13 @@ export function Header({ user, onNewRequest, onAnnounceReturn, onLogout }: Heade
               <DropdownMenuSeparator />
               
               <div className="md:hidden">
-                {menuItems.map((item) => {
+                {menuItems.map((item, idx) => {
                   const Icon = item.icon;
                   const testId = `nav-mobile-${item.label.toLowerCase().replace(/\s+/g, "-")}`;
                   return (
                     <DropdownMenuItem
-                      key={item.href}
-                      onClick={() => navigate(item.href)}
+                      key={item.href || idx}
+                      onClick={() => item.onClick ? item.onClick() : item.href && navigate(item.href)}
                       className="gap-2 cursor-pointer"
                       data-testid={testId}
                     >
@@ -164,6 +173,8 @@ export function Header({ user, onNewRequest, onAnnounceReturn, onLogout }: Heade
           </DropdownMenu>
         </div>
       </div>
+
+      <ContactWhatsAppDialog open={showContactDialog} onOpenChange={setShowContactDialog} />
     </header>
   );
 }
