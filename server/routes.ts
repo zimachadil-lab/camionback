@@ -13,7 +13,8 @@ import {
   insertChatMessageSchema,
   insertNotificationSchema,
   insertEmptyReturnSchema,
-  insertReportSchema
+  insertReportSchema,
+  insertCitySchema
 } from "@shared/schema";
 import { sendFirstOfferSMS, sendOfferAcceptedSMS } from "./sms";
 
@@ -1324,6 +1325,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(settings);
     } catch (error) {
       res.status(500).json({ error: "Failed to update settings" });
+    }
+  });
+
+  // Cities CRUD routes (Admin)
+  app.get("/api/cities", async (req, res) => {
+    try {
+      const cities = await storage.getAllCities();
+      res.json(cities);
+    } catch (error) {
+      console.error("Get cities error:", error);
+      res.status(500).json({ error: "Échec de récupération des villes" });
+    }
+  });
+
+  app.post("/api/cities", async (req, res) => {
+    try {
+      const cityData = insertCitySchema.parse(req.body);
+      const city = await storage.createCity(cityData);
+      res.json(city);
+    } catch (error) {
+      console.error("Create city error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(500).json({ error: "Échec de création de la ville" });
+    }
+  });
+
+  app.patch("/api/cities/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const city = await storage.updateCity(id, req.body);
+      if (!city) {
+        return res.status(404).json({ error: "Ville non trouvée" });
+      }
+      res.json(city);
+    } catch (error) {
+      console.error("Update city error:", error);
+      res.status(500).json({ error: "Échec de modification de la ville" });
+    }
+  });
+
+  app.delete("/api/cities/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteCity(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete city error:", error);
+      res.status(500).json({ error: "Échec de suppression de la ville" });
     }
   });
 

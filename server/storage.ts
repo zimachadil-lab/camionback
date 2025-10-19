@@ -9,13 +9,14 @@ import {
   type Rating, type InsertRating,
   type EmptyReturn, type InsertEmptyReturn,
   type Contract, type InsertContract,
-  type Report, type InsertReport
+  type Report, type InsertReport,
+  type City, type InsertCity
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from './db.js';
 import { 
   users, otpCodes, transportRequests, offers, chatMessages,
-  adminSettings, notifications, ratings, emptyReturns, contracts, reports
+  adminSettings, notifications, ratings, emptyReturns, contracts, reports, cities
 } from '@shared/schema';
 import { eq, and, or, desc, asc, lte, gte, sql } from 'drizzle-orm';
 
@@ -100,6 +101,13 @@ export interface IStorage {
   getAllReports(): Promise<Report[]>;
   getReportById(id: string): Promise<Report | undefined>;
   updateReport(id: string, updates: Partial<Report>): Promise<Report | undefined>;
+  
+  // City operations
+  createCity(city: InsertCity): Promise<City>;
+  getAllCities(): Promise<City[]>;
+  getCityById(id: string): Promise<City | undefined>;
+  updateCity(id: string, updates: Partial<City>): Promise<City | undefined>;
+  deleteCity(id: string): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -1670,6 +1678,35 @@ export class DbStorage implements IStorage {
       .where(eq(reports.id, id))
       .returning();
     return result[0];
+  }
+
+  // City operations
+  async createCity(insertCity: InsertCity): Promise<City> {
+    const result = await db.insert(cities).values(insertCity).returning();
+    return result[0];
+  }
+
+  async getAllCities(): Promise<City[]> {
+    return await db.select().from(cities).orderBy(asc(cities.name));
+  }
+
+  async getCityById(id: string): Promise<City | undefined> {
+    const result = await db.select().from(cities)
+      .where(eq(cities.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  async updateCity(id: string, updates: Partial<City>): Promise<City | undefined> {
+    const result = await db.update(cities)
+      .set(updates)
+      .where(eq(cities.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteCity(id: string): Promise<void> {
+    await db.delete(cities).where(eq(cities.id, id));
   }
 }
 
