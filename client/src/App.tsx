@@ -9,6 +9,8 @@ import MessagesPage from "@/pages/messages-page";
 import SelectRole from "@/pages/select-role";
 import CompleteProfile from "@/pages/complete-profile";
 import AdminDashboard from "@/pages/admin-dashboard";
+import ClientDashboard from "@/pages/client-dashboard";
+import TransporterDashboard from "@/pages/transporter-dashboard";
 import TransporterPayments from "@/pages/transporter-payments";
 import TransporterRatings from "@/pages/transporter-ratings";
 import NotFound from "@/pages/not-found";
@@ -19,7 +21,9 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/select-role" component={SelectRole} />
       <Route path="/complete-profile" component={CompleteProfile} />
-      <Route path="/admin" component={AdminDashboard} />
+      <Route path="/admin-dashboard" component={AdminDashboard} />
+      <Route path="/client-dashboard" component={ClientDashboard} />
+      <Route path="/transporter-dashboard" component={TransporterDashboard} />
       <Route path="/notifications" component={NotificationsPage} />
       <Route path="/messages" component={MessagesPage} />
       <Route path="/transporter/payments" component={TransporterPayments} />

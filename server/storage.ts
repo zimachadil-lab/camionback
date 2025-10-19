@@ -399,6 +399,18 @@ export class MemStorage implements IStorage {
     const request = this.transportRequests.get(id);
     if (!request) return false;
     
+    // Delete all related contracts
+    const relatedContracts = Array.from(this.contracts.entries()).filter(
+      ([, contract]) => contract.requestId === id
+    );
+    relatedContracts.forEach(([contractId]) => this.contracts.delete(contractId));
+    
+    // Delete all related reports
+    const relatedReports = Array.from(this.reports.entries()).filter(
+      ([, report]) => report.requestId === id
+    );
+    relatedReports.forEach(([reportId]) => this.reports.delete(reportId));
+    
     // Delete the request
     this.transportRequests.delete(id);
     
@@ -1211,6 +1223,12 @@ export class DbStorage implements IStorage {
   async deleteTransportRequest(id: string): Promise<boolean> {
     const request = await this.getTransportRequest(id);
     if (!request) return false;
+    
+    // Delete all related contracts
+    await db.delete(contracts).where(eq(contracts.requestId, id));
+    
+    // Delete all related reports
+    await db.delete(reports).where(eq(reports.requestId, id));
     
     // Delete all related offers
     await this.deleteOffersByRequest(id);
