@@ -127,14 +127,19 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
           const recommendationsData = await recommendationsResponse.json();
           setRecommendedTransporters(recommendationsData.transporters || []);
           setShowRecommendationsDialog(true);
+        } else {
+          // If recommendations fail, still call onSuccess
+          form.reset();
+          setPhotos([]);
+          onSuccess?.();
         }
       } catch (err) {
         console.error("Failed to fetch recommendations:", err);
+        // If recommendations fail, still call onSuccess
+        form.reset();
+        setPhotos([]);
+        onSuccess?.();
       }
-      
-      form.reset();
-      setPhotos([]);
-      onSuccess?.();
     } catch (error) {
       toast({
         variant: "destructive",
@@ -362,7 +367,15 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
 
       <RecommendedTransportersDialog
         open={showRecommendationsDialog}
-        onOpenChange={setShowRecommendationsDialog}
+        onOpenChange={(open) => {
+          setShowRecommendationsDialog(open);
+          // Call onSuccess when dialog closes
+          if (!open) {
+            form.reset();
+            setPhotos([]);
+            onSuccess?.();
+          }
+        }}
         requestId={createdRequestId}
         transporters={recommendedTransporters}
       />
