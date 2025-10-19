@@ -1176,6 +1176,31 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
+  async deleteTransportRequest(id: string): Promise<boolean> {
+    const request = await this.getTransportRequest(id);
+    if (!request) return false;
+    
+    // Delete all related offers
+    await this.deleteOffersByRequest(id);
+    
+    // Delete all related chat messages
+    await this.deleteMessagesByRequestId(id);
+    
+    // Delete all related notifications
+    await db.delete(notifications).where(eq(notifications.relatedId, id));
+    
+    // Get all offer IDs for this request to delete related notifications
+    const relatedOffers = await this.getOffersByRequest(id);
+    for (const offer of relatedOffers) {
+      await db.delete(notifications).where(eq(notifications.relatedId, offer.id));
+    }
+    
+    // Delete the request
+    await db.delete(transportRequests).where(eq(transportRequests.id, id));
+    
+    return true;
+  }
+
   // Offer operations
   async createOffer(insertOffer: InsertOffer): Promise<Offer> {
     const result = await db.insert(offers).values(insertOffer).returning();
@@ -1222,6 +1247,22 @@ export class DbStorage implements IStorage {
 
   async deleteOffersByRequest(requestId: string): Promise<void> {
     await db.delete(offers).where(eq(offers.requestId, requestId));
+  }
+
+  async getAllOffers(): Promise<Offer[]> {
+    return await db.select().from(offers);
+  }
+
+  async hasOfferForRequest(transporterId: string, requestId: string): Promise<boolean> {
+    const result = await db.select().from(offers)
+      .where(
+        and(
+          eq(offers.transporterId, transporterId),
+          eq(offers.requestId, requestId)
+        )
+      )
+      .limit(1);
+    return result.length > 0;
   }
 
   // Chat operations
