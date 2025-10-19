@@ -22,6 +22,7 @@ import {
 import { Header } from "@/components/layout/header";
 import { KpiCard } from "@/components/admin/kpi-card";
 import { AddTransporterForm } from "@/components/admin/add-transporter-form";
+import { TransporterRibDialog } from "@/components/admin/transporter-rib-dialog";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -58,6 +59,7 @@ export default function AdminDashboard() {
   const [requestDetailDialogOpen, setRequestDetailDialogOpen] = useState(false);
   const [newCityName, setNewCityName] = useState("");
   const [editingCity, setEditingCity] = useState<any>(null);
+  const [selectedRibTransporter, setSelectedRibTransporter] = useState<any>(null);
   const { toast} = useToast();
 
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
@@ -1370,6 +1372,7 @@ export default function AdminDashboard() {
                               <TableHead>Commissions</TableHead>
                               <TableHead>Dernière activité</TableHead>
                               <TableHead>Statut</TableHead>
+                              <TableHead>RIB</TableHead>
                               <TableHead>Action</TableHead>
                             </TableRow>
                           </TableHeader>
@@ -1424,6 +1427,18 @@ export default function AdminDashboard() {
                                   >
                                     {transporter.accountStatus === "active" ? "Actif" : "Bloqué"}
                                   </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setSelectedRibTransporter(transporter)}
+                                    data-testid={`button-rib-${transporter.id}`}
+                                    className="gap-2"
+                                  >
+                                    <CreditCard className="w-4 h-4" />
+                                    RIB
+                                  </Button>
                                 </TableCell>
                                 <TableCell>
                                   {transporter.accountStatus === "active" ? (
@@ -3181,6 +3196,15 @@ export default function AdminDashboard() {
           })()}
         </DialogContent>
       </Dialog>
+
+      {selectedRibTransporter && (
+        <TransporterRibDialog
+          open={!!selectedRibTransporter}
+          onOpenChange={(open) => !open && setSelectedRibTransporter(null)}
+          transporterId={selectedRibTransporter.id}
+          transporterName={selectedRibTransporter.name}
+        />
+      )}
     </div>
   );
 }
