@@ -1003,6 +1003,125 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // RIB routes for transporters
+  app.get("/api/user/rib", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Non authentifié" });
+      }
+
+      const user = await storage.getUser(req.session.userId);
+      if (!user || user.role !== "transporter") {
+        return res.status(403).json({ error: "Accès refusé" });
+      }
+
+      res.json({
+        ribName: user.ribName || "",
+        ribNumber: user.ribNumber || "",
+      });
+    } catch (error) {
+      console.error("Get RIB error:", error);
+      res.status(500).json({ error: "Échec de récupération du RIB" });
+    }
+  });
+
+  app.patch("/api/user/rib", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Non authentifié" });
+      }
+
+      const user = await storage.getUser(req.session.userId);
+      if (!user || user.role !== "transporter") {
+        return res.status(403).json({ error: "Accès refusé" });
+      }
+
+      const { ribName, ribNumber } = req.body;
+
+      // Validate RIB number (must be exactly 24 digits)
+      if (ribNumber && !/^\d{24}$/.test(ribNumber)) {
+        return res.status(400).json({ error: "Le RIB doit contenir exactement 24 chiffres" });
+      }
+
+      const updatedUser = await storage.updateUser(req.session.userId, {
+        ribName: ribName || null,
+        ribNumber: ribNumber || null,
+      });
+
+      res.json({
+        ribName: updatedUser?.ribName || "",
+        ribNumber: updatedUser?.ribNumber || "",
+      });
+    } catch (error) {
+      console.error("Update RIB error:", error);
+      res.status(500).json({ error: "Échec de mise à jour du RIB" });
+    }
+  });
+
+  // Admin routes for managing transporter RIB
+  app.get("/api/admin/users/:id/rib", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Non authentifié" });
+      }
+
+      const admin = await storage.getUser(req.session.userId);
+      if (!admin || admin.role !== "admin") {
+        return res.status(403).json({ error: "Accès refusé" });
+      }
+
+      const user = await storage.getUser(req.params.id);
+      if (!user) {
+        return res.status(404).json({ error: "Utilisateur non trouvé" });
+      }
+
+      res.json({
+        ribName: user.ribName || "",
+        ribNumber: user.ribNumber || "",
+      });
+    } catch (error) {
+      console.error("Get user RIB error:", error);
+      res.status(500).json({ error: "Échec de récupération du RIB" });
+    }
+  });
+
+  app.patch("/api/admin/users/:id/rib", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "Non authentifié" });
+      }
+
+      const admin = await storage.getUser(req.session.userId);
+      if (!admin || admin.role !== "admin") {
+        return res.status(403).json({ error: "Accès refusé" });
+      }
+
+      const { ribName, ribNumber } = req.body;
+
+      // Validate RIB number (must be exactly 24 digits)
+      if (ribNumber && ribNumber !== "" && !/^\d{24}$/.test(ribNumber)) {
+        return res.status(400).json({ error: "Le RIB doit contenir exactement 24 chiffres" });
+      }
+
+      const updatedUser = await storage.updateUser(req.params.id, {
+        ribName: ribName || null,
+        ribNumber: ribNumber || null,
+      });
+
+      if (!updatedUser) {
+        return res.status(404).json({ error: "Utilisateur non trouvé" });
+      }
+
+      res.json({
+        ribName: updatedUser.ribName || "",
+        ribNumber: updatedUser.ribNumber || "",
+      });
+    } catch (error) {
+      console.error("Update user RIB error:", error);
+      res.status(500).json({ error: "Échec de mise à jour du RIB" });
+    }
+  });
+
   // Offer routes
   app.post("/api/offers", async (req, res) => {
     try {

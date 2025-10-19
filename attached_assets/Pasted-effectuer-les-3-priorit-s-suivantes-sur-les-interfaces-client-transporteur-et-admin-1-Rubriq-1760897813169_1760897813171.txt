@@ -1,0 +1,85 @@
+effectuer les 3 priorités suivantes sur les interfaces client, transporteur et admin :
+
+🟩 1. Rubrique “Mon RIB” (Transporteur + Admin)
+🎯 Objectif :
+
+Permettre aux transporteurs d’ajouter, consulter ou modifier leur RIB bancaire directement depuis leur compte.
+
+📱 Côté Transporteur :
+
+Ajouter une nouvelle rubrique dans le menu burger, intitulée “Mon RIB”.
+
+Lorsqu’il clique dessus → ouvrir une page ou popup avec :
+
+Champ “Nom” (personnel ou société)
+
+Champ “RIB” (saisie obligatoire de 24 chiffres exactement)
+
+Bouton 💾 Enregistrer ou Modifier
+
+Validation :
+
+Vérifier automatiquement que le RIB comporte 24 chiffres exacts (aucune lettre ni espace).
+
+Message de confirmation :
+✅ “Votre RIB a été enregistré avec succès.”
+
+Message d’erreur :
+⚠️ “Le RIB doit contenir exactement 24 chiffres.”
+
+⚙️ Côté Admin :
+
+Sur la vue Transporteurs, ajouter une icône dédiée (ex: 💳 ou 🏦) pour le RIB dans chaque ligne de transporteur.
+
+Au clic sur l’icône → ouvrir une popup affichant ou permettant d’ajouter/modifier le RIB.
+
+L’admin doit pouvoir ajouter, consulter ou corriger le RIB manuellement.
+
+🟦 2. Rubrique “Comment ça marche” (Client & Transporteur)
+📱 Menu Burger :
+
+Ajouter un nouvel item intitulé “Comment ça marche” pour :
+
+Client
+
+Transporteur
+
+💬 Contenu (libre mais clair) :
+Côté Client :
+
+CamionBack est une plateforme marocaine qui met en relation les particuliers et entreprises avec des transporteurs disponibles pour des trajets inter-villes.
+Publiez votre commande, recevez plusieurs offres, comparez les prix et choisissez votre transporteur en toute sécurité.
+Le paiement est sécurisé et n’est libéré qu’après la confirmation de la livraison.
+
+Côté Transporteur :
+
+CamionBack aide les transporteurs à rentabiliser leurs trajets en trouvant des chargements au retour.
+Recevez des demandes, envoyez vos propositions de prix et augmentez votre chiffre d’affaires en évitant les trajets à vide.
+La plateforme facilite la communication, la planification et la facturation.
+
+⚙️ Présenter chaque version dans une petite page propre ou popup défilante élégante avec le logo CamionBack.
+
+🟨 3. Rubrique “Nous Contacter” (Popup WhatsApp)
+📱 Menu Burger :
+
+Ajouter une entrée intitulée “Nous Contacter”.
+
+💬 Fonctionnalité :
+
+Lorsqu’on clique dessus → ouvrir une popup stylisée avec :
+
+Le titre : 💬 Contactez-nous facilement
+
+Une phrase courte :
+“Besoin d’aide ? Écrivez-nous directement sur WhatsApp.”
+
+Un bouton vert ou icône WhatsApp cliquable 📲 qui redirige vers :
+👉 https://wa.me/212664373534
+
+💅 Style :
+
+Popup centrée, fond doux (blanc ou dégradé léger).
+
+Bouton WhatsApp bien visible (vert #25D366).
+
+Animation légère à l’ouverture (fade ou slide).

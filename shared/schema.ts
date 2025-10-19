@@ -18,6 +18,8 @@ export const users = pgTable("users", {
   totalTrips: integer("total_trips").default(0), // For transporters
   status: text("status"), // 'pending', 'validated' - for transporters only
   accountStatus: text("account_status").default("active"), // 'active', 'blocked' - for all users
+  ribName: text("rib_name"), // Name for RIB (for transporters)
+  ribNumber: text("rib_number"), // 24-digit RIB number (for transporters)
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });
