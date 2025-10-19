@@ -1122,13 +1122,35 @@ export class DbStorage implements IStorage {
     const openRequests = await db.select().from(transportRequests)
       .where(eq(transportRequests.status, 'open'));
     
-    // If transporterId provided, filter out requests already declined by this transporter
+    // If transporterId provided, apply transporter-specific filters
     if (transporterId) {
-      return openRequests.filter(req => 
-        !req.declinedBy || !req.declinedBy.includes(transporterId)
-      );
+      // Get request IDs where this transporter already has an offer (optimized: select only requestId)
+      const transporterOffers = await db.select({ requestId: offers.requestId })
+        .from(offers)
+        .where(eq(offers.transporterId, transporterId));
+      const requestIdsWithOffer = new Set(transporterOffers.map(o => o.requestId));
+      
+      return openRequests.filter(req => {
+        // Filter out requests already declined by this transporter
+        if (req.declinedBy && req.declinedBy.includes(transporterId)) {
+          return false;
+        }
+        
+        // Filter out requests where transporter already has an offer
+        if (requestIdsWithOffer.has(req.id)) {
+          return false;
+        }
+        
+        // Filter out requests hidden by admin
+        if (req.isHidden) {
+          return false;
+        }
+        
+        return true;
+      });
     }
     
+    // For admin/client view, return all open requests (including hidden ones for admin management)
     return openRequests;
   }
 

@@ -60,6 +60,17 @@ export default function AdminDashboard() {
 
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
 
+  // Fetch conversation messages (enabled only when conversation dialog is open)
+  const { data: conversationMessages = [] } = useQuery({
+    queryKey: ["/api/chat/messages", selectedConversation?.requestId],
+    queryFn: async () => {
+      if (!selectedConversation?.requestId) return [];
+      const response = await fetch(`/api/chat/messages?requestId=${selectedConversation.requestId}`);
+      return response.json();
+    },
+    enabled: conversationDialogOpen && !!selectedConversation?.requestId,
+  });
+
   useEffect(() => {
     const refreshUserData = async () => {
       try {
@@ -2746,15 +2757,6 @@ export default function AdminDashboard() {
           </DialogHeader>
           
           {selectedConversation && (() => {
-            const { data: messages = [] } = useQuery({
-              queryKey: ["/api/chat/messages", selectedConversation.requestId],
-              queryFn: async () => {
-                const response = await fetch(`/api/chat/messages?requestId=${selectedConversation.requestId}`);
-                return response.json();
-              },
-              enabled: conversationDialogOpen,
-            });
-
             const sendAdminMessage = async () => {
               if (!adminMessage.trim()) return;
               
@@ -2807,10 +2809,10 @@ export default function AdminDashboard() {
               <div className="flex flex-col gap-4 flex-1">
                 {/* Messages list */}
                 <div className="flex-1 overflow-y-auto max-h-[50vh] space-y-3 p-4 border rounded-lg">
-                  {messages.length === 0 ? (
+                  {conversationMessages.length === 0 ? (
                     <p className="text-center text-muted-foreground">Aucun message</p>
                   ) : (
-                    messages.map((message: any) => (
+                    conversationMessages.map((message: any) => (
                       <div
                         key={message.id}
                         className={`p-3 rounded-lg border max-w-[80%] ${getMessageBubbleStyle(message)}`}
