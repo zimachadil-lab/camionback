@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, Image as ImageIcon, Clock, Calendar, Flag } from "lucide-react";
+import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, Image as ImageIcon, Clock, Calendar, Flag, Edit } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { RequestCard } from "@/components/transporter/request-card";
 import { OfferForm } from "@/components/transporter/offer-form";
@@ -32,6 +32,14 @@ const reportSchema = z.object({
   type: z.string().min(1, "Type de problème requis"),
 });
 
+const editOfferSchema = z.object({
+  amount: z.string().min(1, "Montant requis"),
+  pickupDate: z.string().min(1, "Date de prise en charge requise"),
+  loadType: z.enum(["return", "shared"], {
+    required_error: "Type de chargement requis",
+  }),
+});
+
 export default function TransporterDashboard() {
   const [, setLocation] = useLocation();
   const [selectedCity, setSelectedCity] = useState("Toutes les villes");
@@ -52,6 +60,8 @@ export default function TransporterDashboard() {
   const [returnDate, setReturnDate] = useState("");
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [reportRequestId, setReportRequestId] = useState<string>("");
+  const [editOfferDialogOpen, setEditOfferDialogOpen] = useState(false);
+  const [selectedOffer, setSelectedOffer] = useState<any>(null);
 
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
 
@@ -79,6 +89,17 @@ export default function TransporterDashboard() {
       refreshUserData();
     }
   }, [user.id]);
+
+  // Initialize edit offer form when offer is selected
+  useEffect(() => {
+    if (selectedOffer && editOfferDialogOpen) {
+      editOfferForm.reset({
+        amount: selectedOffer.amount.toString(),
+        pickupDate: selectedOffer.pickupDate ? new Date(selectedOffer.pickupDate).toISOString().split('T')[0] : "",
+        loadType: selectedOffer.loadType || "return",
+      });
+    }
+  }, [selectedOffer, editOfferDialogOpen]);
 
   const handleLogout = () => {
     // Clear user session
@@ -245,6 +266,41 @@ export default function TransporterDashboard() {
     defaultValues: {
       description: "",
       type: "",
+    },
+  });
+
+  const editOfferForm = useForm({
+    resolver: zodResolver(editOfferSchema),
+    defaultValues: {
+      amount: "",
+      pickupDate: "",
+      loadType: "return" as const,
+    },
+  });
+
+  const updateOfferMutation = useMutation({
+    mutationFn: async (data: { offerId: string; amount: string; pickupDate: string; loadType: string }) => {
+      return await apiRequest("PATCH", `/api/offers/${data.offerId}`, {
+        amount: parseFloat(data.amount),
+        pickupDate: data.pickupDate,
+        loadType: data.loadType,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Offre modifiée",
+        description: "Votre offre a été mise à jour avec succès",
+      });
+      setEditOfferDialogOpen(false);
+      editOfferForm.reset();
+      queryClient.invalidateQueries({ queryKey: ["/api/offers"] });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Échec de la modification de l'offre",
+      });
     },
   });
 
@@ -453,7 +509,22 @@ export default function TransporterDashboard() {
                               Référence: <span className="font-semibold text-foreground">{request?.referenceId}</span>
                             </span>
                           </div>
-                          <span className="text-xl font-bold text-primary">{offer.amount} MAD</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl font-bold text-primary">{offer.amount} MAD</span>
+                            {offer.status === "pending" && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => {
+                                  setSelectedOffer(offer);
+                                  setEditOfferDialogOpen(true);
+                                }}
+                                data-testid={`button-edit-offer-${offer.id}`}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
                         </div>
 
                         {request && (
@@ -836,6 +907,114 @@ export default function TransporterDashboard() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Offer Dialog */}
+      <Dialog open={editOfferDialogOpen} onOpenChange={(open) => {
+        setEditOfferDialogOpen(open);
+        if (!open) {
+          editOfferForm.reset();
+          setSelectedOffer(null);
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Modifier votre offre</DialogTitle>
+            <DialogDescription>
+              Modifiez le montant, la date ou le type de chargement de votre offre
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...editOfferForm}>
+            <form 
+              onSubmit={editOfferForm.handleSubmit((data) => {
+                if (!selectedOffer) return;
+                updateOfferMutation.mutate({
+                  offerId: selectedOffer.id,
+                  ...data,
+                });
+              })}
+              className="space-y-4"
+            >
+              <FormField
+                control={editOfferForm.control}
+                name="amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Montant (MAD) <span className="text-destructive">*</span></FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="Ex: 5000"
+                        data-testid="input-edit-amount"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editOfferForm.control}
+                name="pickupDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Date de prise en charge <span className="text-destructive">*</span></FormLabel>
+                    <FormControl>
+                      <Input
+                        type="date"
+                        data-testid="input-edit-pickup-date"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editOfferForm.control}
+                name="loadType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Type de chargement <span className="text-destructive">*</span></FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-edit-load-type">
+                          <SelectValue placeholder="Sélectionnez le type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="return">Retour (camion vide)</SelectItem>
+                        <SelectItem value="shared">Groupage / Partagé</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setEditOfferDialogOpen(false);
+                    editOfferForm.reset();
+                    setSelectedOffer(null);
+                  }}
+                  data-testid="button-cancel-edit-offer"
+                >
+                  Annuler
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={updateOfferMutation.isPending}
+                  data-testid="button-submit-edit-offer"
+                >
+                  {updateOfferMutation.isPending ? "Modification..." : "Modifier l'offre"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
 
