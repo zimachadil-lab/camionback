@@ -155,12 +155,12 @@ export default function TransporterDashboard() {
     setOfferDialogOpen(true);
   };
 
-  const handleChat = (clientId: string, clientName: string, requestId: string) => {
+  const handleChat = (clientId: string, clientIdentifier: string, requestId: string) => {
     if (!requestId) {
       console.error('Cannot open chat: requestId is missing');
       return;
     }
-    setSelectedClient({ id: clientId, name: clientName || "Client", role: "client" });
+    setSelectedClient({ id: clientId, name: clientIdentifier || "Client", role: "client" });
     setChatRequestId(requestId);
     setChatOpen(true);
   };
@@ -576,7 +576,7 @@ export default function TransporterDashboard() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => handleChat(client.id, client.name, request.id)}
+                                  onClick={() => handleChat(client.id, client.clientId || "Client", request.id)}
                                   className="gap-2 mt-2 w-full"
                                   data-testid={`button-chat-${offer.id}`}
                                 >
@@ -710,9 +710,10 @@ export default function TransporterDashboard() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleChat(client.id, client.name, request.id)}
-                            className="gap-2 w-full sm:w-auto"
+                            onClick={() => handleChat(client.id, client.clientId || "Client", request.id)}
+                            className="gap-2 w-full sm:w-auto bg-[#00cc88] hover:bg-[#00cc88]/90 text-white border-[#00cc88]"
                             data-testid={`button-chat-request-${request.id}`}
+                            style={{ textShadow: "0 1px 1px rgba(0,0,0,0.2)" }}
                           >
                             <MessageSquare className="w-4 w-4" />
                             Envoyer un message au client
@@ -929,9 +930,12 @@ export default function TransporterDashboard() {
             <form 
               onSubmit={editOfferForm.handleSubmit((data) => {
                 if (!selectedOffer) return;
+                const amount = typeof data.amount === 'number' ? data.amount : Number(data.amount);
                 updateOfferMutation.mutate({
                   offerId: selectedOffer.id,
-                  ...data,
+                  amount,
+                  pickupDate: data.pickupDate,
+                  loadType: data.loadType,
                 });
               })}
               className="space-y-4"

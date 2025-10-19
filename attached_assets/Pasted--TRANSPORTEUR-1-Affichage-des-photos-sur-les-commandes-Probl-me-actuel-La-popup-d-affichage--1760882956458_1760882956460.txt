@@ -1,0 +1,187 @@
+🚛 TRANSPORTEUR
+1️⃣ Affichage des photos sur les commandes
+
+Problème actuel :
+
+La popup d’affichage des photos n’est pas centrée.
+
+Le titre de la popup est coupé.
+
+Quand plusieurs photos sont envoyées, seule la première s’affiche.
+
+Correctif à appliquer :
+
+Centrer correctement la popup horizontalement et verticalement (style modal-centered).
+
+Ajuster la taille de la fenêtre (max 90% de largeur écran et hauteur auto-adaptée).
+
+Afficher toutes les photos en carousel (possibilité de naviguer entre elles) :
+
+Ajouter des flèches ← → ou des petits indicateurs (dots) pour passer d’une photo à l’autre.
+
+Permettre de cliquer sur la photo pour l’agrandir en plein écran.
+
+Si une seule photo → afficher en plein sans navigation.
+
+Le titre de la popup doit être complet :
+“Photos du chargement – Commande [Référence]”
+
+2️⃣ Masquer le numéro du client dans la messagerie
+
+Problème actuel :
+
+Dans la conversation, le transporteur voit le numéro de téléphone du client.
+
+Correctif à appliquer :
+
+Remplacer l’identifiant affiché (“le client + numéro”) par :
+👉 “Client [ID Client]”
+
+Le numéro de téléphone ne doit jamais apparaître tant que la commande n’est pas validée (offre acceptée).
+
+Si l’offre est validée : afficher le téléphone dans la fiche commande, pas dans la messagerie.
+
+3️⃣ Lisibilité du bouton “Envoyer un message au client”
+
+Problème :
+
+Bouton blanc sur fond clair → illisible.
+
+Correctif design :
+
+Modifier la couleur du bouton pour un fond vert #00cc88 ou bleu #007bff.
+
+Texte en blanc pur (#FFFFFF) avec légère ombre (text-shadow: 0 1px 1px rgba(0,0,0,0.2)).
+
+Ajouter un léger effet hover (opacity: 0.9).
+
+S’assurer que le bouton reste visible sur mobile (taille min 90% largeur carte).
+
+⚙️ GÉNÉRAL (SYSTÈME GLOBAL)
+1️⃣ Anonymisation partielle
+
+Objectif :
+
+Pour protéger la confidentialité et uniformiser les affichages :
+→ Remplacer tous les noms de clients visibles dans les interfaces (transporteur, admin, etc.) par leur ID client (ex : C-0245).
+
+À modifier :
+
+Toutes les cartes de commandes
+
+Messages (en-tête “Client…”)
+
+Popups de détail (Admin, Transporteur)
+
+Listes et tableaux (Admin/Transporteurs/Clients)
+
+🧩 ADMIN
+1️⃣ ID Client à la place du nom
+
+Problème :
+
+Certaines rubriques affichent encore “Inconnu” ou le nom du client.
+
+Correctif :
+
+Sur toutes les vues Admin :
+
+“Demandes”
+
+“Facturation”
+
+“Contrats”
+
+“Signalements”
+
+“Offres transporteurs”
+→ Remplacer par “Client : [ID Client]”.
+
+Si ID manquant : afficher “Client : Non défini”.
+
+2️⃣ Barre de navigation déformée sur mobile
+
+Problème :
+
+La barre de menu supérieure (Demandes / Offres / Contrats / etc.) se casse sur les petits écrans.
+
+Correctif responsive :
+
+Convertir la barre en un menu déroulant (burger menu) ou scroll horizontal au-delà de 768px de largeur.
+
+Vérifier affichage sur Chrome mobile et Safari iPhone.
+
+Ajuster le padding entre les onglets pour éviter chevauchement des titres.
+
+👥 CLIENT ET TRANSPORTEUR — SIGNALEMENT
+🧍 Côté Client
+
+Problèmes actuels :
+
+Le bouton “Signaler un problème” ne fonctionne pas (erreur d’envoi).
+
+Le bouton n’est disponible que dans les commandes terminées.
+
+Correctifs à appliquer :
+
+Corriger le backend d’envoi (POST /signalement) → vérifier que le champ ID client et ID commande sont bien envoyés.
+
+Retour attendu : {status: success, message: "Signalement transmis"}
+
+Ajouter le même bouton “Signaler un problème” dans :
+
+Vue Commandes terminées ✅
+
+Vue Commandes actives (en cours) 🆕
+→ Affiché dès qu’une offre est acceptée.
+
+Conserver le même contenu de popup :
+
+Liste déroulante des motifs
+
+Zone texte libre
+
+Bouton “Envoyer le signalement”
+
+Message de succès :
+“✅ Votre signalement a été transmis à l’équipe CamionBack.”
+
+🚛 Côté Transporteur
+
+Actuellement :
+
+Signalement non visible sur la commande en cours (vue “à traiter”).
+
+Correctifs à appliquer :
+
+Ajouter le bouton :
+
+🔴 Signaler un client
+
+
+sous le bouton “Marquer comme à facturer”.
+
+Même structure de popup que celle déjà utilisée :
+
+Motifs prédéfinis :
+
+Client non disponible à la livraison
+
+Retard ou refus de paiement
+
+Mauvaise adresse
+
+Autre (texte libre)
+
+Message de succès :
+“✅ Votre signalement a été transmis à CamionBack.”
+
+Chaque signalement doit créer une ligne dans la vue Admin “Signalements” :
+
+Type : “Transporteur”
+
+ID commande
+
+ID transporteur
+
+Statut : “En attente de traitement”
