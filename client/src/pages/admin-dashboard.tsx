@@ -674,15 +674,7 @@ export default function AdminDashboard() {
                               <TableCell className="font-medium">{request.referenceId}</TableCell>
                               <TableCell>{formatDate(request.createdAt)}</TableCell>
                               <TableCell>
-                                <div>
-                                  <p className="font-medium">Client {client?.clientId || "Non défini"}</p>
-                                  <a 
-                                    href={`tel:${client?.phoneNumber}`}
-                                    className="text-xs text-primary hover:underline"
-                                  >
-                                    {client?.phoneNumber}
-                                  </a>
-                                </div>
+                                Client {client?.clientId || "Non défini"}
                               </TableCell>
                               <TableCell>
                                 <div className="text-sm">
@@ -1214,15 +1206,7 @@ export default function AdminDashboard() {
                           <TableRow key={request.id}>
                             <TableCell className="font-medium">{request.referenceId}</TableCell>
                             <TableCell>
-                              <div>
-                                <p className="font-medium">Client {client?.clientId || "Non défini"}</p>
-                                <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                  <Phone className="w-3 h-3" />
-                                  <a href={`tel:${client?.phoneNumber}`} className="hover:underline">
-                                    {client?.phoneNumber || "N/A"}
-                                  </a>
-                                </div>
-                              </div>
+                              Client {client?.clientId || "Non défini"}
                             </TableCell>
                             <TableCell>
                               <div>
@@ -1920,15 +1904,7 @@ export default function AdminDashboard() {
                                     : "N/A"}
                                 </TableCell>
                                 <TableCell>
-                                  <div>
-                                    <p className="font-medium">Client {client?.clientId || "Non défini"}</p>
-                                    <a 
-                                      href={`tel:${client?.phoneNumber}`}
-                                      className="text-xs text-primary hover:underline"
-                                    >
-                                      {client?.phoneNumber}
-                                    </a>
-                                  </div>
+                                  Client {client?.clientId || "Non défini"}
                                 </TableCell>
                                 <TableCell>
                                   <div>
@@ -2552,20 +2528,6 @@ export default function AdminDashboard() {
                         <p className="font-medium">Client {client?.clientId || "Non défini"}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Téléphone</p>
-                        <a 
-                          href={`tel:${client?.phoneNumber}`}
-                          className="font-medium text-primary hover:underline flex items-center gap-1"
-                        >
-                          <Phone className="w-3 h-3" />
-                          {client?.phoneNumber}
-                        </a>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">ID Client</p>
-                        <p className="font-medium">{client?.clientId || "N/A"}</p>
-                      </div>
-                      <div>
                         <p className="text-sm text-muted-foreground">Ville</p>
                         <p className="font-medium">{client?.city || "N/A"}</p>
                       </div>
@@ -2942,12 +2904,6 @@ export default function AdminDashboard() {
                     </CardHeader>
                     <CardContent>
                       <p className="font-medium">Client {client?.clientId || "Non défini"}</p>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
-                        <Phone className="w-3 h-3" />
-                        <a href={`tel:${client?.phoneNumber}`} className="hover:underline">
-                          {client?.phoneNumber}
-                        </a>
-                      </div>
                     </CardContent>
                   </Card>
 
