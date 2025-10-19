@@ -175,7 +175,7 @@ export default function TransporterDashboard() {
     const client = users.find((u: any) => u.id === request.clientId);
     setSelectedClientDetails({
       ...request,
-      clientName: client?.name,
+      clientId: client?.clientId,
       clientPhone: client?.phoneNumber,
       clientCity: client?.city,
     });
@@ -570,7 +570,7 @@ export default function TransporterDashboard() {
                                 </a>
                               </div>
                               <p className="text-xs text-green-700 dark:text-green-400">
-                                Client : {client.name || "Non spécifié"}
+                                Client {client.clientId || "Non défini"}
                               </p>
                               {request && (
                                 <Button
@@ -775,8 +775,8 @@ export default function TransporterDashboard() {
               </div>
               
               <div>
-                <p className="text-sm text-muted-foreground">Nom</p>
-                <p className="font-medium">{selectedClientDetails.clientName || "Non spécifié"}</p>
+                <p className="text-sm text-muted-foreground">Identifiant</p>
+                <p className="font-medium">Client {selectedClientDetails.clientId || "Non défini"}</p>
               </div>
 
               {selectedClientDetails.clientCity && (

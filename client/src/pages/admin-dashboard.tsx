@@ -675,7 +675,7 @@ export default function AdminDashboard() {
                               <TableCell>{formatDate(request.createdAt)}</TableCell>
                               <TableCell>
                                 <div>
-                                  <p className="font-medium">{client?.name || "Inconnu"}</p>
+                                  <p className="font-medium">Client {client?.clientId || "Non défini"}</p>
                                   <a 
                                     href={`tel:${client?.phoneNumber}`}
                                     className="text-xs text-primary hover:underline"
@@ -924,7 +924,7 @@ export default function AdminDashboard() {
                               </TableCell>
                               <TableCell data-testid={`text-contract-client-${contract.id}`}>
                                 <div className="flex flex-col">
-                                  <span>{client?.name || "N/A"}</span>
+                                  <span>Client {client?.clientId || "Non défini"}</span>
                                   <span className="text-xs text-muted-foreground">{client?.phoneNumber || ""}</span>
                                 </div>
                               </TableCell>
@@ -1028,7 +1028,7 @@ export default function AdminDashboard() {
                                 {conv.referenceId || "N/A"}
                               </TableCell>
                               <TableCell data-testid={`text-conv-client-${conv.requestId}`}>
-                                {conv.clientName || "N/A"}
+                                Client {conv.clientId || "Non défini"}
                               </TableCell>
                               <TableCell data-testid={`text-conv-transporter-${conv.requestId}`}>
                                 {conv.transporterName || "N/A"}
@@ -1218,7 +1218,7 @@ export default function AdminDashboard() {
                             <TableCell className="font-medium">{request.referenceId}</TableCell>
                             <TableCell>
                               <div>
-                                <p className="font-medium">{client?.name || "Client inconnu"}</p>
+                                <p className="font-medium">Client {client?.clientId || "Non défini"}</p>
                                 <div className="flex items-center gap-1 text-sm text-muted-foreground">
                                   <Phone className="w-3 h-3" />
                                   <a href={`tel:${client?.phoneNumber}`} className="hover:underline">
@@ -1924,7 +1924,7 @@ export default function AdminDashboard() {
                                 </TableCell>
                                 <TableCell>
                                   <div>
-                                    <p className="font-medium">{client?.name || "Inconnu"}</p>
+                                    <p className="font-medium">Client {client?.clientId || "Non défini"}</p>
                                     <a 
                                       href={`tel:${client?.phoneNumber}`}
                                       className="text-xs text-primary hover:underline"
@@ -2238,7 +2238,7 @@ export default function AdminDashboard() {
                               <div className="flex items-center gap-2">
                                 <Badge variant="outline">Réf: {request.referenceId}</Badge>
                                 <span className="text-sm text-muted-foreground">
-                                  {client?.name || "Client inconnu"}
+                                  Client {client?.clientId || "Non défini"}
                                 </span>
                               </div>
                               <div className="flex items-center gap-2 text-sm">
@@ -2353,8 +2353,8 @@ export default function AdminDashboard() {
                     </CardHeader>
                     <CardContent className="space-y-2">
                       <div>
-                        <p className="text-sm text-muted-foreground">Nom</p>
-                        <p className="font-medium">{client?.name || "N/A"}</p>
+                        <p className="text-sm text-muted-foreground">Identifiant</p>
+                        <p className="font-medium">Client {client?.clientId || "Non défini"}</p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Téléphone</p>
@@ -2558,8 +2558,8 @@ export default function AdminDashboard() {
                   <CardContent className="space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <p className="text-sm text-muted-foreground">Nom</p>
-                        <p className="font-medium">{client?.name || "Inconnu"}</p>
+                        <p className="text-sm text-muted-foreground">Identifiant</p>
+                        <p className="font-medium">Client {client?.clientId || "Non défini"}</p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Téléphone</p>
@@ -2752,7 +2752,7 @@ export default function AdminDashboard() {
               Conversation - {selectedConversation?.referenceId}
             </DialogTitle>
             <DialogDescription>
-              {selectedConversation?.clientName} ↔ {selectedConversation?.transporterName}
+              Client {selectedConversation?.clientId || "Non défini"} ↔ {selectedConversation?.transporterName}
             </DialogDescription>
           </DialogHeader>
           
@@ -2799,7 +2799,7 @@ export default function AdminDashboard() {
               if (message.senderType === "admin") {
                 return "Admin CamionBack";
               } else if (message.senderId === selectedConversation.clientId) {
-                return selectedConversation.clientName;
+                return `Client ${selectedConversation.clientId || 'Non défini'}`;
               } else {
                 return selectedConversation.transporterName;
               }
@@ -2951,7 +2951,7 @@ export default function AdminDashboard() {
                       <CardTitle className="text-sm text-muted-foreground">Client</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="font-medium">{client?.name || "Inconnu"}</p>
+                      <p className="font-medium">Client {client?.clientId || "Non défini"}</p>
                       <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
                         <Phone className="w-3 h-3" />
                         <a href={`tel:${client?.phoneNumber}`} className="hover:underline">
