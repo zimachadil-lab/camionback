@@ -45,6 +45,23 @@ export function VoiceRecorder({ onVoiceRecorded, disabled }: VoiceRecorderProps)
 
       mediaRecorder.onstop = () => {
         const audioBlob = new Blob(chunksRef.current, { type: mediaRecorder.mimeType });
+        console.log('Voice recording completed:', {
+          size: audioBlob.size,
+          type: audioBlob.type,
+          chunks: chunksRef.current.length
+        });
+        
+        if (audioBlob.size === 0) {
+          toast({
+            variant: "destructive",
+            title: "Erreur",
+            description: "L'enregistrement est vide",
+          });
+          setIsProcessing(false);
+          stream.getTracks().forEach(track => track.stop());
+          return;
+        }
+        
         onVoiceRecorded(audioBlob);
         
         // Stop all audio tracks

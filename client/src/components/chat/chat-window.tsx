@@ -108,23 +108,33 @@ export function ChatWindow({ open, onClose, otherUser, currentUserId, requestId 
 
   const handleVoiceRecorded = async (audioBlob: Blob) => {
     try {
+      console.log('Starting voice upload:', {
+        size: audioBlob.size,
+        type: audioBlob.type
+      });
+
       // Upload voice file
       const formData = new FormData();
       const fileName = `voice-${Date.now()}.webm`;
       formData.append('audio', audioBlob, fileName);
 
+      console.log('Sending to /api/messages/upload-voice...');
       const response = await fetch('/api/messages/upload-voice', {
         method: 'POST',
         body: formData,
       });
 
+      console.log('Response status:', response.status);
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        console.error('Upload error:', errorData);
+        console.error('Upload error response:', errorData);
         throw new Error(errorData.error || 'Upload failed');
       }
 
-      const { fileUrl } = await response.json();
+      const result = await response.json();
+      console.log('Upload successful:', result);
+      const { fileUrl } = result;
 
       // Send voice message
       await sendMessageMutation.mutateAsync({
