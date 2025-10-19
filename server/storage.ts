@@ -537,11 +537,15 @@ export class MemStorage implements IStorage {
 
   async createChatMessage(insertMessage: InsertChatMessage): Promise<ChatMessage> {
     const id = randomUUID();
-    const filteredMessage = this.filterPhoneNumbers(insertMessage.message);
+    // Only filter phone numbers for text messages, not voice messages
+    const filteredMessage = insertMessage.message 
+      ? this.filterPhoneNumbers(insertMessage.message)
+      : null;
+    
     const message: ChatMessage = {
       ...insertMessage,
       id,
-      filteredMessage: filteredMessage !== insertMessage.message ? filteredMessage : null,
+      filteredMessage: filteredMessage && filteredMessage !== insertMessage.message ? filteredMessage : null,
       isRead: false,
       senderType: (insertMessage as any).senderType ?? null,
       createdAt: new Date(),
@@ -1419,10 +1423,14 @@ export class DbStorage implements IStorage {
   }
 
   async createChatMessage(insertMessage: InsertChatMessage): Promise<ChatMessage> {
-    const filteredMessage = this.filterPhoneNumbers(insertMessage.message);
+    // Only filter phone numbers for text messages, not voice messages
+    const filteredMessage = insertMessage.message 
+      ? this.filterPhoneNumbers(insertMessage.message)
+      : null;
+    
     const result = await db.insert(chatMessages).values({
       ...insertMessage,
-      filteredMessage: filteredMessage !== insertMessage.message ? filteredMessage : null,
+      filteredMessage: filteredMessage && filteredMessage !== insertMessage.message ? filteredMessage : null,
     }).returning();
     return result[0];
   }
