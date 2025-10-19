@@ -1299,6 +1299,7 @@ export default function ClientDashboard() {
           onClose={() => setChatOpen(false)}
           otherUser={selectedTransporter}
           currentUserId={user.id}
+          currentUserRole="client"
           requestId={chatRequestId}
         />
       )}

@@ -183,6 +183,7 @@ export default function MessagesPage() {
           onClose={handleCloseChat}
           otherUser={selectedConversation.otherUser}
           currentUserId={user.id}
+          currentUserRole={user.role}
           requestId={selectedConversation.requestId}
         />
       )}

@@ -763,6 +763,7 @@ export default function TransporterDashboard() {
           onClose={() => setChatOpen(false)}
           otherUser={selectedClient}
           currentUserId={user.id}
+          currentUserRole="transporter"
           requestId={chatRequestId}
         />
       )}

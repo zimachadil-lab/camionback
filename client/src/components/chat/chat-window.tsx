@@ -21,10 +21,11 @@ interface ChatWindowProps {
     role: string;
   };
   currentUserId: string;
+  currentUserRole: string;
   requestId: string;
 }
 
-export function ChatWindow({ open, onClose, otherUser, currentUserId, requestId }: ChatWindowProps) {
+export function ChatWindow({ open, onClose, otherUser, currentUserId, currentUserRole, requestId }: ChatWindowProps) {
   const [newMessage, setNewMessage] = useState("");
   const [ws, setWs] = useState<WebSocket | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -90,6 +91,7 @@ export function ChatWindow({ open, onClose, otherUser, currentUserId, requestId 
         requestId,
         senderId: currentUserId,
         receiverId: otherUser.id,
+        senderType: currentUserRole,
         ...messageData,
       });
     },
