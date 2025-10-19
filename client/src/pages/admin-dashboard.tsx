@@ -817,7 +817,7 @@ export default function AdminDashboard() {
                                 {request?.referenceId || "N/A"}
                               </TableCell>
                               <TableCell data-testid={`text-client-${offer.id}`}>
-                                {client?.phoneNumber || "N/A"}
+                                Client {client?.clientId || "Non défini"}
                               </TableCell>
                               <TableCell data-testid={`text-transporter-${offer.id}`}>
                                 {transporter?.phoneNumber || "N/A"}
@@ -923,10 +923,7 @@ export default function AdminDashboard() {
                                 {contract.referenceId || "N/A"}
                               </TableCell>
                               <TableCell data-testid={`text-contract-client-${contract.id}`}>
-                                <div className="flex flex-col">
-                                  <span>Client {client?.clientId || "Non défini"}</span>
-                                  <span className="text-xs text-muted-foreground">{client?.phoneNumber || ""}</span>
-                                </div>
+                                Client {client?.clientId || "Non défini"}
                               </TableCell>
                               <TableCell data-testid={`text-contract-transporter-${contract.id}`}>
                                 <div className="flex flex-col">
@@ -2355,13 +2352,6 @@ export default function AdminDashboard() {
                       <div>
                         <p className="text-sm text-muted-foreground">Identifiant</p>
                         <p className="font-medium">Client {client?.clientId || "Non défini"}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Téléphone</p>
-                        <p className="font-medium flex items-center gap-2">
-                          <Phone className="w-4 h-4" />
-                          {client?.phoneNumber || "N/A"}
-                        </p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Ville</p>
