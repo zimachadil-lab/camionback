@@ -37,11 +37,17 @@ Real-time chat is implemented via WebSockets for direct client-transporter commu
 
 **Request Management System (Admin):** Admins can hide/unhide transport requests (isHidden field) to control visibility for transporters. Hidden requests are not displayed in transporter dashboards. Admins can delete transport requests with automatic cascade deletion of all related data (contracts, reports, offers, messages, notifications) to maintain database integrity.
 
-**Reporting and Dispute System:** Clients and transporters can report issues on completed orders, categorizing problem types. The admin dashboard lists all reports, allowing admins to resolve, reject, or block reported users.
+**Reporting and Dispute System:** Clients and transporters can report issues on active and completed orders, categorizing problem types. Clients can report problems in "Commandes actives" for accepted orders. Transporters can report clients for all in-progress orders. The admin dashboard lists all reports, allowing admins to resolve, reject, or block reported users.
 
 **SMS Notification System:** Critical SMS alerts are sent via Twilio for the first offer received by a client and offer acceptance confirmation to a transporter.
 
 **File Upload:** Client request photos use Base64 encoding. Transporter truck photos use Multer middleware.
+
+**Photo Gallery System:** Transport request photos are displayed in a fullscreen modal with carousel navigation (Embla Carousel). The gallery dialog shows "Photos du chargement – Commande [REF]" as title and allows navigation between multiple photos with previous/next controls.
+
+**Client Privacy & Anonymization:** Complete client anonymization across all interfaces for privacy protection. Standard anonymized format: `Client {client?.clientId || "Non défini"}` (e.g., "Client C-0001"). All admin operational views (Demandes, Offres, Contrats, Facturation tables and dialogs, Conversations, Reports) display only anonymized client identifiers with no phone number exposure. Transporters see "Client C-XXXX" in all interfaces (order cards, details dialogs, chat headers). The ONLY exception: Admin > Clients > "Nom" column displays real names for user management purposes. This ensures comprehensive privacy while maintaining necessary administrative functionality.
+
+**UI Enhancements:** Admin navigation tabs use responsive design with horizontal scrolling on mobile (`flex overflow-x-auto`) and grid layout on desktop (`lg:grid lg:grid-cols-N`). Transporter "Envoyer un message" button styled with green background (#00cc88), white text, and shadow for improved visibility.
 
 ### System Design Choices
 **Data Storage:** PostgreSQL with Neon serverless and Drizzle ORM for type-safe queries and migrations. Database connection configured with WebSocket support (`ws` package) for Neon Serverless compatibility in Node.js environment.
