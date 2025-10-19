@@ -21,7 +21,7 @@ Real-time chat is implemented via WebSockets for direct client-transporter commu
 ### Feature Specifications
 **Request and Payment Workflow:** Clients create requests that progress through 'Open', 'Accepted', and 'Completed' statuses. Clients can accept offers, mark requests complete, and republish them. The payment flow includes 'pending', 'awaiting_payment', 'pending_admin_validation', and 'paid' statuses, involving receipt uploads and admin validation.
 
-**Transporter Offers System:** Transporters submit offers with amount, pickup date, and load type ("Retour" or "Groupage / Partagé"). Clients can accept (triggering commission calculation and notifications) or decline offers. Admins can also accept offers on behalf of clients.
+**Transporter Offers System:** Transporters submit offers with amount, pickup date, and load type ("Retour" or "Groupage / Partagé"). Clients can accept (triggering commission calculation and notifications) or decline offers. Admins can also accept offers on behalf of clients. Transporters can edit their pending offers (amount, pickup date, load type) with numeric validation using z.coerce.number(). Transporters cannot see requests where they have already submitted an offer (automatic filtering) or requests hidden by admins.
 
 **Transporter Rating System:** Clients rate transporters (1-5 stars) upon request completion, updating average ratings and completed trips.
 
@@ -35,6 +35,8 @@ Real-time chat is implemented via WebSockets for direct client-transporter commu
 
 **User Account Management System:** Admins can block/unblock user accounts, controlling login access. Blocked users receive notifications and cannot log in.
 
+**Request Management System (Admin):** Admins can hide/unhide transport requests (isHidden field) to control visibility for transporters. Hidden requests are not displayed in transporter dashboards. Admins can delete transport requests with automatic cascade deletion of all related data (contracts, reports, offers, messages, notifications) to maintain database integrity.
+
 **Reporting and Dispute System:** Clients and transporters can report issues on completed orders, categorizing problem types. The admin dashboard lists all reports, allowing admins to resolve, reject, or block reported users.
 
 **SMS Notification System:** Critical SMS alerts are sent via Twilio for the first offer received by a client and offer acceptance confirmation to a transporter.
@@ -45,6 +47,7 @@ Real-time chat is implemented via WebSockets for direct client-transporter commu
 **Data Storage:** PostgreSQL with Neon serverless and Drizzle ORM for type-safe queries and migrations. Database connection configured with WebSocket support (`ws` package) for Neon Serverless compatibility in Node.js environment.
 **Authentication & Authorization:** Phone number-based PIN verification. Role and status-based access control.
 **Backend:** Express.js with TypeScript, ES Modules, and `tsx`. Multer for multipart form data (5MB limit). DbStorage class implementing IStorage interface for all database operations.
+**Routing:** Dashboard routes are explicitly defined: `/admin-dashboard` for administrators, `/client-dashboard` for clients, and `/transporter-dashboard` for transporters.
 **Admin Account:** Default admin account created with phone number `+212664373534` and PIN `040189`. This account has full administrative access to the platform and can manage users, validate transporters, configure commission rates, and access all administrative features.
 
 ## External Dependencies
