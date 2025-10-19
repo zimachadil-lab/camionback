@@ -110,14 +110,19 @@ export function ChatWindow({ open, onClose, otherUser, currentUserId, requestId 
     try {
       // Upload voice file
       const formData = new FormData();
-      formData.append('audio', audioBlob);
+      const fileName = `voice-${Date.now()}.webm`;
+      formData.append('audio', audioBlob, fileName);
 
       const response = await fetch('/api/messages/upload-voice', {
         method: 'POST',
         body: formData,
       });
 
-      if (!response.ok) throw new Error('Upload failed');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Upload error:', errorData);
+        throw new Error(errorData.error || 'Upload failed');
+      }
 
       const { fileUrl } = await response.json();
 
