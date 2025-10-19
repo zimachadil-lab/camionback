@@ -48,12 +48,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 
-const moroccanCities = [
-  "Casablanca", "Rabat", "Marrakech", "Fès", "Tanger", "Agadir", 
-  "Meknès", "Oujda", "Kenitra", "Tétouan", "Safi", "El Jadida",
-  "Nador", "Khouribga", "Béni Mellal", "Mohammedia"
-];
-
 const goodsTypes = [
   "Meubles", "Électroménager", "Marchandises", "Déménagement",
   "Matériaux de construction", "Colis", "Véhicule", "Autre"
@@ -75,7 +69,7 @@ const reportSchema = z.object({
   type: z.string().min(1, "Type de problème requis"),
 });
 
-function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onDelete, onViewTransporter, onUpdateStatus, onReport, users }: any) {
+function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onDelete, onViewTransporter, onUpdateStatus, onReport, users, cities, citiesLoading }: any) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showOffersDialog, setShowOffersDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -284,6 +278,22 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                 <Info className="h-4 w-4" />
                 Infos transporteur
               </Button>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => {
+                  const acceptedOffer = offersWithTransporters.find((o: any) => o.id === request.acceptedOfferId);
+                  if (acceptedOffer) {
+                    onChat(acceptedOffer.transporterId, acceptedOffer.transporterName, request.id);
+                  }
+                }}
+                data-testid={`button-chat-active-${request.id}`}
+                className="gap-2 flex-1 bg-[#00cc88] hover:bg-[#00cc88]/90 border-[#00cc88]"
+                style={{ textShadow: "0 1px 1px rgba(0,0,0,0.2)" }}
+              >
+                <MessageSquare className="h-4 w-4" />
+                <span className="hidden sm:inline">Message</span>
+              </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -394,9 +404,13 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {moroccanCities.map((city) => (
-                            <SelectItem key={city} value={city}>{city}</SelectItem>
-                          ))}
+                          {citiesLoading ? (
+                            <div className="p-2 text-sm text-muted-foreground">Chargement...</div>
+                          ) : (
+                            cities.map((city: any) => (
+                              <SelectItem key={city.id} value={city.name}>{city.name}</SelectItem>
+                            ))
+                          )}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -417,9 +431,13 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {moroccanCities.map((city) => (
-                            <SelectItem key={city} value={city}>{city}</SelectItem>
-                          ))}
+                          {citiesLoading ? (
+                            <div className="p-2 text-sm text-muted-foreground">Chargement...</div>
+                          ) : (
+                            cities.map((city: any) => (
+                              <SelectItem key={city.id} value={city.name}>{city.name}</SelectItem>
+                            ))
+                          )}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -670,6 +688,15 @@ export default function ClientDashboard() {
     },
   });
 
+  // Fetch cities from API
+  const { data: cities = [], isLoading: citiesLoading } = useQuery({
+    queryKey: ["/api/cities"],
+    queryFn: async () => {
+      const response = await fetch("/api/cities");
+      return response.json();
+    },
+  });
+
   const acceptOfferMutation = useMutation({
     mutationFn: async (offerId: string) => {
       const response = await fetch(`/api/offers/${offerId}/accept`, {
@@ -878,12 +905,29 @@ export default function ClientDashboard() {
 
   const createReportMutation = useMutation({
     mutationFn: async (data: { requestId: string; description: string; type: string }) => {
+      // Get the request to find the transporter ID
+      const request = requests.find((r: any) => r.id === data.requestId);
+      
+      // Fetch the accepted offer to get transporterId
+      let transporterId = "";
+      if (request?.acceptedOfferId) {
+        try {
+          const offersResponse = await fetch(`/api/offers?requestId=${data.requestId}`);
+          const offers = await offersResponse.json();
+          const acceptedOffer = offers.find((o: any) => o.id === request.acceptedOfferId);
+          transporterId = acceptedOffer?.transporterId || "";
+        } catch (error) {
+          console.error("Error fetching offers:", error);
+        }
+      }
+      
       return await apiRequest("POST", "/api/reports", {
         requestId: data.requestId,
-        reportedBy: user.id,
-        reportedAgainst: null, // will be determined by backend from request
-        type: data.type,
-        description: data.description,
+        reporterId: user.id,
+        reporterType: "client",
+        reportedUserId: transporterId,
+        reason: data.type,
+        details: data.description,
       });
     },
     onSuccess: () => {
@@ -1056,6 +1100,8 @@ export default function ClientDashboard() {
                     key={request.id} 
                     request={request}
                     users={users}
+                    cities={cities}
+                    citiesLoading={citiesLoading}
                     onAcceptOffer={handleAcceptOffer}
                     onDeclineOffer={handleDeclineOffer}
                     onChat={handleChat}

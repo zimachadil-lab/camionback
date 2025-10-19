@@ -22,11 +22,6 @@ import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 
-const moroccanCities = [
-  "Toutes les villes", "Casablanca", "Rabat", "Marrakech", "Fès", "Tanger", 
-  "Agadir", "Meknès", "Oujda", "Kenitra"
-];
-
 const reportSchema = z.object({
   description: z.string().min(10, "Description minimale: 10 caractères"),
   type: z.string().min(1, "Type de problème requis"),
@@ -182,6 +177,15 @@ export default function TransporterDashboard() {
     setClientDetailsOpen(true);
   };
 
+  // Fetch cities from API
+  const { data: cities = [], isLoading: citiesLoading } = useQuery({
+    queryKey: ["/api/cities"],
+    queryFn: async () => {
+      const response = await fetch("/api/cities");
+      return response.json();
+    },
+  });
+
   const { toast } = useToast();
 
   const markForBillingMutation = useMutation({
@@ -306,12 +310,17 @@ export default function TransporterDashboard() {
 
   const createReportMutation = useMutation({
     mutationFn: async (data: { requestId: string; description: string; type: string }) => {
+      // Get the request to find the client ID
+      const request = [...requests, ...acceptedRequests].find((r: any) => r.id === data.requestId);
+      const clientId = request?.clientId || "";
+      
       return await apiRequest("POST", "/api/reports", {
         requestId: data.requestId,
-        reportedBy: user.id,
-        reportedAgainst: null, // will be determined by backend from request
-        type: data.type,
-        description: data.description,
+        reporterId: user.id,
+        reporterType: "transporter",
+        reportedUserId: clientId,
+        reason: data.type,
+        details: data.description,
       });
     },
     onSuccess: () => {
@@ -448,9 +457,14 @@ export default function TransporterDashboard() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {moroccanCities.map((city) => (
-                    <SelectItem key={city} value={city}>{city}</SelectItem>
-                  ))}
+                  <SelectItem value="Toutes les villes">Toutes les villes</SelectItem>
+                  {citiesLoading ? (
+                    <div className="p-2 text-sm text-muted-foreground">Chargement...</div>
+                  ) : (
+                    cities.map((city: any) => (
+                      <SelectItem key={city.id} value={city.name}>{city.name}</SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -834,11 +848,15 @@ export default function TransporterDashboard() {
                   <SelectValue placeholder="Sélectionner la ville de départ" />
                 </SelectTrigger>
                 <SelectContent>
-                  {moroccanCities.slice(1).map((city) => (
-                    <SelectItem key={city} value={city}>
-                      {city}
-                    </SelectItem>
-                  ))}
+                  {citiesLoading ? (
+                    <div className="p-2 text-sm text-muted-foreground">Chargement...</div>
+                  ) : (
+                    cities.map((city: any) => (
+                      <SelectItem key={city.id} value={city.name}>
+                        {city.name}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -850,11 +868,15 @@ export default function TransporterDashboard() {
                   <SelectValue placeholder="Sélectionner la ville d'arrivée" />
                 </SelectTrigger>
                 <SelectContent>
-                  {moroccanCities.slice(1).map((city) => (
-                    <SelectItem key={city} value={city}>
-                      {city}
-                    </SelectItem>
-                  ))}
+                  {citiesLoading ? (
+                    <div className="p-2 text-sm text-muted-foreground">Chargement...</div>
+                  ) : (
+                    cities.map((city: any) => (
+                      <SelectItem key={city.id} value={city.name}>
+                        {city.name}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>

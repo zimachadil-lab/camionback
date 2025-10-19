@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Upload, MapPin } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 
 const requestSchema = z.object({
   fromCity: z.string().min(2, "Ville de départ requise"),
@@ -25,12 +26,6 @@ const requestSchema = z.object({
 
 type RequestFormData = z.infer<typeof requestSchema>;
 
-const moroccanCities = [
-  "Casablanca", "Rabat", "Marrakech", "Fès", "Tanger", "Agadir", 
-  "Meknès", "Oujda", "Kenitra", "Tétouan", "Safi", "El Jadida",
-  "Nador", "Khouribga", "Béni Mellal", "Mohammedia"
-];
-
 const goodsTypes = [
   "Meubles", "Électroménager", "Marchandises", "Déménagement",
   "Matériaux de construction", "Colis", "Véhicule", "Autre"
@@ -39,6 +34,15 @@ const goodsTypes = [
 export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
   const [photos, setPhotos] = useState<File[]>([]);
   const { toast } = useToast();
+
+  // Fetch cities from API
+  const { data: cities = [], isLoading: citiesLoading } = useQuery({
+    queryKey: ["/api/cities"],
+    queryFn: async () => {
+      const response = await fetch("/api/cities");
+      return response.json();
+    },
+  });
 
   const form = useForm<RequestFormData>({
     resolver: zodResolver(requestSchema),
@@ -140,9 +144,13 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {moroccanCities.map((city) => (
-                          <SelectItem key={city} value={city}>{city}</SelectItem>
-                        ))}
+                        {citiesLoading ? (
+                          <div className="p-2 text-sm text-muted-foreground">Chargement...</div>
+                        ) : (
+                          cities.map((city: any) => (
+                            <SelectItem key={city.id} value={city.name}>{city.name}</SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -163,9 +171,13 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {moroccanCities.map((city) => (
-                          <SelectItem key={city} value={city}>{city}</SelectItem>
-                        ))}
+                        {citiesLoading ? (
+                          <div className="p-2 text-sm text-muted-foreground">Chargement...</div>
+                        ) : (
+                          cities.map((city: any) => (
+                            <SelectItem key={city.id} value={city.name}>{city.name}</SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />

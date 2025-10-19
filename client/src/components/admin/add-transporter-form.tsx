@@ -9,12 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-const MOROCCAN_CITIES = [
-  "Casablanca", "Rabat", "Fès", "Marrakech", "Tanger", "Agadir",
-  "Meknès", "Oujda", "Kenitra", "Tétouan", "Safi", "El Jadida",
-  "Nador", "Béni Mellal", "Khouribga"
-];
+import { useQuery } from "@tanstack/react-query";
 
 const transporterSchema = z.object({
   phoneNumber: z.string().min(9, "Numéro de téléphone requis (9 chiffres)"),
@@ -34,6 +29,15 @@ interface AddTransporterFormProps {
 
 export function AddTransporterForm({ open, onClose, onSuccess }: AddTransporterFormProps) {
   const { toast } = useToast();
+
+  // Fetch cities from API
+  const { data: cities = [], isLoading: citiesLoading } = useQuery({
+    queryKey: ["/api/cities"],
+    queryFn: async () => {
+      const response = await fetch("/api/cities");
+      return response.json();
+    },
+  });
 
   const form = useForm<TransporterFormData>({
     resolver: zodResolver(transporterSchema),
@@ -190,11 +194,15 @@ export function AddTransporterForm({ open, onClose, onSuccess }: AddTransporterF
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {MOROCCAN_CITIES.map((city) => (
-                        <SelectItem key={city} value={city}>
-                          {city}
-                        </SelectItem>
-                      ))}
+                      {citiesLoading ? (
+                        <div className="p-2 text-sm text-muted-foreground">Chargement...</div>
+                      ) : (
+                        cities.map((city: any) => (
+                          <SelectItem key={city.id} value={city.name}>
+                            {city.name}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                   <FormMessage />
