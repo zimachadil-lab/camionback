@@ -12,6 +12,7 @@ import { Calendar, Upload, MapPin } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
+import { RecommendedTransportersDialog } from "./recommended-transporters-dialog";
 
 const requestSchema = z.object({
   fromCity: z.string().min(2, "Ville de départ requise"),
@@ -33,6 +34,9 @@ const goodsTypes = [
 
 export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
   const [photos, setPhotos] = useState<File[]>([]);
+  const [showRecommendationsDialog, setShowRecommendationsDialog] = useState(false);
+  const [recommendedTransporters, setRecommendedTransporters] = useState<any[]>([]);
+  const [createdRequestId, setCreatedRequestId] = useState<string>("");
   const { toast } = useToast();
 
   // Fetch cities from API
@@ -106,10 +110,28 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
       
       if (!response.ok) throw new Error();
       
+      const createdRequest = await response.json();
+      setCreatedRequestId(createdRequest.id);
+      
       toast({
         title: "Demande créée",
         description: "Votre demande de transport a été publiée avec succès",
       });
+      
+      // Fetch recommended transporters
+      try {
+        const recommendationsResponse = await fetch(
+          `/api/requests/${createdRequest.id}/recommended-transporters`
+        );
+        if (recommendationsResponse.ok) {
+          const recommendationsData = await recommendationsResponse.json();
+          setRecommendedTransporters(recommendationsData.transporters || []);
+          setShowRecommendationsDialog(true);
+        }
+      } catch (err) {
+        console.error("Failed to fetch recommendations:", err);
+      }
+      
       form.reset();
       setPhotos([]);
       onSuccess?.();
@@ -337,6 +359,13 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
           </form>
         </Form>
       </CardContent>
+
+      <RecommendedTransportersDialog
+        open={showRecommendationsDialog}
+        onOpenChange={setShowRecommendationsDialog}
+        requestId={createdRequestId}
+        transporters={recommendedTransporters}
+      />
     </Card>
   );
 }

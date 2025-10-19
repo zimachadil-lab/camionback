@@ -963,6 +963,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get recommended transporters for a request
+  app.get("/api/requests/:id/recommended-transporters", async (req, res) => {
+    try {
+      const requestId = req.params.id;
+      const request = await storage.getTransportRequest(requestId);
+      
+      if (!request) {
+        return res.status(404).json({ error: "Demande non trouvée" });
+      }
+
+      // Get recommended transporters based on fromCity
+      const recommendedTransporters = await storage.getRecommendedTransporters(request.fromCity);
+      
+      res.json({
+        transporters: recommendedTransporters,
+        count: recommendedTransporters.length
+      });
+    } catch (error) {
+      console.error("Failed to get recommended transporters:", error);
+      res.status(500).json({ error: "Échec de récupération des transporteurs recommandés" });
+    }
+  });
+
+  // Notify selected transporters about a new request
+  app.post("/api/requests/:id/notify-transporters", async (req, res) => {
+    try {
+      const requestId = req.params.id;
+      const { transporterIds } = req.body;
+      
+      if (!transporterIds || !Array.isArray(transporterIds) || transporterIds.length === 0) {
+        return res.status(400).json({ error: "Liste de transporteurs requise" });
+      }
+
+      const request = await storage.getTransportRequest(requestId);
+      if (!request) {
+        return res.status(404).json({ error: "Demande non trouvée" });
+      }
+
+      // Create notifications for each selected transporter
+      let notifiedCount = 0;
+      for (const transporterId of transporterIds) {
+        try {
+          await storage.createNotification({
+            userId: transporterId,
+            type: "new_request_available",
+            title: "Nouvelle demande disponible",
+            message: `Une nouvelle demande correspondant à votre trajet ou retour est disponible. Référence: ${request.referenceId}`,
+            relatedId: requestId,
+          });
+          notifiedCount++;
+        } catch (err) {
+          console.error(`Failed to notify transporter ${transporterId}:`, err);
+        }
+      }
+
+      res.json({ 
+        success: true,
+        notifiedCount,
+        message: `${notifiedCount} transporteur(s) notifié(s)`
+      });
+    } catch (error) {
+      console.error("Failed to notify transporters:", error);
+      res.status(500).json({ error: "Échec de l'envoi des notifications" });
+    }
+  });
+
   // Get ratings for a transporter with request details
   app.get("/api/transporters/:id/ratings", async (req, res) => {
     try {
@@ -1425,6 +1491,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to delete conversation" });
+    }
+  });
+
+  // Upload voice message
+  const voiceUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { 
+      fileSize: 5 * 1024 * 1024 // 5MB limit (approximately 1 minute of audio)
+    },
+    fileFilter: (req, file, cb) => {
+      // Accept audio files including browser-recorded formats
+      const acceptedMimeTypes = [
+        'audio/mpeg', 
+        'audio/wav', 
+        'audio/mp3',
+        'audio/webm',  // Browser MediaRecorder output
+        'audio/mp4',   // Alternative MediaRecorder output
+        'audio/ogg'    // Some browsers use this
+      ];
+      if (acceptedMimeTypes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Format de fichier non supporté'));
+      }
+    }
+  });
+
+  app.post("/api/messages/upload-voice", voiceUpload.single('audio'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "Fichier audio requis" });
+      }
+
+      // Convert audio file to base64
+      const base64Audio = req.file.buffer.toString('base64');
+      const mimeType = req.file.mimetype;
+      const dataUrl = `data:${mimeType};base64,${base64Audio}`;
+
+      res.json({ 
+        success: true,
+        fileUrl: dataUrl,
+        mimeType,
+        size: req.file.size
+      });
+    } catch (error) {
+      console.error("Voice upload error:", error);
+      res.status(500).json({ error: "Échec de l'upload du message vocal" });
     }
   });
 

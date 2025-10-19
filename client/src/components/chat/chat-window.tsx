@@ -8,6 +8,9 @@ import { Send, X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { type ChatMessage } from "@shared/schema";
+import { VoiceRecorder } from "./voice-recorder";
+import { VoiceMessagePlayer } from "./voice-message-player";
+import { useToast } from "@/hooks/use-toast";
 
 interface ChatWindowProps {
   open: boolean;
@@ -25,6 +28,7 @@ export function ChatWindow({ open, onClose, otherUser, currentUserId, requestId 
   const [newMessage, setNewMessage] = useState("");
   const [ws, setWs] = useState<WebSocket | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   const { data: messages = [], refetch } = useQuery<ChatMessage[]>({
     queryKey: [`/api/chat/messages?requestId=${requestId}`],
@@ -81,12 +85,12 @@ export function ChatWindow({ open, onClose, otherUser, currentUserId, requestId 
   }, [open, requestId, refetch]);
 
   const sendMessageMutation = useMutation({
-    mutationFn: async (messageText: string) => {
+    mutationFn: async (messageData: { message?: string; messageType?: string; fileUrl?: string }) => {
       return apiRequest("POST", "/api/chat/messages", {
         requestId,
         senderId: currentUserId,
         receiverId: otherUser.id,
-        message: messageText,
+        ...messageData,
       });
     },
     onSuccess: (newMsg) => {
@@ -102,10 +106,40 @@ export function ChatWindow({ open, onClose, otherUser, currentUserId, requestId 
     },
   });
 
+  const handleVoiceRecorded = async (audioBlob: Blob) => {
+    try {
+      // Upload voice file
+      const formData = new FormData();
+      formData.append('audio', audioBlob);
+
+      const response = await fetch('/api/messages/upload-voice', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error('Upload failed');
+
+      const { fileUrl } = await response.json();
+
+      // Send voice message
+      await sendMessageMutation.mutateAsync({
+        messageType: 'voice',
+        fileUrl,
+      });
+    } catch (error) {
+      console.error('Voice message error:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erreur',
+        description: "Échec de l'envoi du message vocal",
+      });
+    }
+  };
+
   const handleSendMessage = () => {
     const trimmed = newMessage.trim();
     if (!trimmed) return;
-    sendMessageMutation.mutate(trimmed);
+    sendMessageMutation.mutate({ message: trimmed, messageType: 'text' });
   };
 
   if (!open) return null;
@@ -141,6 +175,7 @@ export function ChatWindow({ open, onClose, otherUser, currentUserId, requestId 
           ) : (
             messages.map((msg) => {
               const isOwn = msg.senderId === currentUserId;
+              const isVoiceMessage = msg.messageType === 'voice';
               const displayMessage = msg.filteredMessage || msg.message;
               
               return (
@@ -150,17 +185,25 @@ export function ChatWindow({ open, onClose, otherUser, currentUserId, requestId 
                   data-testid={`message-${msg.id}`}
                 >
                   <div
-                    className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                    className={`max-w-[80%] ${
+                      isVoiceMessage ? '' : 'rounded-lg px-4 py-2'
+                    } ${
                       isOwn
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted"
+                        ? isVoiceMessage ? '' : "bg-primary text-primary-foreground"
+                        : isVoiceMessage ? '' : "bg-muted"
                     }`}
                   >
-                    <p className="text-sm">{displayMessage}</p>
-                    {msg.filteredMessage && (
-                      <p className="text-xs opacity-70 mt-1">
-                        [Contenu filtré]
-                      </p>
+                    {isVoiceMessage && msg.fileUrl ? (
+                      <VoiceMessagePlayer audioUrl={msg.fileUrl} />
+                    ) : (
+                      <>
+                        <p className="text-sm">{displayMessage}</p>
+                        {msg.filteredMessage && (
+                          <p className="text-xs opacity-70 mt-1">
+                            [Contenu filtré]
+                          </p>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -179,6 +222,10 @@ export function ChatWindow({ open, onClose, otherUser, currentUserId, requestId 
             placeholder="Tapez votre message..."
             disabled={sendMessageMutation.isPending}
             data-testid="input-chat-message"
+          />
+          <VoiceRecorder 
+            onVoiceRecorded={handleVoiceRecorded}
+            disabled={sendMessageMutation.isPending}
           />
           <Button 
             onClick={handleSendMessage} 

@@ -80,7 +80,9 @@ export const chatMessages = pgTable("chat_messages", {
   requestId: varchar("request_id").notNull().references(() => transportRequests.id),
   senderId: varchar("sender_id").notNull().references(() => users.id),
   receiverId: varchar("receiver_id").notNull().references(() => users.id),
-  message: text("message").notNull(),
+  message: text("message"), // Text message content (null for voice messages)
+  messageType: text("message_type").default("text"), // 'text' or 'voice'
+  fileUrl: text("file_url"), // URL to audio file for voice messages
   filteredMessage: text("filtered_message"), // Message after phone/link filtering
   isRead: boolean("is_read").default(false),
   senderType: text("sender_type"), // 'client', 'transporter', or 'admin'
@@ -173,7 +175,9 @@ export const insertOfferSchema = createInsertSchema(offers).omit({ id: true, cre
   pickupDate: z.coerce.date(), // Accept ISO string and coerce to Date
   loadType: z.enum(["return", "shared"]), // Only allow 'return' or 'shared'
 });
-export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({ id: true, createdAt: true, filteredMessage: true, isRead: true });
+export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({ id: true, createdAt: true, filteredMessage: true, isRead: true }).extend({
+  messageType: z.enum(["text", "voice"]).default("text"), // Only allow 'text' or 'voice'
+});
 export const insertAdminSettingsSchema = createInsertSchema(adminSettings).omit({ id: true, updatedAt: true });
 export const insertNotificationSchema = createInsertSchema(notifications).omit({ id: true, createdAt: true, read: true });
 export const insertRatingSchema = createInsertSchema(ratings).omit({ id: true, createdAt: true });

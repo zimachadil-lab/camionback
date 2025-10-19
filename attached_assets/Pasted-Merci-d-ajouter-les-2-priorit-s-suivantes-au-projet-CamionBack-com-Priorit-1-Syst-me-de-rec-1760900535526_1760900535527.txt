@@ -1,0 +1,114 @@
+Merci d’ajouter les 2 priorités suivantes au projet CamionBack.com :
+
+🟩 Priorité 1 — Système de recommandation intelligente de transporteurs + notification automatique
+🎯 Objectif :
+
+Quand un client publie une nouvelle demande, afficher automatiquement une popup de recommandations proposant jusqu’à 5 transporteurs les plus pertinents pour traiter la commande.
+
+⚙️ Logique de sélection des transporteurs :
+
+1️⃣ Filtrage 1 – Priorité “Retour” (retours annoncés) :
+
+Rechercher dans la base les transporteurs ayant annoncé un retour (ville_depart_retour == ville_depart_client).
+
+Trier par date la plus proche et afficher jusqu’à 5 résultats max.
+
+2️⃣ Filtrage 2 – Ville de résidence :
+
+Si aucun transporteur dans la catégorie “retour”,
+→ rechercher ceux dont ville_de_residence == ville_depart_client.
+
+Trier par meilleure note moyenne (ou le plus de trajets effectués).
+
+3️⃣ Filtrage 3 – Sélection aléatoire parmi les meilleurs transporteurs :
+
+Si aucun trouvé dans les deux filtres précédents,
+→ sélectionner jusqu’à 5 transporteurs avec la meilleure note moyenne et nombre de trajets terminés.
+
+🪧 Affichage côté client :
+
+Quand le client valide sa commande → afficher une popup modale avec le texte suivant :
+
+🚛 3 transporteurs disponibles sur ce trajet.
+Souhaitez-vous leur envoyer une notification ?
+
+Boutons :
+
+✅ Oui, notifier
+
+❌ Non, plus tard
+
+💡 Si le client clique “Oui” :
+
+Le système envoie une notification instantanée push 
+aux transporteurs concernés avec :
+
+“Nouvelle demande disponible correspondant à votre trajet ou retour. Connectez-vous pour consulter les détails.”
+(Inclure la référence de commande CMD-XXXX)
+
+🧩 Détails techniques :
+
+Créer une fonction getRecommendedTransporters(ville_depart_client) côté backend.
+
+Cette fonction doit renvoyer un tableau des transporteurs avec leurs :
+
+id_transporteur
+
+nom_complet
+
+ville_de_residence
+
+note_moyenne
+
+type_disponibilite (retour / normal)
+
+Intégrer un bouton dans la popup client qui déclenche notifyTransporters() avec la liste des IDs.
+
+Ajouter un petit log admin : “X transporteurs notifiés pour la commande CMD-XXXX”.
+
+🟦 Priorité 2 — Messagerie instantanée : ajout d’enregistrements vocaux
+🎯 Objectif :
+
+Permettre aux clients, transporteurs et administrateurs d’envoyer et écouter des messages vocaux via la messagerie instantanée intégrée.
+
+💬 Fonctionnalités attendues :
+
+Ajouter un bouton micro 🎤 à côté du champ texte dans la messagerie.
+
+Au clic :
+
+Démarre l’enregistrement (durée max 1 minute).
+
+Affiche un timer et un bouton “Arrêter”.
+
+Une fois arrêté → le message vocal est automatiquement uploadé (format .mp3 ou .wav) et visible dans le chat.
+
+Les utilisateurs peuvent :
+
+▶️ écouter le message (lecteur audio intégré),
+
+🗑️ supprimer leur message avant envoi (optionnel).
+
+⚙️ Spécifications techniques :
+
+Format audio : .mp3 ou .wav
+
+Stockage : même dossier que les fichiers uploadés (dossier /uploads/voice/)
+
+Sauvegarder dans la base :
+
+id_message
+
+sender_id
+
+receiver_id
+
+type: "voice"
+
+file_url
+
+timestamp
+
+L’API de messagerie existante doit reconnaître type = "voice" pour l’afficher avec un lecteur audio simple (Play/Pause + durée).
+
+L’admin doit également pouvoir envoyer et écouter ces messages depuis sa vue “Messages”.

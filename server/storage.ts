@@ -47,6 +47,7 @@ export interface IStorage {
   getAcceptedRequestsByTransporter(transporterId: string): Promise<TransportRequest[]>;
   getPaymentsByTransporter(transporterId: string): Promise<TransportRequest[]>;
   updateTransportRequest(id: string, updates: Partial<TransportRequest>): Promise<TransportRequest | undefined>;
+  getRecommendedTransporters(fromCity: string): Promise<any[]>;
   
   // Offer operations
   createOffer(offer: InsertOffer): Promise<Offer>;
@@ -1226,6 +1227,90 @@ export class DbStorage implements IStorage {
       .where(eq(transportRequests.id, id))
       .returning();
     return result[0];
+  }
+
+  async getRecommendedTransporters(fromCity: string): Promise<any[]> {
+    // Filtrage 1: Transporteurs avec retours annoncés (fromCity == ville de départ du retour)
+    const activeReturns = await db.select({
+      transporterId: emptyReturns.transporterId,
+      returnDate: emptyReturns.returnDate,
+    })
+      .from(emptyReturns)
+      .where(
+        and(
+          eq(emptyReturns.fromCity, fromCity),
+          eq(emptyReturns.status, 'active')
+        )
+      )
+      .orderBy(asc(emptyReturns.returnDate))
+      .limit(5);
+
+    if (activeReturns.length > 0) {
+      const transporterIds = activeReturns.map(r => r.transporterId);
+      const transportersData = await db.select().from(users)
+        .where(
+          and(
+            sql`${users.id} IN (${sql.join(transporterIds.map(id => sql`${id}`), sql`, `)})`,
+            eq(users.role, 'transporter'),
+            eq(users.status, 'validated'),
+            eq(users.accountStatus, 'active')
+          )
+        );
+
+      return transportersData.map(t => ({
+        id: t.id,
+        name: t.name,
+        city: t.city,
+        rating: t.rating ? parseFloat(t.rating) : 0,
+        totalTrips: t.totalTrips || 0,
+        availabilityType: 'retour',
+      }));
+    }
+
+    // Filtrage 2: Transporteurs de la ville de résidence
+    const localTransporters = await db.select().from(users)
+      .where(
+        and(
+          eq(users.city, fromCity),
+          eq(users.role, 'transporter'),
+          eq(users.status, 'validated'),
+          eq(users.accountStatus, 'active')
+        )
+      )
+      .orderBy(desc(users.rating), desc(users.totalTrips))
+      .limit(5);
+
+    if (localTransporters.length > 0) {
+      return localTransporters.map(t => ({
+        id: t.id,
+        name: t.name,
+        city: t.city,
+        rating: t.rating ? parseFloat(t.rating) : 0,
+        totalTrips: t.totalTrips || 0,
+        availabilityType: 'ville_residence',
+      }));
+    }
+
+    // Filtrage 3: Meilleurs transporteurs (note + trajets)
+    const topTransporters = await db.select().from(users)
+      .where(
+        and(
+          eq(users.role, 'transporter'),
+          eq(users.status, 'validated'),
+          eq(users.accountStatus, 'active')
+        )
+      )
+      .orderBy(desc(users.rating), desc(users.totalTrips))
+      .limit(5);
+
+    return topTransporters.map(t => ({
+      id: t.id,
+      name: t.name,
+      city: t.city,
+      rating: t.rating ? parseFloat(t.rating) : 0,
+      totalTrips: t.totalTrips || 0,
+      availabilityType: 'top_rated',
+    }));
   }
 
   async deleteTransportRequest(id: string): Promise<boolean> {
