@@ -42,7 +42,7 @@ export interface IStorage {
   getTransportRequest(id: string): Promise<TransportRequest | undefined>;
   getAllTransportRequests(): Promise<TransportRequest[]>;
   getRequestsByClient(clientId: string): Promise<TransportRequest[]>;
-  getOpenRequests(): Promise<TransportRequest[]>;
+  getOpenRequests(transporterId?: string): Promise<TransportRequest[]>;
   getAcceptedRequestsByTransporter(transporterId: string): Promise<TransportRequest[]>;
   getPaymentsByTransporter(transporterId: string): Promise<TransportRequest[]>;
   updateTransportRequest(id: string, updates: Partial<TransportRequest>): Promise<TransportRequest | undefined>;
@@ -299,6 +299,7 @@ export class MemStorage implements IStorage {
       budget: insertRequest.budget ?? null,
       photos: insertRequest.photos ?? null,
       smsSent: insertRequest.smsSent ?? null,
+      isHidden: false,
       id,
       referenceId,
       status: "open",
@@ -1117,9 +1118,18 @@ export class DbStorage implements IStorage {
       .where(eq(transportRequests.clientId, clientId));
   }
 
-  async getOpenRequests(): Promise<TransportRequest[]> {
-    return await db.select().from(transportRequests)
+  async getOpenRequests(transporterId?: string): Promise<TransportRequest[]> {
+    const openRequests = await db.select().from(transportRequests)
       .where(eq(transportRequests.status, 'open'));
+    
+    // If transporterId provided, filter out requests already declined by this transporter
+    if (transporterId) {
+      return openRequests.filter(req => 
+        !req.declinedBy || !req.declinedBy.includes(transporterId)
+      );
+    }
+    
+    return openRequests;
   }
 
   async getAcceptedRequestsByTransporter(transporterId: string): Promise<TransportRequest[]> {

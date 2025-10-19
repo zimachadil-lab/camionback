@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCircle, UserCheck, CreditCard, Phone, Eye, TruckIcon, MapPin, Calendar, FileText, MessageSquare, Trash2, Send, Flag } from "lucide-react";
+import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCircle, UserCheck, CreditCard, Phone, Eye, EyeOff, TruckIcon, MapPin, Calendar, FileText, MessageSquare, Trash2, Send, Flag } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -54,6 +54,8 @@ export default function AdminDashboard() {
   const [assignOrderSearch, setAssignOrderSearch] = useState("");
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
   const [invoiceDetailsOpen, setInvoiceDetailsOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  const [requestDetailDialogOpen, setRequestDetailDialogOpen] = useState(false);
   const { toast} = useToast();
 
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
@@ -397,6 +399,71 @@ export default function AdminDashboard() {
     },
   });
 
+  const toggleHideRequest = useMutation({
+    mutationFn: async ({ requestId, isHidden }: { requestId: string; isHidden: boolean }) => {
+      return await apiRequest("PATCH", `/api/requests/${requestId}/toggle-hide`, {
+        isHidden,
+      });
+    },
+    onSuccess: (_data, variables) => {
+      toast({
+        title: variables.isHidden ? "Demande masquée" : "Demande réaffichée",
+        description: variables.isHidden 
+          ? "La demande a été masquée aux transporteurs" 
+          : "La demande est à nouveau visible pour les transporteurs",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de modifier la visibilité de la demande",
+      });
+    },
+  });
+
+  const deleteRequest = useMutation({
+    mutationFn: async (requestId: string) => {
+      return await apiRequest("DELETE", `/api/requests/${requestId}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Demande supprimée",
+        description: "La demande a été supprimée définitivement",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de supprimer la demande",
+      });
+    },
+  });
+
+  const updateRequestMutation = useMutation({
+    mutationFn: async ({ requestId, updates }: { requestId: string; updates: any }) => {
+      return await apiRequest("PATCH", `/api/requests/${requestId}`, updates);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Statut modifié",
+        description: "Le statut de la demande a été mis à jour",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+      setRequestDetailDialogOpen(false);
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de modifier le statut",
+      });
+    },
+  });
+
   // Format trend text
   const formatTrend = (trend: number) => {
     if (trend === 0) return "Aucun changement";
@@ -611,19 +678,53 @@ export default function AdminDashboard() {
                                   {request.fromCity} → {request.toCity}
                                 </div>
                               </TableCell>
-                              <TableCell>{formatDate(request.desiredDate)}</TableCell>
+                              <TableCell>{formatDate(request.dateTime)}</TableCell>
                               <TableCell className="font-semibold text-primary">
                                 {request.estimatedPrice?.toLocaleString("fr-MA")} MAD
                               </TableCell>
                               <TableCell>{getStatusBadge(request.status)}</TableCell>
                               <TableCell className="text-right">
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost"
-                                  data-testid={`button-view-request-${request.id}`}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
+                                <div className="flex justify-end gap-2">
+                                  <Button 
+                                    size="icon" 
+                                    variant="ghost"
+                                    onClick={() => {
+                                      setSelectedRequest(request);
+                                      setRequestDetailDialogOpen(true);
+                                    }}
+                                    data-testid={`button-view-request-${request.id}`}
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    size="icon" 
+                                    variant="ghost"
+                                    onClick={() => {
+                                      // Toggle hide/show request
+                                      toggleHideRequest.mutate({ 
+                                        requestId: request.id, 
+                                        isHidden: !request.isHidden 
+                                      });
+                                    }}
+                                    data-testid={`button-toggle-hide-${request.id}`}
+                                    className={request.isHidden ? "text-yellow-600 hover:text-yellow-700" : ""}
+                                  >
+                                    {request.isHidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                                  </Button>
+                                  <Button 
+                                    size="icon" 
+                                    variant="ghost"
+                                    className="text-destructive hover:text-destructive"
+                                    onClick={() => {
+                                      if (confirm(`Voulez-vous vraiment supprimer définitivement la demande ${request.referenceId} ?`)) {
+                                        deleteRequest.mutate(request.id);
+                                      }
+                                    }}
+                                    data-testid={`button-delete-request-${request.id}`}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </TableCell>
                             </TableRow>
                           );
@@ -2381,6 +2482,251 @@ export default function AdminDashboard() {
                     </CardContent>
                   </Card>
                 )}
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* Request Detail Dialog */}
+      <Dialog open={requestDetailDialogOpen} onOpenChange={setRequestDetailDialogOpen}>
+        <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">
+              Détails de la commande
+            </DialogTitle>
+            <DialogDescription>
+              {selectedRequest?.referenceId}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedRequest && (() => {
+            const client = users.find((u: any) => u.id === selectedRequest.clientId);
+            const formatDate = (dateStr: string) => {
+              if (!dateStr) return "N/A";
+              try {
+                const date = new Date(dateStr);
+                return date.toLocaleDateString("fr-FR", { 
+                  day: '2-digit', 
+                  month: '2-digit', 
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                });
+              } catch {
+                return "N/A";
+              }
+            };
+
+            const getStatusBadge = (status: string) => {
+              if (status === "open") return <Badge variant="default">Ouverte</Badge>;
+              if (status === "accepted") return <Badge className="bg-blue-600">Acceptée</Badge>;
+              if (status === "completed") return <Badge className="bg-green-600">Complétée</Badge>;
+              if (status === "cancelled") return <Badge variant="destructive">Annulée</Badge>;
+              return <Badge variant="secondary">{status}</Badge>;
+            };
+
+            const getPaymentStatusBadge = (status: string) => {
+              if (status === "pending") return <Badge variant="secondary">En attente</Badge>;
+              if (status === "awaiting_payment") return <Badge className="bg-yellow-600">Attente paiement</Badge>;
+              if (status === "pending_admin_validation") return <Badge className="bg-orange-600">Validation admin</Badge>;
+              if (status === "paid") return <Badge className="bg-green-600">Payé</Badge>;
+              return <Badge variant="secondary">{status}</Badge>;
+            };
+
+            return (
+              <div className="space-y-6 py-4">
+                {/* Client Information */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Users className="w-4 h-4" />
+                      Informations client
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Nom</p>
+                        <p className="font-medium">{client?.name || "Inconnu"}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Téléphone</p>
+                        <a 
+                          href={`tel:${client?.phoneNumber}`}
+                          className="font-medium text-primary hover:underline flex items-center gap-1"
+                        >
+                          <Phone className="w-3 h-3" />
+                          {client?.phoneNumber}
+                        </a>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">ID Client</p>
+                        <p className="font-medium">{client?.clientId || "N/A"}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Ville</p>
+                        <p className="font-medium">{client?.city || "N/A"}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Transport Details */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Package className="w-4 h-4" />
+                      Détails du transport
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">De</p>
+                        <p className="font-medium flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          {selectedRequest.fromCity}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Vers</p>
+                        <p className="font-medium flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          {selectedRequest.toCity}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Date souhaitée</p>
+                        <p className="font-medium flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {formatDate(selectedRequest.dateTime)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Date flexible</p>
+                        <p className="font-medium">
+                          {selectedRequest.dateFlexible ? "Oui" : "Non"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Type de marchandise</p>
+                        <p className="font-medium">{selectedRequest.goodsType}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Budget estimé</p>
+                        <p className="font-medium">
+                          {selectedRequest.budget ? `${parseFloat(selectedRequest.budget).toLocaleString("fr-MA")} MAD` : "Non spécifié"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Facture TTC requise</p>
+                        <p className="font-medium">{selectedRequest.invoiceRequired ? "Oui" : "Non"}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Nombre de vues</p>
+                        <p className="font-medium">{selectedRequest.viewCount || 0}</p>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Description</p>
+                      <p className="font-medium text-sm bg-muted p-3 rounded-md">{selectedRequest.description}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Status Information */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <FileText className="w-4 h-4" />
+                      Statut et suivi
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Statut de la demande</p>
+                        <div className="mt-1">{getStatusBadge(selectedRequest.status)}</div>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Statut du paiement</p>
+                        <div className="mt-1">{getPaymentStatusBadge(selectedRequest.paymentStatus)}</div>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Visibilité</p>
+                        <div className="mt-1">
+                          {selectedRequest.isHidden ? (
+                            <Badge variant="secondary">Masquée</Badge>
+                          ) : (
+                            <Badge variant="default">Visible</Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Date de création</p>
+                        <p className="font-medium">{formatDate(selectedRequest.createdAt)}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Photos */}
+                {selectedRequest.photos && selectedRequest.photos.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">
+                        Photos du chargement ({selectedRequest.photos.length})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                        {selectedRequest.photos.map((photo: string, index: number) => (
+                          <div 
+                            key={index}
+                            className="aspect-square rounded-lg overflow-hidden border hover:border-primary cursor-pointer transition-all"
+                            onClick={() => window.open(photo, '_blank')}
+                          >
+                            <img 
+                              src={photo} 
+                              alt={`Photo ${index + 1}`}
+                              className="w-full h-full object-cover hover:scale-110 transition-transform"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex justify-end gap-3 pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    onClick={() => setRequestDetailDialogOpen(false)}
+                  >
+                    Fermer
+                  </Button>
+                  <Select
+                    value={selectedRequest.status}
+                    onValueChange={(newStatus) => {
+                      updateRequestMutation.mutate({
+                        requestId: selectedRequest.id,
+                        updates: { status: newStatus }
+                      });
+                    }}
+                  >
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue placeholder="Modifier le statut" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="open">Ouverte</SelectItem>
+                      <SelectItem value="accepted">Acceptée</SelectItem>
+                      <SelectItem value="completed">Complétée</SelectItem>
+                      <SelectItem value="cancelled">Annulée</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             );
           })()}

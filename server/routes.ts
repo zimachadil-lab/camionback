@@ -358,9 +358,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // If status changed to resolved, notify the reporter
-      if (updates.status === "resolved" && report.reportedBy) {
+      if (updates.status === "resolved" && report.reporterId) {
         await storage.createNotification({
-          userId: report.reportedBy,
+          userId: report.reporterId,
           type: "report_resolved",
           title: "Signalement résolu",
           message: `Votre signalement concernant la commande ${report.requestId} a été résolu.`,
@@ -487,6 +487,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(request);
     } catch (error) {
       res.status(500).json({ error: "Failed to update request" });
+    }
+  });
+
+  // Admin toggle hide/show request from transporters
+  app.patch("/api/requests/:id/toggle-hide", async (req, res) => {
+    try {
+      const { isHidden } = req.body;
+      const request = await storage.updateTransportRequest(req.params.id, { isHidden });
+      if (!request) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+      res.json(request);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to toggle request visibility" });
     }
   });
 

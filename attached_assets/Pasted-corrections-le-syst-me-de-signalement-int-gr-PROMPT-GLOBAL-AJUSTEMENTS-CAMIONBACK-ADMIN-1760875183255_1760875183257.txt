@@ -1,0 +1,174 @@
+corrections + le système de signalement intégré.
+
+🧠 PROMPT GLOBAL – AJUSTEMENTS CAMIONBACK
+🧩 ADMIN PANEL
+
+Gestion des demandes
+
+Ajouter sur chaque ligne de la rubrique “Demandes publiées” deux boutons d’action :
+
+🗑️ Supprimer définitivement la commande
+
+👁️ Masquer / Réafficher aux transporteurs
+
+Quand masquée → la commande ne s’affiche plus sur les tableaux transporteurs.
+
+Quand réaffichée → elle redevient visible.
+
+L’état “masqué” doit être stocké dans la base de données (champ booléen isHidden).
+
+Correction de la date souhaitée
+
+Corriger le champ “Date souhaitée” affiché en “N/A” :
+→ Utiliser la vraie valeur de desired_date (ou date_souhaitee) envoyée par le client lors de la création de la commande.
+
+Fiche commande (œil)
+
+Le bouton 👁️ sur la vue Demandes doit ouvrir une popup complète affichant :
+
+Référence de la commande
+
+Nom et téléphone du client
+
+Détails du chargement (ville départ, arrivée, type, poids, volume, etc.)
+
+Type de chargement (Retour / Groupage)
+
+Photos du chargement (affichées en miniature cliquable)
+
+Statut actuel (En attente / En cours / Terminé / Annulé)
+
+Option : ajouter un bouton Modifier statut dans la popup.
+
+Messages Admin
+
+Corriger le bug du bouton 👁️ dans la vue Messages : actuellement, il affiche une page vide.
+→ Il doit ouvrir une popup de conversation entre le client et le transporteur, avec la possibilité pour l’admin d’écrire sous le nom “Admin CamionBack” (message en couleur différente).
+
+Ajouter un bouton 🗑️ pour supprimer la conversation complète si nécessaire.
+
+🚛 TRANSPORTEUR
+
+Disparition après offre
+
+Quand un transporteur envoie une offre de prix sur une commande :
+→ cette commande doit disparaître de la rubrique “Commandes disponibles”
+et apparaître uniquement dans “Mes offres envoyées”.
+
+Modification libre de l’offre
+
+Tant que le client n’a pas décliné l’offre, le transporteur doit pouvoir :
+
+Modifier son prix
+
+Modifier les dates proposées
+
+Modifier le type de chargement (Retour / Groupage)
+→ Ces changements mettent simplement à jour l’offre existante.
+
+👥 CLIENT ET TRANSPORTEUR – SYSTÈME DE SIGNALEMENT
+🧍 Côté Client :
+
+Emplacement : dans “Commandes terminées”, sur chaque carte.
+
+Ajouter un bouton rouge :
+
+🔴 Signaler un problème
+
+
+Lorsqu’on clique :
+→ Ouvre une popup avec :
+
+Liste déroulante (select) :
+
+Le transporteur ne s’est pas présenté
+
+Marchandise abîmée ou perdue
+
+Retard important
+
+Autre (champ texte libre)
+
+Champ texte libre facultatif (textarea)
+
+Bouton “Envoyer le signalement”
+
+Après envoi :
+
+Message de confirmation :
+“✅ Votre signalement a été transmis à l’équipe CamionBack.”
+
+Le signalement est enregistré côté Admin dans une nouvelle vue “Signalements” avec :
+
+Type : Client
+
+ID Commande
+
+Motif sélectionné
+
+Commentaire
+
+Statut = “En attente de traitement”
+
+🚛 Côté Transporteur :
+
+Même logique, dans “Commandes terminées”, ajouter :
+
+🔴 Signaler un client
+
+
+Popup avec :
+
+Liste déroulante :
+
+Client non disponible à la livraison
+
+Refus ou retard de paiement
+
+Mauvaise adresse / informations incomplètes
+
+Autre (champ libre)
+
+Zone texte pour explication
+
+Bouton “Envoyer le signalement”
+
+Confirmation :
+“✅ Votre signalement a été transmis à l’équipe CamionBack.”
+
+🧾 Côté Admin :
+
+La vue “Signalements” doit :
+
+Lister tous les signalements, clients et transporteurs confondus.
+
+Colonnes :
+
+Référence commande
+
+Type (Client / Transporteur)
+
+Nom et téléphone des deux parties
+
+Motif
+
+Commentaire
+
+Statut (“En attente”, “En cours”, “Résolu”)
+
+Bouton d’action :
+
+👁️ Voir le détail complet (popup)
+
+✅ Marquer comme résolu
+
+🧱 BONUS – Option de suivi visuel
+
+Si possible, dans la vue Admin “Signalements”,
+ajouter un badge coloré selon le statut :
+
+🟠 En attente
+
+🟡 En cours
+
+🟢 Résolu

@@ -54,6 +54,7 @@ export const transportRequests = pgTable("transport_requests", {
   viewCount: integer("view_count").default(0), // Number of times request was viewed
   declinedBy: text("declined_by").array().default(sql`ARRAY[]::text[]`), // IDs of transporters who declined
   smsSent: boolean("sms_sent").default(false), // Track if first offer SMS was sent to client
+  isHidden: boolean("is_hidden").default(false), // Admin can hide requests from transporters
   createdAt: timestamp("created_at").defaultNow(),
 });
 
