@@ -622,6 +622,10 @@ export default function ClientDashboard() {
           // Update localStorage with fresh data
           localStorage.setItem("camionback_user", JSON.stringify(updatedUser));
           setUser(updatedUser);
+        } else if (response.status === 404) {
+          // User not found - clear localStorage and redirect to login
+          localStorage.removeItem("camionback_user");
+          window.location.href = "/";
         }
       } catch (error) {
         console.error("Failed to refresh user data:", error);
