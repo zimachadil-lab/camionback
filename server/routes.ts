@@ -1399,11 +1399,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Chat routes
   app.post("/api/chat/messages", async (req, res) => {
     try {
+      console.log('[DEBUG] POST /api/chat/messages - Request body:', JSON.stringify(req.body, null, 2));
       const messageData = insertChatMessageSchema.parse(req.body);
+      console.log('[DEBUG] Validation passed, creating message...');
       const message = await storage.createChatMessage(messageData);
+      console.log('[DEBUG] Message created successfully:', message.id);
       res.json(message);
     } catch (error) {
+      console.error('[DEBUG] Error in POST /api/chat/messages:', error);
       if (error instanceof z.ZodError) {
+        console.error('[DEBUG] Zod validation error:', JSON.stringify(error.errors, null, 2));
         return res.status(400).json({ error: error.errors });
       }
       res.status(500).json({ error: "Failed to send message" });
