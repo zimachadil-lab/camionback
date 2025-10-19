@@ -12,7 +12,8 @@ import {
   insertOfferSchema,
   insertChatMessageSchema,
   insertNotificationSchema,
-  insertEmptyReturnSchema
+  insertEmptyReturnSchema,
+  insertReportSchema
 } from "@shared/schema";
 import { sendFirstOfferSMS, sendOfferAcceptedSMS } from "./sms";
 
