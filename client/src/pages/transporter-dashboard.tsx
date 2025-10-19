@@ -656,18 +656,16 @@ export default function TransporterDashboard() {
                                 Marquer comme à facturer
                               </Button>
                             )}
-                            {(request.status === "completed" || request.paymentStatus === "paid") && (
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => handleOpenReportDialog(request.id)}
-                                data-testid={`button-report-${request.id}`}
-                                className="gap-2"
-                              >
-                                <Flag className="h-4 w-4" />
-                                <span className="hidden sm:inline">Signaler</span>
-                              </Button>
-                            )}
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleOpenReportDialog(request.id)}
+                              data-testid={`button-report-${request.id}`}
+                              className="gap-2"
+                            >
+                              <Flag className="h-4 w-4" />
+                              <span className="hidden sm:inline">Signaler</span>
+                            </Button>
                           </div>
                         </div>
 

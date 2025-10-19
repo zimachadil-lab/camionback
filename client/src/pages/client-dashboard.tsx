@@ -75,7 +75,7 @@ const reportSchema = z.object({
   type: z.string().min(1, "Type de problème requis"),
 });
 
-function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onDelete, onViewTransporter, onUpdateStatus, users }: any) {
+function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onDelete, onViewTransporter, onUpdateStatus, onReport, users }: any) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showOffersDialog, setShowOffersDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -315,6 +315,16 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => onReport(request.id)}
+                data-testid={`button-report-active-${request.id}`}
+                className="gap-2"
+              >
+                <Flag className="h-4 w-4" />
+                <span className="hidden sm:inline">Signaler</span>
+              </Button>
             </div>
           )}
         </CardContent>
@@ -1052,6 +1062,7 @@ export default function ClientDashboard() {
                     onDelete={handleDeleteRequest}
                     onViewTransporter={handleViewTransporter}
                     onUpdateStatus={handleUpdateStatus}
+                    onReport={handleOpenReportDialog}
                   />
                 ))
               ) : (
