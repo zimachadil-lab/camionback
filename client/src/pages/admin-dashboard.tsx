@@ -540,9 +540,9 @@ export default function AdminDashboard() {
             {/* Barre de navigation principale - Opérations */}
             <div className="bg-muted/30 p-2 rounded-lg">
               <p className="text-xs text-muted-foreground mb-2 px-2 font-medium">Opérations</p>
-              <TabsList className="grid w-full grid-cols-7 text-xs sm:text-sm">
-                <TabsTrigger value="requests" data-testid="tab-requests">Demandes</TabsTrigger>
-                <TabsTrigger value="offers" data-testid="tab-offers">
+              <TabsList className="flex lg:grid w-full lg:grid-cols-7 overflow-x-auto text-xs sm:text-sm">
+                <TabsTrigger value="requests" data-testid="tab-requests" className="flex-shrink-0">Demandes</TabsTrigger>
+                <TabsTrigger value="offers" data-testid="tab-offers" className="flex-shrink-0">
                   Offres
                   {allOffers.length > 0 && (
                     <Badge className="ml-2 px-1.5 py-0 h-5 min-w-5 text-xs">
@@ -550,7 +550,7 @@ export default function AdminDashboard() {
                     </Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="contracts" data-testid="tab-contracts">
+                <TabsTrigger value="contracts" data-testid="tab-contracts" className="flex-shrink-0">
                   Contrats
                   {contracts.length > 0 && (
                     <Badge className="ml-2 px-1.5 py-0 h-5 min-w-5 text-xs">
@@ -558,7 +558,7 @@ export default function AdminDashboard() {
                     </Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="messages" data-testid="tab-messages">
+                <TabsTrigger value="messages" data-testid="tab-messages" className="flex-shrink-0">
                   <MessageSquare className="w-4 h-4 mr-1" />
                   Messages
                   {conversations.length > 0 && (
@@ -567,7 +567,7 @@ export default function AdminDashboard() {
                     </Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="to-pay" data-testid="tab-to-pay">
+                <TabsTrigger value="to-pay" data-testid="tab-to-pay" className="flex-shrink-0">
                   À payer
                   {pendingPayments.length > 0 && (
                     <Badge variant="destructive" className="ml-2 px-1.5 py-0 h-5 min-w-5 text-xs">
@@ -575,7 +575,7 @@ export default function AdminDashboard() {
                     </Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="validation" data-testid="tab-validation">
+                <TabsTrigger value="validation" data-testid="tab-validation" className="flex-shrink-0">
                   Validation
                   {pendingDrivers.length > 0 && (
                     <Badge variant="destructive" className="ml-2 px-1.5 py-0 h-5 min-w-5 text-xs">
@@ -583,7 +583,7 @@ export default function AdminDashboard() {
                     </Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="empty-returns" data-testid="tab-empty-returns">
+                <TabsTrigger value="empty-returns" data-testid="tab-empty-returns" className="flex-shrink-0">
                   <TruckIcon className="w-4 h-4 mr-1" />
                   Retours
                   {emptyReturns.length > 0 && (
@@ -598,10 +598,10 @@ export default function AdminDashboard() {
             {/* Barre de navigation secondaire - Gestion */}
             <div className="bg-muted/30 p-2 rounded-lg">
               <p className="text-xs text-muted-foreground mb-2 px-2 font-medium">Gestion & Configuration</p>
-              <TabsList className="grid w-full grid-cols-6 text-xs sm:text-sm">
-                <TabsTrigger value="drivers" data-testid="tab-drivers">Transporteurs</TabsTrigger>
-                <TabsTrigger value="clients" data-testid="tab-clients">Clients</TabsTrigger>
-                <TabsTrigger value="reports" data-testid="tab-reports">
+              <TabsList className="flex lg:grid w-full lg:grid-cols-6 overflow-x-auto text-xs sm:text-sm">
+                <TabsTrigger value="drivers" data-testid="tab-drivers" className="flex-shrink-0">Transporteurs</TabsTrigger>
+                <TabsTrigger value="clients" data-testid="tab-clients" className="flex-shrink-0">Clients</TabsTrigger>
+                <TabsTrigger value="reports" data-testid="tab-reports" className="flex-shrink-0">
                   <Flag className="w-4 h-4 mr-1" />
                   Signalements
                   {allReports.filter((r: any) => r.status === "pending").length > 0 && (
@@ -610,9 +610,9 @@ export default function AdminDashboard() {
                     </Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="facturation" data-testid="tab-facturation">Facturation</TabsTrigger>
-                <TabsTrigger value="stats" data-testid="tab-stats">Statistiques</TabsTrigger>
-                <TabsTrigger value="settings" data-testid="tab-settings">Paramètres</TabsTrigger>
+                <TabsTrigger value="facturation" data-testid="tab-facturation" className="flex-shrink-0">Facturation</TabsTrigger>
+                <TabsTrigger value="stats" data-testid="tab-stats" className="flex-shrink-0">Statistiques</TabsTrigger>
+                <TabsTrigger value="settings" data-testid="tab-settings" className="flex-shrink-0">Paramètres</TabsTrigger>
               </TabsList>
             </div>
           </div>
