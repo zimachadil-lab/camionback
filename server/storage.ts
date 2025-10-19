@@ -298,6 +298,7 @@ export class MemStorage implements IStorage {
       invoiceRequired: insertRequest.invoiceRequired ?? false,
       budget: insertRequest.budget ?? null,
       photos: insertRequest.photos ?? null,
+      smsSent: insertRequest.smsSent ?? null,
       id,
       referenceId,
       status: "open",
@@ -916,7 +917,9 @@ export class MemStorage implements IStorage {
     const newReport: Report = {
       id: randomUUID(),
       ...report,
+      details: report.details ?? null,
       status: "pending",
+      adminNotes: null,
       createdAt: new Date(),
     };
     this.reports.set(newReport.id, newReport);
