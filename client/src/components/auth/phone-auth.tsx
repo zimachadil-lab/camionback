@@ -3,8 +3,9 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Truck, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import camionbackLogo from "@assets/logo camion (14)_1760911574566.png";
 
 export function PhoneAuth({ onAuthSuccess }: { onAuthSuccess: (user: any) => void }) {
   const [, setLocation] = useLocation();
@@ -141,11 +142,16 @@ export function PhoneAuth({ onAuthSuccess }: { onAuthSuccess: (user: any) => voi
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center space-y-2">
-          <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-2">
-            <Truck className="w-8 h-8 text-primary" />
+        <CardHeader className="text-center space-y-4">
+          <div className="mx-auto w-full max-w-xs px-4">
+            <img 
+              src={camionbackLogo} 
+              alt="CamionBack Logo" 
+              className="w-full h-auto"
+              loading="eager"
+              data-testid="img-logo"
+            />
           </div>
-          <CardTitle className="text-3xl font-bold">CamionBack</CardTitle>
           <CardDescription className="text-base">
             {step === "phone" 
               ? "Entrez votre numéro de téléphone" 
