@@ -14,21 +14,31 @@ export default function MyRib() {
   const [ribName, setRibName] = useState("");
   const [ribNumber, setRibNumber] = useState("");
 
+  // Get current user from localStorage
+  const storedUser = localStorage.getItem("camionback_user");
+  const user = storedUser ? JSON.parse(storedUser) : null;
+
   const { isLoading } = useQuery({
-    queryKey: ["/api/user/rib"],
+    queryKey: ["/api/user/rib", user?.id],
     queryFn: async () => {
-      const response = await fetch("/api/user/rib");
+      if (!user?.id) throw new Error("Utilisateur non trouvé");
+      const response = await fetch(`/api/user/rib?userId=${user.id}`);
       if (!response.ok) throw new Error("Échec de récupération du RIB");
       const data = await response.json();
       setRibName(data.ribName || "");
       setRibNumber(data.ribNumber || "");
       return data;
     },
+    enabled: !!user?.id,
   });
 
   const updateRibMutation = useMutation({
     mutationFn: async (data: { ribName: string; ribNumber: string }) => {
-      return await apiRequest("PATCH", "/api/user/rib", data);
+      if (!user?.id) throw new Error("Utilisateur non trouvé");
+      return await apiRequest("PATCH", "/api/user/rib", {
+        ...data,
+        userId: user.id,
+      });
     },
     onSuccess: () => {
       toast({

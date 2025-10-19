@@ -1072,11 +1072,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // RIB routes for transporters
   app.get("/api/user/rib", async (req, res) => {
     try {
-      if (!req.session.userId) {
+      const userId = req.query.userId as string;
+      
+      if (!userId) {
         return res.status(401).json({ error: "Non authentifié" });
       }
 
-      const user = await storage.getUser(req.session.userId);
+      const user = await storage.getUser(userId);
       if (!user || user.role !== "transporter") {
         return res.status(403).json({ error: "Accès refusé" });
       }
@@ -1093,23 +1095,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/user/rib", async (req, res) => {
     try {
-      if (!req.session.userId) {
+      const { userId, ribName, ribNumber } = req.body;
+      
+      if (!userId) {
         return res.status(401).json({ error: "Non authentifié" });
       }
 
-      const user = await storage.getUser(req.session.userId);
+      const user = await storage.getUser(userId);
       if (!user || user.role !== "transporter") {
         return res.status(403).json({ error: "Accès refusé" });
       }
-
-      const { ribName, ribNumber } = req.body;
 
       // Validate RIB number (must be exactly 24 digits)
       if (ribNumber && !/^\d{24}$/.test(ribNumber)) {
         return res.status(400).json({ error: "Le RIB doit contenir exactement 24 chiffres" });
       }
 
-      const updatedUser = await storage.updateUser(req.session.userId, {
+      const updatedUser = await storage.updateUser(userId, {
         ribName: ribName || null,
         ribNumber: ribNumber || null,
       });
@@ -1127,11 +1129,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin routes for managing transporter RIB
   app.get("/api/admin/users/:id/rib", async (req, res) => {
     try {
-      if (!req.session.userId) {
+      const adminId = req.query.adminId as string;
+      
+      if (!adminId) {
         return res.status(401).json({ error: "Non authentifié" });
       }
 
-      const admin = await storage.getUser(req.session.userId);
+      const admin = await storage.getUser(adminId);
       if (!admin || admin.role !== "admin") {
         return res.status(403).json({ error: "Accès refusé" });
       }
@@ -1153,16 +1157,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/admin/users/:id/rib", async (req, res) => {
     try {
-      if (!req.session.userId) {
+      const { adminId, ribName, ribNumber } = req.body;
+      
+      if (!adminId) {
         return res.status(401).json({ error: "Non authentifié" });
       }
 
-      const admin = await storage.getUser(req.session.userId);
+      const admin = await storage.getUser(adminId);
       if (!admin || admin.role !== "admin") {
         return res.status(403).json({ error: "Accès refusé" });
       }
-
-      const { ribName, ribNumber } = req.body;
 
       // Validate RIB number (must be exactly 24 digits)
       if (ribNumber && ribNumber !== "" && !/^\d{24}$/.test(ribNumber)) {
