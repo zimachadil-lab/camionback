@@ -33,6 +33,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { VoiceRecorder } from "@/components/chat/voice-recorder";
+import { VoiceMessagePlayer } from "@/components/chat/voice-message-player";
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
@@ -2911,6 +2913,7 @@ export default function AdminDashboard() {
                   senderId: user.id,
                   receiverId: selectedConversation.clientId,
                   message: adminMessage,
+                  messageType: "text",
                   senderType: "admin",
                 });
                 
@@ -2926,6 +2929,47 @@ export default function AdminDashboard() {
                   variant: "destructive",
                   title: "Erreur",
                   description: "Échec de l'envoi du message",
+                });
+              }
+            };
+
+            const handleVoiceRecorded = async (audioBlob: Blob) => {
+              try {
+                // Upload voice file
+                const formData = new FormData();
+                formData.append('audio', audioBlob);
+
+                const response = await fetch('/api/messages/upload-voice', {
+                  method: 'POST',
+                  body: formData,
+                });
+
+                if (!response.ok) throw new Error('Upload failed');
+
+                const { fileUrl } = await response.json();
+
+                // Send voice message
+                await apiRequest("POST", "/api/chat/messages", {
+                  requestId: selectedConversation.requestId,
+                  senderId: user.id,
+                  receiverId: selectedConversation.clientId,
+                  messageType: 'voice',
+                  fileUrl,
+                  senderType: "admin",
+                });
+
+                toast({
+                  title: "Message vocal envoyé",
+                  description: "Votre message vocal a été envoyé avec succès",
+                });
+
+                queryClient.invalidateQueries({ queryKey: ["/api/chat/messages", selectedConversation.requestId] });
+              } catch (error) {
+                console.error('Voice message error:', error);
+                toast({
+                  variant: 'destructive',
+                  title: 'Erreur',
+                  description: "Échec de l'envoi du message vocal",
                 });
               }
             };
@@ -2957,26 +3001,34 @@ export default function AdminDashboard() {
                   {conversationMessages.length === 0 ? (
                     <p className="text-center text-muted-foreground">Aucun message</p>
                   ) : (
-                    conversationMessages.map((message: any) => (
-                      <div
-                        key={message.id}
-                        className={`p-3 rounded-lg border max-w-[80%] ${getMessageBubbleStyle(message)}`}
-                        data-testid={`message-${message.id}`}
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-semibold" data-testid={`message-sender-${message.id}`}>
-                            {getSenderLabel(message)}
-                          </span>
-                          <span className="text-xs text-muted-foreground" data-testid={`message-time-${message.id}`}>
-                            {new Date(message.createdAt).toLocaleString("fr-FR", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </span>
+                    conversationMessages.map((message: any) => {
+                      const isVoiceMessage = message.messageType === 'voice';
+                      
+                      return (
+                        <div
+                          key={message.id}
+                          className={`p-3 rounded-lg border max-w-[80%] ${getMessageBubbleStyle(message)}`}
+                          data-testid={`message-${message.id}`}
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-semibold" data-testid={`message-sender-${message.id}`}>
+                              {getSenderLabel(message)}
+                            </span>
+                            <span className="text-xs text-muted-foreground" data-testid={`message-time-${message.id}`}>
+                              {new Date(message.createdAt).toLocaleString("fr-FR", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                          </div>
+                          {isVoiceMessage && message.fileUrl ? (
+                            <VoiceMessagePlayer audioUrl={message.fileUrl} />
+                          ) : (
+                            <p className="text-sm" data-testid={`message-text-${message.id}`}>{message.message}</p>
+                          )}
                         </div>
-                        <p className="text-sm" data-testid={`message-text-${message.id}`}>{message.message}</p>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
 
@@ -2994,6 +3046,10 @@ export default function AdminDashboard() {
                     }}
                     className="flex-1"
                     data-testid="textarea-admin-message"
+                  />
+                  <VoiceRecorder 
+                    onVoiceRecorded={handleVoiceRecorded}
+                    disabled={false}
                   />
                   <Button
                     onClick={sendAdminMessage}

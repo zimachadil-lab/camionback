@@ -177,6 +177,8 @@ export const insertOfferSchema = createInsertSchema(offers).omit({ id: true, cre
 });
 export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({ id: true, createdAt: true, filteredMessage: true, isRead: true }).extend({
   messageType: z.enum(["text", "voice"]).default("text"), // Only allow 'text' or 'voice'
+  message: z.string().optional(), // Make message optional for voice messages
+  fileUrl: z.string().optional(), // Make fileUrl optional for text messages
 });
 export const insertAdminSettingsSchema = createInsertSchema(adminSettings).omit({ id: true, updatedAt: true });
 export const insertNotificationSchema = createInsertSchema(notifications).omit({ id: true, createdAt: true, read: true });
