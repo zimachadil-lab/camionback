@@ -12,9 +12,11 @@ Preferred communication style: Simple, everyday language.
 The platform features a mobile-first design with a dark teal theme and a French language interface. It utilizes React 18, TypeScript, Vite, Wouter for routing, TanStack Query for state management, and Tailwind CSS for styling. Shadcn/ui provides components, Radix UI ensures accessibility, and React Hook Form with Zod handles forms.
 
 ### Technical Implementations
-The backend is built with Express.js and TypeScript, providing RESTful JSON APIs. Authentication is phone number-based with 6-digit PIN verification and bcrypt hashing, supporting Moroccan phone formats. User roles (Client, Transporter) are managed, with Transporters requiring admin validation. Session persistence uses localStorage, with role and status-based access control.
+The backend is built with Express.js and TypeScript, providing RESTful JSON APIs. Authentication is phone number-based with 6-digit PIN verification and bcrypt hashing, supporting Moroccan phone formats. User roles (Client, Transporter, Admin) are managed, with Transporters requiring admin validation. Session persistence uses localStorage, with role and status-based access control.
 
 Real-time chat is implemented via WebSockets for direct client-transporter communication. An in-app notification system provides alerts for offers, payments, and chat messages.
+
+**Database:** The application uses PostgreSQL (via Neon Serverless) with Drizzle ORM for type-safe database operations. The database connection is configured with WebSocket support for compatibility with Neon's serverless architecture (`server/db.ts`). Database storage is handled by the `DbStorage` class (`server/storage.ts`), implementing all CRUD operations through Drizzle ORM queries. Schema migrations are managed via `npm run db:push` (no manual SQL migrations required).
 
 ### Feature Specifications
 **Request and Payment Workflow:** Clients create requests that progress through 'Open', 'Accepted', and 'Completed' statuses. Clients can accept offers, mark requests complete, and republish them. The payment flow includes 'pending', 'awaiting_payment', 'pending_admin_validation', and 'paid' statuses, involving receipt uploads and admin validation.
@@ -40,9 +42,10 @@ Real-time chat is implemented via WebSockets for direct client-transporter commu
 **File Upload:** Client request photos use Base64 encoding. Transporter truck photos use Multer middleware.
 
 ### System Design Choices
-**Data Storage:** PostgreSQL with Neon serverless and Drizzle ORM for type-safe queries and migrations.
+**Data Storage:** PostgreSQL with Neon serverless and Drizzle ORM for type-safe queries and migrations. Database connection configured with WebSocket support (`ws` package) for Neon Serverless compatibility in Node.js environment.
 **Authentication & Authorization:** Phone number-based PIN verification. Role and status-based access control.
-**Backend:** Express.js with TypeScript, ES Modules, and `tsx`. Multer for multipart form data (5MB limit). Abstracted storage layer.
+**Backend:** Express.js with TypeScript, ES Modules, and `tsx`. Multer for multipart form data (5MB limit). DbStorage class implementing IStorage interface for all database operations.
+**Admin Account:** Default admin account created with phone number `+212664373534` and PIN `040189`. This account has full administrative access to the platform and can manage users, validate transporters, configure commission rates, and access all administrative features.
 
 ## External Dependencies
 
