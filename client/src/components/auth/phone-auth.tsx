@@ -142,8 +142,8 @@ export function PhoneAuth({ onAuthSuccess }: { onAuthSuccess: (user: any) => voi
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center space-y-4">
-          <div className="mx-auto w-full max-w-xs px-4">
+        <CardHeader className="text-center space-y-3 pb-4">
+          <div className="mx-auto w-full max-w-[200px]">
             <img 
               src={camionbackLogo} 
               alt="CamionBack Logo" 
