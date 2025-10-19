@@ -29,6 +29,8 @@ Real-time chat is implemented via WebSockets for direct client-transporter commu
 
 **Centralized Admin Messaging System:** Admins can monitor and intervene in client-transporter conversations. The admin dashboard displays all conversations, allows viewing full threads, and enables admins to send messages as "Admin CamionBack."
 
+**Voice Messaging System:** Full voice recording and playback capabilities integrated across all user roles (Client, Transporter, Admin). Users can record up to 1-minute voice messages through the VoiceRecorder component (microphone icon button). Voice messages are uploaded to `/api/messages/upload-voice`, stored with `messageType: 'voice'` and played back via VoiceMessagePlayer component. Chat message schema enforces conditional validation: text messages require non-empty `message` field, voice messages require non-empty `fileUrl` field. Admin conversation dialog includes VoiceRecorder for sending voice messages while monitoring conversations. Supported audio formats: audio/webm, audio/mp4, audio/mpeg, audio/wav.
+
 **Dynamic Admin Dashboard Statistics:** The admin dashboard provides real-time statistics, including active users, conversion rates, average ratings, order processing times, and pending payments. It also displays detailed statistics for clients and transporters.
 
 **Automatic Client Identification System:** Clients receive sequential IDs (C-XXXX) upon registration, displayed in their interface. The admin dashboard includes a "Clients" tab with comprehensive client statistics and search functionality.
@@ -61,7 +63,7 @@ Real-time chat is implemented via WebSockets for direct client-transporter commu
 **Data Storage:** PostgreSQL with Neon serverless and Drizzle ORM for type-safe queries and migrations. Database connection configured with WebSocket support (`ws` package) for Neon Serverless compatibility in Node.js environment.
 **Authentication & Authorization:** Phone number-based PIN verification. Role and status-based access control.
 **Backend:** Express.js with TypeScript, ES Modules, and `tsx`. Multer for multipart form data (5MB limit). DbStorage class implementing IStorage interface for all database operations.
-**Routing:** Dashboard routes are explicitly defined: `/admin-dashboard` for administrators, `/client-dashboard` for clients, and `/transporter-dashboard` for transporters.
+**Routing:** Dashboard routes are explicitly defined: `/admin-dashboard` for administrators, `/client-dashboard` for clients, and `/transporter-dashboard` for transporters. The `/login` route is configured as an alias to the home route `/` for improved accessibility and testing compatibility, both rendering the Home component which handles phone-based authentication.
 **Admin Account:** Default admin account created with phone number `+212664373534` and PIN `040189`. This account has full administrative access to the platform and can manage users, validate transporters, configure commission rates, and access all administrative features.
 
 ## External Dependencies
