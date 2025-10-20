@@ -1633,7 +1633,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/cities", async (req, res) => {
     try {
       const cities = await storage.getAllCities();
-      res.json(cities);
+      // Sort cities alphabetically by name (A → Z)
+      const sortedCities = cities.sort((a, b) => 
+        a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' })
+      );
+      res.json(sortedCities);
     } catch (error) {
       console.error("Get cities error:", error);
       res.status(500).json({ error: "Échec de récupération des villes" });
