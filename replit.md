@@ -36,6 +36,7 @@ The backend is built with Express.js and TypeScript, offering RESTful JSON APIs.
 - **Informational Pages System:** Role-specific "How It Works" pages for clients and transporters.
 - **WhatsApp Contact Integration:** Direct WhatsApp support link for all users.
 - **Admin SMS Communications System:** Bulk SMS messaging system for admins to communicate with users via Infobip, featuring three main components: (1) Quick notify for validated transporters with predefined message, (2) Custom SMS sending with audience targeting (transporters/clients/both) and 160-character limit, (3) Full SMS history tracking with admin attribution, recipient count, and deletion capability.
+- **Advanced Admin Request Filtering & Search System:** Comprehensive filtering and search capabilities in the admin Demandes view with: (1) Real-time search across reference ID, client phone number, departure city, and arrival city, (2) Status-based filtering dropdown (all/open/accepted/completed/cancelled), (3) Automatic descending date sorting (most recent first), (4) Date display with time in JJ/MM/AAAA - HH:mm format, (5) Results count and filter reset functionality.
 - **UI Enhancements:** Responsive admin navigation, clear messaging buttons, role-based header navigation.
 
 ### System Design Choices
