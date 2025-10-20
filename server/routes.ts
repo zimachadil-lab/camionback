@@ -17,7 +17,7 @@ import {
   insertCitySchema,
   type Offer
 } from "@shared/schema";
-import { sendFirstOfferSMS, sendOfferAcceptedSMS, sendTransporterActivatedSMS } from "./infobip-sms";
+import { sendFirstOfferSMS, sendOfferAcceptedSMS, sendTransporterActivatedSMS, sendBulkSMS } from "./infobip-sms";
 import { emailService } from "./email-service";
 
 const upload = multer({ 
@@ -2221,6 +2221,187 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(contract);
     } catch (error) {
       res.status(500).json({ error: "Échec de la mise à jour du contrat" });
+    }
+  });
+
+  // SMS Communication Routes (Admin only)
+  
+  // Quick notify all validated transporters
+  app.post("/api/admin/sms/notify-transporters", async (req, res) => {
+    try {
+      const { adminId } = req.body;
+
+      if (!adminId) {
+        return res.status(401).json({ error: "Non authentifié" });
+      }
+
+      // Verify admin role
+      const admin = await storage.getUser(adminId);
+      if (!admin || admin.role !== "admin") {
+        return res.status(403).json({ error: "Accès refusé - Admin requis" });
+      }
+
+      // Get all validated transporters
+      const allUsers = await storage.getAllUsers();
+      const validatedTransporters = allUsers.filter(
+        user => user.role === "transporter" && user.status === "validated" && user.accountStatus === "active"
+      );
+
+      if (validatedTransporters.length === 0) {
+        return res.status(400).json({ error: "Aucun transporteur validé trouvé" });
+      }
+
+      const phoneNumbers = validatedTransporters.map(t => t.phoneNumber);
+      const message = "🚛 De nouvelles offres de transport sont disponibles sur CamionBack ! Connectez-vous dès maintenant pour proposer vos tarifs.";
+
+      // Send bulk SMS
+      const result = await sendBulkSMS(phoneNumbers, message);
+
+      // Save to history
+      await storage.createSmsHistory({
+        adminId,
+        targetAudience: "transporters",
+        message,
+        recipientCount: validatedTransporters.length
+      });
+
+      res.json({
+        success: true,
+        sent: result.success,
+        failed: result.failed,
+        total: validatedTransporters.length
+      });
+    } catch (error) {
+      console.error("Erreur envoi SMS transporteurs:", error);
+      res.status(500).json({ error: "Erreur lors de l'envoi des SMS" });
+    }
+  });
+
+  // Send custom SMS to target audience
+  app.post("/api/admin/sms/send", async (req, res) => {
+    try {
+      const { adminId, targetAudience, message } = req.body;
+
+      if (!adminId || !targetAudience || !message) {
+        return res.status(400).json({ error: "Tous les champs sont requis" });
+      }
+
+      // Verify admin role
+      const admin = await storage.getUser(adminId);
+      if (!admin || admin.role !== "admin") {
+        return res.status(403).json({ error: "Accès refusé - Admin requis" });
+      }
+
+      if (message.length > 160) {
+        return res.status(400).json({ error: "Le message ne peut pas dépasser 160 caractères" });
+      }
+
+      // Get target users based on audience
+      const allUsers = await storage.getAllUsers();
+      let targetUsers: typeof allUsers = [];
+
+      if (targetAudience === "transporters") {
+        targetUsers = allUsers.filter(
+          user => user.role === "transporter" && user.status === "validated" && user.accountStatus === "active"
+        );
+      } else if (targetAudience === "clients") {
+        targetUsers = allUsers.filter(
+          user => user.role === "client" && user.accountStatus === "active"
+        );
+      } else if (targetAudience === "both") {
+        targetUsers = allUsers.filter(
+          user => (
+            (user.role === "client" && user.accountStatus === "active") ||
+            (user.role === "transporter" && user.status === "validated" && user.accountStatus === "active")
+          )
+        );
+      }
+
+      if (targetUsers.length === 0) {
+        return res.status(400).json({ error: "Aucun destinataire trouvé" });
+      }
+
+      const phoneNumbers = targetUsers.map(u => u.phoneNumber);
+
+      // Send bulk SMS
+      const result = await sendBulkSMS(phoneNumbers, message);
+
+      // Save to history
+      await storage.createSmsHistory({
+        adminId,
+        targetAudience,
+        message,
+        recipientCount: targetUsers.length
+      });
+
+      res.json({
+        success: true,
+        sent: result.success,
+        failed: result.failed,
+        total: targetUsers.length
+      });
+    } catch (error) {
+      console.error("Erreur envoi SMS personnalisé:", error);
+      res.status(500).json({ error: "Erreur lors de l'envoi des SMS" });
+    }
+  });
+
+  // Get SMS history
+  app.get("/api/admin/sms/history", async (req, res) => {
+    try {
+      const adminId = req.query.adminId as string;
+
+      if (!adminId) {
+        return res.status(401).json({ error: "Non authentifié" });
+      }
+
+      // Verify admin role
+      const admin = await storage.getUser(adminId);
+      if (!admin || admin.role !== "admin") {
+        return res.status(403).json({ error: "Accès refusé - Admin requis" });
+      }
+
+      const history = await storage.getAllSmsHistory();
+      
+      // Populate admin names
+      const historyWithAdmins = await Promise.all(
+        history.map(async (record) => {
+          const admin = await storage.getUser(record.adminId);
+          return {
+            ...record,
+            adminName: admin?.name || "Admin"
+          };
+        })
+      );
+      
+      res.json(historyWithAdmins);
+    } catch (error) {
+      console.error("Erreur récupération historique SMS:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération de l'historique" });
+    }
+  });
+
+  // Delete SMS history entry
+  app.delete("/api/admin/sms/history/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const adminId = req.query.adminId as string;
+
+      if (!adminId) {
+        return res.status(401).json({ error: "Non authentifié" });
+      }
+
+      // Verify admin role
+      const admin = await storage.getUser(adminId);
+      if (!admin || admin.role !== "admin") {
+        return res.status(403).json({ error: "Accès refusé - Admin requis" });
+      }
+
+      await storage.deleteSmsHistory(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Erreur suppression historique SMS:", error);
+      res.status(500).json({ error: "Erreur lors de la suppression" });
     }
   });
 

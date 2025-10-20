@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/dialog";
 import { VoiceRecorder } from "@/components/chat/voice-recorder";
 import { VoiceMessagePlayer } from "@/components/chat/voice-message-player";
+import AdminCommunications from "@/pages/admin-communications";
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
@@ -665,7 +666,7 @@ export default function AdminDashboard() {
             {/* Barre de navigation secondaire - Gestion */}
             <div className="bg-muted/30 p-2 rounded-lg">
               <p className="text-xs text-muted-foreground mb-2 px-2 font-medium">Gestion & Configuration</p>
-              <TabsList className="flex lg:grid w-full lg:grid-cols-7 overflow-x-auto text-xs sm:text-sm">
+              <TabsList className="flex lg:grid w-full lg:grid-cols-8 overflow-x-auto text-xs sm:text-sm">
                 <TabsTrigger value="drivers" data-testid="tab-drivers" className="flex-shrink-0">Transporteurs</TabsTrigger>
                 <TabsTrigger value="clients" data-testid="tab-clients" className="flex-shrink-0">Clients</TabsTrigger>
                 <TabsTrigger value="reports" data-testid="tab-reports" className="flex-shrink-0">
@@ -676,6 +677,10 @@ export default function AdminDashboard() {
                       {allReports.filter((r: any) => r.status === "pending").length}
                     </Badge>
                   )}
+                </TabsTrigger>
+                <TabsTrigger value="communications" data-testid="tab-communications" className="flex-shrink-0">
+                  <Send className="w-4 h-4 mr-1" />
+                  Communications
                 </TabsTrigger>
                 <TabsTrigger value="facturation" data-testid="tab-facturation" className="flex-shrink-0">Facturation</TabsTrigger>
                 <TabsTrigger value="cities" data-testid="tab-cities" className="flex-shrink-0">Villes</TabsTrigger>
@@ -1859,6 +1864,10 @@ export default function AdminDashboard() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="communications" className="mt-6">
+            <AdminCommunications />
           </TabsContent>
 
           <TabsContent value="stats" className="mt-6">
