@@ -35,7 +35,7 @@ export default function AdminCommunications() {
   const [viewRecord, setViewRecord] = useState<SmsHistoryRecord | null>(null);
 
   // Get current user from localStorage
-  const userStr = localStorage.getItem("user");
+  const userStr = localStorage.getItem("camionback_user");
   const currentUser = userStr ? JSON.parse(userStr) : null;
 
   // Fetch SMS history

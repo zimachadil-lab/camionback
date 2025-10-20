@@ -35,6 +35,7 @@ The backend is built with Express.js and TypeScript, offering RESTful JSON APIs.
 - **RIB (Bank Account) Management System:** Transporters manage their RIB details; admins can view and edit them.
 - **Informational Pages System:** Role-specific "How It Works" pages for clients and transporters.
 - **WhatsApp Contact Integration:** Direct WhatsApp support link for all users.
+- **Admin SMS Communications System:** Bulk SMS messaging system for admins to communicate with users via Infobip, featuring three main components: (1) Quick notify for validated transporters with predefined message, (2) Custom SMS sending with audience targeting (transporters/clients/both) and 160-character limit, (3) Full SMS history tracking with admin attribution, recipient count, and deletion capability.
 - **UI Enhancements:** Responsive admin navigation, clear messaging buttons, role-based header navigation.
 
 ### System Design Choices
