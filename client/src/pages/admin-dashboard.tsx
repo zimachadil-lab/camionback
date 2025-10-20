@@ -68,6 +68,8 @@ export default function AdminDashboard() {
   const [editOfferAmount, setEditOfferAmount] = useState("");
   const [editOfferDate, setEditOfferDate] = useState("");
   const [editOfferLoadType, setEditOfferLoadType] = useState("");
+  const [enlargedTruckPhoto, setEnlargedTruckPhoto] = useState<string>("");
+  const [showTruckPhotoDialog, setShowTruckPhotoDialog] = useState(false);
   const { toast} = useToast();
 
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
@@ -1212,7 +1214,11 @@ export default function AdminDashboard() {
                               <img 
                                 src={driver.truckPhotos[0]} 
                                 alt="Camion" 
-                                className="w-16 h-16 object-cover rounded"
+                                className="w-16 h-16 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
+                                onClick={() => {
+                                  setEnlargedTruckPhoto(driver.truckPhotos[0]);
+                                  setShowTruckPhotoDialog(true);
+                                }}
                                 data-testid={`img-truck-${driver.id}`}
                               />
                             ) : (
@@ -3455,6 +3461,26 @@ export default function AdminDashboard() {
             >
               Enregistrer
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Truck Photo Enlargement Dialog */}
+      <Dialog open={showTruckPhotoDialog} onOpenChange={setShowTruckPhotoDialog}>
+        <DialogContent className="max-w-4xl" data-testid="dialog-enlarged-truck-photo">
+          <DialogHeader>
+            <DialogTitle>Photo du camion</DialogTitle>
+            <DialogDescription>
+              Vérification visuelle de la photo du véhicule
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center justify-center p-4">
+            <img 
+              src={enlargedTruckPhoto} 
+              alt="Camion agrandi" 
+              className="max-w-full max-h-[600px] object-contain rounded-lg"
+              data-testid="img-enlarged-truck"
+            />
           </div>
         </DialogContent>
       </Dialog>
