@@ -451,6 +451,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update transporter profile (with truck photo)
+  app.patch("/api/users/:id/profile", upload.single("truckPhoto"), async (req, res) => {
+    try {
+      const { phoneNumber, name } = req.body;
+      const truckPhoto = req.file;
+
+      if (!phoneNumber || !name) {
+        return res.status(400).json({ error: "Nom et téléphone requis" });
+      }
+
+      // Validate phone number format
+      const phoneRegex = /^\+212[5-7]\d{8}$/;
+      if (!phoneRegex.test(phoneNumber)) {
+        return res.status(400).json({ error: "Format de numéro invalide" });
+      }
+
+      const updateData: any = {
+        phoneNumber,
+        name,
+      };
+
+      // If truck photo is provided, convert to base64 and update
+      if (truckPhoto) {
+        const truckPhotoBase64 = `data:${truckPhoto.mimetype};base64,${truckPhoto.buffer.toString('base64')}`;
+        updateData.truckPhotos = [truckPhotoBase64];
+      }
+
+      const user = await storage.updateUser(req.params.id, updateData);
+      
+      if (!user) {
+        return res.status(404).json({ error: "Utilisateur non trouvé" });
+      }
+
+      res.json(user);
+    } catch (error) {
+      console.error("Update profile error:", error);
+      res.status(500).json({ error: "Échec de la mise à jour du profil" });
+    }
+  });
+
+  // Update user PIN
+  app.patch("/api/users/:id/pin", async (req, res) => {
+    try {
+      const { pin } = req.body;
+
+      if (!pin || pin.length !== 6 || !/^\d{6}$/.test(pin)) {
+        return res.status(400).json({ error: "Le PIN doit contenir exactement 6 chiffres" });
+      }
+
+      // Hash the new PIN
+      const hashedPin = await bcrypt.hash(pin, 10);
+
+      const user = await storage.updateUser(req.params.id, {
+        passwordHash: hashedPin,
+      });
+
+      if (!user) {
+        return res.status(404).json({ error: "Utilisateur non trouvé" });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Update PIN error:", error);
+      res.status(500).json({ error: "Échec de la mise à jour du PIN" });
+    }
+  });
+
   // Transport request routes
   app.post("/api/requests", async (req, res) => {
     try {

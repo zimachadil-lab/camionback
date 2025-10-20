@@ -13,6 +13,7 @@ import ClientDashboard from "@/pages/client-dashboard";
 import TransporterDashboard from "@/pages/transporter-dashboard";
 import TransporterPayments from "@/pages/transporter-payments";
 import TransporterRatings from "@/pages/transporter-ratings";
+import TransporterProfile from "@/pages/transporter-profile";
 import MyRib from "@/pages/my-rib";
 import HowItWorksClient from "@/pages/how-it-works-client";
 import HowItWorksTransporter from "@/pages/how-it-works-transporter";
@@ -32,6 +33,7 @@ function Router() {
       <Route path="/messages" component={MessagesPage} />
       <Route path="/transporter/payments" component={TransporterPayments} />
       <Route path="/transporter/ratings" component={TransporterRatings} />
+      <Route path="/transporter/profile" component={TransporterProfile} />
       <Route path="/transporter/rib" component={MyRib} />
       <Route path="/how-it-works-client" component={HowItWorksClient} />
       <Route path="/how-it-works-transporter" component={HowItWorksTransporter} />

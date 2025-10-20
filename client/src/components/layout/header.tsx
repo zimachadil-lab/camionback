@@ -41,6 +41,7 @@ export function Header({ user, onNewRequest, onAnnounceReturn, onLogout }: Heade
     } else if (user.role === "transporter") {
       return [
         { label: "Tableau de bord", icon: Package, href: "/" },
+        { label: "Mon Profil", icon: User, href: "/transporter/profile" },
         { label: "Paiements reçus", icon: Receipt, href: "/transporter/payments" },
         { label: "Mes avis clients", icon: Star, href: "/transporter/ratings" },
         { label: "Mon RIB", icon: CreditCard, href: "/transporter/rib" },
