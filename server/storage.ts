@@ -33,6 +33,7 @@ export interface IStorage {
   getClientStatistics(): Promise<any[]>;
   blockUser(userId: string): Promise<User | undefined>;
   unblockUser(userId: string): Promise<User | undefined>;
+  deleteUser(userId: string): Promise<void>;
   
   // OTP operations
   createOtp(otp: InsertOtpCode): Promise<OtpCode>;
@@ -274,6 +275,81 @@ export class MemStorage implements IStorage {
     const user = this.users.get(userId);
     if (!user) return undefined;
     return this.updateUser(userId, { accountStatus: "active" });
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    const user = this.users.get(userId);
+    if (!user) return;
+
+    // Delete all related data
+    // Ratings
+    for (const [id, rating] of this.ratings.entries()) {
+      if (rating.clientId === userId || rating.transporterId === userId) {
+        this.ratings.delete(id);
+      }
+    }
+
+    // Contracts
+    for (const [id, contract] of this.contracts.entries()) {
+      if (contract.clientId === userId || contract.transporterId === userId) {
+        this.contracts.delete(id);
+      }
+    }
+
+    // Reports
+    for (const [id, report] of this.reports.entries()) {
+      if (report.reporterId === userId || report.reportedUserId === userId) {
+        this.reports.delete(id);
+      }
+    }
+
+    // Empty returns
+    for (const [id, emptyReturn] of this.emptyReturns.entries()) {
+      if (emptyReturn.transporterId === userId) {
+        this.emptyReturns.delete(id);
+      }
+    }
+
+    // Chat messages
+    for (const [id, message] of this.chatMessages.entries()) {
+      if (message.senderId === userId || message.receiverId === userId) {
+        this.chatMessages.delete(id);
+      }
+    }
+
+    // Notifications
+    for (const [id, notification] of this.notifications.entries()) {
+      if (notification.userId === userId) {
+        this.notifications.delete(id);
+      }
+    }
+
+    // SMS history
+    for (const [id, sms] of this.smsHistory.entries()) {
+      if (sms.adminId === userId) {
+        this.smsHistory.delete(id);
+      }
+    }
+
+    // Offers
+    for (const [id, offer] of this.offers.entries()) {
+      if (offer.transporterId === userId) {
+        this.offers.delete(id);
+      }
+    }
+
+    // Transport requests
+    for (const [id, request] of this.transportRequests.entries()) {
+      if (request.clientId === userId) {
+        this.transportRequests.delete(id);
+      }
+    }
+
+    // OTP codes
+    this.otpCodes.delete(user.phoneNumber);
+
+    // Finally delete user
+    this.users.delete(userId);
   }
 
   async createOtp(insertOtp: InsertOtpCode): Promise<OtpCode> {
@@ -1096,6 +1172,66 @@ export class DbStorage implements IStorage {
 
   async unblockUser(userId: string): Promise<User | undefined> {
     return this.updateUser(userId, { accountStatus: "active" });
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    // Delete in correct order to respect foreign key constraints
+    
+    // 1. Delete ratings where user is client or transporter
+    await db.delete(ratings).where(
+      or(
+        eq(ratings.clientId, userId),
+        eq(ratings.transporterId, userId)
+      )
+    );
+    
+    // 2. Delete contracts where user is client or transporter
+    await db.delete(contracts).where(
+      or(
+        eq(contracts.clientId, userId),
+        eq(contracts.transporterId, userId)
+      )
+    );
+    
+    // 3. Delete reports where user is reporter or reported
+    await db.delete(reports).where(
+      or(
+        eq(reports.reporterId, userId),
+        eq(reports.reportedUserId, userId)
+      )
+    );
+    
+    // 4. Delete empty returns
+    await db.delete(emptyReturns).where(eq(emptyReturns.transporterId, userId));
+    
+    // 5. Delete chat messages where user is sender or receiver
+    await db.delete(chatMessages).where(
+      or(
+        eq(chatMessages.senderId, userId),
+        eq(chatMessages.receiverId, userId)
+      )
+    );
+    
+    // 6. Delete notifications
+    await db.delete(notifications).where(eq(notifications.userId, userId));
+    
+    // 7. Delete SMS history (if user is admin)
+    await db.delete(smsHistory).where(eq(smsHistory.adminId, userId));
+    
+    // 8. Delete offers
+    await db.delete(offers).where(eq(offers.transporterId, userId));
+    
+    // 9. Delete transport requests
+    await db.delete(transportRequests).where(eq(transportRequests.clientId, userId));
+    
+    // 10. Delete OTP codes
+    const user = await this.getUser(userId);
+    if (user) {
+      await db.delete(otpCodes).where(eq(otpCodes.phoneNumber, user.phoneNumber));
+    }
+    
+    // 11. Finally, delete the user
+    await db.delete(users).where(eq(users.id, userId));
   }
 
   // OTP operations
