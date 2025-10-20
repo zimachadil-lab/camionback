@@ -17,6 +17,7 @@ import {
   insertCitySchema
 } from "@shared/schema";
 import { sendFirstOfferSMS, sendOfferAcceptedSMS } from "./sms";
+import { emailService } from "./email-service";
 
 const upload = multer({ 
   storage: multer.memoryStorage(),
@@ -327,6 +328,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Send email notification to admin about new report
+      try {
+        const request = await storage.getTransportRequest(report.requestId);
+        const reporter = await storage.getUser(report.reporterId);
+        const reported = await storage.getUser(report.reportedUserId);
+        
+        if (request && reporter && reported) {
+          await emailService.sendNewReportEmail(report, request, reporter, reported);
+        }
+      } catch (emailError) {
+        console.error("Failed to send report email:", emailError);
+        // Continue - don't block the report creation
+      }
+
       res.json(report);
     } catch (error) {
       console.error("Create report error:", error);
@@ -430,7 +445,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const requestData = insertTransportRequestSchema.parse(req.body);
       const request = await storage.createTransportRequest(requestData);
       
-      // TODO: Send WhatsApp notifications to transporters in production
+      // Send email notification to admin
+      try {
+        const client = await storage.getUser(request.clientId);
+        if (client) {
+          await emailService.sendNewRequestEmail(request, client);
+        }
+      } catch (emailError) {
+        console.error("Failed to send request email:", emailError);
+        // Continue - don't block the request creation
+      }
+      
       console.log("New request created:", request.referenceId);
       
       res.json(request);
@@ -1228,6 +1253,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           relatedId: offer.id
         });
 
+        // Send email notification to admin
+        try {
+          const client = await storage.getUser(request.clientId);
+          if (client && transporter) {
+            await emailService.sendNewOfferEmail(offer, request, transporter, client);
+          }
+        } catch (emailError) {
+          console.error("Failed to send offer email:", emailError);
+          // Continue - don't block the offer creation
+        }
+
         // Send SMS to client if this is the first offer
         const allOffers = await storage.getOffersByRequest(offer.requestId);
         if (allOffers.length === 1 && !request.smsSent) {
@@ -1345,6 +1381,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           referenceId: request.referenceId,
           amount: offer.amount,
         });
+      }
+
+      // Send email notification to admin about order validation
+      try {
+        if (request && transporter && client) {
+          await emailService.sendOrderValidatedEmail(request, offer, client, transporter);
+        }
+      } catch (emailError) {
+        console.error("Failed to send order validated email:", emailError);
+        // Continue - don't block the acceptance
       }
 
       // Send SMS to transporter about offer acceptance
