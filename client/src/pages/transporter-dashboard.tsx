@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, Image as ImageIcon, Clock, Calendar, Flag, Edit } from "lucide-react";
+import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, Image as ImageIcon, Clock, Calendar, Flag, Edit, TruckIcon } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { RequestCard } from "@/components/transporter/request-card";
 import { OfferForm } from "@/components/transporter/offer-form";
@@ -57,6 +57,7 @@ export default function TransporterDashboard() {
   const [reportRequestId, setReportRequestId] = useState<string>("");
   const [editOfferDialogOpen, setEditOfferDialogOpen] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState<any>(null);
+  const [notValidatedDialogOpen, setNotValidatedDialogOpen] = useState(false);
 
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
 
@@ -101,6 +102,17 @@ export default function TransporterDashboard() {
     localStorage.removeItem("camionback_user");
     // Force page reload to clear all state
     window.location.href = "/";
+  };
+
+  const handleAnnounceReturn = () => {
+    // Check if transporter is validated
+    if (user.status === "validated") {
+      // Allow access to announce return form
+      setAnnounceReturnOpen(true);
+    } else {
+      // Show blocking dialog for non-validated transporters
+      setNotValidatedDialogOpen(true);
+    }
   };
 
   const { data: requests = [], isLoading: requestsLoading } = useQuery({
@@ -395,7 +407,7 @@ export default function TransporterDashboard() {
     <div className="min-h-screen bg-background">
       <Header
         user={user}
-        onAnnounceReturn={() => setAnnounceReturnOpen(true)}
+        onAnnounceReturn={handleAnnounceReturn}
         onLogout={handleLogout}
       />
       
@@ -1115,6 +1127,39 @@ export default function TransporterDashboard() {
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Account Not Validated Dialog */}
+      <Dialog open={notValidatedDialogOpen} onOpenChange={setNotValidatedDialogOpen}>
+        <DialogContent className="max-w-[90vw] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <Flag className="h-5 w-5 text-amber-600" />
+              Compte non validé
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <p className="text-muted-foreground leading-relaxed">
+              Votre compte CamionBack n'est pas encore validé par notre équipe.
+            </p>
+            <p className="text-muted-foreground leading-relaxed">
+              Vous pourrez annoncer vos retours et bénéficier de toutes les fonctionnalités dès que votre compte sera activé.
+            </p>
+            <p className="text-muted-foreground leading-relaxed flex items-center gap-2">
+              <TruckIcon className="h-4 w-4 text-[#00d4b2]" />
+              Merci pour votre patience.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={() => setNotValidatedDialogOpen(false)}
+              className="w-full"
+              data-testid="button-close-not-validated"
+            >
+              Fermer
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
