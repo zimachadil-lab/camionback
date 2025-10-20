@@ -1320,12 +1320,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/offers/:id", async (req, res) => {
     try {
-      const offer = await storage.updateOffer(req.params.id, req.body);
+      console.log(`[PATCH /api/offers/${req.params.id}] Request body:`, JSON.stringify(req.body, null, 2));
+      
+      // Convert amount to string if it's a number (for decimal type)
+      const updates: any = { ...req.body };
+      if (typeof updates.amount === "number") {
+        updates.amount = updates.amount.toString();
+      }
+      
+      // Convert pickupDate to Date if it's a string
+      if (typeof updates.pickupDate === "string" && updates.pickupDate) {
+        updates.pickupDate = new Date(updates.pickupDate);
+      }
+      
+      const offer = await storage.updateOffer(req.params.id, updates);
       if (!offer) {
+        console.log(`[PATCH /api/offers/${req.params.id}] Offer not found`);
         return res.status(404).json({ error: "Offer not found" });
       }
+      console.log(`[PATCH /api/offers/${req.params.id}] Success:`, JSON.stringify(offer, null, 2));
       res.json(offer);
     } catch (error) {
+      console.error(`[PATCH /api/offers/${req.params.id}] Error:`, error);
       res.status(500).json({ error: "Failed to update offer" });
     }
   });

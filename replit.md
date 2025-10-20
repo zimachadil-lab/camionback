@@ -43,6 +43,8 @@ Real-time chat is implemented via WebSockets for direct client-transporter commu
 
 **SMS Notification System:** Critical SMS alerts are sent via Twilio for the first offer received by a client and offer acceptance confirmation to a transporter.
 
+**Automated Email Notification System:** Comprehensive email notifications using Nodemailer with professional HTML templates for critical platform events. Email service (`server/email-service.ts`) sends automated notifications to camionback@gmail.com from noreply@camionback.com for: (1) New transport requests - includes client details, route, cargo info, and photos; (2) New offers - includes transporter details, offer amount, pickup date, and load type; (3) Order validation - sent when client accepts an offer, includes contract details and both parties' information; (4) New reports/disputes - includes reporter details, reported user, problem description, and order reference. Email sending is asynchronous and non-blocking - errors are logged but don't affect main operations. Requires SMTP environment variables: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS. If not configured, emails fail silently while system continues normally.
+
 **File Upload:** Client request photos use Base64 encoding. Transporter truck photos use Multer middleware.
 
 **Photo Gallery System:** Transport request photos are displayed in a fullscreen modal with carousel navigation (Embla Carousel). The gallery dialog shows "Photos du chargement – Commande [REF]" as title and allows navigation between multiple photos with previous/next controls.
