@@ -457,19 +457,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { phoneNumber, name } = req.body;
       const truckPhoto = req.file;
 
+      // Validate required fields
       if (!phoneNumber || !name) {
         return res.status(400).json({ error: "Nom et téléphone requis" });
       }
 
-      // Validate phone number format
+      // Validate phone number format (Moroccan)
       const phoneRegex = /^\+212[5-7]\d{8}$/;
       if (!phoneRegex.test(phoneNumber)) {
         return res.status(400).json({ error: "Format de numéro invalide" });
       }
 
+      // Validate truck photo MIME type if provided
+      if (truckPhoto) {
+        const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        if (!allowedMimeTypes.includes(truckPhoto.mimetype)) {
+          return res.status(400).json({ 
+            error: "Format de photo invalide. Formats acceptés: JPG, PNG, WEBP" 
+          });
+        }
+
+        // Validate file size (5MB limit)
+        if (truckPhoto.size > 5 * 1024 * 1024) {
+          return res.status(400).json({ 
+            error: "Photo trop volumineuse. Maximum 5 MB" 
+          });
+        }
+      }
+
       const updateData: any = {
-        phoneNumber,
-        name,
+        phoneNumber: phoneNumber.trim(),
+        name: name.trim(),
       };
 
       // If truck photo is provided, convert to base64 and update

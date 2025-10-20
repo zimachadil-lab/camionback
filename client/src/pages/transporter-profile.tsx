@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/layout/header";
@@ -28,7 +28,7 @@ type UserProfile = {
 };
 
 export default function TransporterProfile() {
-  const [location, navigate] = useLocation();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [showPinDialog, setShowPinDialog] = useState(false);
@@ -52,12 +52,12 @@ export default function TransporterProfile() {
   });
 
   // Initialize form when profile loads
-  useState(() => {
+  useEffect(() => {
     if (profile) {
       setPhoneNumber(profile.phoneNumber);
       setName(profile.name);
     }
-  });
+  }, [profile]);
 
   // Update profile mutation
   const updateProfileMutation = useMutation({
@@ -119,7 +119,7 @@ export default function TransporterProfile() {
 
   const handleLogout = () => {
     localStorage.removeItem("camionback_user");
-    navigate("/");
+    setLocation("/");
   };
 
   const handleTruckPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
