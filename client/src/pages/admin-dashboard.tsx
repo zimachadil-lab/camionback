@@ -584,6 +584,30 @@ export default function AdminDashboard() {
     },
   });
 
+  // Delete user mutation (for permanent account deletion)
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      return await apiRequest("DELETE", `/api/admin/users/${userId}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Compte supprimé",
+        description: "✅ Compte supprimé avec succès. L'utilisateur peut désormais se réinscrire librement.",
+      });
+      // Invalidate all user-related queries
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pending-drivers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/client-statistics"] });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de supprimer le compte",
+      });
+    },
+  });
+
   // Format trend text
   const formatTrend = (trend: number) => {
     if (trend === 0) return "Aucun changement";
@@ -1367,6 +1391,19 @@ export default function AdminDashboard() {
                               >
                                 <XCircle className="w-4 h-4 mr-1" />
                                 Refuser
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => {
+                                  if (confirm(`⚠️ Êtes-vous sûr de vouloir supprimer définitivement ce compte transporteur ?\n\nCette action supprimera aussi son mot de passe et toutes ses données associées (offres, messages, etc.).`)) {
+                                    deleteUserMutation.mutate(driver.id);
+                                  }
+                                }}
+                                data-testid={`button-delete-user-${driver.id}`}
+                              >
+                                <Trash2 className="w-4 h-4" />
                               </Button>
                             </div>
                           </TableCell>
