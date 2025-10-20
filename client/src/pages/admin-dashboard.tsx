@@ -1839,25 +1839,40 @@ export default function AdminDashboard() {
                                   </Badge>
                                 </TableCell>
                                 <TableCell>
-                                  {client.accountStatus === "active" ? (
+                                  <div className="flex gap-2">
+                                    {client.accountStatus === "active" ? (
+                                      <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        onClick={() => handleBlockUser(client.id, "client")}
+                                        data-testid={`button-block-client-${client.id}`}
+                                      >
+                                        🔒 Bloquer
+                                      </Button>
+                                    ) : (
+                                      <Button
+                                        size="sm"
+                                        variant="default"
+                                        onClick={() => handleUnblockUser(client.id, "client")}
+                                        data-testid={`button-unblock-client-${client.id}`}
+                                      >
+                                        🔓 Débloquer
+                                      </Button>
+                                    )}
                                     <Button
                                       size="sm"
-                                      variant="destructive"
-                                      onClick={() => handleBlockUser(client.id, "client")}
-                                      data-testid={`button-block-client-${client.id}`}
+                                      variant="outline"
+                                      className="text-destructive hover:text-destructive"
+                                      onClick={() => {
+                                        if (confirm(`⚠️ Êtes-vous sûr de vouloir supprimer définitivement ce compte client ?\n\nCette action supprimera aussi son mot de passe et toutes ses données associées (demandes, messages, etc.).`)) {
+                                          deleteUserMutation.mutate(client.id);
+                                        }
+                                      }}
+                                      data-testid={`button-delete-user-${client.id}`}
                                     >
-                                      🔒 Bloquer
+                                      <Trash2 className="w-4 h-4" />
                                     </Button>
-                                  ) : (
-                                    <Button
-                                      size="sm"
-                                      variant="default"
-                                      onClick={() => handleUnblockUser(client.id, "client")}
-                                      data-testid={`button-unblock-client-${client.id}`}
-                                    >
-                                      🔓 Débloquer
-                                    </Button>
-                                  )}
+                                  </div>
                                 </TableCell>
                               </TableRow>
                             ))}
