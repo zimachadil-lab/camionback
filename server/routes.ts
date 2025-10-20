@@ -14,7 +14,8 @@ import {
   insertNotificationSchema,
   insertEmptyReturnSchema,
   insertReportSchema,
-  insertCitySchema
+  insertCitySchema,
+  type Offer
 } from "@shared/schema";
 import { sendFirstOfferSMS, sendOfferAcceptedSMS } from "./sms";
 import { emailService } from "./email-service";
@@ -1379,6 +1380,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         acceptedOfferId: req.params.id,
       });
 
+      // Clean up: Delete all other offers for this request (auto-cleanup)
+      const allOffersForRequest = await storage.getOffersByRequest(offer.requestId);
+      for (const otherOffer of allOffersForRequest) {
+        if (otherOffer.id !== req.params.id) {
+          await storage.deleteOffer(otherOffer.id);
+        }
+      }
+
       // Create notification for transporter
       await storage.createNotification({
         userId: offer.transporterId,
@@ -1457,6 +1466,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to decline offer" });
+    }
+  });
+
+  // Admin offer management routes
+  app.delete("/api/admin/offers/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const offer = await storage.getOffer(id);
+      
+      if (!offer) {
+        return res.status(404).json({ error: "Offre non trouvée" });
+      }
+      
+      // Delete related contracts first (foreign key constraint)
+      const contract = await storage.getContractByOfferId(id);
+      if (contract) {
+        await storage.deleteContract(contract.id);
+      }
+      
+      // Delete the offer
+      await storage.deleteOffer(id);
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete offer error:", error);
+      res.status(500).json({ error: "Échec de suppression de l'offre" });
+    }
+  });
+
+  app.patch("/api/admin/offers/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { amount, pickupDate, loadType } = req.body;
+      
+      const offer = await storage.getOffer(id);
+      if (!offer) {
+        return res.status(404).json({ error: "Offre non trouvée" });
+      }
+      
+      // Prepare updates
+      const updates: Partial<Offer> = {};
+      
+      if (amount !== undefined) {
+        updates.amount = typeof amount === "number" ? amount.toString() : amount;
+      }
+      
+      if (pickupDate !== undefined) {
+        updates.pickupDate = typeof pickupDate === "string" ? new Date(pickupDate) : pickupDate;
+      }
+      
+      if (loadType !== undefined) {
+        updates.loadType = loadType;
+      }
+      
+      // Update the offer
+      const updatedOffer = await storage.updateOffer(id, updates);
+      
+      res.json(updatedOffer);
+    } catch (error) {
+      console.error("Update offer error:", error);
+      res.status(500).json({ error: "Échec de modification de l'offre" });
     }
   });
 

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCircle, UserCheck, CreditCard, Phone, Eye, EyeOff, TruckIcon, MapPin, Calendar, FileText, MessageSquare, Trash2, Send, Flag } from "lucide-react";
+import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCircle, UserCheck, CreditCard, Phone, Eye, EyeOff, TruckIcon, MapPin, Calendar, FileText, MessageSquare, Trash2, Send, Flag, Pencil } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -62,6 +62,11 @@ export default function AdminDashboard() {
   const [newCityName, setNewCityName] = useState("");
   const [editingCity, setEditingCity] = useState<any>(null);
   const [selectedRibTransporter, setSelectedRibTransporter] = useState<any>(null);
+  const [deleteOfferId, setDeleteOfferId] = useState<string | null>(null);
+  const [editingOffer, setEditingOffer] = useState<any>(null);
+  const [editOfferAmount, setEditOfferAmount] = useState("");
+  const [editOfferDate, setEditOfferDate] = useState("");
+  const [editOfferLoadType, setEditOfferLoadType] = useState("");
   const { toast} = useToast();
 
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
@@ -490,6 +495,53 @@ export default function AdminDashboard() {
     },
   });
 
+  // Delete offer mutation
+  const deleteOfferMutation = useMutation({
+    mutationFn: async (offerId: string) => {
+      return await apiRequest("DELETE", `/api/admin/offers/${offerId}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Offre supprimée",
+        description: "L'offre a été supprimée avec succès",
+      });
+      setDeleteOfferId(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/offers"] });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de supprimer l'offre",
+      });
+    },
+  });
+
+  // Edit offer mutation
+  const editOfferMutation = useMutation({
+    mutationFn: async ({ offerId, updates }: { offerId: string; updates: any }) => {
+      return await apiRequest("PATCH", `/api/admin/offers/${offerId}`, updates);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Offre modifiée",
+        description: "L'offre a été modifiée avec succès",
+      });
+      setEditingOffer(null);
+      setEditOfferAmount("");
+      setEditOfferDate("");
+      setEditOfferLoadType("");
+      queryClient.invalidateQueries({ queryKey: ["/api/offers"] });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de modifier l'offre",
+      });
+    },
+  });
+
   // Format trend text
   const formatTrend = (trend: number) => {
     if (trend === 0) return "Aucun changement";
@@ -849,16 +901,43 @@ export default function AdminDashboard() {
                                 {getStatusBadge(offer.status)}
                               </TableCell>
                               <TableCell className="text-right">
-                                {offer.status === "pending" && (
+                                <div className="flex items-center justify-end gap-2">
+                                  {offer.status === "pending" && (
+                                    <>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => {
+                                          setEditingOffer(offer);
+                                          setEditOfferAmount(offer.amount);
+                                          setEditOfferDate(offer.pickupDate ? new Date(offer.pickupDate).toISOString().split('T')[0] : "");
+                                          setEditOfferLoadType(offer.loadType || "");
+                                        }}
+                                        data-testid={`button-edit-offer-${offer.id}`}
+                                        title="Modifier l'offre"
+                                      >
+                                        <Pencil className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        className="bg-[#00cc88] hover:bg-[#00b377]"
+                                        onClick={() => handleAcceptOfferAsAdmin(offer.id, request?.id)}
+                                        data-testid={`button-accept-offer-${offer.id}`}
+                                      >
+                                        Accepter
+                                      </Button>
+                                    </>
+                                  )}
                                   <Button
                                     size="sm"
-                                    className="bg-[#00cc88] hover:bg-[#00b377]"
-                                    onClick={() => handleAcceptOfferAsAdmin(offer.id, request?.id)}
-                                    data-testid={`button-accept-offer-${offer.id}`}
+                                    variant="ghost"
+                                    onClick={() => setDeleteOfferId(offer.id)}
+                                    data-testid={`button-delete-offer-${offer.id}`}
+                                    title="Supprimer l'offre"
                                   >
-                                    Accepter l'offre
+                                    <Trash2 className="h-4 w-4 text-destructive" />
                                   </Button>
-                                )}
+                                </div>
                               </TableCell>
                             </TableRow>
                           );
@@ -3266,6 +3345,110 @@ export default function AdminDashboard() {
           transporterName={selectedRibTransporter.name}
         />
       )}
+
+      {/* Delete Offer Confirmation Dialog */}
+      <AlertDialog open={!!deleteOfferId} onOpenChange={(open) => !open && setDeleteOfferId(null)}>
+        <AlertDialogContent data-testid="dialog-delete-offer">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cette offre ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Voulez-vous vraiment supprimer cette offre ? Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete-offer">Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteOfferId && deleteOfferMutation.mutate(deleteOfferId)}
+              className="bg-destructive hover:bg-destructive/90"
+              data-testid="button-confirm-delete-offer"
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Edit Offer Dialog */}
+      <Dialog open={!!editingOffer} onOpenChange={(open) => !open && setEditingOffer(null)}>
+        <DialogContent data-testid="dialog-edit-offer">
+          <DialogHeader>
+            <DialogTitle>Modifier l'offre</DialogTitle>
+            <DialogDescription>
+              Modifiez le prix, la date ou le type de chargement de l'offre.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="edit-amount" className="text-sm font-medium">
+                Prix proposé (MAD)
+              </label>
+              <Input
+                id="edit-amount"
+                type="number"
+                value={editOfferAmount}
+                onChange={(e) => setEditOfferAmount(e.target.value)}
+                placeholder="Montant"
+                data-testid="input-edit-offer-amount"
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="edit-date" className="text-sm font-medium">
+                Date de prise en charge
+              </label>
+              <Input
+                id="edit-date"
+                type="date"
+                value={editOfferDate}
+                onChange={(e) => setEditOfferDate(e.target.value)}
+                data-testid="input-edit-offer-date"
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="edit-load-type" className="text-sm font-medium">
+                Type de chargement
+              </label>
+              <Select
+                value={editOfferLoadType}
+                onValueChange={setEditOfferLoadType}
+              >
+                <SelectTrigger data-testid="select-edit-offer-load-type">
+                  <SelectValue placeholder="Sélectionner le type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="return">Retour</SelectItem>
+                  <SelectItem value="shared">Groupage / Partagé</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setEditingOffer(null)}
+              data-testid="button-cancel-edit-offer"
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={() => {
+                if (editingOffer) {
+                  editOfferMutation.mutate({
+                    offerId: editingOffer.id,
+                    updates: {
+                      amount: parseFloat(editOfferAmount),
+                      pickupDate: editOfferDate,
+                      loadType: editOfferLoadType,
+                    },
+                  });
+                }
+              }}
+              data-testid="button-confirm-edit-offer"
+            >
+              Enregistrer
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

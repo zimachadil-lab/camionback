@@ -55,6 +55,7 @@ export interface IStorage {
   getOffersByRequest(requestId: string): Promise<Offer[]>;
   getOffersByTransporter(transporterId: string): Promise<Offer[]>;
   updateOffer(id: string, updates: Partial<Offer>): Promise<Offer | undefined>;
+  deleteOffer(id: string): Promise<void>;
   deleteOffersByRequest(requestId: string): Promise<void>;
   
   // Chat operations
@@ -96,6 +97,8 @@ export interface IStorage {
   getContractById(id: string): Promise<Contract | undefined>;
   updateContract(id: string, updates: Partial<Contract>): Promise<Contract | undefined>;
   getContractByRequestId(requestId: string): Promise<Contract | undefined>;
+  getContractByOfferId(offerId: string): Promise<Contract | undefined>;
+  deleteContract(id: string): Promise<void>;
   
   // Report operations
   createReport(report: InsertReport): Promise<Report>;
@@ -506,6 +509,10 @@ export class MemStorage implements IStorage {
     const updated = { ...offer, ...updates };
     this.offers.set(id, updated);
     return updated;
+  }
+
+  async deleteOffer(id: string): Promise<void> {
+    this.offers.delete(id);
   }
 
   async deleteOffersByRequest(requestId: string): Promise<void> {
@@ -936,6 +943,16 @@ export class MemStorage implements IStorage {
     return Array.from(this.contracts.values()).find(
       (contract) => contract.requestId === requestId
     );
+  }
+
+  async getContractByOfferId(offerId: string): Promise<Contract | undefined> {
+    return Array.from(this.contracts.values()).find(
+      (contract) => contract.offerId === offerId
+    );
+  }
+
+  async deleteContract(id: string): Promise<void> {
+    this.contracts.delete(id);
   }
 
   // Report operations
@@ -1392,6 +1409,10 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
+  async deleteOffer(id: string): Promise<void> {
+    await db.delete(offers).where(eq(offers.id, id));
+  }
+
   async deleteOffersByRequest(requestId: string): Promise<void> {
     await db.delete(offers).where(eq(offers.requestId, requestId));
   }
@@ -1746,6 +1767,17 @@ export class DbStorage implements IStorage {
       .where(eq(contracts.requestId, requestId))
       .limit(1);
     return result[0];
+  }
+
+  async getContractByOfferId(offerId: string): Promise<Contract | undefined> {
+    const result = await db.select().from(contracts)
+      .where(eq(contracts.offerId, offerId))
+      .limit(1);
+    return result[0];
+  }
+
+  async deleteContract(id: string): Promise<void> {
+    await db.delete(contracts).where(eq(contracts.id, id));
   }
 
   // Report operations
