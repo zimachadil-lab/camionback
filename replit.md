@@ -37,6 +37,7 @@ The backend is built with Express.js and TypeScript, offering RESTful JSON APIs.
 - **WhatsApp Contact Integration:** Direct WhatsApp support link for all users.
 - **Admin SMS Communications System:** Bulk SMS messaging system for admins to communicate with users via Infobip, featuring three main components: (1) Quick notify for validated transporters with predefined message, (2) Custom SMS sending with audience targeting (transporters/clients/both) and 160-character limit, (3) Full SMS history tracking with admin attribution, recipient count, and deletion capability.
 - **Advanced Admin Request Filtering & Search System:** Comprehensive filtering and search capabilities in the admin Demandes view with: (1) Real-time search across reference ID, client phone number, departure city, and arrival city, (2) Status-based filtering dropdown (all/open/accepted/completed/cancelled), (3) Automatic descending date sorting (most recent first), (4) Date display with time in JJ/MM/AAAA - HH:mm format, (5) Results count and filter reset functionality.
+- **Permanent User Account Deletion System:** Admins can permanently delete user accounts (clients and transporters) with complete cascade deletion of all related data (offers, messages, notifications, ratings, contracts, reports, empty returns, SMS history, credentials). The phone number is freed upon deletion and can be reused for new account registration. Deletion buttons are available in both the "Validation des transporteurs" and "Clients" admin views with native confirmation dialogs.
 - **UI Enhancements:** Responsive admin navigation, clear messaging buttons, role-based header navigation.
 
 ### System Design Choices
@@ -70,3 +71,8 @@ The backend is built with Express.js and TypeScript, offering RESTful JSON APIs.
 - **Zod**: Schema validation.
 - **date-fns**: Date manipulation.
 - **Embla Carousel**: Carousel/slider for photo galleries.
+
+## Known Issues & Future Improvements
+
+### Security
+**CRITICAL - Admin Route Authorization:** All admin routes (including `/api/admin/users/:id`, `/api/admin/pending-drivers`, `/api/admin/validate-driver/:id`, `/api/admin/block-user/:id`, etc.) currently lack authentication and authorization checks. This means any user who knows the API endpoints could potentially access admin functionality. **Future work required:** Implement middleware to authenticate requests and verify admin role before allowing access to admin routes.
