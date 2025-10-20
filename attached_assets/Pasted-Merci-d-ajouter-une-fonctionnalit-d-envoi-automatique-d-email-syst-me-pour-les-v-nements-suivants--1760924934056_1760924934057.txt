@@ -1,0 +1,100 @@
+Merci d’ajouter une fonctionnalité d’envoi automatique d’email système pour les événements suivants sur CamionBack :
+
+📧 Événements qui déclenchent un email :
+
+Nouvelle demande publiée par un client
+
+Nouvelle offre envoyée par un transporteur
+
+Commande validée par un client  et autre pour tout nouveau signalement 
+
+🧩 Configuration d’envoi :
+
+Expéditeur : noreply@camionback.com
+
+Destinataire : camionback@gmail.com (administrateur principal)
+
+Objet de l’email : doit toujours commencer par le numéro de commande, exemple :
+
+[Commande #CB-4587] Nouvelle offre reçue
+ou
+[Commande #CB-3721] Nouvelle demande publiée
+
+🧾 Contenu de l’email (format structuré et lisible) :
+
+Inclure les informations suivantes selon le type d’événement :
+
+🟢 Pour une nouvelle demande :
+
+Numéro de commande
+
+Nom et ID client
+
+Téléphone client
+
+Détails du chargement (ville départ, arrivée, description, date souhaitée, etc.)
+
+Statut actuel : “Demande publiée”
+
+Date et heure de publication
+
+🟠 Pour une offre envoyée :
+
+Numéro de commande concernée
+
+Nom et ID transporteur
+
+Téléphone transporteur
+
+Montant proposé et date d’exécution
+
+Détails du client et de la demande liée
+
+Statut : “Offre envoyée par transporteur”
+
+Date et heure de soumission
+
+🔵 Pour une commande validée :
+
+Numéro de commande
+
+Informations du client et du transporteur
+
+Montant final convenu
+
+Date prévue de livraison
+
+Statut : “Commande validée”
+
+Lien direct vers la commande sur le tableau de bord admin
+
+⚙️ Remarques techniques :
+
+Utiliser un service d’envoi fiable (par ex. Nodemailer avec SMTP, ou une API comme SendGrid / Mailgun).
+
+Les emails doivent être au format HTML lisible et léger, avec un design simple et structuré.
+
+Prévoir une gestion d’erreur en cas d’échec d’envoi, sans bloquer le reste du flux. 🔴 Pour un nouveau litige signalé :
+
+Numéro de commande concernée
+
+Type de signalement (provenance : client ou transporteur)
+
+Motif sélectionné (ex : retard, marchandise abîmée, etc.)
+
+Description ou commentaire libre du signalement
+
+Nom et ID du déclarant
+
+Coordonnées du déclarant (téléphone, email)
+
+Date et heure du signalement
+
+Statut initial : “En attente de traitement”
+
+Objet de l’email :
+
+[Commande #CB-XXXX] Nouveau litige signalé
+
+Destinataire : camionback@gmail.com
+Expéditeur : noreply@camionback.com
