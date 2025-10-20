@@ -132,6 +132,7 @@ export class MemStorage implements IStorage {
   private emptyReturns: Map<string, EmptyReturn>;
   private contracts: Map<string, Contract>;
   private reports: Map<string, Report>;
+  private smsHistory: Map<string, SmsHistory>;
   private adminSettings: AdminSettings;
   private requestCounter: number;
 
@@ -146,6 +147,7 @@ export class MemStorage implements IStorage {
     this.emptyReturns = new Map();
     this.contracts = new Map();
     this.reports = new Map();
+    this.smsHistory = new Map();
     this.requestCounter = 1;
     this.adminSettings = {
       id: randomUUID(),

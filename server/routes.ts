@@ -320,6 +320,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete user account permanently (admin)
+  app.delete("/api/admin/users/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Check if user exists before deletion
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ error: "Utilisateur non trouvé" });
+      }
+
+      // Delete user and all associated data
+      await storage.deleteUser(id);
+
+      res.json({ 
+        success: true, 
+        message: "Compte supprimé avec succès. L'utilisateur peut désormais se réinscrire librement." 
+      });
+    } catch (error) {
+      console.error("Delete user error:", error);
+      res.status(500).json({ error: "Échec de la suppression de l'utilisateur" });
+    }
+  });
+
   // Report/Signalement routes
   app.post("/api/reports", async (req, res) => {
     try {
