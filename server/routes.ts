@@ -328,19 +328,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Send email notification to admin about new report
-      try {
-        const request = await storage.getTransportRequest(report.requestId);
-        const reporter = await storage.getUser(report.reporterId);
-        const reported = await storage.getUser(report.reportedUserId);
-        
+      // Send email notification to admin about new report (non-blocking)
+      Promise.all([
+        storage.getTransportRequest(report.requestId),
+        storage.getUser(report.reporterId),
+        storage.getUser(report.reportedUserId)
+      ]).then(([request, reporter, reported]) => {
         if (request && reporter && reported) {
-          await emailService.sendNewReportEmail(report, request, reporter, reported);
+          emailService.sendNewReportEmail(report, request, reporter, reported).catch(emailError => {
+            console.error("Failed to send report email:", emailError);
+          });
         }
-      } catch (emailError) {
-        console.error("Failed to send report email:", emailError);
-        // Continue - don't block the report creation
-      }
+      }).catch(err => {
+        console.error("Failed to get data for report email:", err);
+      });
 
       res.json(report);
     } catch (error) {
@@ -445,16 +446,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const requestData = insertTransportRequestSchema.parse(req.body);
       const request = await storage.createTransportRequest(requestData);
       
-      // Send email notification to admin
-      try {
-        const client = await storage.getUser(request.clientId);
+      // Send email notification to admin (non-blocking)
+      storage.getUser(request.clientId).then(client => {
         if (client) {
-          await emailService.sendNewRequestEmail(request, client);
+          emailService.sendNewRequestEmail(request, client).catch(emailError => {
+            console.error("Failed to send request email:", emailError);
+          });
         }
-      } catch (emailError) {
-        console.error("Failed to send request email:", emailError);
-        // Continue - don't block the request creation
-      }
+      }).catch(err => {
+        console.error("Failed to get client for email:", err);
+      });
       
       console.log("New request created:", request.referenceId);
       
@@ -1253,16 +1254,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           relatedId: offer.id
         });
 
-        // Send email notification to admin
-        try {
-          const client = await storage.getUser(request.clientId);
+        // Send email notification to admin (non-blocking)
+        storage.getUser(request.clientId).then(client => {
           if (client && transporter) {
-            await emailService.sendNewOfferEmail(offer, request, transporter, client);
+            emailService.sendNewOfferEmail(offer, request, transporter, client).catch(emailError => {
+              console.error("Failed to send offer email:", emailError);
+            });
           }
-        } catch (emailError) {
-          console.error("Failed to send offer email:", emailError);
-          // Continue - don't block the offer creation
-        }
+        }).catch(err => {
+          console.error("Failed to get client for email:", err);
+        });
 
         // Send SMS to client if this is the first offer
         const allOffers = await storage.getOffersByRequest(offer.requestId);
@@ -1399,14 +1400,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Send email notification to admin about order validation
-      try {
-        if (request && transporter && client) {
-          await emailService.sendOrderValidatedEmail(request, offer, client, transporter);
-        }
-      } catch (emailError) {
-        console.error("Failed to send order validated email:", emailError);
-        // Continue - don't block the acceptance
+      // Send email notification to admin about order validation (non-blocking)
+      if (request && transporter && client) {
+        emailService.sendOrderValidatedEmail(request, offer, client, transporter).catch(emailError => {
+          console.error("Failed to send order validated email:", emailError);
+        });
       }
 
       // Send SMS to transporter about offer acceptance
