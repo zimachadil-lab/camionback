@@ -261,16 +261,16 @@ export default function AdminDashboard() {
         const client = users.find((u: any) => u.id === request.clientId);
         
         // Search by reference ID
-        if (request.referenceId?.toLowerCase().includes(query)) return true;
+        if (request.referenceId?.toString().toLowerCase().includes(query)) return true;
         
         // Search by client phone number
-        if (client?.phoneNumber?.toLowerCase().includes(query)) return true;
+        if (client?.phoneNumber?.toString().toLowerCase().includes(query)) return true;
         
         // Search by departure city
-        if (request.fromCity?.toLowerCase().includes(query)) return true;
+        if (request.fromCity?.toString().toLowerCase().includes(query)) return true;
         
         // Search by arrival city
-        if (request.toCity?.toLowerCase().includes(query)) return true;
+        if (request.toCity?.toString().toLowerCase().includes(query)) return true;
         
         return false;
       }
@@ -279,8 +279,8 @@ export default function AdminDashboard() {
     })
     .sort((a: any, b: any) => {
       // Sort by date descending (most recent first)
-      const dateA = new Date(a.createdAt).getTime();
-      const dateB = new Date(b.createdAt).getTime();
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
       return dateB - dateA;
     });
 
