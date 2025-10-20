@@ -165,6 +165,17 @@ export const cities = pgTable("cities", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// SMS History - Track all SMS sent from admin dashboard
+export const smsHistory = pgTable("sms_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  adminId: varchar("admin_id").notNull().references(() => users.id),
+  targetAudience: text("target_audience").notNull(), // 'transporters', 'clients', 'both'
+  message: text("message").notNull(),
+  recipientCount: integer("recipient_count").notNull(),
+  status: text("status").default("sent"), // 'sent', 'failed'
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertOtpCodeSchema = createInsertSchema(otpCodes).omit({ id: true, createdAt: true, verified: true });
@@ -205,6 +216,7 @@ export const insertEmptyReturnSchema = createInsertSchema(emptyReturns).omit({ i
 export const insertContractSchema = createInsertSchema(contracts).omit({ id: true, createdAt: true, status: true });
 export const insertReportSchema = createInsertSchema(reports).omit({ id: true, createdAt: true, status: true, adminNotes: true });
 export const insertCitySchema = createInsertSchema(cities).omit({ id: true, createdAt: true });
+export const insertSmsHistorySchema = createInsertSchema(smsHistory).omit({ id: true, createdAt: true, status: true });
 
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -231,3 +243,5 @@ export type InsertReport = z.infer<typeof insertReportSchema>;
 export type Report = typeof reports.$inferSelect;
 export type InsertCity = z.infer<typeof insertCitySchema>;
 export type City = typeof cities.$inferSelect;
+export type InsertSmsHistory = z.infer<typeof insertSmsHistorySchema>;
+export type SmsHistory = typeof smsHistory.$inferSelect;

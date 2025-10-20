@@ -10,13 +10,14 @@ import {
   type EmptyReturn, type InsertEmptyReturn,
   type Contract, type InsertContract,
   type Report, type InsertReport,
-  type City, type InsertCity
+  type City, type InsertCity,
+  type SmsHistory, type InsertSmsHistory
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from './db.js';
 import { 
   users, otpCodes, transportRequests, offers, chatMessages,
-  adminSettings, notifications, ratings, emptyReturns, contracts, reports, cities
+  adminSettings, notifications, ratings, emptyReturns, contracts, reports, cities, smsHistory
 } from '@shared/schema';
 import { eq, and, or, desc, asc, lte, gte, sql } from 'drizzle-orm';
 
@@ -112,6 +113,11 @@ export interface IStorage {
   getCityById(id: string): Promise<City | undefined>;
   updateCity(id: string, updates: Partial<City>): Promise<City | undefined>;
   deleteCity(id: string): Promise<void>;
+  
+  // SMS History operations
+  createSmsHistory(smsHistory: InsertSmsHistory): Promise<SmsHistory>;
+  getAllSmsHistory(): Promise<SmsHistory[]>;
+  deleteSmsHistory(id: string): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -1832,6 +1838,20 @@ export class DbStorage implements IStorage {
 
   async deleteCity(id: string): Promise<void> {
     await db.delete(cities).where(eq(cities.id, id));
+  }
+
+  // SMS History operations
+  async createSmsHistory(insertSmsHistory: InsertSmsHistory): Promise<SmsHistory> {
+    const result = await db.insert(smsHistory).values(insertSmsHistory).returning();
+    return result[0];
+  }
+
+  async getAllSmsHistory(): Promise<SmsHistory[]> {
+    return await db.select().from(smsHistory).orderBy(desc(smsHistory.createdAt));
+  }
+
+  async deleteSmsHistory(id: string): Promise<void> {
+    await db.delete(smsHistory).where(eq(smsHistory.id, id));
   }
 }
 

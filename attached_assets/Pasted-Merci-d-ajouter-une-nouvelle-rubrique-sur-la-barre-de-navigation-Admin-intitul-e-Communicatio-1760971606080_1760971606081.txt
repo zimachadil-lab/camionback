@@ -1,0 +1,71 @@
+Merci d’ajouter une nouvelle rubrique sur la barre de navigation Admin, intitulée :
+📢 “Communications & SMS” (ou “Newsletters & Notifications”, à ton choix selon le design).
+
+Cette rubrique permettra à l’administrateur de communiquer facilement par SMS avec les transporteurs et les clients directement depuis le tableau de bord CamionBack.
+
+🧭 Structure de la page “Communications & SMS” :
+1️⃣ Bloc 1 — “📤 Envoi rapide aux transporteurs”
+
+Un bouton principal “Notifier les transporteurs validés”.
+
+Quand l’administrateur clique dessus :
+→ Envoi automatique d’un SMS à tous les transporteurs validés, avec le texte suivant (modifiable dans le code si besoin) :
+
+"🚛 De nouvelles offres de transport sont disponibles sur CamionBack ! Connectez-vous dès maintenant pour proposer vos tarifs."
+
+Le message doit être envoyé au nom de “CamionBack” via l’API Infobip déjà configurée.
+
+2️⃣ Bloc 2 — “🧾 Envoi libre de SMS personnalisés”
+
+Un petit formulaire ergonomique et clair avec :
+
+Un menu déroulant pour choisir le public ciblé :
+
+🔘 Tous les transporteurs
+
+🔘 Tous les clients
+
+🔘 Les deux (transporteurs + clients)
+
+Un champ texte pour rédiger le message SMS librement (max 160 caractères, compteur visible).
+
+Un bouton “Envoyer le SMS” (CTA vert, clair et centré).
+
+Après envoi :
+
+Une notification visuelle “SMS envoyé avec succès à X destinataires”
+
+En cas d’erreur : un message clair “Erreur d’envoi – veuillez vérifier la configuration Infobip”.
+
+3️⃣ Bloc 3 — “📊 Historique d’envois”
+
+Une section listant les SMS envoyés avec :
+
+📅 Date & heure d’envoi
+
+🎯 Cible (Clients / Transporteurs / Tous)
+
+📝 Message envoyé
+
+✅ Statut (Envoyé / Échec)
+
+👁️ Icône “œil” pour voir le détail complet du message
+
+Option : possibilité de supprimer un ancien envoi.
+
+⚙️ Fonctionnalités techniques :
+
+Tous les SMS doivent être envoyés via Infobip (API déjà configurée).
+
+L’expéditeur doit toujours être CamionBack.
+
+L’envoi doit être asynchrone (non bloquant pour le reste du système).
+
+Prévoir une gestion d’erreurs si le nombre de destinataires est élevé (par envoi en lot de 50 ou 100 maximum par batch).
+
+Optimiser le design pour mobile et desktop (responsive).
+
+Ajouter cette nouvelle rubrique sur la même ligne que les autres vues Admin, entre “Signalements” et “Paramètres”.
+
+🎯 Objectif :
+Créer un centre de communication interne permettant à l’administrateur d’envoyer rapidement des notifications SMS ciblées ou générales pour stimuler l’activité des transporteurs, informer les clients, ou communiquer sur de nouvelles offres, tout en gardant un suivi clair de l’historique.

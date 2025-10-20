@@ -157,6 +157,81 @@ export async function sendTransporterActivatedSMS(transporterPhone: string): Pro
   return true;
 }
 
+/**
+ * Send bulk SMS to multiple recipients
+ * Sends in batches to avoid overwhelming the API
+ * @param phoneNumbers - Array of phone numbers
+ * @param message - SMS message body
+ * @returns object with success count and failed count
+ */
+export async function sendBulkSMS(
+  phoneNumbers: string[],
+  message: string
+): Promise<{ success: number; failed: number }> {
+  // Check if Infobip is configured
+  if (!isInfobipConfigured()) {
+    console.log(`⚠️ SMS en masse non envoyés - Infobip non configuré`);
+    return { success: 0, failed: phoneNumbers.length };
+  }
+  
+  const BATCH_SIZE = 50; // Process 50 at a time
+  let successCount = 0;
+  let failedCount = 0;
+  
+  // Split into batches
+  for (let i = 0; i < phoneNumbers.length; i += BATCH_SIZE) {
+    const batch = phoneNumbers.slice(i, i + BATCH_SIZE);
+    
+    try {
+      // Format all numbers in batch
+      const destinations = batch.map(phone => ({
+        to: formatMoroccanPhone(phone)
+      }));
+      
+      const payload = {
+        messages: [
+          {
+            destinations,
+            from: SENDER_NAME,
+            text: message,
+          },
+        ],
+      };
+      
+      const response = await fetch(`${VALIDATED_INFOBIP_BASE_URL}/sms/2/text/advanced`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `App ${INFOBIP_API_KEY}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`❌ Erreur Infobip batch ${i / BATCH_SIZE + 1} (${response.status}):`, errorText);
+        failedCount += batch.length;
+      } else {
+        const result = await response.json();
+        successCount += batch.length;
+        console.log(`✅ Batch ${i / BATCH_SIZE + 1}: ${batch.length} SMS envoyés via Infobip`);
+      }
+      
+      // Small delay between batches to avoid rate limiting
+      if (i + BATCH_SIZE < phoneNumbers.length) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    } catch (error) {
+      console.error(`❌ Erreur lors de l'envoi du batch ${i / BATCH_SIZE + 1}:`, error);
+      failedCount += batch.length;
+    }
+  }
+  
+  console.log(`📊 Envoi en masse terminé: ${successCount} réussis, ${failedCount} échecs`);
+  return { success: successCount, failed: failedCount };
+}
+
 // Log configuration status on startup
 if (isInfobipConfigured()) {
   console.log("✅ Service SMS Infobip configuré avec succès");
