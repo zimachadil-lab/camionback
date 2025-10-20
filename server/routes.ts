@@ -22,7 +22,7 @@ import { emailService } from "./email-service";
 
 const upload = multer({ 
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
