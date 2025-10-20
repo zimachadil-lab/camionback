@@ -17,7 +17,7 @@ import {
   insertCitySchema,
   type Offer
 } from "@shared/schema";
-import { sendFirstOfferSMS, sendOfferAcceptedSMS } from "./sms";
+import { sendFirstOfferSMS, sendOfferAcceptedSMS, sendTransporterActivatedSMS } from "./infobip-sms";
 import { emailService } from "./email-service";
 
 const upload = multer({ 
@@ -233,6 +233,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const { validated, note } = req.body; // validated: boolean, note: optional string
 
+      console.log(`📋 Validation transporteur demandée - ID: ${id}, Validated: ${validated}`);
+
       if (validated === undefined) {
         return res.status(400).json({ error: "État de validation requis" });
       }
@@ -246,10 +248,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const user = await storage.updateUser(id, updates);
       if (!user) {
+        console.log(`❌ Transporteur non trouvé - ID: ${id}`);
         return res.status(404).json({ error: "Transporteur non trouvé" });
       }
 
-      // TODO: Send notification to transporter about validation status
+      console.log(`✅ Transporteur ${validated ? 'validé' : 'refusé'} - Nom: ${user.name}, Tél: ${user.phoneNumber}`);
+
+      // Send SMS notification if transporter is validated
+      if (validated && user.phoneNumber) {
+        console.log(`📱 Envoi SMS activation à ${user.phoneNumber}`);
+        sendTransporterActivatedSMS(user.phoneNumber).catch(err => {
+          console.error('Erreur envoi SMS activation transporteur:', err);
+        });
+      }
 
       res.json({ user });
     } catch (error) {
