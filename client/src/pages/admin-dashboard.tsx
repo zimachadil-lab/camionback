@@ -70,6 +70,8 @@ export default function AdminDashboard() {
   const [editOfferLoadType, setEditOfferLoadType] = useState("");
   const [enlargedTruckPhoto, setEnlargedTruckPhoto] = useState<string>("");
   const [showTruckPhotoDialog, setShowTruckPhotoDialog] = useState(false);
+  const [requestSearchQuery, setRequestSearchQuery] = useState("");
+  const [requestStatusFilter, setRequestStatusFilter] = useState("all");
   const { toast} = useToast();
 
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
@@ -244,6 +246,43 @@ export default function AdminDashboard() {
   const pendingPayments = allRequests.filter(
     (req: any) => req.paymentStatus === "pending_admin_validation"
   );
+
+  // Filter and sort requests for the Demandes view
+  const filteredAndSortedRequests = [...allRequests]
+    .filter((request: any) => {
+      // Filter by status
+      if (requestStatusFilter !== "all") {
+        if (requestStatusFilter !== request.status) return false;
+      }
+
+      // Filter by search query
+      if (requestSearchQuery.trim() !== "") {
+        const query = requestSearchQuery.toLowerCase().trim();
+        const client = users.find((u: any) => u.id === request.clientId);
+        
+        // Search by reference ID
+        if (request.referenceId?.toLowerCase().includes(query)) return true;
+        
+        // Search by client phone number
+        if (client?.phoneNumber?.toLowerCase().includes(query)) return true;
+        
+        // Search by departure city
+        if (request.fromCity?.toLowerCase().includes(query)) return true;
+        
+        // Search by arrival city
+        if (request.toCity?.toLowerCase().includes(query)) return true;
+        
+        return false;
+      }
+
+      return true;
+    })
+    .sort((a: any, b: any) => {
+      // Sort by date descending (most recent first)
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      return dateB - dateA;
+    });
 
   const handleValidateDriver = async (driverId: string, validated: boolean) => {
     try {
@@ -704,10 +743,77 @@ export default function AdminDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                {/* Filters and Search Bar */}
+                <div className="mb-6 space-y-4">
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    {/* Search Input */}
+                    <div className="flex-1">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          type="text"
+                          placeholder="Rechercher par n° commande, téléphone, ville départ ou arrivée..."
+                          value={requestSearchQuery}
+                          onChange={(e) => setRequestSearchQuery(e.target.value)}
+                          className="pl-10"
+                          data-testid="input-search-requests"
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Status Filter */}
+                    <div className="w-full sm:w-64">
+                      <Select
+                        value={requestStatusFilter}
+                        onValueChange={setRequestStatusFilter}
+                      >
+                        <SelectTrigger data-testid="select-filter-status">
+                          <SelectValue placeholder="Filtrer par statut" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Tous les statuts</SelectItem>
+                          <SelectItem value="open">🟡 En attente d'offre</SelectItem>
+                          <SelectItem value="accepted">🔵 Acceptée</SelectItem>
+                          <SelectItem value="completed">🟢 Terminée</SelectItem>
+                          <SelectItem value="cancelled">🔴 Annulée</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  {/* Results Summary */}
+                  {(requestSearchQuery || requestStatusFilter !== "all") && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span>
+                        {filteredAndSortedRequests.length} résultat{filteredAndSortedRequests.length > 1 ? 's' : ''} trouvé{filteredAndSortedRequests.length > 1 ? 's' : ''}
+                      </span>
+                      {(requestSearchQuery || requestStatusFilter !== "all") && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setRequestSearchQuery("");
+                            setRequestStatusFilter("all");
+                          }}
+                          className="h-6 px-2"
+                          data-testid="button-clear-filters"
+                        >
+                          Réinitialiser les filtres
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 {allRequests.length === 0 ? (
                   <div className="text-center py-8">
                     <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                     <p className="text-muted-foreground">Aucune demande pour le moment</p>
+                  </div>
+                ) : filteredAndSortedRequests.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">Aucune demande ne correspond à vos critères de recherche</p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
@@ -715,7 +821,7 @@ export default function AdminDashboard() {
                       <TableHeader>
                         <TableRow>
                           <TableHead>Référence</TableHead>
-                          <TableHead>Date</TableHead>
+                          <TableHead>Date de publication</TableHead>
                           <TableHead>Client</TableHead>
                           <TableHead>De → Vers</TableHead>
                           <TableHead>Date souhaitée</TableHead>
@@ -725,8 +831,25 @@ export default function AdminDashboard() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {allRequests.map((request: any) => {
+                        {filteredAndSortedRequests.map((request: any) => {
                           const client = users.find((u: any) => u.id === request.clientId);
+                          
+                          // Format date with time: JJ/MM/AAAA - HH:mm
+                          const formatDateWithTime = (dateStr: string) => {
+                            if (!dateStr) return "N/A";
+                            try {
+                              const date = new Date(dateStr);
+                              const day = String(date.getDate()).padStart(2, '0');
+                              const month = String(date.getMonth() + 1).padStart(2, '0');
+                              const year = date.getFullYear();
+                              const hours = String(date.getHours()).padStart(2, '0');
+                              const minutes = String(date.getMinutes()).padStart(2, '0');
+                              return `${day}/${month}/${year} - ${hours}:${minutes}`;
+                            } catch {
+                              return "N/A";
+                            }
+                          };
+                          
                           const formatDate = (dateStr: string) => {
                             if (!dateStr) return "N/A";
                             try {
@@ -747,7 +870,7 @@ export default function AdminDashboard() {
                           return (
                             <TableRow key={request.id}>
                               <TableCell className="font-medium">{request.referenceId}</TableCell>
-                              <TableCell>{formatDate(request.createdAt)}</TableCell>
+                              <TableCell className="text-sm">{formatDateWithTime(request.createdAt)}</TableCell>
                               <TableCell>
                                 Client {client?.clientId || "Non défini"}
                               </TableCell>
