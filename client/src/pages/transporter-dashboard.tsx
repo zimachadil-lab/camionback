@@ -374,17 +374,22 @@ export default function TransporterDashboard() {
     }
   };
 
-  const filteredRequests = requests.filter((req: any) => {
-    // Exclude requests declined by this transporter
-    const notDeclined = !req.declinedBy || !req.declinedBy.includes(user.id);
-    const cityMatch: boolean = selectedCity === "Toutes les villes" || 
-                     req.fromCity === selectedCity || 
-                     req.toCity === selectedCity;
-    const searchMatch: boolean = searchQuery === "" || 
-                       req.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                       req.goodsType.toLowerCase().includes(searchQuery.toLowerCase());
-    return notDeclined && cityMatch && searchMatch;
-  });
+  const filteredRequests = requests
+    .filter((req: any) => {
+      // Exclude requests declined by this transporter
+      const notDeclined = !req.declinedBy || !req.declinedBy.includes(user.id);
+      const cityMatch: boolean = selectedCity === "Toutes les villes" || 
+                       req.fromCity === selectedCity || 
+                       req.toCity === selectedCity;
+      const searchMatch: boolean = searchQuery === "" || 
+                         req.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         req.goodsType.toLowerCase().includes(searchQuery.toLowerCase());
+      return notDeclined && cityMatch && searchMatch;
+    })
+    .sort((a: any, b: any) => {
+      // Sort by most recent first
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
 
   // Count offers per request for display
   const offerCounts = myOffers.reduce((acc: any, offer: any) => {
