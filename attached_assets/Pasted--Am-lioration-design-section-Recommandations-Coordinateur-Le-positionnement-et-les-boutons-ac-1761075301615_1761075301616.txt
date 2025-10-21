@@ -1,0 +1,91 @@
+🎨 Amélioration design — section Recommandations & Coordinateur
+
+Le positionnement et les boutons actuels fonctionnent bien sur desktop, mais manquent de clarté et de lisibilité sur mobile.
+Merci d’améliorer le design, la hiérarchie visuelle et l’ergonomie mobile de la zone contenant :
+
+le bouton “🚚 Recommandations”
+
+le bouton “📞 Coordinateur”
+
+💡 Objectifs :
+
+Rendre les boutons plus visibles, modernes et interactifs.
+
+Optimiser la lecture sur mobile (éviter que le texte “Contacter” ou “Coordinateur” soit coupé).
+
+Donner une sensation d’énergie et d’action cohérente avec le concept CamionBack.
+
+🧱 Proposition d’amélioration :
+
+1️⃣ Disposition :
+
+Placer les deux boutons sur une seule ligne flexible (flex wrap) avec un espacement régulier (gap: 10–15px).
+
+Chaque bouton doit s’ajuster en largeur sur petit écran pour éviter les coupures de texte.
+
+2️⃣ Style visuel :
+
+Boutons arrondis (border-radius: 10px à 12px).
+
+Fond dégradé #17cfcf → #13b3b3 (effet moderne CamionBack).
+
+Icônes plus grandes, légèrement animées au survol (zoom ou glow).
+
+Texte en blanc gras pour contraste et meilleure lecture.
+
+Ajouter une légère ombre portée (box-shadow) pour un effet “cliquable”.
+
+Exemple CSS :
+
+.btn-camionback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #17cfcf, #13b3b3);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+  transition: all 0.3s ease-in-out;
+  white-space: nowrap;
+}
+
+.btn-camionback:hover {
+  transform: scale(1.03);
+  box-shadow: 0 4px 15px rgba(23,207,207,0.4);
+}
+
+
+3️⃣ Icônes :
+
+Utiliser des icônes un peu plus expressives :
+
+🚛 ou fa-truck-fast pour “Recommandations”
+
+☎️ ou fa-headset pour “Coordinateur”
+
+Aligner verticalement texte + icône au centre.
+
+4️⃣ Animation légère (optionnelle mais conseillée) :
+
+Lorsqu’un nouveau transporteur est recommandé, ajouter un petit badge animé “Nouveau” (vert clair, petit coin supérieur).
+
+Survol ou clic → légère pulsation turquoise.
+
+📱 Mobile UX (très important) :
+
+Forcer la taille minimale de texte (font-size: 13–14px) pour éviter la coupure.
+
+Sur mobile, empiler verticalement les boutons si nécessaire (responsive breakpoint < 480px).
+
+S’assurer que le texte reste entièrement visible sur tous les écrans.
+
+✅ Résultat attendu :
+
+Des boutons modernes, lisibles et attrayants qui invitent à l’action — même sur petit écran.
+Exemple visuel attendu :
+🟦 [🚛 Recommandations] 🟦 [📞 Coordinateur]
+
+clairs, équilibrés, et parfaitement lisibles sur mobile et desktop.
