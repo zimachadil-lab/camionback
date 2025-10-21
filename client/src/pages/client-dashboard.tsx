@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star, CreditCard, Upload, Eye, Edit, MessageSquare, Calendar, Flag, Truck, Users, Zap, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star, CreditCard, Upload, Eye, Edit, MessageSquare, Calendar, Flag, Truck, Users, Zap, X, ChevronLeft, ChevronRight, Target, ArrowDown } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { NewRequestForm } from "@/components/client/new-request-form";
 import { OfferCard } from "@/components/client/offer-card";
@@ -317,7 +317,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
               <Button
                 onClick={() => setShowCamioMatchDialog(true)}
                 data-testid={`button-camiomatch-${request.id}`}
-                className="flex-1 min-w-[135px] gap-2 rounded-xl font-semibold text-white bg-gradient-to-br from-[#17cfcf] to-[#13b3b3] border-0 shadow-md hover:shadow-lg hover:shadow-[#17cfcf]/30 transition-all duration-300 hover:scale-[1.02]"
+                className="flex-1 min-w-[135px] gap-2 rounded-xl font-semibold text-white bg-gradient-to-br from-[#17cfcf] to-[#13b3b3] border-0 shadow-md hover:shadow-lg hover:shadow-[#17cfcf]/30 transition-shadow duration-300 hover-elevate"
               >
                 <Zap className="w-5 h-5" />
                 CamioMatch
@@ -325,7 +325,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
               <Button
                 onClick={handleWhatsAppContact}
                 data-testid={`button-coordinator-${request.id}`}
-                className="flex-1 min-w-[135px] gap-2 rounded-xl font-semibold text-white bg-gradient-to-br from-[#17cfcf] to-[#13b3b3] border-0 shadow-md hover:shadow-lg hover:shadow-[#17cfcf]/25 transition-all duration-300 hover:scale-[1.02]"
+                className="flex-1 min-w-[135px] gap-2 rounded-xl font-semibold text-white bg-gradient-to-br from-[#17cfcf] to-[#13b3b3] border-0 shadow-md hover:shadow-lg hover:shadow-[#17cfcf]/25 transition-shadow duration-300 hover-elevate"
               >
                 <Phone className="w-5 h-5" />
                 Coordinateur
@@ -455,8 +455,9 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
               <Zap className="w-6 h-6 text-[#17cfcf]" />
               CamioMatch
             </DialogTitle>
-            <DialogDescription className="text-center text-base">
-              🚛 Voici les meilleurs matches pour votre trajet !
+            <DialogDescription className="text-center text-base flex items-center justify-center gap-2">
+              <Truck className="w-5 h-5" />
+              Voici les meilleurs matches pour votre trajet
             </DialogDescription>
           </DialogHeader>
 
@@ -488,8 +489,9 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
               </div>
             ) : (
               <div className="space-y-6">
-                <p className="text-center text-sm text-muted-foreground">
-                  Glissez pour découvrir vos options 👇
+                <p className="text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
+                  Glissez pour découvrir vos options
+                  <ArrowDown className="w-4 h-4" />
                 </p>
 
                 {/* Carte centrale du match actuel */}
@@ -516,10 +518,25 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                             {matches[currentMatchIndex]?.name || `Transporteur ${matches[currentMatchIndex]?.id?.substring(0, 8)}`}
                           </h3>
                           {matches[currentMatchIndex]?.priority && (
-                            <Badge className="bg-[#17cfcf] text-white font-semibold">
-                              {matches[currentMatchIndex].priority === 'empty_return' && '🎯 Retour à vide'}
-                              {matches[currentMatchIndex].priority === 'active' && '⚡ Actif récemment'}
-                              {matches[currentMatchIndex].priority === 'rating' && '⭐ Bien noté'}
+                            <Badge className="bg-[#17cfcf] text-white font-semibold flex items-center gap-1">
+                              {matches[currentMatchIndex].priority === 'empty_return' && (
+                                <>
+                                  <Target className="w-3 h-3" />
+                                  Retour à vide
+                                </>
+                              )}
+                              {matches[currentMatchIndex].priority === 'active' && (
+                                <>
+                                  <Zap className="w-3 h-3" />
+                                  Actif récemment
+                                </>
+                              )}
+                              {matches[currentMatchIndex].priority === 'rating' && (
+                                <>
+                                  <Star className="w-3 h-3 fill-white" />
+                                  Bien noté
+                                </>
+                              )}
                             </Badge>
                           )}
                         </div>
@@ -626,7 +643,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                       onChat(currentMatch.id, currentMatch.name || 'Transporteur', request.id);
                       setShowCamioMatchDialog(false);
                     }}
-                    className="w-32 h-16 rounded-full bg-gradient-to-br from-[#17cfcf] to-[#13b3b3] text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                    className="w-32 h-16 rounded-full bg-gradient-to-br from-[#17cfcf] to-[#13b3b3] text-white border-0 shadow-lg hover:shadow-xl transition-shadow duration-300 hover-elevate active-elevate-2"
                     data-testid="button-contact-match"
                   >
                     <MessageSquare className="w-8 h-8" />
@@ -1695,7 +1712,7 @@ export default function ClientDashboard() {
                     onClick={() => setRatingValue(star)}
                     onMouseEnter={() => setHoverRating(star)}
                     onMouseLeave={() => setHoverRating(0)}
-                    className="p-1 transition-transform hover:scale-110"
+                    className="p-1 hover-elevate active-elevate-2"
                     data-testid={`button-star-${star}`}
                   >
                     <Star
