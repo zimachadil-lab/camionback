@@ -11,13 +11,15 @@ import {
   type Contract, type InsertContract,
   type Report, type InsertReport,
   type City, type InsertCity,
-  type SmsHistory, type InsertSmsHistory
+  type SmsHistory, type InsertSmsHistory,
+  type ClientTransporterContact, type InsertClientTransporterContact
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from './db.js';
 import { 
   users, otpCodes, transportRequests, offers, chatMessages,
-  adminSettings, notifications, ratings, emptyReturns, contracts, reports, cities, smsHistory
+  adminSettings, notifications, ratings, emptyReturns, contracts, reports, cities, smsHistory,
+  clientTransporterContacts
 } from '@shared/schema';
 import { eq, and, or, desc, asc, lte, gte, sql } from 'drizzle-orm';
 

@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import { storage } from "./storage";
+import { db } from "./db";
 import multer from "multer";
 import { z } from "zod";
 import bcrypt from "bcrypt";
@@ -15,8 +16,10 @@ import {
   insertEmptyReturnSchema,
   insertReportSchema,
   insertCitySchema,
-  type Offer
+  type Offer,
+  clientTransporterContacts
 } from "@shared/schema";
+import { desc } from "drizzle-orm";
 import { sendFirstOfferSMS, sendOfferAcceptedSMS, sendTransporterActivatedSMS, sendBulkSMS } from "./infobip-sms";
 import { emailService } from "./email-service";
 
@@ -2337,6 +2340,128 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error assigning order:", error);
       res.status(500).json({ error: "Échec de l'affectation de la commande" });
+    }
+  });
+
+  // Transporter Recommendation routes
+  app.get("/api/recommendations/:requestId", async (req, res) => {
+    try {
+      const { requestId } = req.params;
+      
+      // Get request details
+      const request = await storage.getTransportRequest(requestId);
+      if (!request) {
+        return res.status(404).json({ error: "Demande non trouvée" });
+      }
+
+      // Get all validated transporters
+      const allUsers = await storage.getAllUsers();
+      const validatedTransporters = allUsers.filter(
+        (u: any) => u.role === "transporter" && u.status === "validated"
+      );
+
+      // Get active empty returns for same route (priority 1)
+      await storage.expireOldReturns();
+      const emptyReturns = await storage.getActiveEmptyReturns();
+      const matchingReturns = emptyReturns.filter(
+        (er: any) => er.fromCity === request.toCity && er.toCity === request.fromCity
+      );
+      
+      // Priority 1: Transporters with matching empty returns
+      const priority1Transporters = matchingReturns.map((er: any) => {
+        const transporter = validatedTransporters.find((t: any) => t.id === er.transporterId);
+        return transporter ? { ...transporter, priority: 1, hasEmptyReturn: true } : null;
+      }).filter(Boolean);
+
+      // Priority 2: Recently active transporters (last 24h) - simulated with random for now
+      const now = new Date();
+      const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const priority2Transporters = validatedTransporters
+        .filter((t: any) => !priority1Transporters.find((p1: any) => p1.id === t.id))
+        .filter(() => Math.random() > 0.5) // Simulate activity - would normally check lastActive field
+        .map((t: any) => ({ ...t, priority: 2, recentlyActive: true }));
+
+      // Priority 3: Best rated transporters
+      const priority3Transporters = validatedTransporters
+        .filter((t: any) => !priority1Transporters.find((p1: any) => p1.id === t.id))
+        .filter((t: any) => !priority2Transporters.find((p2: any) => p2.id === t.id))
+        .filter((t: any) => parseFloat(t.rating || "0") >= 4.0)
+        .map((t: any) => ({ ...t, priority: 3, highRated: true }));
+
+      // Priority 4: Other available transporters
+      const priority4Transporters = validatedTransporters
+        .filter((t: any) => !priority1Transporters.find((p1: any) => p1.id === t.id))
+        .filter((t: any) => !priority2Transporters.find((p2: any) => p2.id === t.id))
+        .filter((t: any) => !priority3Transporters.find((p3: any) => p3.id === t.id))
+        .map((t: any) => ({ ...t, priority: 4 }));
+
+      // Combine all priorities and limit to 5
+      const recommendations = [
+        ...priority1Transporters,
+        ...priority2Transporters,
+        ...priority3Transporters,
+        ...priority4Transporters
+      ].slice(0, 5);
+
+      res.json(recommendations);
+    } catch (error) {
+      console.error("Error fetching recommendations:", error);
+      res.status(500).json({ error: "Échec de la récupération des recommandations" });
+    }
+  });
+
+  // Client-Transporter Contact tracking
+  app.post("/api/client-transporter-contacts", async (req, res) => {
+    try {
+      const { requestId, clientId, transporterId } = req.body;
+
+      if (!requestId || !clientId || !transporterId) {
+        return res.status(400).json({ error: "requestId, clientId et transporterId requis" });
+      }
+
+      // Create contact record in database
+      const [contact] = await db.insert(clientTransporterContacts).values({
+        requestId,
+        clientId,
+        transporterId,
+        contactType: "recommendation",
+      }).returning();
+
+      // Get request and transporter details for notification
+      const request = await storage.getTransportRequest(requestId);
+      const transporter = await storage.getUser(transporterId);
+
+      // Create admin notification
+      const admins = (await storage.getAllUsers()).filter((u: any) => u.role === "admin");
+      for (const admin of admins) {
+        await storage.createNotification({
+          userId: admin.id,
+          type: "client_contacted_transporter",
+          title: "Contact client-transporteur",
+          message: `Le client ${request?.referenceId} a contacté le transporteur ${transporter?.name}`,
+          relatedId: requestId,
+        });
+      }
+
+      res.json(contact);
+    } catch (error) {
+      console.error("Error creating contact:", error);
+      res.status(500).json({ error: "Échec de l'enregistrement du contact" });
+    }
+  });
+
+  // Get all client-transporter contacts (Admin only)
+  app.get("/api/admin/client-transporter-contacts", async (req, res) => {
+    try {
+      const contacts = await db
+        .select()
+        .from(clientTransporterContacts)
+        .orderBy(desc(clientTransporterContacts.createdAt));
+      
+      res.json(contacts);
+    } catch (error) {
+      console.error("Error fetching contacts:", error);
+      res.status(500).json({ error: "Échec de la récupération des contacts" });
     }
   });
 
