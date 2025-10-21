@@ -586,7 +586,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                         variant="ghost"
                         size="icon"
                         onClick={() => setCurrentMatchIndex((prev) => (prev === 0 ? matches.length - 1 : prev - 1))}
-                        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 h-14 w-14 rounded-full bg-background shadow-lg border-2 border-[#17cfcf] hover:bg-[#17cfcf]/10 hover:scale-110 transition-all duration-200 z-10"
+                        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 h-14 w-14 rounded-full bg-background shadow-lg border-2 border-[#17cfcf] z-10"
                         data-testid="button-previous-match"
                       >
                         <ChevronLeft className="w-8 h-8 text-[#17cfcf]" />
@@ -595,7 +595,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                         variant="ghost"
                         size="icon"
                         onClick={() => setCurrentMatchIndex((prev) => (prev === matches.length - 1 ? 0 : prev + 1))}
-                        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 h-14 w-14 rounded-full bg-background shadow-lg border-2 border-[#17cfcf] hover:bg-[#17cfcf]/10 hover:scale-110 transition-all duration-200 z-10"
+                        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 h-14 w-14 rounded-full bg-background shadow-lg border-2 border-[#17cfcf] z-10"
                         data-testid="button-next-match"
                       >
                         <ChevronRight className="w-8 h-8 text-[#17cfcf]" />
@@ -636,7 +636,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                         });
                       }
                     }}
-                    className="w-16 h-16 rounded-full border-2 border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200"
+                    className="w-16 h-16 rounded-full border-2 border-red-500 text-red-500 shadow-lg"
                     data-testid="button-skip-match"
                   >
                     <X className="w-7 h-7" />
@@ -649,7 +649,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                       onChat(currentMatch.id, currentMatch.name || 'Transporteur', request.id);
                       setShowCamioMatchDialog(false);
                     }}
-                    className="w-20 h-20 rounded-full bg-gradient-to-br from-[#17cfcf] to-[#13b3b3] text-white border-0 shadow-xl hover:shadow-2xl hover:shadow-[#17cfcf]/50 hover:scale-110 transition-all duration-200"
+                    className="w-20 h-20 rounded-full bg-gradient-to-br from-[#17cfcf] to-[#13b3b3] text-white border-0 shadow-xl"
                     data-testid="button-contact-match"
                   >
                     <MessageSquare className="w-9 h-9" />
