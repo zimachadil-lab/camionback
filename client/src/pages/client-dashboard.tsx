@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star, CreditCard, Upload, Eye, Edit, MessageSquare, Calendar, Flag } from "lucide-react";
+import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star, CreditCard, Upload, Eye, Edit, MessageSquare, Calendar, Flag, Truck, Users } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { NewRequestForm } from "@/components/client/new-request-form";
 import { OfferCard } from "@/components/client/offer-card";
@@ -69,10 +69,11 @@ const reportSchema = z.object({
   type: z.string().min(1, "Type de problème requis"),
 });
 
-function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onDelete, onViewTransporter, onUpdateStatus, onReport, users, cities, citiesLoading }: any) {
+function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onDelete, onViewTransporter, onUpdateStatus, onReport, users, cities, citiesLoading, currentUserId }: any) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showOffersDialog, setShowOffersDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showRecommendationsDialog, setShowRecommendationsDialog] = useState(false);
   const isAccepted = request.status === "accepted";
   const { toast } = useToast();
 
@@ -183,6 +184,43 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
     editRequestMutation.mutate(payload);
   };
 
+  // Recommendations query
+  const { data: recommendations = [], isLoading: recommendationsLoading } = useQuery({
+    queryKey: ["/api/recommendations", request.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/recommendations/${request.id}`);
+      return response.json();
+    },
+    enabled: showRecommendationsDialog,
+  });
+
+  // Contact transporter mutation
+  const contactTransporterMutation = useMutation({
+    mutationFn: async (transporterId: string) => {
+      return await apiRequest("POST", "/api/client-transporter-contacts", {
+        requestId: request.id,
+        clientId: currentUserId,
+        transporterId,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Contact enregistré",
+        description: "Vous pouvez maintenant contacter ce transporteur",
+      });
+    },
+  });
+
+  // Function to handle WhatsApp redirect
+  const handleWhatsAppContact = () => {
+    const phoneNumber = "+212664373534";
+    const message = encodeURIComponent(
+      `Bonjour, j'ai besoin d'aide pour ma commande ${request.referenceId} (${request.fromCity} → ${request.toCity}). Pouvez-vous m'assister ?`
+    );
+    const whatsappUrl = `https://wa.me/${phoneNumber.replace(/\+/g, "")}?text=${message}`;
+    window.open(whatsappUrl, "_blank");
+  };
+
   return (
     <>
       <Card className="overflow-hidden hover-elevate bg-[#0f324f]/30 border-[#1d3c57]">
@@ -263,6 +301,30 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
               <MessageSquare className="w-4 h-4" />
               Offres reçues ({offersWithTransporters.length})
             </Button>
+          )}
+
+          {/* Nouveaux boutons: Recommandations et Coordinateur */}
+          {!isAccepted && (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1 gap-2 border-[#17cfcf] text-[#17cfcf] hover:bg-[#17cfcf]/10 hover:border-[#17cfcf]"
+                onClick={() => setShowRecommendationsDialog(true)}
+                data-testid={`button-recommendations-${request.id}`}
+              >
+                <Truck className="w-4 h-4" />
+                Recommandations
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 gap-2 border-[#17cfcf] text-[#17cfcf] hover:bg-[#17cfcf]/10 hover:border-[#17cfcf]"
+                onClick={handleWhatsAppContact}
+                data-testid={`button-coordinator-${request.id}`}
+              >
+                <Phone className="w-4 h-4" />
+                Coordinateur
+              </Button>
+            </div>
           )}
 
           {/* Actions pour commande acceptée */}
@@ -614,6 +676,79 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dialog des recommandations */}
+      <Dialog open={showRecommendationsDialog} onOpenChange={setShowRecommendationsDialog}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Transporteurs recommandés - {request.referenceId}</DialogTitle>
+            <DialogDescription>
+              {request.fromCity} → {request.toCity}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            {recommendationsLoading ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                Chargement des recommandations...
+              </p>
+            ) : recommendations.length > 0 ? (
+              <div className="space-y-3">
+                {recommendations.map((transporter: any) => (
+                  <Card key={transporter.id} className="overflow-hidden bg-[#0f324f]/30 border-[#1d3c57]">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-semibold">{transporter.name}</h4>
+                            {transporter.hasEmptyReturn && (
+                              <Badge className="bg-[#17cfcf] text-white">Retour à vide</Badge>
+                            )}
+                            {transporter.recentlyActive && (
+                              <Badge variant="secondary">Actif récemment</Badge>
+                            )}
+                            {transporter.highRated && (
+                              <Badge variant="default" className="bg-green-600">Bien noté</Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+                              {parseFloat(transporter.rating || "0").toFixed(1)}
+                            </span>
+                            <span>
+                              {transporter.totalTrips || 0} trajet{transporter.totalTrips > 1 ? 's' : ''}
+                            </span>
+                            {transporter.city && (
+                              <span>{transporter.city}</span>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          className="gap-2 bg-[#17cfcf] hover:bg-[#17cfcf]/90 border-[#17cfcf]"
+                          onClick={() => {
+                            contactTransporterMutation.mutate(transporter.id);
+                            onChat(transporter.id, transporter.name, request.id);
+                            setShowRecommendationsDialog(false);
+                          }}
+                          data-testid={`button-contact-transporter-${transporter.id}`}
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                          Contacter
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                Aucune recommandation disponible pour le moment
+              </p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
@@ -1102,6 +1237,7 @@ export default function ClientDashboard() {
                     users={users}
                     cities={cities}
                     citiesLoading={citiesLoading}
+                    currentUserId={user.id}
                     onAcceptOffer={handleAcceptOffer}
                     onDeclineOffer={handleDeclineOffer}
                     onChat={handleChat}
