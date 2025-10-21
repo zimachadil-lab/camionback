@@ -176,6 +176,17 @@ export const smsHistory = pgTable("sms_history", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Client-Transporter Contacts - Track when clients contact transporters via recommendations
+export const clientTransporterContacts = pgTable("client_transporter_contacts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  requestId: varchar("request_id").notNull().references(() => transportRequests.id),
+  clientId: varchar("client_id").notNull().references(() => users.id),
+  transporterId: varchar("transporter_id").notNull().references(() => users.id),
+  contactType: text("contact_type").default("recommendation"), // 'recommendation' - for future expansion
+  isRead: boolean("is_read").default(false), // Admin read status
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertOtpCodeSchema = createInsertSchema(otpCodes).omit({ id: true, createdAt: true, verified: true });
@@ -217,6 +228,7 @@ export const insertContractSchema = createInsertSchema(contracts).omit({ id: tru
 export const insertReportSchema = createInsertSchema(reports).omit({ id: true, createdAt: true, status: true, adminNotes: true });
 export const insertCitySchema = createInsertSchema(cities).omit({ id: true, createdAt: true });
 export const insertSmsHistorySchema = createInsertSchema(smsHistory).omit({ id: true, createdAt: true, status: true });
+export const insertClientTransporterContactSchema = createInsertSchema(clientTransporterContacts).omit({ id: true, createdAt: true, isRead: true });
 
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -245,3 +257,5 @@ export type InsertCity = z.infer<typeof insertCitySchema>;
 export type City = typeof cities.$inferSelect;
 export type InsertSmsHistory = z.infer<typeof insertSmsHistorySchema>;
 export type SmsHistory = typeof smsHistory.$inferSelect;
+export type InsertClientTransporterContact = z.infer<typeof insertClientTransporterContactSchema>;
+export type ClientTransporterContact = typeof clientTransporterContacts.$inferSelect;

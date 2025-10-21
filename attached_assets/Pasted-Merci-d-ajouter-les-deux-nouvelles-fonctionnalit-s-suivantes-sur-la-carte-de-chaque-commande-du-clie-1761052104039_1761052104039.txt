@@ -1,0 +1,67 @@
+Merci d’ajouter les deux nouvelles fonctionnalités suivantes sur la carte de chaque commande du client, tout en veillant à un design léger et bien intégré (de simples icônes à droite de la commande, avec infobulle ou petite légende).
+
+🚚 1. Bouton “Recommandation transporteurs”
+
+Objectif :
+Permettre au client de voir des recommandations de camions disponibles avant même de recevoir des offres.
+
+⚙️ Logique de priorisation (intelligence simple) :
+
+1ʳᵉ priorité : transporteurs ayant annoncé un retour vide sur la même route (ex. Marrakech → Casablanca).
+
+2ᵉ priorité : transporteurs récemment actifs (connectés ou en ligne dans les dernières 24h).
+
+3ᵉ priorité : transporteurs avec le meilleur taux de satisfaction.
+
+4ᵉ priorité : si aucun trouvé, affichage aléatoire de transporteurs proches disponibles.
+
+🖼️ Présentation visuelle :
+Sur la carte de la commande, ajouter un bouton ou icône (par exemple 🚛 ou 🤝) intitulé :
+
+“Recommandations transporteurs”
+
+Quand le client clique dessus →
+une popup ou panneau horizontal s’ouvre affichant une carte de profils (maximum 5 transporteurs recommandés) :
+
+📷 Photo du camion
+
+🚛 Type de chargement (Retour / Groupage)
+
+📍 Ville actuelle
+
+💬 Bouton “Contacter”
+
+Ce bouton ouvre une mini popup de messagerie interne éphémère (chat rapide et sécurisé).
+Aucun numéro WhatsApp ou téléphone n’est visible à ce stade.
+
+🔒 Sécurité & Contrôle admin :
+
+Tous les échanges avant validation de l’offre doivent rester dans la messagerie interne CamionBack.
+
+Si un client écrit à un transporteur, une alerte est automatiquement générée côté admin :
+
+“Le client CMD-2025-001 a contacté le transporteur T-204 (retour Casa → Fès).”
+
+🆘 2. Bouton “Demander l’aide d’un coordinateur”
+
+Toujours sur la même carte de commande, ajouter un petit bouton avec une icône d’assistance (🧭 ou 🆘) intitulé :
+
+“Demander l’aide d’un coordinateur”
+
+Fonction :
+
+Quand le client clique dessus, il est redirigé automatiquement vers une conversation WhatsApp avec le coordinateur CamionBack au numéro suivant :
+👉 +212664373534
+
+Le message prérempli doit être :
+
+“Bonjour, je souhaite votre aide pour trouver un camion pour ma commande CMD-XXX.”
+(le système remplace automatiquement “CMD-XXX” par la référence réelle de la commande).
+
+🎨 Détails design :
+
+Les deux icônes (🚛 et 🆘) doivent être positionnées à droite ou en bas à droite de la carte de commande.
+
+Aspect minimaliste et moderne : fond clair, icône colorée #17cfcf au survol.
+
+Éviter de surcharger la carte — placer les boutons sur une seule ligne à droite pour un rendu propre et responsive.
