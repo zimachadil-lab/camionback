@@ -449,7 +449,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
 
       {/* Dialog CamioMatch */}
       <Dialog open={showCamioMatchDialog} onOpenChange={setShowCamioMatchDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             {/* Phrase animée d'accueil */}
             <div className="text-center mb-2">
