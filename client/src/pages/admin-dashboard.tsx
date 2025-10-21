@@ -617,8 +617,8 @@ export default function AdminDashboard() {
 
   // Update transporter mutation
   const updateTransporterMutation = useMutation({
-    mutationFn: async (formData: FormData) => {
-      const response = await fetch(`/api/admin/transporters/${editingTransporter.id}`, {
+    mutationFn: async ({ transporterId, formData }: { transporterId: string; formData: FormData }) => {
+      const response = await fetch(`/api/admin/transporters/${transporterId}`, {
         method: "PATCH",
         body: formData,
       });
@@ -651,6 +651,8 @@ export default function AdminDashboard() {
   });
 
   const handleUpdateTransporter = () => {
+    if (!editingTransporter) return;
+    
     const formData = new FormData();
     
     // Only add fields that have values
@@ -670,7 +672,10 @@ export default function AdminDashboard() {
       formData.append("truckPhoto", editTransporterPhoto);
     }
     
-    updateTransporterMutation.mutate(formData);
+    updateTransporterMutation.mutate({ 
+      transporterId: editingTransporter.id, 
+      formData 
+    });
   };
 
   // Format trend text
