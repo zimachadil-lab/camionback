@@ -72,6 +72,13 @@ export default function AdminDashboard() {
   const [showTruckPhotoDialog, setShowTruckPhotoDialog] = useState(false);
   const [requestSearchQuery, setRequestSearchQuery] = useState("");
   const [requestStatusFilter, setRequestStatusFilter] = useState("all");
+  const [editingTransporter, setEditingTransporter] = useState<any>(null);
+  const [editTransporterDialogOpen, setEditTransporterDialogOpen] = useState(false);
+  const [editTransporterName, setEditTransporterName] = useState("");
+  const [editTransporterCity, setEditTransporterCity] = useState("");
+  const [editTransporterPhone, setEditTransporterPhone] = useState("");
+  const [editTransporterNewPassword, setEditTransporterNewPassword] = useState("");
+  const [editTransporterPhoto, setEditTransporterPhoto] = useState<File | null>(null);
   const { toast} = useToast();
 
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
@@ -607,6 +614,64 @@ export default function AdminDashboard() {
       });
     },
   });
+
+  // Update transporter mutation
+  const updateTransporterMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const response = await fetch(`/api/admin/transporters/${editingTransporter.id}`, {
+        method: "PATCH",
+        body: formData,
+      });
+      if (!response.ok) {
+        throw new Error("Échec de la mise à jour");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Succès",
+        description: "✅ Les informations du transporteur ont été mises à jour avec succès.",
+      });
+      setEditTransporterDialogOpen(false);
+      setEditingTransporter(null);
+      setEditTransporterName("");
+      setEditTransporterCity("");
+      setEditTransporterPhone("");
+      setEditTransporterNewPassword("");
+      setEditTransporterPhoto(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de mettre à jour le transporteur",
+      });
+    },
+  });
+
+  const handleUpdateTransporter = () => {
+    const formData = new FormData();
+    
+    // Only add fields that have values
+    if (editTransporterName.trim()) {
+      formData.append("name", editTransporterName.trim());
+    }
+    if (editTransporterCity.trim()) {
+      formData.append("city", editTransporterCity.trim());
+    }
+    if (editTransporterPhone.trim()) {
+      formData.append("phoneNumber", editTransporterPhone.trim());
+    }
+    if (editTransporterNewPassword.trim()) {
+      formData.append("newPassword", editTransporterNewPassword.trim());
+    }
+    if (editTransporterPhoto) {
+      formData.append("truckPhoto", editTransporterPhoto);
+    }
+    
+    updateTransporterMutation.mutate(formData);
+  };
 
   // Format trend text
   const formatTrend = (trend: number) => {
@@ -1693,25 +1758,45 @@ export default function AdminDashboard() {
                                   </Button>
                                 </TableCell>
                                 <TableCell>
-                                  {transporter.accountStatus === "active" ? (
+                                  <div className="flex gap-2 flex-wrap">
                                     <Button
                                       size="sm"
-                                      variant="destructive"
-                                      onClick={() => handleBlockUser(transporter.id, "transporter")}
-                                      data-testid={`button-block-${transporter.id}`}
+                                      variant="outline"
+                                      onClick={() => {
+                                        setEditingTransporter(transporter);
+                                        setEditTransporterName(transporter.name || "");
+                                        setEditTransporterCity(transporter.city || "");
+                                        setEditTransporterPhone(transporter.phoneNumber || "");
+                                        setEditTransporterNewPassword("");
+                                        setEditTransporterPhoto(null);
+                                        setEditTransporterDialogOpen(true);
+                                      }}
+                                      data-testid={`button-edit-${transporter.id}`}
+                                      className="gap-1"
                                     >
-                                      🔒 Bloquer
+                                      <Pencil className="w-4 h-4" />
+                                      Modifier
                                     </Button>
-                                  ) : (
-                                    <Button
-                                      size="sm"
-                                      variant="default"
-                                      onClick={() => handleUnblockUser(transporter.id, "transporter")}
-                                      data-testid={`button-unblock-${transporter.id}`}
-                                    >
-                                      🔓 Débloquer
-                                    </Button>
-                                  )}
+                                    {transporter.accountStatus === "active" ? (
+                                      <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        onClick={() => handleBlockUser(transporter.id, "transporter")}
+                                        data-testid={`button-block-${transporter.id}`}
+                                      >
+                                        🔒 Bloquer
+                                      </Button>
+                                    ) : (
+                                      <Button
+                                        size="sm"
+                                        variant="default"
+                                        onClick={() => handleUnblockUser(transporter.id, "transporter")}
+                                        data-testid={`button-unblock-${transporter.id}`}
+                                      >
+                                        🔓 Débloquer
+                                      </Button>
+                                    )}
+                                  </div>
                                 </TableCell>
                               </TableRow>
                             ))}
@@ -3656,6 +3741,146 @@ export default function AdminDashboard() {
               className="max-w-full max-h-[600px] object-contain rounded-lg"
               data-testid="img-enlarged-truck"
             />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Transporter Dialog */}
+      <Dialog open={editTransporterDialogOpen} onOpenChange={setEditTransporterDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="dialog-edit-transporter">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="w-5 h-5" />
+              Modifier le profil du transporteur
+            </DialogTitle>
+            <DialogDescription>
+              Modifiez les informations du transporteur. Tous les champs sont facultatifs.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {/* Nom */}
+            <div className="space-y-2">
+              <label htmlFor="edit-transporter-name" className="text-sm font-medium">
+                Nom complet
+              </label>
+              <Input
+                id="edit-transporter-name"
+                value={editTransporterName}
+                onChange={(e) => setEditTransporterName(e.target.value)}
+                placeholder="Ex: Ahmed Benani"
+                data-testid="input-edit-transporter-name"
+              />
+            </div>
+
+            {/* Ville */}
+            <div className="space-y-2">
+              <label htmlFor="edit-transporter-city" className="text-sm font-medium">
+                Ville
+              </label>
+              <Input
+                id="edit-transporter-city"
+                value={editTransporterCity}
+                onChange={(e) => setEditTransporterCity(e.target.value)}
+                placeholder="Ex: Casablanca"
+                data-testid="input-edit-transporter-city"
+              />
+            </div>
+
+            {/* Téléphone */}
+            <div className="space-y-2">
+              <label htmlFor="edit-transporter-phone" className="text-sm font-medium">
+                Numéro de téléphone
+              </label>
+              <Input
+                id="edit-transporter-phone"
+                value={editTransporterPhone}
+                onChange={(e) => setEditTransporterPhone(e.target.value)}
+                placeholder="Ex: +212612345678"
+                data-testid="input-edit-transporter-phone"
+              />
+            </div>
+
+            {/* Code d'accès (nouveau mot de passe) */}
+            <div className="space-y-2">
+              <label htmlFor="edit-transporter-password" className="text-sm font-medium">
+                Code d'accès (nouveau mot de passe)
+              </label>
+              <Input
+                id="edit-transporter-password"
+                type="text"
+                value={editTransporterNewPassword}
+                onChange={(e) => setEditTransporterNewPassword(e.target.value)}
+                placeholder="Ex: 040189 (laissez vide pour ne pas changer)"
+                data-testid="input-edit-transporter-password"
+              />
+              <p className="text-xs text-muted-foreground">
+                Saisissez un nouveau code à 6 chiffres pour remplacer le mot de passe actuel
+              </p>
+            </div>
+
+            {/* Photo du camion */}
+            <div className="space-y-2">
+              <label htmlFor="edit-transporter-photo" className="text-sm font-medium">
+                📷 Photo du camion (modifier)
+              </label>
+              {editingTransporter?.truckPhoto && !editTransporterPhoto && (
+                <div className="mb-2">
+                  <img 
+                    src={editingTransporter.truckPhoto} 
+                    alt="Photo actuelle" 
+                    className="w-32 h-32 object-cover rounded border"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Photo actuelle</p>
+                </div>
+              )}
+              <Input
+                id="edit-transporter-photo"
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setEditTransporterPhoto(file);
+                  }
+                }}
+                data-testid="input-edit-transporter-photo"
+              />
+              {editTransporterPhoto && (
+                <p className="text-sm text-green-600">
+                  ✅ Nouvelle photo sélectionnée: {editTransporterPhoto.name}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Formats acceptés: JPG, PNG. Taille max: 5MB
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setEditTransporterDialogOpen(false);
+                setEditingTransporter(null);
+                setEditTransporterName("");
+                setEditTransporterCity("");
+                setEditTransporterPhone("");
+                setEditTransporterNewPassword("");
+                setEditTransporterPhoto(null);
+              }}
+              data-testid="button-cancel-edit-transporter"
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={() => {
+                if (editingTransporter) {
+                  handleUpdateTransporter();
+                }
+              }}
+              data-testid="button-confirm-edit-transporter"
+            >
+              Enregistrer les modifications
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

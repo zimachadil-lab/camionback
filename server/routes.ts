@@ -344,6 +344,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update transporter profile (admin)
+  app.patch("/api/admin/transporters/:id", upload.single("truckPhoto"), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { name, city, phoneNumber, newPassword } = req.body;
+      
+      // Check if user exists
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ error: "Transporteur non trouvé" });
+      }
+
+      if (user.role !== "transporter") {
+        return res.status(400).json({ error: "L'utilisateur n'est pas un transporteur" });
+      }
+
+      // Build update object
+      const updates: any = {};
+      
+      if (name) updates.name = name;
+      if (city) updates.city = city;
+      if (phoneNumber) updates.phoneNumber = phoneNumber;
+      
+      // Handle password update
+      if (newPassword) {
+        // Validate password is 6 digits
+        if (!/^\d{6}$/.test(newPassword)) {
+          return res.status(400).json({ error: "Le code d'accès doit contenir exactement 6 chiffres" });
+        }
+        updates.passwordHash = await bcrypt.hash(newPassword, 10);
+      }
+      
+      // Handle truck photo upload
+      if (req.file) {
+        const photoBase64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`;
+        updates.truckPhotos = [photoBase64];
+      }
+
+      // Update user
+      const updatedUser = await storage.updateUser(id, updates);
+      
+      if (!updatedUser) {
+        return res.status(500).json({ error: "Échec de la mise à jour" });
+      }
+
+      console.log(`✅ Transporteur mis à jour - ID: ${id}, Nom: ${updatedUser.name}`);
+      res.json({ user: updatedUser });
+    } catch (error) {
+      console.error("Update transporter error:", error);
+      res.status(500).json({ error: "Échec de la mise à jour du transporteur" });
+    }
+  });
+
   // Report/Signalement routes
   app.post("/api/reports", async (req, res) => {
     try {
