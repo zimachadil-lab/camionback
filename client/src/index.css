@@ -352,4 +352,17 @@
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
     inset: -1px;
   }
+
+  /* CamioMatch truck driving animation */
+  @keyframes drive {
+    0% {
+      transform: translateX(0);
+    }
+    50% {
+      transform: translateX(150px);
+    }
+    100% {
+      transform: translateX(0);
+    }
+  }
 }

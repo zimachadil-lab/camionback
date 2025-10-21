@@ -1,0 +1,96 @@
+⚡ Nouvelle fonctionnalité : “CamioMatch” (remplace Recommandations)
+
+Merci de remplacer complètement le bouton “Recommandations” par “⚡ CamioMatch”.
+Cette fonctionnalité doit garder la logique actuelle, mais avec un design plus dynamique et un effet de “matching” inspiré de Tinder.
+
+🔹 1. Nouveau bouton sur la carte commande
+
+Remplacer le mot “Recommandations” par :
+⚡ CamioMatch
+
+Garder le même emplacement, mais réduire légèrement la largeur pour un meilleur rendu mobile.
+
+Couleur principale : #17cfcf, texte blanc, effet glow au survol.
+
+Le bouton doit donner une impression de “recherche intelligente” — icône ⚡ animée pendant le chargement.
+
+🔹 2. Animation de chargement
+
+Au lieu du texte “Chargement des recommandations...”,
+afficher une animation de camion en mouvement sur une route pendant la recherche de transporteurs.
+👉 Exemple : un petit camion turquoise roulant sur une ligne horizontale (type loader animé SVG ou Lottie).
+
+Animation fluide (2–3 secondes en boucle) jusqu’à ce que les résultats apparaissent.
+
+🔹 3. Résultat — style “matching Tinder”
+
+L’idée : rendre la sélection des transporteurs fun, fluide, et intuitive comme un “swipe Tinder”.
+
+Format d’affichage dans la popup :
+
+Une grande carte centrale affichant :
+
+Photo du camion (ou image par défaut)
+
+Nom / ID transporteur
+
+Ville actuelle
+
+Statut “Actif récemment”
+
+Étoiles de satisfaction ⭐
+
+Sous la carte :
+
+Deux boutons :
+
+❌ (Ignorer / passer au suivant)
+
+💬 (Contacter)
+
+Un effet de glissement latéral (swipe) ou flèches gauche/droite pour passer d’un transporteur à un autre.
+
+Exemple de texte au-dessus de la carte :
+
+🚛 Voici les meilleurs matches pour votre trajet !
+Glissez pour découvrir vos options 👇
+
+🔹 4. Logique de tri des “matches”
+
+Priorité aux transporteurs ayant déclaré un retour vide sur la même route (ex : Casa → Marrakech).
+
+Ensuite, ceux récemment actifs (connectés dans les dernières 24h).
+
+Puis, ceux avec meilleur taux de satisfaction.
+
+Enfin, s’il n’y a pas de correspondance, afficher des transporteurs proches ou aléatoires.
+
+🔹 5. Sécurité & contrôle
+
+Les messages envoyés via “CamioMatch” doivent rester dans la messagerie interne, sans afficher les numéros de téléphone.
+
+Si un client contacte un transporteur via cette popup, l’admin reçoit une notification :
+
+“Le client CMD-XXXX vient de contacter le transporteur T-XXX via CamioMatch.”
+
+🔹 6. Design & fluidité
+
+Interface simple et moderne, fond clair (ou transparent).
+
+Animation fluide entre les cartes (type swipe ou fade transition).
+
+Éviter la surcharge visuelle : privilégier grandes images, peu de texte, et icônes intuitives.
+
+Compatible mobile :
+
+Swipe = doigt gauche/droite
+
+Boutons grands et espacés
+
+Texte visible sans zoom
+
+✅ Objectif attendu
+
+Créer une expérience immersive et fluide où le client a l’impression de matcher son camion idéal, tout en gardant la logique métier de CamionBack.
+
+Exemple attendu : Tinder-style cards, animation fun, et design “énergique” cohérent avec les couleurs #17cfcf et #0a2540.

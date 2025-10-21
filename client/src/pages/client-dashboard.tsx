@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star, CreditCard, Upload, Eye, Edit, MessageSquare, Calendar, Flag, Truck, Users } from "lucide-react";
+import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star, CreditCard, Upload, Eye, Edit, MessageSquare, Calendar, Flag, Truck, Users, Zap, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { NewRequestForm } from "@/components/client/new-request-form";
 import { OfferCard } from "@/components/client/offer-card";
@@ -73,7 +73,8 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showOffersDialog, setShowOffersDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const [showRecommendationsDialog, setShowRecommendationsDialog] = useState(false);
+  const [showCamioMatchDialog, setShowCamioMatchDialog] = useState(false);
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const isAccepted = request.status === "accepted";
   const { toast } = useToast();
 
@@ -184,15 +185,22 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
     editRequestMutation.mutate(payload);
   };
 
-  // Recommendations query
-  const { data: recommendations = [], isLoading: recommendationsLoading } = useQuery({
+  // CamioMatch query
+  const { data: matches = [], isLoading: matchesLoading } = useQuery({
     queryKey: ["/api/recommendations", request.id],
     queryFn: async () => {
       const response = await fetch(`/api/recommendations/${request.id}`);
       return response.json();
     },
-    enabled: showRecommendationsDialog,
+    enabled: showCamioMatchDialog,
   });
+
+  // Reset current match index when dialog opens
+  useEffect(() => {
+    if (showCamioMatchDialog) {
+      setCurrentMatchIndex(0);
+    }
+  }, [showCamioMatchDialog]);
 
   // Contact transporter mutation
   const contactTransporterMutation = useMutation({
@@ -303,21 +311,21 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
             </Button>
           )}
 
-          {/* Nouveaux boutons: Recommandations et Coordinateur */}
+          {/* Nouveaux boutons: CamioMatch et Coordinateur */}
           {!isAccepted && (
             <div className="flex flex-wrap gap-2.5">
               <Button
-                onClick={() => setShowRecommendationsDialog(true)}
-                data-testid={`button-recommendations-${request.id}`}
-                className="flex-1 min-w-[140px] gap-2 rounded-xl font-semibold text-white bg-gradient-to-br from-[#17cfcf] to-[#13b3b3] border-0 shadow-md hover:shadow-lg hover:shadow-[#17cfcf]/25 transition-all duration-300 hover:scale-[1.02]"
+                onClick={() => setShowCamioMatchDialog(true)}
+                data-testid={`button-camiomatch-${request.id}`}
+                className="flex-1 min-w-[135px] gap-2 rounded-xl font-semibold text-white bg-gradient-to-br from-[#17cfcf] to-[#13b3b3] border-0 shadow-md hover:shadow-lg hover:shadow-[#17cfcf]/30 transition-all duration-300 hover:scale-[1.02]"
               >
-                <Truck className="w-5 h-5" />
-                Recommandations
+                <Zap className="w-5 h-5" />
+                CamioMatch
               </Button>
               <Button
                 onClick={handleWhatsAppContact}
                 data-testid={`button-coordinator-${request.id}`}
-                className="flex-1 min-w-[140px] gap-2 rounded-xl font-semibold text-white bg-gradient-to-br from-[#17cfcf] to-[#13b3b3] border-0 shadow-md hover:shadow-lg hover:shadow-[#17cfcf]/25 transition-all duration-300 hover:scale-[1.02]"
+                className="flex-1 min-w-[135px] gap-2 rounded-xl font-semibold text-white bg-gradient-to-br from-[#17cfcf] to-[#13b3b3] border-0 shadow-md hover:shadow-lg hover:shadow-[#17cfcf]/25 transition-all duration-300 hover:scale-[1.02]"
               >
                 <Phone className="w-5 h-5" />
                 Coordinateur
@@ -434,6 +442,201 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
               <p className="text-sm text-muted-foreground text-center py-8">
                 Aucune offre pour le moment
               </p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog CamioMatch */}
+      <Dialog open={showCamioMatchDialog} onOpenChange={setShowCamioMatchDialog}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-center flex items-center justify-center gap-2">
+              <Zap className="w-6 h-6 text-[#17cfcf]" />
+              CamioMatch
+            </DialogTitle>
+            <DialogDescription className="text-center text-base">
+              🚛 Voici les meilleurs matches pour votre trajet !
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-6">
+            {matchesLoading ? (
+              <div className="flex flex-col items-center justify-center py-12 space-y-6">
+                {/* Animation de chargement avec camion */}
+                <div className="relative w-48 h-24">
+                  <div className="absolute bottom-8 left-0 w-full h-1 bg-gray-300 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] rounded-full animate-pulse" />
+                  </div>
+                  <div className="absolute bottom-0 left-0 w-16 h-16 animate-[drive_2s_ease-in-out_infinite]">
+                    <Truck className="w-full h-full text-[#17cfcf]" />
+                  </div>
+                </div>
+                <p className="text-lg font-medium text-[#17cfcf] animate-pulse">
+                  Recherche des meilleurs transporteurs...
+                </p>
+              </div>
+            ) : matches.length === 0 ? (
+              <div className="text-center py-12">
+                <Truck className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                <p className="text-lg font-medium text-muted-foreground">
+                  Aucun match disponible pour le moment
+                </p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Essayez de republier votre demande ou contactez le coordinateur
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <p className="text-center text-sm text-muted-foreground">
+                  Glissez pour découvrir vos options 👇
+                </p>
+
+                {/* Carte centrale du match actuel */}
+                <div className="relative">
+                  <Card className="overflow-hidden border-2 border-[#17cfcf]/30 shadow-xl bg-gradient-to-br from-background to-[#17cfcf]/5">
+                    <CardContent className="p-6 space-y-4">
+                      {/* Photo du camion */}
+                      <div className="w-full h-48 bg-gradient-to-br from-[#0a2540] to-[#1d3c57] rounded-lg overflow-hidden flex items-center justify-center">
+                        {matches[currentMatchIndex]?.truckPhoto ? (
+                          <img
+                            src={matches[currentMatchIndex].truckPhoto}
+                            alt="Camion"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Truck className="w-24 h-24 text-[#17cfcf]/50" />
+                        )}
+                      </div>
+
+                      {/* Informations transporteur */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-xl font-bold">
+                            {matches[currentMatchIndex]?.name || `Transporteur ${matches[currentMatchIndex]?.id?.substring(0, 8)}`}
+                          </h3>
+                          {matches[currentMatchIndex]?.priority && (
+                            <Badge className="bg-[#17cfcf] text-white font-semibold">
+                              {matches[currentMatchIndex].priority === 'empty_return' && '🎯 Retour à vide'}
+                              {matches[currentMatchIndex].priority === 'active' && '⚡ Actif récemment'}
+                              {matches[currentMatchIndex].priority === 'rating' && '⭐ Bien noté'}
+                            </Badge>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-4 text-sm">
+                          <span className="flex items-center gap-1">
+                            <span className="text-muted-foreground">Ville:</span>
+                            <span className="font-medium">{matches[currentMatchIndex]?.city || 'N/A'}</span>
+                          </span>
+                        </div>
+
+                        {/* Étoiles de satisfaction */}
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`w-5 h-5 ${
+                                  i < Math.round(matches[currentMatchIndex]?.rating || 0)
+                                    ? 'fill-yellow-400 text-yellow-400'
+                                    : 'text-gray-300'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-sm font-medium">
+                            {(matches[currentMatchIndex]?.rating || 0).toFixed(1)} / 5.0
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            ({matches[currentMatchIndex]?.totalTrips || 0} trajets)
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Navigation avec flèches */}
+                  {matches.length > 1 && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setCurrentMatchIndex((prev) => (prev === 0 ? matches.length - 1 : prev - 1))}
+                        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 h-12 w-12 rounded-full bg-background/80 backdrop-blur hover:bg-background border-2 border-[#17cfcf]/30"
+                        data-testid="button-previous-match"
+                      >
+                        <ChevronLeft className="w-6 h-6" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setCurrentMatchIndex((prev) => (prev === matches.length - 1 ? 0 : prev + 1))}
+                        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 h-12 w-12 rounded-full bg-background/80 backdrop-blur hover:bg-background border-2 border-[#17cfcf]/30"
+                        data-testid="button-next-match"
+                      >
+                        <ChevronRight className="w-6 h-6" />
+                      </Button>
+                    </>
+                  )}
+                </div>
+
+                {/* Indicateur de position */}
+                {matches.length > 1 && (
+                  <div className="flex items-center justify-center gap-2">
+                    {matches.map((_: any, index: number) => (
+                      <div
+                        key={index}
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          index === currentMatchIndex
+                            ? 'w-8 bg-[#17cfcf]'
+                            : 'w-2 bg-gray-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* Boutons d'action */}
+                <div className="flex items-center justify-center gap-4">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={() => {
+                      // Passer au suivant
+                      if (currentMatchIndex < matches.length - 1) {
+                        setCurrentMatchIndex(currentMatchIndex + 1);
+                      } else {
+                        toast({
+                          title: "Fin des matches",
+                          description: "Vous avez vu tous les transporteurs disponibles",
+                        });
+                      }
+                    }}
+                    className="w-32 h-16 rounded-full border-2 border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
+                    data-testid="button-skip-match"
+                  >
+                    <X className="w-8 h-8" />
+                  </Button>
+                  <Button
+                    size="lg"
+                    onClick={() => {
+                      const currentMatch = matches[currentMatchIndex];
+                      contactTransporterMutation.mutate(currentMatch.id);
+                      onChat(currentMatch.id, currentMatch.name || 'Transporteur', request.id);
+                      setShowCamioMatchDialog(false);
+                    }}
+                    className="w-32 h-16 rounded-full bg-gradient-to-br from-[#17cfcf] to-[#13b3b3] text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                    data-testid="button-contact-match"
+                  >
+                    <MessageSquare className="w-8 h-8" />
+                  </Button>
+                </div>
+
+                <p className="text-center text-xs text-muted-foreground">
+                  {currentMatchIndex + 1} / {matches.length} transporteurs
+                </p>
+              </div>
             )}
           </div>
         </DialogContent>
@@ -674,79 +877,6 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Dialog des recommandations */}
-      <Dialog open={showRecommendationsDialog} onOpenChange={setShowRecommendationsDialog}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Transporteurs recommandés - {request.referenceId}</DialogTitle>
-            <DialogDescription>
-              {request.fromCity} → {request.toCity}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 mt-4">
-            {recommendationsLoading ? (
-              <p className="text-sm text-muted-foreground text-center py-8">
-                Chargement des recommandations...
-              </p>
-            ) : recommendations.length > 0 ? (
-              <div className="space-y-3">
-                {recommendations.map((transporter: any) => (
-                  <Card key={transporter.id} className="overflow-hidden bg-[#0f324f]/30 border-[#1d3c57]">
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 space-y-2">
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-semibold">{transporter.name}</h4>
-                            {transporter.hasEmptyReturn && (
-                              <Badge className="bg-[#17cfcf] text-white">Retour à vide</Badge>
-                            )}
-                            {transporter.recentlyActive && (
-                              <Badge variant="secondary">Actif récemment</Badge>
-                            )}
-                            {transporter.highRated && (
-                              <Badge variant="default" className="bg-green-600">Bien noté</Badge>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
-                              {parseFloat(transporter.rating || "0").toFixed(1)}
-                            </span>
-                            <span>
-                              {transporter.totalTrips || 0} trajet{transporter.totalTrips > 1 ? 's' : ''}
-                            </span>
-                            {transporter.city && (
-                              <span>{transporter.city}</span>
-                            )}
-                          </div>
-                        </div>
-                        <Button
-                          size="sm"
-                          className="gap-2 bg-[#17cfcf] hover:bg-[#17cfcf]/90 border-[#17cfcf]"
-                          onClick={() => {
-                            contactTransporterMutation.mutate(transporter.id);
-                            onChat(transporter.id, transporter.name, request.id);
-                            setShowRecommendationsDialog(false);
-                          }}
-                          data-testid={`button-contact-transporter-${transporter.id}`}
-                        >
-                          <MessageSquare className="w-4 h-4" />
-                          Contacter
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground text-center py-8">
-                Aucune recommandation disponible pour le moment
-              </p>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }
