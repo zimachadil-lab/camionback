@@ -449,14 +449,20 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
 
       {/* Dialog CamioMatch */}
       <Dialog open={showCamioMatchDialog} onOpenChange={setShowCamioMatchDialog}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden">
           <DialogHeader>
+            {/* Phrase animée d'accueil */}
+            <div className="text-center mb-2">
+              <p className="text-sm text-[#17cfcf] font-medium animate-pulse flex items-center justify-center gap-2">
+                <Truck className="w-4 h-4" />
+                Trouvons le bon camion pour vous...
+              </p>
+            </div>
             <DialogTitle className="text-2xl font-bold text-center flex items-center justify-center gap-2">
               <Zap className="w-6 h-6 text-[#17cfcf]" />
               CamioMatch
             </DialogTitle>
-            <DialogDescription className="text-center text-base flex items-center justify-center gap-2">
-              <Truck className="w-5 h-5" />
+            <DialogDescription className="text-center text-base">
               Voici les meilleurs matches pour votre trajet
             </DialogDescription>
           </DialogHeader>
@@ -495,19 +501,19 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                 </p>
 
                 {/* Carte centrale du match actuel */}
-                <div className="relative">
-                  <Card className="overflow-hidden border-2 border-[#17cfcf]/30 shadow-xl bg-gradient-to-br from-background to-[#17cfcf]/5">
+                <div className="relative transition-all duration-300">
+                  <Card className="overflow-hidden border-2 border-[#17cfcf]/40 shadow-2xl bg-gradient-to-br from-card via-card to-[#17cfcf]/10 backdrop-blur-sm">
                     <CardContent className="p-6 space-y-4">
                       {/* Photo du camion */}
-                      <div className="w-full h-48 bg-gradient-to-br from-[#0a2540] to-[#1d3c57] rounded-lg overflow-hidden flex items-center justify-center">
+                      <div className="w-full h-52 bg-gradient-to-br from-[#0a2540] via-[#1d3c57] to-[#17cfcf]/20 rounded-xl overflow-hidden flex items-center justify-center relative shadow-inner">
                         {matches[currentMatchIndex]?.truckPhoto ? (
                           <img
                             src={matches[currentMatchIndex].truckPhoto}
-                            alt="Camion"
-                            className="w-full h-full object-cover"
+                            alt="Camion du transporteur"
+                            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                           />
                         ) : (
-                          <Truck className="w-24 h-24 text-[#17cfcf]/50" />
+                          <Truck className="w-24 h-24 text-[#17cfcf] opacity-40" />
                         )}
                       </div>
 
@@ -573,26 +579,26 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                     </CardContent>
                   </Card>
 
-                  {/* Navigation avec flèches */}
+                  {/* Navigation avec flèches améliorées */}
                   {matches.length > 1 && (
                     <>
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => setCurrentMatchIndex((prev) => (prev === 0 ? matches.length - 1 : prev - 1))}
-                        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 h-12 w-12 rounded-full bg-background/80 backdrop-blur hover:bg-background border-2 border-[#17cfcf]/30"
+                        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 h-14 w-14 rounded-full bg-background shadow-lg border-2 border-[#17cfcf] hover:bg-[#17cfcf]/10 hover:scale-110 transition-all duration-200 z-10"
                         data-testid="button-previous-match"
                       >
-                        <ChevronLeft className="w-6 h-6" />
+                        <ChevronLeft className="w-8 h-8 text-[#17cfcf]" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => setCurrentMatchIndex((prev) => (prev === matches.length - 1 ? 0 : prev + 1))}
-                        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 h-12 w-12 rounded-full bg-background/80 backdrop-blur hover:bg-background border-2 border-[#17cfcf]/30"
+                        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 h-14 w-14 rounded-full bg-background shadow-lg border-2 border-[#17cfcf] hover:bg-[#17cfcf]/10 hover:scale-110 transition-all duration-200 z-10"
                         data-testid="button-next-match"
                       >
-                        <ChevronRight className="w-6 h-6" />
+                        <ChevronRight className="w-8 h-8 text-[#17cfcf]" />
                       </Button>
                     </>
                   )}
@@ -614,8 +620,8 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                   </div>
                 )}
 
-                {/* Boutons d'action */}
-                <div className="flex items-center justify-center gap-4">
+                {/* Boutons d'action style Tinder */}
+                <div className="flex items-center justify-center gap-6 pt-2">
                   <Button
                     variant="outline"
                     size="lg"
@@ -630,10 +636,10 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                         });
                       }
                     }}
-                    className="w-32 h-16 rounded-full border-2 border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
+                    className="w-16 h-16 rounded-full border-2 border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200"
                     data-testid="button-skip-match"
                   >
-                    <X className="w-8 h-8" />
+                    <X className="w-7 h-7" />
                   </Button>
                   <Button
                     size="lg"
@@ -643,10 +649,10 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                       onChat(currentMatch.id, currentMatch.name || 'Transporteur', request.id);
                       setShowCamioMatchDialog(false);
                     }}
-                    className="w-32 h-16 rounded-full bg-gradient-to-br from-[#17cfcf] to-[#13b3b3] text-white border-0 shadow-lg hover:shadow-xl transition-shadow duration-300 hover-elevate active-elevate-2"
+                    className="w-20 h-20 rounded-full bg-gradient-to-br from-[#17cfcf] to-[#13b3b3] text-white border-0 shadow-xl hover:shadow-2xl hover:shadow-[#17cfcf]/50 hover:scale-110 transition-all duration-200"
                     data-testid="button-contact-match"
                   >
-                    <MessageSquare className="w-8 h-8" />
+                    <MessageSquare className="w-9 h-9" />
                   </Button>
                 </div>
 
