@@ -966,7 +966,7 @@ export default function AdminDashboard() {
                               <TableCell className="font-medium">{request.referenceId}</TableCell>
                               <TableCell className="text-sm">{formatDateWithTime(request.createdAt)}</TableCell>
                               <TableCell>
-                                Client {client?.clientId || "Non défini"}
+                                {client?.phoneNumber || "Non défini"}
                               </TableCell>
                               <TableCell>
                                 <div className="text-sm">
@@ -3078,8 +3078,8 @@ export default function AdminDashboard() {
                   <CardContent className="space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <p className="text-sm text-muted-foreground">Identifiant</p>
-                        <p className="font-medium">Client {client?.clientId || "Non défini"}</p>
+                        <p className="text-sm text-muted-foreground">Numéro de téléphone</p>
+                        <p className="font-medium">{client?.phoneNumber || "Non défini"}</p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Ville</p>
