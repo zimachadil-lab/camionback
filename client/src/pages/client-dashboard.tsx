@@ -305,23 +305,23 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
 
           {/* Nouveaux boutons: Recommandations et Coordinateur */}
           {!isAccepted && (
-            <div className="flex flex-wrap gap-3 sm:gap-2">
-              <button
+            <div className="flex flex-wrap gap-2.5">
+              <Button
                 onClick={() => setShowRecommendationsDialog(true)}
                 data-testid={`button-recommendations-${request.id}`}
-                className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-white text-sm whitespace-nowrap bg-gradient-to-br from-[#17cfcf] to-[#13b3b3] shadow-md hover:shadow-lg hover:shadow-[#17cfcf]/30 transition-all duration-300 hover:scale-[1.03] active:scale-[0.98]"
+                className="flex-1 min-w-[140px] gap-2 rounded-xl font-semibold text-white bg-gradient-to-br from-[#17cfcf] to-[#13b3b3] border-0 shadow-md hover:shadow-lg hover:shadow-[#17cfcf]/25 transition-all duration-300 hover:scale-[1.02]"
               >
                 <Truck className="w-5 h-5" />
-                <span>Recommandations</span>
-              </button>
-              <button
+                Recommandations
+              </Button>
+              <Button
                 onClick={handleWhatsAppContact}
                 data-testid={`button-coordinator-${request.id}`}
-                className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-white text-sm whitespace-nowrap bg-gradient-to-br from-[#17cfcf] to-[#13b3b3] shadow-md hover:shadow-lg hover:shadow-[#17cfcf]/30 transition-all duration-300 hover:scale-[1.03] active:scale-[0.98]"
+                className="flex-1 min-w-[140px] gap-2 rounded-xl font-semibold text-white bg-gradient-to-br from-[#17cfcf] to-[#13b3b3] border-0 shadow-md hover:shadow-lg hover:shadow-[#17cfcf]/25 transition-all duration-300 hover:scale-[1.02]"
               >
                 <Phone className="w-5 h-5" />
-                <span>Coordinateur</span>
-              </button>
+                Coordinateur
+              </Button>
             </div>
           )}
 
