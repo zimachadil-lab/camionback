@@ -1,0 +1,55 @@
+J’ai testé la nouvelle version de CamioMatch (voir capture jointe) et voici les points à corriger / améliorer pour que tout fonctionne parfaitement :
+
+🧭 1. Position des flèches de navigation
+
+Les flèches pour basculer entre les transporteurs (droite/gauche) sont actuellement trop centrées et se chevauchent avec la carte.
+
+Merci de les décaler légèrement vers les bords latéraux de la popup (≈ 15–20px du bord) pour que la navigation soit plus fluide et lisible.
+
+Il faut aussi augmenter légèrement leur taille et leur contraste pour une meilleure visibilité sur mobile.
+
+🚚 2. Affichage des photos réelles des camions
+
+Actuellement, la photo réelle du camion ne s’affiche pas (même pour les profils validés avec photo).
+
+Merci de :
+
+Vérifier le mapping du champ photoCamion (ou équivalent) dans la requête de données.
+
+T’assurer que le rendu récupère bien l’image uploadée par le transporteur (et non une image par défaut).
+
+Si aucune photo n’existe, garder l’icône de camion par défaut, mais réduire son opacité (par exemple 0.5).
+
+💬 3. Bouton pour envoyer un message
+
+Le bouton de messagerie n’apparaît pas dans la carte.
+
+Merci d’ajouter un bouton stylisé “💬 Contacter” ou une icône message à la manière du style Tinder :
+
+Position : juste en bas au centre de la carte (entre les flèches gauche/droite).
+
+Design : rond, avec une légère ombre, couleur principale #17cfcf, icône blanche.
+
+Action : ouvrir une petite popup de messagerie instantanée interne entre le client et le transporteur sélectionné.
+
+🎨 4. Suggestions design (optionnel mais recommandé)
+
+Ajouter un léger effet de “swipe” lors du passage d’un profil à l’autre (glissement latéral ou fade-in/out).
+
+Donner un fond un peu plus contrasté à la carte (par ex. gradient subtil) pour mettre la photo du camion en valeur.
+
+Ajouter éventuellement une courte phrase animée au-dessus du titre :
+
+“🚛 Trouvons le bon camion pour vous...”
+
+✅ Objectif attendu
+
+👉 Une expérience fluide, visuelle et intuitive :
+
+Photos réelles bien visibles
+
+Navigation claire avec flèches
+
+Interaction directe via bouton “Contacter”
+
+Rendu agréable et cohérent avec le style Tinder-style matching

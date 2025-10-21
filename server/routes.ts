@@ -2382,7 +2382,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: t.id,
         name: t.name,
         city: t.city,
-        truckPhoto: t.truckPhoto,
+        truckPhoto: t.truckPhotos && t.truckPhotos.length > 0 ? t.truckPhotos[0] : null,
         rating: parseFloat(t.rating || "0"),
         totalTrips: completedOffersByTransporter.get(t.id) || 0,
         priority,
