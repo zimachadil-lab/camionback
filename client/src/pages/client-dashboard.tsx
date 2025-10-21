@@ -494,18 +494,13 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                 </p>
               </div>
             ) : (
-              <div className="space-y-6">
-                <p className="text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
-                  Glissez pour découvrir vos options
-                  <ArrowDown className="w-4 h-4" />
-                </p>
-
+              <div className="space-y-4">
                 {/* Carte centrale du match actuel */}
                 <div className="relative transition-all duration-300">
                   <Card className="overflow-hidden border-2 border-[#17cfcf]/40 shadow-2xl bg-gradient-to-br from-card via-card to-[#17cfcf]/10 backdrop-blur-sm">
-                    <CardContent className="p-6 space-y-4">
+                    <CardContent className="p-4 space-y-3">
                       {/* Photo du camion */}
-                      <div className="w-full h-52 bg-gradient-to-br from-[#0a2540] via-[#1d3c57] to-[#17cfcf]/20 rounded-xl overflow-hidden flex items-center justify-center relative shadow-inner">
+                      <div className="w-full h-40 bg-gradient-to-br from-[#0a2540] via-[#1d3c57] to-[#17cfcf]/20 rounded-xl overflow-hidden flex items-center justify-center relative shadow-inner">
                         {matches[currentMatchIndex]?.truckPhoto ? (
                           <img
                             src={matches[currentMatchIndex].truckPhoto}
@@ -606,42 +601,26 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
 
                 {/* Indicateur de position */}
                 {matches.length > 1 && (
-                  <div className="flex items-center justify-center gap-2">
+                  <div className="flex items-center justify-center gap-2 mt-2">
                     {matches.map((_: any, index: number) => (
                       <div
                         key={index}
-                        className={`h-2 rounded-full transition-all duration-300 ${
+                        className={`h-1.5 rounded-full transition-all duration-300 ${
                           index === currentMatchIndex
-                            ? 'w-8 bg-[#17cfcf]'
-                            : 'w-2 bg-gray-300'
+                            ? 'w-6 bg-[#17cfcf]'
+                            : 'w-1.5 bg-gray-300'
                         }`}
                       />
                     ))}
                   </div>
                 )}
 
-                {/* Boutons d'action style Tinder */}
-                <div className="flex flex-col items-center gap-4 pt-4">
-                  {/* Bouton Contacter principal avec animation pulse */}
+                {/* Boutons d'action style Tinder - icônes uniquement */}
+                <div className="flex items-center justify-center gap-8 pt-2">
+                  {/* Bouton Passer (gauche, rouge/gris) */}
                   <Button
-                    size="lg"
-                    onClick={() => {
-                      const currentMatch = matches[currentMatchIndex];
-                      contactTransporterMutation.mutate(currentMatch.id);
-                      onChat(currentMatch.id, currentMatch.name || 'Transporteur', request.id);
-                      setShowCamioMatchDialog(false);
-                    }}
-                    className="rounded-full bg-gradient-to-br from-[#17cfcf] to-[#13b3b3] text-white border-0 shadow-xl animate-pulse-glow font-semibold"
-                    data-testid="button-contact-match"
-                  >
-                    <MessageSquare className="w-5 h-5 mr-2" />
-                    Contacter
-                  </Button>
-
-                  {/* Bouton Passer en version discrète */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
+                    variant="outline"
+                    size="icon"
                     onClick={() => {
                       // Passer au suivant
                       if (currentMatchIndex < matches.length - 1) {
@@ -653,16 +632,31 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                         });
                       }
                     }}
-                    className="text-muted-foreground"
+                    className="rounded-full border-2 border-red-500/60 text-red-500 shadow-lg"
                     data-testid="button-skip-match"
                   >
-                    <X className="w-4 h-4 mr-1" />
-                    Passer
+                    <X className="w-8 h-8" />
+                  </Button>
+
+                  {/* Bouton Contacter (droite, turquoise avec pulse) */}
+                  <Button
+                    size="icon"
+                    onClick={() => {
+                      const currentMatch = matches[currentMatchIndex];
+                      contactTransporterMutation.mutate(currentMatch.id);
+                      onChat(currentMatch.id, currentMatch.name || 'Transporteur', request.id);
+                      setShowCamioMatchDialog(false);
+                    }}
+                    className="rounded-full bg-gradient-to-br from-[#17cfcf] to-[#13b3b3] text-white border-0 shadow-xl animate-pulse-glow"
+                    data-testid="button-contact-match"
+                  >
+                    <MessageSquare className="w-8 h-8" />
                   </Button>
                 </div>
 
-                <p className="text-center text-xs text-muted-foreground">
-                  {currentMatchIndex + 1} / {matches.length} transporteurs
+                {/* Compteur discret */}
+                <p className="text-center text-[10px] text-muted-foreground/60 mt-1">
+                  {currentMatchIndex + 1} / {matches.length}
                 </p>
               </div>
             )}
