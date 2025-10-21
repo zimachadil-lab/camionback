@@ -3216,6 +3216,83 @@ export default function AdminDashboard() {
                   </Card>
                 )}
 
+                {/* Offers Received */}
+                {(() => {
+                  const requestOffers = allOffers.filter((offer: any) => offer.requestId === selectedRequest.id);
+                  if (requestOffers.length === 0) return null;
+                  
+                  return (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Package className="w-4 h-4" />
+                          Offres reçues ({requestOffers.length})
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          {requestOffers.map((offer: any) => {
+                            const transporter = users.find((u: any) => u.id === offer.transporterId);
+                            const formatOfferDate = (dateStr: string) => {
+                              if (!dateStr) return "N/A";
+                              try {
+                                const date = new Date(dateStr);
+                                return date.toLocaleDateString("fr-FR", { 
+                                  day: '2-digit', 
+                                  month: '2-digit', 
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                });
+                              } catch {
+                                return "N/A";
+                              }
+                            };
+
+                            return (
+                              <div key={offer.id} className="flex items-center justify-between p-4 border rounded-lg hover-elevate">
+                                <div className="flex-1 space-y-1">
+                                  <div className="flex items-center gap-2">
+                                    <p className="font-medium">{transporter?.name || "Transporteur inconnu"}</p>
+                                    {offer.status === "accepted" && (
+                                      <Badge className="bg-green-600">Acceptée</Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">
+                                    {transporter?.phoneNumber || "N/A"}
+                                  </p>
+                                  <div className="flex items-center gap-4 text-sm">
+                                    <span className="font-semibold text-primary">
+                                      {parseFloat(offer.amount).toLocaleString("fr-MA")} MAD
+                                    </span>
+                                    <span className="text-muted-foreground">
+                                      {formatOfferDate(offer.createdAt)}
+                                    </span>
+                                  </div>
+                                </div>
+                                {offer.status !== "accepted" && selectedRequest.status === "open" && (
+                                  <Button
+                                    size="sm"
+                                    onClick={() => {
+                                      if (confirm("Voulez-vous accepter cette offre ? Le transporteur et le client seront notifiés.")) {
+                                        handleAcceptOfferAsAdmin(offer.id, selectedRequest.id);
+                                        setRequestDetailDialogOpen(false);
+                                      }
+                                    }}
+                                    data-testid={`button-accept-offer-${offer.id}`}
+                                  >
+                                    ✅ Accepter l'offre
+                                  </Button>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })()}
+
                 {/* Action Buttons */}
                 <div className="flex justify-end gap-3 pt-4 border-t">
                   <Button
