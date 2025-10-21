@@ -621,10 +621,27 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                 )}
 
                 {/* Boutons d'action style Tinder */}
-                <div className="flex items-center justify-center gap-6 pt-2">
+                <div className="flex flex-col items-center gap-4 pt-4">
+                  {/* Bouton Contacter principal avec animation pulse */}
                   <Button
-                    variant="outline"
                     size="lg"
+                    onClick={() => {
+                      const currentMatch = matches[currentMatchIndex];
+                      contactTransporterMutation.mutate(currentMatch.id);
+                      onChat(currentMatch.id, currentMatch.name || 'Transporteur', request.id);
+                      setShowCamioMatchDialog(false);
+                    }}
+                    className="rounded-full bg-gradient-to-br from-[#17cfcf] to-[#13b3b3] text-white border-0 shadow-xl animate-pulse-glow font-semibold"
+                    data-testid="button-contact-match"
+                  >
+                    <MessageSquare className="w-5 h-5 mr-2" />
+                    Contacter
+                  </Button>
+
+                  {/* Bouton Passer en version discrète */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => {
                       // Passer au suivant
                       if (currentMatchIndex < matches.length - 1) {
@@ -636,23 +653,11 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                         });
                       }
                     }}
-                    className="w-16 h-16 rounded-full border-2 border-red-500 text-red-500 shadow-lg"
+                    className="text-muted-foreground"
                     data-testid="button-skip-match"
                   >
-                    <X className="w-7 h-7" />
-                  </Button>
-                  <Button
-                    size="lg"
-                    onClick={() => {
-                      const currentMatch = matches[currentMatchIndex];
-                      contactTransporterMutation.mutate(currentMatch.id);
-                      onChat(currentMatch.id, currentMatch.name || 'Transporteur', request.id);
-                      setShowCamioMatchDialog(false);
-                    }}
-                    className="w-20 h-20 rounded-full bg-gradient-to-br from-[#17cfcf] to-[#13b3b3] text-white border-0 shadow-xl"
-                    data-testid="button-contact-match"
-                  >
-                    <MessageSquare className="w-9 h-9" />
+                    <X className="w-4 h-4 mr-1" />
+                    Passer
                   </Button>
                 </div>
 
