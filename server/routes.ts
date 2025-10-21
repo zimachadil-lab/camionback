@@ -1593,8 +1593,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Send SMS to transporter about offer acceptance
-      if (transporter?.phoneNumber && request?.referenceId) {
-        await sendOfferAcceptedSMS(transporter.phoneNumber, request.referenceId);
+      if (transporter?.phoneNumber) {
+        await sendOfferAcceptedSMS(transporter.phoneNumber);
       }
 
       res.json({ 
@@ -2367,10 +2367,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         (er: any) => er.fromCity === request.toCity && er.toCity === request.fromCity
       );
       
+      // Get completed trips count for each transporter
+      const allOffers = await storage.getAllOffers();
+      const completedOffersByTransporter = new Map();
+      allOffers
+        .filter((o: any) => o.status === "accepted")
+        .forEach((o: any) => {
+          const count = completedOffersByTransporter.get(o.transporterId) || 0;
+          completedOffersByTransporter.set(o.transporterId, count + 1);
+        });
+
+      // Helper function to map transporter data
+      const mapTransporter = (t: any, priority: string | null) => ({
+        id: t.id,
+        name: t.name,
+        city: t.city,
+        truckPhoto: t.truckPhoto,
+        rating: parseFloat(t.rating || "0"),
+        totalTrips: completedOffersByTransporter.get(t.id) || 0,
+        priority,
+      });
+
       // Priority 1: Transporters with matching empty returns
       const priority1Transporters = matchingReturns.map((er: any) => {
         const transporter = validatedTransporters.find((t: any) => t.id === er.transporterId);
-        return transporter ? { ...transporter, priority: 1, hasEmptyReturn: true } : null;
+        return transporter ? mapTransporter(transporter, 'empty_return') : null;
       }).filter(Boolean);
 
       // Priority 2: Recently active transporters (last 24h) - simulated with random for now
@@ -2379,21 +2400,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const priority2Transporters = validatedTransporters
         .filter((t: any) => !priority1Transporters.find((p1: any) => p1.id === t.id))
         .filter(() => Math.random() > 0.5) // Simulate activity - would normally check lastActive field
-        .map((t: any) => ({ ...t, priority: 2, recentlyActive: true }));
+        .map((t: any) => mapTransporter(t, 'active'))
+        .slice(0, 2); // Limit to 2
 
       // Priority 3: Best rated transporters
       const priority3Transporters = validatedTransporters
         .filter((t: any) => !priority1Transporters.find((p1: any) => p1.id === t.id))
         .filter((t: any) => !priority2Transporters.find((p2: any) => p2.id === t.id))
         .filter((t: any) => parseFloat(t.rating || "0") >= 4.0)
-        .map((t: any) => ({ ...t, priority: 3, highRated: true }));
+        .map((t: any) => mapTransporter(t, 'rating'))
+        .slice(0, 2); // Limit to 2
 
       // Priority 4: Other available transporters
       const priority4Transporters = validatedTransporters
         .filter((t: any) => !priority1Transporters.find((p1: any) => p1.id === t.id))
         .filter((t: any) => !priority2Transporters.find((p2: any) => p2.id === t.id))
         .filter((t: any) => !priority3Transporters.find((p3: any) => p3.id === t.id))
-        .map((t: any) => ({ ...t, priority: 4 }));
+        .map((t: any) => mapTransporter(t, null))
+        .slice(0, 1); // Limit to 1
 
       // Combine all priorities and limit to 5
       const recommendations = [
@@ -2403,6 +2427,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...priority4Transporters
       ].slice(0, 5);
 
+      console.log('🎯 CamioMatch recommendations:', recommendations.length, 'matches found');
       res.json(recommendations);
     } catch (error) {
       console.error("Error fetching recommendations:", error);
