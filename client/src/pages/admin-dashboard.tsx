@@ -1723,7 +1723,6 @@ export default function AdminDashboard() {
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead>Photo camion</TableHead>
                               <TableHead>Nom</TableHead>
                               <TableHead>Ville</TableHead>
                               <TableHead>Téléphone</TableHead>
@@ -1739,20 +1738,6 @@ export default function AdminDashboard() {
                           <TableBody>
                             {filteredTransporters.map((transporter: any) => (
                               <TableRow key={transporter.id}>
-                                <TableCell>
-                                  {transporter.truckPhoto ? (
-                                    <img 
-                                      src={transporter.truckPhoto} 
-                                      alt="Camion" 
-                                      className="w-16 h-16 object-cover rounded"
-                                      data-testid={`img-truck-${transporter.id}`}
-                                    />
-                                  ) : (
-                                    <div className="w-16 h-16 bg-muted rounded flex items-center justify-center">
-                                      <TruckIcon className="w-8 h-8 text-muted-foreground" />
-                                    </div>
-                                  )}
-                                </TableCell>
                                 <TableCell className="font-medium">{transporter.name}</TableCell>
                                 <TableCell>{transporter.city}</TableCell>
                                 <TableCell>

@@ -2130,8 +2130,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalCommissions: Math.round(totalCommissions),
           lastActivity: lastActivityDate,
           totalRatings: transporter.totalRatings || 0,
-          truckPhoto: transporter.truckPhotos && transporter.truckPhotos.length > 0 ? transporter.truckPhotos[0] : null,
+          hasTruckPhoto: transporter.truckPhotos && transporter.truckPhotos.length > 0,
           accountStatus: transporter.accountStatus || "active",
+          ribName: transporter.ribName || null,
+          ribNumber: transporter.ribNumber || null,
         };
       });
       
