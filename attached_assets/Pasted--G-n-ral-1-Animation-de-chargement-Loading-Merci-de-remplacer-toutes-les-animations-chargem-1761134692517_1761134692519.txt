@@ -1,0 +1,92 @@
+🔧 Général
+
+1️⃣ Animation de chargement (Loading)
+
+Merci de remplacer toutes les animations “chargement en cours” (cercle qui tourne) sur l’ensemble de la plateforme CamionBack (client, transporteur, admin) par la même animation du camion qui roule sur la route déjà utilisée sur le “chargement des recommandations CamioMatch”.
+
+Cette animation doit être réutilisée à chaque fois qu’il y a un temps de chargement (API, transition, publication d’offre, etc.), avec un fond léger blanc ou transparent pour une apparence propre.
+
+Assure-toi qu’elle soit responsive et bien centrée sur mobile.
+
+2️⃣ Icône principale (favicon du site)
+
+Merci d’ajouter le logo CamionBack (turquoise #17cfcf) comme favicon visible sur les onglets du navigateur.
+
+Le favicon doit apparaître sur toutes les pages.
+
+Il doit être ajouté dans le <head> principal :
+
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
+
+
+Vérifie qu’il est bien visible sur Chrome, Edge et Safari.
+
+🧭 Admin
+
+1️⃣ Envoi SMS à un numéro spécifique (vue Communications)
+
+Merci d’ajouter une nouvelle section ou bloc sur la page “Communications” (ou “Newsletters”).
+
+Cette section doit permettre à l’administrateur d’envoyer un SMS personnalisé à un seul numéro.
+
+Champs requis :
+
+Numéro de téléphone : champ texte (préfixe +212 déjà intégré)
+
+Message : champ texte multi-ligne
+
+Bouton : “Envoyer le SMS”
+
+Une fois cliqué, le SMS est envoyé via l’API Infobip déjà connectée, au nom de CamionBack.
+
+Exemple d’appel API :
+
+fetch("https://1g692n.api.infobip.com/sms/2/text/advanced", {
+  method: "POST",
+  headers: {
+    "Authorization": "App f6b45bb267ea14ad79e1c30e2e1153f8-a45b17f2-927b-44ea-9ee7-4733bfa74306",
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    messages: [
+      {
+        from: "CamionBack",
+        destinations: [{ to: "+2126XXXXXXXX" }],
+        text: "Votre message personnalisé ici"
+      }
+    ]
+  })
+});
+
+
+Afficher une alerte de confirmation “✅ SMS envoyé avec succès via CamionBack”.
+
+2️⃣ Bouton “Actualiser” sur le tableau de bord
+
+Merci d’ajouter une icône “↻ Actualiser” visible sur la barre du haut du tableau de bord Admin (à côté des autres icônes principales).
+
+Ce bouton doit :
+
+Actualiser les données visibles (demandes, offres, signalements, paiements, etc.)
+
+Rafraîchir uniquement les éléments dynamiques sans recharger toute la page.
+
+Exemple d’action : window.location.reload() ou une fonction de refetch API si déjà prévue.
+
+Style souhaité :
+
+Icône “refresh” (🔄 ou ↻)
+
+Couleur #17cfcf
+
+Petit effet hover clair (ex : #13baba)
+
+✅ Objectif final :
+
+Animation Camion uniforme sur tout le site
+
+Logo favicon visible sur tous les navigateurs
+
+Possibilité d’envoyer un SMS individuel depuis Admin
+
+Bouton “Actualiser” fonctionnel et design propre

@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCircle, UserCheck, CreditCard, Phone, Eye, EyeOff, TruckIcon, MapPin, Calendar, FileText, MessageSquare, Trash2, Send, Flag, Pencil, Camera } from "lucide-react";
+import { LoadingTruck } from "@/components/ui/loading-truck";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -1446,8 +1447,7 @@ export default function AdminDashboard() {
               <CardContent>
                 {pendingLoading ? (
                   <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                    <p className="text-muted-foreground">Chargement...</p>
+                    <LoadingTruck message="Chargement des transporteurs..." size="md" />
                   </div>
                 ) : pendingDrivers.length === 0 ? (
                   <div className="text-center py-8">
@@ -1706,8 +1706,7 @@ export default function AdminDashboard() {
 
                 {transportersLoading ? (
                   <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                    <p className="text-muted-foreground">Chargement des transporteurs...</p>
+                    <LoadingTruck message="Chargement des transporteurs..." size="md" />
                   </div>
                 ) : transportersError ? (
                   <div className="text-center py-8 text-destructive">
@@ -2072,7 +2071,7 @@ export default function AdminDashboard() {
               <CardContent className="space-y-4">
                 {reportsLoading ? (
                   <div className="text-center py-8">
-                    <p className="text-muted-foreground">Chargement...</p>
+                    <LoadingTruck message="Chargement des signalements..." size="md" />
                   </div>
                 ) : allReports.length === 0 ? (
                   <div className="text-center py-8">
@@ -2513,8 +2512,7 @@ export default function AdminDashboard() {
                   <h4 className="font-medium mb-4">Liste des villes ({cities.length})</h4>
                   {citiesLoading ? (
                     <div className="text-center py-8">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                      <p className="text-muted-foreground">Chargement...</p>
+                      <LoadingTruck message="Chargement des villes..." size="md" />
                     </div>
                   ) : cities.length === 0 ? (
                     <div className="text-center py-8">
@@ -2677,8 +2675,7 @@ export default function AdminDashboard() {
               <CardContent>
                 {emptyReturnsLoading ? (
                   <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                    <p className="text-muted-foreground">Chargement...</p>
+                    <LoadingTruck message="Chargement des retours à vide..." size="md" />
                   </div>
                 ) : emptyReturns.length === 0 ? (
                   <div className="text-center py-8">
@@ -4062,8 +4059,7 @@ export default function AdminDashboard() {
           <div className="space-y-4">
             {photoLoading ? (
               <div className="flex flex-col items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
-                <p className="text-sm text-muted-foreground">Chargement de la photo...</p>
+                <LoadingTruck message="Chargement de la photo..." size="sm" />
               </div>
             ) : !transporterPhoto?.hasTruckPhoto || !transporterPhoto?.truckPhoto ? (
               <div className="flex flex-col items-center justify-center py-12">
