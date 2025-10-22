@@ -50,36 +50,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "userId requis" });
       }
 
-      console.log('🧪 === TEST PUSH NOTIFICATION ===');
-      console.log('🧪 Envoi d\'une notification de test à userId:', userId);
-
-      const { sendNotificationToUser, NotificationTemplates } = await import('./push-notifications');
+      const { sendNotificationToUser } = await import('./push-notifications');
+      
+      const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+        ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
+        : 'https://camionback.com';
       
       const testNotification = {
-        title: '🧪 Test Notification CamionBack',
+        title: 'Test Notification CamionBack',
         body: 'Ceci est une notification de test. Si vous la voyez, les push notifications fonctionnent !',
         url: '/',
-        icon: '/icons/icon-192.png',
-        badge: '/icons/icon-192.png'
+        icon: `${baseUrl}/apple-touch-icon.png`,
+        badge: `${baseUrl}/icons/notification-badge.png`
       };
 
       const result = await sendNotificationToUser(userId, testNotification, storage);
 
       if (result) {
-        console.log('🧪 ✅ Notification de test envoyée avec succès');
         res.json({ 
           success: true, 
           message: 'Notification de test envoyée. Vérifiez votre appareil !' 
         });
       } else {
-        console.log('🧪 ❌ Échec de l\'envoi de la notification de test');
         res.json({ 
           success: false, 
           message: 'Échec de l\'envoi. Vérifiez les logs serveur pour plus de détails.' 
         });
       }
     } catch (error) {
-      console.error('🧪 ❌ Erreur lors du test push:', error);
+      console.error('Erreur lors du test push:', error);
       res.status(500).json({ error: "Erreur lors du test" });
     }
   });
