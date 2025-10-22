@@ -1,9 +1,13 @@
 // Service Worker for CamionBack PWA
 // Handles push notifications and offline capabilities
+// Version: 2.0 - Enhanced with better update management
 
-const CACHE_NAME = 'camionback-v1';
-const STATIC_CACHE = 'camionback-static-v1';
-const DYNAMIC_CACHE = 'camionback-dynamic-v1';
+const VERSION = '2.0';
+const CACHE_NAME = `camionback-v${VERSION}`;
+const STATIC_CACHE = `camionback-static-v${VERSION}`;
+const DYNAMIC_CACHE = `camionback-dynamic-v${VERSION}`;
+
+console.log(`[Service Worker] Version ${VERSION} loaded`);
 
 // Core files to cache immediately
 const urlsToCache = [
@@ -15,20 +19,23 @@ const urlsToCache = [
 
 // Install event - cache core resources
 self.addEventListener('install', (event) => {
-  console.log('[Service Worker] Installing...');
+  console.log(`[Service Worker] Installing version ${VERSION}...`);
   event.waitUntil(
     caches.open(STATIC_CACHE)
       .then((cache) => {
         console.log('[Service Worker] Caching app shell');
         return cache.addAll(urlsToCache);
       })
-      .then(() => self.skipWaiting())
+      .then(() => {
+        console.log('[Service Worker] Skipping waiting to activate immediately');
+        return self.skipWaiting();
+      })
   );
 });
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-  console.log('[Service Worker] Activating...');
+  console.log(`[Service Worker] Activating version ${VERSION}...`);
   const cacheWhitelist = [STATIC_CACHE, DYNAMIC_CACHE];
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -40,7 +47,20 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
-    }).then(() => self.clients.claim())
+    }).then(() => {
+      console.log('[Service Worker] Taking control of all clients');
+      return self.clients.claim();
+    }).then(() => {
+      // Notify clients that a new version is active
+      return self.clients.matchAll().then(clients => {
+        clients.forEach(client => {
+          client.postMessage({
+            type: 'SW_ACTIVATED',
+            version: VERSION
+          });
+        });
+      });
+    })
   );
 });
 

@@ -7,15 +7,43 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
   if ('serviceWorker' in navigator) {
     try {
       const registration = await navigator.serviceWorker.register('/service-worker.js', {
-        scope: '/'
+        scope: '/',
+        updateViaCache: 'none' // Force check for updates every time
       });
       
       console.log('✅ Service Worker enregistré pour CamionBack:', registration.scope);
       
-      // Check for updates periodically
+      // Listen for updates
+      registration.addEventListener('updatefound', () => {
+        const newWorker = registration.installing;
+        console.log('🔄 Nouvelle version du Service Worker détectée');
+        
+        if (newWorker) {
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              console.log('✨ Nouvelle version disponible, rafraîchissement recommandé');
+              // Notify the user that a new version is available
+              window.dispatchEvent(new CustomEvent('sw-update-available'));
+            }
+          });
+        }
+      });
+      
+      // Listen for messages from the service worker
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data?.type === 'SW_ACTIVATED') {
+          console.log(`✅ Service Worker version ${event.data.version} activé`);
+        }
+      });
+      
+      // Check for updates more frequently
       setInterval(() => {
+        console.log('🔍 Vérification des mises à jour du Service Worker...');
         registration.update();
-      }, 60 * 60 * 1000); // Check every hour
+      }, 30 * 60 * 1000); // Check every 30 minutes
+      
+      // Immediate update check
+      registration.update();
       
       return registration;
     } catch (error) {
