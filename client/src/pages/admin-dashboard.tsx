@@ -151,7 +151,9 @@ export default function AdminDashboard() {
     queryKey: ["/api/users"],
     queryFn: async () => {
       const response = await fetch("/api/users");
-      return response.json();
+      const data = await response.json();
+      console.log("📊 Admin: Loaded users:", data.length, "Sample:", data[0]);
+      return data;
     },
   });
 
