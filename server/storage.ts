@@ -1642,6 +1642,9 @@ export class DbStorage implements IStorage {
     
     const conversations: any[] = [];
     
+    // Get current user to determine their role
+    const currentUser = await this.getUser(userId);
+    
     for (const conv of Array.from(conversationsMap.values())) {
       const request = await this.getTransportRequest(conv.requestId);
       let otherUser = await this.getUser(conv.otherUserId);
@@ -1657,6 +1660,11 @@ export class DbStorage implements IStorage {
       }
       
       if (request && otherUser) {
+        // Anonymize client for transporters: show clientId instead of name/phone
+        const displayName = currentUser?.role === 'transporter' && otherUser.role === 'client'
+          ? otherUser.clientId || 'Client'
+          : (otherUser.name || otherUser.phoneNumber);
+        
         conversations.push({
           requestId: conv.requestId,
           referenceId: request.referenceId,
@@ -1666,7 +1674,7 @@ export class DbStorage implements IStorage {
           unreadCount: conv.unreadCount,
           otherUser: {
             id: otherUser.id,
-            name: otherUser.name || otherUser.phoneNumber,
+            name: displayName,
             role: otherUser.role,
           },
         });
