@@ -616,6 +616,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update user device token for push notifications
+  app.patch("/api/users/:id/device-token", async (req, res) => {
+    try {
+      const { deviceToken } = req.body;
+
+      if (!deviceToken) {
+        return res.status(400).json({ error: "Device token requis" });
+      }
+
+      const user = await storage.updateUser(req.params.id, {
+        deviceToken: deviceToken,
+      });
+
+      if (!user) {
+        return res.status(404).json({ error: "Utilisateur non trouvé" });
+      }
+
+      console.log(`✅ Device token enregistré pour l'utilisateur ${req.params.id}`);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Update device token error:", error);
+      res.status(500).json({ error: "Échec de l'enregistrement du device token" });
+    }
+  });
+
   // Transport request routes
   app.post("/api/requests", async (req, res) => {
     try {

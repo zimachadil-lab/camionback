@@ -1,0 +1,117 @@
+Merci d’ajouter et configurer un fichier manifest.json à la racine du projet CamionBack avec les éléments suivants :
+
+{
+  "name": "CamionBack",
+  "short_name": "CamionBack",
+  "description": "Réservez vos camions de retour à moindre coût partout au Maroc 🇲🇦",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#17cfcf",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
+
+
+Ensuite :
+1️⃣ Crée un dossier /icons/ avec deux fichiers PNG du logo CamionBack (couleur #17cfcf) aux tailles 192x192 et 512x512.
+2️⃣ Ajoute ce lien dans le <head> du fichier principal HTML :
+
+<link rel="manifest" href="/manifest.json">
+
+
+3️⃣ Vérifie que la PWA est bien détectée sur Chrome → DevTools → Application → Manifest (elle doit indiquer “Installable”).
+
+4️⃣ Le bouton “Installer CamionBack” doit automatiquement apparaître sur Android (ou via les trois points → “Installer l’app”).
+
+🔔 2️⃣ Intégration Notifications Push via Infobip Push API
+
+Objectif :
+Permettre à CamionBack d’envoyer des notifications push (comme une app native) pour avertir les utilisateurs de nouveaux messages, offres, ou validations.
+
+🧠 Prompt à envoyer à ton agent Replit :
+
+Prompt :
+
+Merci d’intégrer la notification push Infobip au projet CamionBack pour afficher des alertes sur téléphone dès qu’un événement important est déclenché (nouvelle offre, validation de commande, message, litige, etc.).
+
+Étapes techniques à suivre :
+
+1️⃣ Ajouter un fichier service-worker.js à la racine du projet contenant :
+
+self.addEventListener("push", (event) => {
+  const data = event.data.json();
+  const options = {
+    body: data.body,
+    icon: "/icons/icon-192.png",
+    badge: "/icons/icon-192.png",
+    vibrate: [200, 100, 200],
+    data: { url: data.url || "/" }
+  };
+  event.waitUntil(self.registration.showNotification(data.title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil(clients.openWindow(event.notification.data.url));
+});
+
+
+2️⃣ Enregistrer le Service Worker au chargement de la page principale :
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/service-worker.js").then(() => {
+    console.log("✅ Service Worker enregistré pour CamionBack");
+  });
+}
+
+
+3️⃣ Connecter Infobip Push API :
+Exemple d’appel API (Node.js ou backend Python) :
+
+import fetch from "node-fetch";
+
+const sendPush = async (deviceToken, title, body, url) => {
+  const response = await fetch("https://1g692n.api.infobip.com/push/1/message/advanced", {
+    method: "POST",
+    headers: {
+      "Authorization": "App f6b45bb267ea14ad79e1c30e2e1153f8-a45b17f2-927b-44ea-9ee7-4733bfa74306",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      messages: [
+        {
+          destinations: [{ to: deviceToken }],
+          notification: {
+            title: title,
+            body: body,
+            clickAction: url
+          }
+        }
+      ]
+    })
+  });
+  console.log(await response.json());
+};
+
+
+4️⃣ Exemple d’usage :
+
+Quand une offre est acceptée :
+sendPush(deviceToken, "🚛 Offre acceptée !", "Votre offre vient d’être validée sur CamionBack.", "/dashboard");
+
+Quand un nouveau message est reçu :
+sendPush(deviceToken, "💬 Nouveau message", "Vous avez un message d’un client CamionBack.", "/messages");
+
+5️⃣ Ajouter sur chaque compte utilisateur un champ deviceToken pour stocker le token généré par le navigateur (pushManager.subscribe()).
