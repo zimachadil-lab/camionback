@@ -1,8 +1,8 @@
 // Service Worker for CamionBack PWA
 // Handles push notifications and offline capabilities
-// Version: 2.0 - Enhanced with better update management
+// Version: 2.1 - CamionBack logo in push notifications
 
-const VERSION = '2.0';
+const VERSION = '2.1';
 const CACHE_NAME = `camionback-v${VERSION}`;
 const STATIC_CACHE = `camionback-static-v${VERSION}`;
 const DYNAMIC_CACHE = `camionback-dynamic-v${VERSION}`;
