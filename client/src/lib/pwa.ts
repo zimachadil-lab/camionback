@@ -4,6 +4,24 @@
  * Register service worker for PWA functionality
  */
 export async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
+  // DISABLE Service Worker in development to prevent caching issues
+  const isDevelopment = window.location.hostname === 'localhost' || 
+                        window.location.hostname.includes('replit.dev') ||
+                        window.location.hostname.endsWith('camionback.com');
+  
+  if (isDevelopment) {
+    console.log('⚠️ Service Worker DÉSACTIVÉ en mode développement');
+    // Unregister any existing service worker
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const registration of registrations) {
+        await registration.unregister();
+        console.log('✅ Service Worker existant désinstallé');
+      }
+    }
+    return null;
+  }
+  
   if ('serviceWorker' in navigator) {
     try {
       const registration = await navigator.serviceWorker.register('/service-worker.js', {
