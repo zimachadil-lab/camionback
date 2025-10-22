@@ -997,6 +997,14 @@ export default function AdminDashboard() {
                       <TableBody>
                         {filteredAndSortedRequests.map((request: any) => {
                           const client = users.find((u: any) => u.id === request.clientId);
+                          if (!client && request.clientId) {
+                            console.log("⚠️ Client not found for request:", {
+                              requestId: request.referenceId,
+                              clientId: request.clientId,
+                              usersCount: users.length,
+                              firstUserId: users[0]?.id
+                            });
+                          }
                           
                           // Format date with time: JJ/MM/AAAA - HH:mm
                           const formatDateWithTime = (dateStr: string) => {
