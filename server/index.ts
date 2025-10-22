@@ -51,6 +51,74 @@ app.use((req, res, next) => {
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
   if (app.get("env") === "development") {
+    // Middleware custom pour servir les fichiers statiques AVANT Vite
+    const path = await import("path");
+    const fs = await import("fs/promises");
+    const publicPath = path.resolve(import.meta.dirname, "..", "public");
+    log(`📁 Serving static files from: ${publicPath}`);
+    
+    // Middleware custom sécurisé pour servir les fichiers statiques avant Vite
+    app.use((req, res, next) => {
+      // Liste des fichiers statiques autorisés (whitelist)
+      const allowedStaticFiles = [
+        '/favicon.png',
+        '/favicon-32x32.png',
+        '/favicon-16x16.png',
+        '/apple-touch-icon.png',
+        '/manifest.json',
+        '/service-worker.js',
+        '/icons/icon-192.png',
+        '/icons/icon-512.png'
+      ];
+      
+      // Vérifier si la requête correspond à un fichier autorisé
+      if (allowedStaticFiles.includes(req.path)) {
+        // Construire le chemin du fichier sécurisé
+        // IMPORTANT: utiliser '.' + req.path car path.join ignore publicPath si req.path commence par '/'
+        const safeFilePath = path.resolve(publicPath, '.' + req.path);
+        
+        // Lire le fichier manuellement pour contrôle total des headers
+        fs.readFile(safeFilePath)
+          .then(fileContent => {
+            // Définir les MIME types
+            const ext = path.extname(req.path);
+            const mimeTypes: Record<string, string> = {
+              '.png': 'image/png',
+              '.jpg': 'image/jpeg',
+              '.jpeg': 'image/jpeg',
+              '.svg': 'image/svg+xml',
+              '.ico': 'image/x-icon',
+              '.json': 'application/json',
+              '.js': 'text/javascript'
+            };
+            
+            // Définir Content-Type
+            res.setHeader('Content-Type', mimeTypes[ext] || 'application/octet-stream');
+            
+            // Service Worker DOIT avoir no-cache pour permettre les mises à jour PWA
+            if (req.path === '/service-worker.js') {
+              res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+              res.setHeader('Pragma', 'no-cache');
+              res.setHeader('Expires', '0');
+            } else {
+              // Autres fichiers statiques : cache long terme
+              res.setHeader('Cache-Control', 'public, max-age=31536000');
+            }
+            
+            // Envoyer le fichier
+            res.send(fileContent);
+          })
+          .catch(() => {
+            // Fichier non trouvé, passer au middleware suivant
+            next();
+          });
+        
+        return;
+      }
+      
+      next();
+    });
+    
     await setupVite(app, server);
   } else {
     serveStatic(app);
