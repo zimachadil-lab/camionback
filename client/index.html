@@ -35,6 +35,8 @@
       (function() {
         'use strict';
         
+        console.log('🚀 PWA Install Script loaded - Listening for beforeinstallprompt');
+        
         // Diagnostic logging
         console.log('🔍 PWA Diagnostics:');
         console.log('  - HTTPS:', window.location.protocol === 'https:');
@@ -52,8 +54,10 @@
         }
         
         // Listen for beforeinstallprompt event
-        // DO NOT prevent default - let browser show its native banner
+        // Store the event for detection but DO NOT prevent default
         window.addEventListener('beforeinstallprompt', (e) => {
+          // Store the event on window for detection
+          window.deferredPrompt = e;
           console.log('📱 beforeinstallprompt déclenché - Bannière native du navigateur disponible');
           console.log('ℹ️ Le navigateur affichera sa propre bannière d\'installation');
           // Note: We do NOT call e.preventDefault() to allow native browser banner
