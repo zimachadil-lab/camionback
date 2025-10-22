@@ -689,6 +689,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Update user device token for push notifications
   app.patch("/api/users/:id/device-token", async (req, res) => {
+    console.log('🚨 🚨 🚨 [ROUTE HIT] /api/users/:id/device-token appelée !');
+    console.log('🚨 userId:', req.params.id);
+    console.log('🚨 req.body:', JSON.stringify(req.body, null, 2));
+    console.log('🚨 Content-Type:', req.headers['content-type']);
+    
     try {
       const { deviceToken } = req.body;
 
