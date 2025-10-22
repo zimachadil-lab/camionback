@@ -51,8 +51,8 @@ export async function sendPushNotification(options: SendPushOptions): Promise<bo
     const payload = {
       title: options.notification.title,
       body: options.notification.body,
-      icon: options.notification.icon || '/icons/icon-192.png',
-      badge: options.notification.badge || '/icons/icon-192.png',
+      icon: options.notification.icon || '/favicon.png',
+      badge: options.notification.badge || '/favicon-32x32.png',
       url: options.notification.url || '/',
     };
 

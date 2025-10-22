@@ -133,8 +133,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         title: '🧪 Test CamionBack',
         body: 'Si vous voyez ceci, les push notifications fonctionnent !',
         url: '/',
-        icon: '/icons/icon-192.png',
-        badge: '/icons/icon-192.png'
+        icon: '/favicon.png',
+        badge: '/favicon-32x32.png'
       };
       
       debugInfo.steps.push('5. Envoi en cours via Web Push (avec VAPID)...');
