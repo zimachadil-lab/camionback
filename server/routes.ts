@@ -3077,6 +3077,133 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Stories routes
+  // Get all stories (admin)
+  app.get("/api/stories", async (req, res) => {
+    try {
+      const adminId = req.query.adminId as string;
+
+      if (!adminId) {
+        return res.status(401).json({ error: "Non authentifié" });
+      }
+
+      const admin = await storage.getUser(adminId);
+      if (!admin || admin.role !== "admin") {
+        return res.status(403).json({ error: "Accès refusé - Admin requis" });
+      }
+
+      const stories = await storage.getAllStories();
+      res.json(stories);
+    } catch (error) {
+      console.error("Erreur récupération stories:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération des stories" });
+    }
+  });
+
+  // Get active stories by role
+  app.get("/api/stories/active", async (req, res) => {
+    try {
+      const role = req.query.role as string;
+
+      if (!role || !["client", "transporter", "all"].includes(role)) {
+        return res.status(400).json({ error: "Rôle invalide" });
+      }
+
+      const stories = await storage.getActiveStoriesByRole(role);
+      res.json(stories);
+    } catch (error) {
+      console.error("Erreur récupération stories actives:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération des stories" });
+    }
+  });
+
+  // Create story (admin)
+  app.post("/api/stories", async (req, res) => {
+    try {
+      const adminId = req.query.adminId as string;
+
+      if (!adminId) {
+        return res.status(401).json({ error: "Non authentifié" });
+      }
+
+      const admin = await storage.getUser(adminId);
+      if (!admin || admin.role !== "admin") {
+        return res.status(403).json({ error: "Accès refusé - Admin requis" });
+      }
+
+      const { title, content, mediaUrl, role, order } = req.body;
+
+      if (!title || !content || !role) {
+        return res.status(400).json({ error: "Titre, contenu et rôle requis" });
+      }
+
+      const story = await storage.createStory({
+        title,
+        content,
+        mediaUrl: mediaUrl || null,
+        role,
+        order: order || 0,
+        isActive: true
+      });
+
+      res.json(story);
+    } catch (error) {
+      console.error("Erreur création story:", error);
+      res.status(500).json({ error: "Erreur lors de la création de la story" });
+    }
+  });
+
+  // Update story (admin)
+  app.patch("/api/stories/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const adminId = req.query.adminId as string;
+
+      if (!adminId) {
+        return res.status(401).json({ error: "Non authentifié" });
+      }
+
+      const admin = await storage.getUser(adminId);
+      if (!admin || admin.role !== "admin") {
+        return res.status(403).json({ error: "Accès refusé - Admin requis" });
+      }
+
+      const story = await storage.updateStory(id, req.body);
+      
+      if (!story) {
+        return res.status(404).json({ error: "Story non trouvée" });
+      }
+
+      res.json(story);
+    } catch (error) {
+      console.error("Erreur mise à jour story:", error);
+      res.status(500).json({ error: "Erreur lors de la mise à jour de la story" });
+    }
+  });
+
+  // Delete story (admin)
+  app.delete("/api/stories/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const adminId = req.query.adminId as string;
+
+      if (!adminId) {
+        return res.status(401).json({ error: "Non authentifié" });
+      }
+
+      const admin = await storage.getUser(adminId);
+      if (!admin || admin.role !== "admin") {
+        return res.status(403).json({ error: "Accès refusé - Admin requis" });
+      }
+
+      await storage.deleteStory(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Erreur suppression story:", error);
+      res.status(500).json({ error: "Erreur lors de la suppression de la story" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // WebSocket server for real-time chat (using separate path to avoid Vite HMR conflict)
