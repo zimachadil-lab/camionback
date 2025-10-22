@@ -664,7 +664,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         requests = await storage.getAllTransportRequests();
       }
       
-      res.json(requests);
+      // Enrich requests with offers count
+      const enrichedRequests = await Promise.all(
+        requests.map(async (request) => {
+          const offers = await storage.getOffersByRequest(request.id);
+          return {
+            ...request,
+            offersCount: offers.length,
+          };
+        })
+      );
+      
+      res.json(enrichedRequests);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch requests" });
     }

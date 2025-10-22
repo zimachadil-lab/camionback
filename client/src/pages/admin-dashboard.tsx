@@ -959,6 +959,7 @@ export default function AdminDashboard() {
                           <TableHead>De → Vers</TableHead>
                           <TableHead>Date souhaitée</TableHead>
                           <TableHead>Prix estimé</TableHead>
+                          <TableHead>Offres</TableHead>
                           <TableHead>Statut</TableHead>
                           <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
@@ -1015,6 +1016,11 @@ export default function AdminDashboard() {
                               <TableCell>{formatDate(request.dateTime)}</TableCell>
                               <TableCell className="font-semibold text-primary">
                                 {request.estimatedPrice?.toLocaleString("fr-MA")} MAD
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="secondary" data-testid={`badge-offers-count-${request.id}`}>
+                                  {request.offersCount || 0} {request.offersCount === 1 ? "offre" : "offres"}
+                                </Badge>
                               </TableCell>
                               <TableCell>{getStatusBadge(request.status)}</TableCell>
                               <TableCell className="text-right">
