@@ -2,6 +2,10 @@
 // Handles push notifications and offline capabilities
 
 const CACHE_NAME = 'camionback-v1';
+const STATIC_CACHE = 'camionback-static-v1';
+const DYNAMIC_CACHE = 'camionback-dynamic-v1';
+
+// Core files to cache immediately
 const urlsToCache = [
   '/',
   '/manifest.json',
@@ -9,11 +13,11 @@ const urlsToCache = [
   '/icons/icon-512.png'
 ];
 
-// Install event - cache resources
+// Install event - cache core resources
 self.addEventListener('install', (event) => {
   console.log('[Service Worker] Installing...');
   event.waitUntil(
-    caches.open(CACHE_NAME)
+    caches.open(STATIC_CACHE)
       .then((cache) => {
         console.log('[Service Worker] Caching app shell');
         return cache.addAll(urlsToCache);
@@ -25,11 +29,12 @@ self.addEventListener('install', (event) => {
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
   console.log('[Service Worker] Activating...');
+  const cacheWhitelist = [STATIC_CACHE, DYNAMIC_CACHE];
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
+          if (!cacheWhitelist.includes(cacheName)) {
             console.log('[Service Worker] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
@@ -39,13 +44,106 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - cache-first strategy with network fallback
 self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // Skip chrome-extension and non-http(s) requests
+  if (!url.protocol.startsWith('http')) {
+    return;
+  }
+
+  // Handle navigation requests (page loads/refreshes) - serve cached shell
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          // If online, cache the response and return it
+          const responseClone = response.clone();
+          caches.open(STATIC_CACHE).then((cache) => {
+            cache.put(request, responseClone);
+          });
+          return response;
+        })
+        .catch(() => {
+          // If offline, serve the cached root for SPA to boot
+          return caches.match('/').then((cachedResponse) => {
+            return cachedResponse || new Response('Offline', {
+              status: 503,
+              statusText: 'Service Unavailable',
+              headers: new Headers({
+                'Content-Type': 'text/html'
+              })
+            });
+          });
+        })
+    );
+    return;
+  }
+
+  // API requests - network first, cache fallback
+  if (request.url.includes('/api/')) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          // Clone response to cache it
+          const responseClone = response.clone();
+          caches.open(DYNAMIC_CACHE).then((cache) => {
+            cache.put(request, responseClone);
+          });
+          return response;
+        })
+        .catch(() => {
+          // If network fails, try cache
+          return caches.match(request);
+        })
+    );
+    return;
+  }
+
+  // Static assets - cache first, network fallback
   event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Return cached version or fetch from network
-        return response || fetch(event.request);
+    caches.match(request)
+      .then((cachedResponse) => {
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+
+        // Not in cache, fetch from network and cache it
+        return fetch(request).then((response) => {
+          // Don't cache non-successful responses
+          if (!response || response.status !== 200 || response.type === 'error') {
+            return response;
+          }
+
+          // Clone the response
+          const responseToCache = response.clone();
+
+          // Determine which cache to use
+          const cacheToUse = request.url.includes('/assets/') || 
+                             request.url.includes('.js') || 
+                             request.url.includes('.css') || 
+                             request.url.includes('.woff') ||
+                             request.url.includes('.png') ||
+                             request.url.includes('.jpg')
+            ? STATIC_CACHE
+            : DYNAMIC_CACHE;
+
+          caches.open(cacheToUse).then((cache) => {
+            cache.put(request, responseToCache);
+          });
+
+          return response;
+        }).catch(() => {
+          // Network failed, check cache one more time
+          return caches.match(request).then((cachedResponse) => {
+            return cachedResponse || new Response('Offline - Resource not available', {
+              status: 503,
+              statusText: 'Service Unavailable'
+            });
+          });
+        });
       })
   );
 });

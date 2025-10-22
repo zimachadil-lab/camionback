@@ -26,30 +26,40 @@ export function usePushNotifications({ userId, enabled }: UsePushNotificationsOp
         return;
       }
 
-      // Only request permission if not already granted or denied
-      if (permission === 'default') {
-        try {
-          const subscription = await requestPushPermission();
+      try {
+        let subscription = null;
+
+        // If permission already granted, get existing subscription
+        if (permission === 'granted') {
+          const { getPushSubscription } = await import('@/lib/pwa');
+          subscription = await getPushSubscription();
           
-          if (subscription) {
-            // Convert subscription to device token string
-            const deviceToken = getDeviceTokenFromSubscription(subscription);
-            
-            // Register device token with backend
-            await apiRequest('PATCH', `/api/users/${userId}/device-token`, {
-              deviceToken
-            });
-            
-            setIsSubscribed(true);
-            setPermission('granted');
-            console.log('✅ Notifications push activées');
-          } else {
-            setPermission('denied');
-            console.log('ℹ️ Permission de notification refusée');
+          // If no subscription exists, request a new one
+          if (!subscription) {
+            subscription = await requestPushPermission();
           }
-        } catch (error) {
-          console.error('❌ Erreur lors de la configuration des notifications:', error);
+        } 
+        // If permission is default, request permission
+        else if (permission === 'default') {
+          subscription = await requestPushPermission();
         }
+        
+        // If we have a subscription, register it with backend
+        if (subscription) {
+          const deviceToken = getDeviceTokenFromSubscription(subscription);
+          
+          await apiRequest('PATCH', `/api/users/${userId}/device-token`, {
+            deviceToken
+          });
+          
+          setIsSubscribed(true);
+          setPermission('granted');
+          console.log('✅ Notifications push activées et synchronisées');
+        } else if (permission === 'denied') {
+          console.log('ℹ️ Permission de notification refusée');
+        }
+      } catch (error) {
+        console.error('❌ Erreur lors de la configuration des notifications:', error);
       }
     }
 
