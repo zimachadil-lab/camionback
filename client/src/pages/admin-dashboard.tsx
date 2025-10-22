@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCircle, UserCheck, CreditCard, Phone, Eye, EyeOff, TruckIcon, MapPin, Calendar, FileText, MessageSquare, Trash2, Send, Flag, Pencil } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCircle, UserCheck, CreditCard, Phone, Eye, EyeOff, TruckIcon, MapPin, Calendar, FileText, MessageSquare, Trash2, Send, Flag, Pencil, Camera } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -79,6 +80,8 @@ export default function AdminDashboard() {
   const [editTransporterPhone, setEditTransporterPhone] = useState("");
   const [editTransporterNewPassword, setEditTransporterNewPassword] = useState("");
   const [editTransporterPhoto, setEditTransporterPhoto] = useState<File | null>(null);
+  const [viewPhotoTransporterId, setViewPhotoTransporterId] = useState<string | null>(null);
+  const [viewPhotoDialogOpen, setViewPhotoDialogOpen] = useState(false);
   const { toast} = useToast();
 
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
@@ -237,6 +240,18 @@ export default function AdminDashboard() {
       data: transportersWithStats
     });
   }, [transportersWithStats, transportersLoading, transportersError]);
+
+  // Fetch transporter photo when dialog opens
+  const { data: transporterPhoto, isLoading: photoLoading } = useQuery({
+    queryKey: ["/api/admin/transporters", viewPhotoTransporterId, "photo"],
+    queryFn: async () => {
+      if (!viewPhotoTransporterId) return null;
+      const response = await fetch(`/api/admin/transporters/${viewPhotoTransporterId}/photo`);
+      if (!response.ok) return null;
+      return response.json();
+    },
+    enabled: viewPhotoDialogOpen && !!viewPhotoTransporterId,
+  });
 
   // Fetch clients with stats
   const { data: clientsWithStats = [] } = useQuery({
@@ -1723,6 +1738,7 @@ export default function AdminDashboard() {
                         <Table>
                           <TableHeader>
                             <TableRow>
+                              <TableHead className="w-16">Photo</TableHead>
                               <TableHead>Nom</TableHead>
                               <TableHead>Ville</TableHead>
                               <TableHead>Téléphone</TableHead>
@@ -1738,6 +1754,30 @@ export default function AdminDashboard() {
                           <TableBody>
                             {filteredTransporters.map((transporter: any) => (
                               <TableRow key={transporter.id}>
+                                <TableCell>
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          size="icon"
+                                          variant="ghost"
+                                          onClick={() => {
+                                            setViewPhotoTransporterId(transporter.id);
+                                            setViewPhotoDialogOpen(true);
+                                          }}
+                                          disabled={!transporter.hasTruckPhoto}
+                                          data-testid={`button-view-photo-${transporter.id}`}
+                                          className="hover-elevate"
+                                        >
+                                          <Camera className={`w-4 h-4 ${transporter.hasTruckPhoto ? 'text-primary' : 'text-muted-foreground'}`} />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>{transporter.hasTruckPhoto ? "Voir la photo du camion" : "Aucune photo disponible"}</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                </TableCell>
                                 <TableCell className="font-medium">{transporter.name}</TableCell>
                                 <TableCell>{transporter.city}</TableCell>
                                 <TableCell>
@@ -3985,6 +4025,57 @@ export default function AdminDashboard() {
               data-testid="button-confirm-edit-transporter"
             >
               Enregistrer les modifications
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog pour visualiser la photo du camion */}
+      <Dialog open={viewPhotoDialogOpen} onOpenChange={setViewPhotoDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Photo du camion</DialogTitle>
+            <DialogDescription>
+              {transporterPhoto?.name || "Transporteur"}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {photoLoading ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+                <p className="text-sm text-muted-foreground">Chargement de la photo...</p>
+              </div>
+            ) : !transporterPhoto?.hasTruckPhoto || !transporterPhoto?.truckPhoto ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <TruckIcon className="w-16 h-16 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground font-medium">Aucune photo disponible</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Ce transporteur n'a pas encore ajouté de photo de camion
+                </p>
+              </div>
+            ) : (
+              <div className="relative rounded-lg overflow-hidden bg-muted">
+                <img
+                  src={transporterPhoto.truckPhoto}
+                  alt={`Camion de ${transporterPhoto.name}`}
+                  className="w-full h-auto max-h-[600px] object-contain"
+                  data-testid="img-transporter-photo-full"
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end pt-4 border-t">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setViewPhotoDialogOpen(false);
+                setViewPhotoTransporterId(null);
+              }}
+              data-testid="button-close-photo-dialog"
+            >
+              Fermer
             </Button>
           </div>
         </DialogContent>

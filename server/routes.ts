@@ -2144,6 +2144,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get transporter truck photo by ID (admin)
+  app.get("/api/admin/transporters/:id/photo", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const user = await storage.getUser(id);
+      
+      if (!user) {
+        return res.status(404).json({ error: "Transporteur non trouvé" });
+      }
+      
+      if (user.role !== "transporter") {
+        return res.status(400).json({ error: "Cet utilisateur n'est pas un transporteur" });
+      }
+      
+      const truckPhoto = user.truckPhotos && user.truckPhotos.length > 0 ? user.truckPhotos[0] : null;
+      
+      res.json({ 
+        id: user.id,
+        name: user.name || "Sans nom",
+        truckPhoto,
+        hasTruckPhoto: !!truckPhoto
+      });
+    } catch (error) {
+      console.error("Error fetching transporter photo:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération de la photo" });
+    }
+  });
+
   // Get all clients with stats (admin)
   app.get("/api/admin/clients", async (req, res) => {
     try {
