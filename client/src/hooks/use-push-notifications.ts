@@ -68,10 +68,29 @@ export function usePushNotifications({ userId, enabled }: UsePushNotificationsOp
           const deviceToken = getDeviceTokenFromSubscription(subscription);
           console.log('📤 [usePushNotifications] Envoi du device token au serveur...');
           console.log('📤 [usePushNotifications] Device token length:', deviceToken.length);
+          console.log('📤 [usePushNotifications] URL:', `/api/users/${userId}/device-token`);
+          console.log('📤 [usePushNotifications] Method: PATCH');
+          console.log('📤 [usePushNotifications] Body:', JSON.stringify({ deviceToken }, null, 2));
           
-          await apiRequest('PATCH', `/api/users/${userId}/device-token`, {
-            deviceToken
-          });
+          try {
+            console.log('🚀 [usePushNotifications] Appel de apiRequest...');
+            const response = await apiRequest('PATCH', `/api/users/${userId}/device-token`, {
+              deviceToken
+            });
+            console.log('✅ [usePushNotifications] apiRequest retourné avec succès !');
+            console.log('✅ [usePushNotifications] Response status:', response.status);
+            console.log('✅ [usePushNotifications] Response ok:', response.ok);
+            
+            // Parse response to check success
+            const data = await response.json();
+            console.log('✅ [usePushNotifications] Response data:', data);
+          } catch (apiError) {
+            console.error('❌ ❌ ❌ [usePushNotifications] ERREUR LORS DE L\'ENVOI DU TOKEN ❌ ❌ ❌');
+            console.error('❌ [usePushNotifications] Type:', apiError instanceof Error ? apiError.name : typeof apiError);
+            console.error('❌ [usePushNotifications] Message:', apiError instanceof Error ? apiError.message : String(apiError));
+            console.error('❌ [usePushNotifications] Stack:', apiError instanceof Error ? apiError.stack : 'N/A');
+            throw apiError; // Re-throw to be caught by outer catch
+          }
           
           setIsSubscribed(true);
           setPermission('granted');
