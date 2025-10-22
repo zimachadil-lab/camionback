@@ -80,9 +80,11 @@ export const chatMessages = pgTable("chat_messages", {
   requestId: varchar("request_id").notNull().references(() => transportRequests.id),
   senderId: varchar("sender_id").notNull().references(() => users.id),
   receiverId: varchar("receiver_id").notNull().references(() => users.id),
-  message: text("message"), // Text message content (null for voice messages)
-  messageType: text("message_type").default("text"), // 'text' or 'voice'
-  fileUrl: text("file_url"), // URL to audio file for voice messages
+  message: text("message"), // Text message content (null for voice/photo/video messages)
+  messageType: text("message_type").default("text"), // 'text', 'voice', 'photo', or 'video'
+  fileUrl: text("file_url"), // URL to file (audio/photo/video)
+  fileName: text("file_name"), // Original filename
+  fileSize: integer("file_size"), // File size in bytes
   filteredMessage: text("filtered_message"), // Message after phone/link filtering
   isRead: boolean("is_read").default(false),
   senderType: text("sender_type"), // 'client', 'transporter', or 'admin'
@@ -200,22 +202,24 @@ export const insertOfferSchema = createInsertSchema(offers).omit({ id: true, cre
 export const insertChatMessageSchema = createInsertSchema(chatMessages)
   .omit({ id: true, createdAt: true, filteredMessage: true, isRead: true })
   .extend({
-    messageType: z.enum(["text", "voice"]).default("text"),
+    messageType: z.enum(["text", "voice", "photo", "video"]).default("text"),
     message: z.string().optional(),
     fileUrl: z.string().optional(),
+    fileName: z.string().optional(),
+    fileSize: z.number().optional(),
   })
   .refine(
     (data) => {
       if (data.messageType === "text") {
         return !!data.message && data.message.trim().length > 0;
       }
-      if (data.messageType === "voice") {
+      if (data.messageType === "voice" || data.messageType === "photo" || data.messageType === "video") {
         return !!data.fileUrl && data.fileUrl.trim().length > 0;
       }
       return false;
     },
     {
-      message: "Text messages require a message field, voice messages require a fileUrl field",
+      message: "Text messages require a message field, media messages require a fileUrl field",
     }
   );
 export const insertAdminSettingsSchema = createInsertSchema(adminSettings).omit({ id: true, updatedAt: true });

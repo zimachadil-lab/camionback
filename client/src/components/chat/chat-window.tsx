@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Send, X } from "lucide-react";
+import { Send, X, Image as ImageIcon, Video, Loader2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { type ChatMessage } from "@shared/schema";
@@ -28,7 +28,9 @@ interface ChatWindowProps {
 export function ChatWindow({ open, onClose, otherUser, currentUserId, currentUserRole, requestId }: ChatWindowProps) {
   const [newMessage, setNewMessage] = useState("");
   const [ws, setWs] = useState<WebSocket | null>(null);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const { data: messages = [], refetch } = useQuery<ChatMessage[]>({
@@ -86,7 +88,7 @@ export function ChatWindow({ open, onClose, otherUser, currentUserId, currentUse
   }, [open, requestId, refetch]);
 
   const sendMessageMutation = useMutation({
-    mutationFn: async (messageData: { message?: string; messageType?: string; fileUrl?: string }) => {
+    mutationFn: async (messageData: { message?: string; messageType?: string; fileUrl?: string; fileName?: string; fileSize?: number }) => {
       return apiRequest("POST", "/api/chat/messages", {
         requestId,
         senderId: currentUserId,
@@ -153,6 +155,76 @@ export function ChatWindow({ open, onClose, otherUser, currentUserId, currentUse
     }
   };
 
+  const handleMediaUpload = async (file: File) => {
+    try {
+      setUploadingMedia(true);
+      console.log('Starting media upload:', {
+        size: file.size,
+        type: file.type,
+        name: file.name
+      });
+
+      // Validate file size (10MB max)
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          variant: 'destructive',
+          title: 'Erreur',
+          description: 'Le fichier est trop volumineux (max 10MB)',
+        });
+        return;
+      }
+
+      // Upload media file
+      const formData = new FormData();
+      formData.append('media', file);
+
+      const response = await fetch('/api/messages/upload-media', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }));
+        throw new Error(errorData.error || 'Upload échoué');
+      }
+
+      const result = await response.json();
+      const { fileUrl, fileName, fileSize, messageType } = result;
+
+      // Send media message
+      await sendMessageMutation.mutateAsync({
+        messageType,
+        fileUrl,
+        fileName,
+        fileSize,
+      });
+
+      toast({
+        title: 'Média envoyé',
+        description: 'Le fichier a été envoyé avec succès',
+      });
+    } catch (error) {
+      console.error('Media upload error:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erreur',
+        description: "Échec de l'envoi du média",
+      });
+    } finally {
+      setUploadingMedia(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleMediaUpload(file);
+    }
+  };
+
   const handleSendMessage = () => {
     const trimmed = newMessage.trim();
     if (!trimmed) return;
@@ -192,7 +264,7 @@ export function ChatWindow({ open, onClose, otherUser, currentUserId, currentUse
           ) : (
             messages.map((msg) => {
               const isOwn = msg.senderId === currentUserId;
-              const isVoiceMessage = msg.messageType === 'voice';
+              const isMedia = msg.messageType === 'voice' || msg.messageType === 'photo' || msg.messageType === 'video';
               const displayMessage = msg.filteredMessage || msg.message;
               
               return (
@@ -203,15 +275,46 @@ export function ChatWindow({ open, onClose, otherUser, currentUserId, currentUse
                 >
                   <div
                     className={`max-w-[80%] ${
-                      isVoiceMessage ? '' : 'rounded-lg px-4 py-2'
+                      isMedia ? '' : 'rounded-lg px-4 py-2'
                     } ${
                       isOwn
-                        ? isVoiceMessage ? '' : "bg-primary text-primary-foreground"
-                        : isVoiceMessage ? '' : "bg-muted"
+                        ? isMedia ? '' : "bg-primary text-primary-foreground"
+                        : isMedia ? '' : "bg-muted"
                     }`}
                   >
-                    {isVoiceMessage && msg.fileUrl ? (
+                    {msg.messageType === 'voice' && msg.fileUrl ? (
                       <VoiceMessagePlayer audioUrl={msg.fileUrl} />
+                    ) : msg.messageType === 'photo' && msg.fileUrl ? (
+                      <div className="rounded-lg overflow-hidden">
+                        <img
+                          src={msg.fileUrl}
+                          alt="Photo partagée"
+                          className="max-w-full h-auto max-h-64 cursor-pointer hover:opacity-90 transition-opacity"
+                          onClick={() => msg.fileUrl && window.open(msg.fileUrl, '_blank')}
+                          data-testid={`img-photo-${msg.id}`}
+                        />
+                        {msg.fileName && (
+                          <p className="text-xs text-muted-foreground mt-1 px-2 pb-1">
+                            {msg.fileName}
+                          </p>
+                        )}
+                      </div>
+                    ) : msg.messageType === 'video' && msg.fileUrl ? (
+                      <div className="rounded-lg overflow-hidden">
+                        <video
+                          controls
+                          className="max-w-full h-auto max-h-64"
+                          data-testid={`video-${msg.id}`}
+                        >
+                          <source src={msg.fileUrl} type="video/mp4" />
+                          Votre navigateur ne supporte pas la lecture vidéo.
+                        </video>
+                        {msg.fileName && (
+                          <p className="text-xs text-muted-foreground mt-1 px-2 pb-1">
+                            {msg.fileName}
+                          </p>
+                        )}
+                      </div>
                     ) : (
                       <>
                         <p className="text-sm">{displayMessage}</p>
@@ -237,17 +340,39 @@ export function ChatWindow({ open, onClose, otherUser, currentUserId, currentUse
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyPress={(e) => e.key === "Enter" && !sendMessageMutation.isPending && handleSendMessage()}
             placeholder="Tapez votre message..."
-            disabled={sendMessageMutation.isPending}
+            disabled={sendMessageMutation.isPending || uploadingMedia}
             data-testid="input-chat-message"
           />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,video/*"
+            onChange={handleFileInputChange}
+            className="hidden"
+            data-testid="input-file-media"
+          />
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={sendMessageMutation.isPending || uploadingMedia}
+            data-testid="button-upload-media"
+            title="Envoyer une photo ou vidéo"
+          >
+            {uploadingMedia ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <ImageIcon className="h-4 w-4" />
+            )}
+          </Button>
           <VoiceRecorder 
             onVoiceRecorded={handleVoiceRecorded}
-            disabled={sendMessageMutation.isPending}
+            disabled={sendMessageMutation.isPending || uploadingMedia}
           />
           <Button 
             onClick={handleSendMessage} 
             size="icon"
-            disabled={sendMessageMutation.isPending || !newMessage.trim()}
+            disabled={sendMessageMutation.isPending || !newMessage.trim() || uploadingMedia}
             data-testid="button-send-message"
           >
             <Send className="h-4 w-4" />

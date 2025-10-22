@@ -1867,6 +1867,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Upload photo/video for chat
+  const mediaUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { 
+      fileSize: 10 * 1024 * 1024 // 10MB limit for photos and videos
+    },
+    fileFilter: (req, file, cb) => {
+      // Accept image and video files
+      const allowedTypes = [
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+        'video/mp4',
+        'video/quicktime', // .mov files
+        'video/x-msvideo', // .avi files
+        'video/webm'
+      ];
+      
+      if (allowedTypes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Format de fichier non supporté. Utilisez JPEG, PNG, GIF, WEBP, MP4, MOV, AVI ou WEBM'));
+      }
+    }
+  });
+
+  app.post("/api/messages/upload-media", mediaUpload.single('media'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "Fichier média requis" });
+      }
+
+      // Determine message type based on MIME type
+      const messageType = req.file.mimetype.startsWith('image/') ? 'photo' : 'video';
+
+      // Convert buffer to base64
+      const base64Media = req.file.buffer.toString('base64');
+      const mimeType = req.file.mimetype;
+      const dataUrl = `data:${mimeType};base64,${base64Media}`;
+      
+      res.json({ 
+        success: true, 
+        fileUrl: dataUrl,
+        fileName: req.file.originalname,
+        fileSize: req.file.size,
+        mimeType,
+        messageType
+      });
+    } catch (error) {
+      console.error("Error uploading media:", error);
+      res.status(500).json({ error: "Échec du téléversement du média" });
+    }
+  });
+
   // Admin routes
   app.get("/api/admin/settings", async (req, res) => {
     try {
