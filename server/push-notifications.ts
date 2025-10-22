@@ -38,19 +38,12 @@ interface SendPushOptions {
  */
 export async function sendPushNotification(options: SendPushOptions): Promise<boolean> {
   try {
-    console.log('🚀 === DÉBUT ENVOI PUSH NOTIFICATION ===');
-    
     // Parse device token (which is a PushSubscription object)
     let subscription;
     try {
       subscription = JSON.parse(options.deviceToken);
-      console.log('✅ Device token parsé avec succès:', {
-        endpoint: subscription.endpoint?.substring(0, 60) + '...',
-        hasP256dh: !!subscription.keys?.p256dh,
-        hasAuth: !!subscription.keys?.auth
-      });
     } catch (parseError) {
-      console.error('❌ Device token invalide (JSON parse failed):', parseError);
+      console.error('Push notification: device token invalide');
       return false;
     }
     
@@ -63,44 +56,22 @@ export async function sendPushNotification(options: SendPushOptions): Promise<bo
       url: options.notification.url || '/',
     };
 
-    console.log('📨 Envoi notification push via Web Push API:', {
-      endpoint: subscription.endpoint?.substring(0, 60) + '...',
-      title: payload.title,
-      body: payload.body,
-      url: payload.url
-    });
-
     // Send notification via web-push
     try {
-      const result = await webpush.sendNotification(subscription, JSON.stringify(payload));
-      console.log('✅ ✅ ✅ PUSH NOTIFICATION ENVOYÉE AVEC SUCCÈS ✅ ✅ ✅');
-      console.log('📊 Résultat Web Push:', {
-        statusCode: result.statusCode,
-        body: result.body
-      });
-      console.log('🚀 === FIN ENVOI PUSH NOTIFICATION (SUCCÈS) ===');
+      await webpush.sendNotification(subscription, JSON.stringify(payload));
+      console.log(`✅ Push notification envoyée: ${payload.title}`);
       return true;
     } catch (sendError: any) {
-      console.error('❌ ❌ ❌ ÉCHEC ENVOI PUSH NOTIFICATION ❌ ❌ ❌');
-      
       // Handle subscription expiration/invalidation
       if (sendError.statusCode === 404 || sendError.statusCode === 410) {
-        console.warn('⚠️ Subscription expirée ou invalide (code:', sendError.statusCode, ')');
-        console.warn('⚠️ Cette subscription devrait être supprimée de la base de données');
+        console.warn(`⚠️ Subscription expirée (code ${sendError.statusCode})`);
       } else {
-        console.error('❌ Erreur lors de l\'envoi Web Push:', {
-          statusCode: sendError.statusCode,
-          message: sendError.message,
-          body: sendError.body
-        });
+        console.error('Erreur push notification:', sendError.message);
       }
-      console.log('🚀 === FIN ENVOI PUSH NOTIFICATION (ÉCHEC) ===');
       return false;
     }
   } catch (error) {
-    console.error('❌ ❌ ❌ ERREUR CRITIQUE lors de l\'envoi de la notification push ❌ ❌ ❌');
-    console.error('Détails:', error);
-    console.log('🚀 === FIN ENVOI PUSH NOTIFICATION (ERREUR CRITIQUE) ===');
+    console.error('Erreur critique push notification:', error);
     return false;
   }
 }
@@ -188,30 +159,18 @@ export async function sendNotificationToUser(
   storage: any // IStorage interface
 ): Promise<boolean> {
   try {
-    console.log(`🔍 Recherche de l'utilisateur ${userId} pour envoi push...`);
     const user = await storage.getUser(userId);
     
-    if (!user) {
-      console.error(`❌ Utilisateur ${userId} introuvable`);
+    if (!user || !user.deviceToken) {
       return false;
     }
-
-    console.log(`✅ Utilisateur trouvé: ${user.name} (${user.phoneNumber}) - Role: ${user.role}`);
-    
-    if (!user.deviceToken) {
-      console.log(`⚠️ Utilisateur ${user.name} (${user.phoneNumber}) n'a pas de device token configuré`);
-      console.log(`⚠️ L'utilisateur doit autoriser les notifications dans son navigateur`);
-      return false;
-    }
-
-    console.log(`✅ Device token trouvé pour ${user.name}, envoi en cours...`);
     
     return await sendPushNotification({
       deviceToken: user.deviceToken,
       notification
     });
   } catch (error) {
-    console.error(`❌ Erreur lors de l'envoi de notification à l'utilisateur ${userId}:`, error);
+    console.error('Erreur envoi notification:', error);
     return false;
   }
 }

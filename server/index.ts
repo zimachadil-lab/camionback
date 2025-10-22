@@ -74,18 +74,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Middleware spécial pour tracer toutes les requêtes PATCH (débogage)
-app.use((req, res, next) => {
-  if (req.method === 'PATCH') {
-    console.log('🔍 🔍 🔍 [MIDDLEWARE] Requête PATCH détectée !');
-    console.log('🔍 Path:', req.path);
-    console.log('🔍 URL:', req.url);
-    console.log('🔍 Body:', JSON.stringify(req.body, null, 2));
-    console.log('🔍 Headers:', JSON.stringify(req.headers, null, 2));
-  }
-  next();
-});
-
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;

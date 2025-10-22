@@ -766,29 +766,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Update user device token for push notifications
   app.patch("/api/users/:id/device-token", async (req, res) => {
-    console.log('🚨 🚨 🚨 [ROUTE HIT] /api/users/:id/device-token appelée !');
-    console.log('🚨 userId:', req.params.id);
-    console.log('🚨 req.body:', JSON.stringify(req.body, null, 2));
-    console.log('🚨 Content-Type:', req.headers['content-type']);
-    
     try {
       const { deviceToken } = req.body;
 
       if (!deviceToken) {
-        console.error('❌ Device token manquant dans la requête');
         return res.status(400).json({ error: "Device token requis" });
       }
 
       // Parse device token to validate it's a proper PushSubscription
       try {
         const subscription = JSON.parse(deviceToken);
-        console.log('📱 Device token valide reçu:', {
-          userId: req.params.id,
-          endpoint: subscription.endpoint?.substring(0, 50) + '...',
-          hasKeys: !!(subscription.keys?.p256dh && subscription.keys?.auth)
-        });
+        if (!subscription.endpoint || !subscription.keys?.p256dh || !subscription.keys?.auth) {
+          return res.status(400).json({ error: "Device token invalide" });
+        }
       } catch (e) {
-        console.error('❌ Device token invalide (pas un JSON valide)');
         return res.status(400).json({ error: "Device token invalide" });
       }
 
@@ -797,14 +788,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       if (!user) {
-        console.error(`❌ Utilisateur ${req.params.id} non trouvé`);
         return res.status(404).json({ error: "Utilisateur non trouvé" });
       }
 
-      console.log(`✅ Device token enregistré pour ${user.name} (${user.phoneNumber}) - Role: ${user.role}`);
+      console.log(`✅ Device token enregistré pour ${user.name || user.phoneNumber}`);
       res.json({ success: true });
     } catch (error) {
-      console.error("❌ Erreur lors de l'enregistrement du device token:", error);
+      console.error("Erreur device token:", error);
       res.status(500).json({ error: "Échec de l'enregistrement du device token" });
     }
   });
