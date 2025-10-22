@@ -189,7 +189,7 @@ export async function sendNotificationToUser(
 ): Promise<boolean> {
   try {
     console.log(`🔍 Recherche de l'utilisateur ${userId} pour envoi push...`);
-    const user = await storage.getUserById(userId);
+    const user = await storage.getUser(userId);
     
     if (!user) {
       console.error(`❌ Utilisateur ${userId} introuvable`);

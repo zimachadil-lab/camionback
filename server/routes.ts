@@ -99,7 +99,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       debugInfo.steps.push('1. UserId reçu');
 
       // Check user exists
-      const user = await storage.getUserById(userId);
+      const user = await storage.getUser(userId);
       if (!user) {
         debugInfo.steps.push('2. ❌ Utilisateur introuvable');
         return res.json({ success: false, debug: debugInfo });
