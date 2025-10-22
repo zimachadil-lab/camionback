@@ -74,6 +74,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // CRITICAL: Only cache GET requests (POST, PATCH, PUT, DELETE cannot be cached)
+  // This prevents "Request method 'PATCH' is unsupported" errors
+  if (request.method !== 'GET') {
+    console.log(`[Service Worker] Skipping cache for ${request.method} request:`, request.url);
+    return; // Let the browser handle non-GET requests normally
+  }
+
   // Handle navigation requests (page loads/refreshes) - serve cached shell
   if (request.mode === 'navigate') {
     event.respondWith(
