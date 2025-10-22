@@ -29,6 +29,18 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // PWA - Get VAPID public key for push notifications
+  app.get("/api/pwa/vapid-public-key", (req, res) => {
+    const publicKey = process.env.VAPID_PUBLIC_KEY;
+    
+    if (!publicKey) {
+      console.error('❌ VAPID_PUBLIC_KEY not configured');
+      return res.status(500).json({ error: "Push notifications not configured" });
+    }
+    
+    res.json({ publicKey });
+  });
+
   // Auth routes - New PIN-based system
   
   // Check if phone number exists

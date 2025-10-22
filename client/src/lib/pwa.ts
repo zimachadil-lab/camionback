@@ -57,6 +57,25 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
 }
 
 /**
+ * Fetch VAPID public key from server
+ */
+async function getVapidPublicKey(): Promise<string | null> {
+  try {
+    const response = await fetch('/api/pwa/vapid-public-key');
+    if (!response.ok) {
+      console.error('❌ Erreur lors de la récupération de la clé VAPID');
+      return null;
+    }
+    const data = await response.json();
+    console.log('✅ Clé VAPID publique récupérée depuis le serveur');
+    return data.publicKey;
+  } catch (error) {
+    console.error('❌ Erreur lors de la récupération de la clé VAPID:', error);
+    return null;
+  }
+}
+
+/**
  * Request push notification permission and subscribe
  */
 export async function requestPushPermission(): Promise<PushSubscription | null> {
@@ -66,25 +85,40 @@ export async function requestPushPermission(): Promise<PushSubscription | null> 
   }
 
   try {
+    console.log('🔔 Demande de permission de notification...');
     const permission = await Notification.requestPermission();
+    console.log('🔔 Permission de notification:', permission);
     
     if (permission !== 'granted') {
       console.log('ℹ️ Permission de notification refusée');
       return null;
     }
 
+    console.log('⏳ Attente du Service Worker...');
     const registration = await navigator.serviceWorker.ready;
+    console.log('✅ Service Worker prêt');
+
+    // Get VAPID public key from server
+    console.log('🔑 Récupération de la clé VAPID publique...');
+    const vapidPublicKey = await getVapidPublicKey();
+    if (!vapidPublicKey) {
+      console.error('❌ Impossible de récupérer la clé VAPID publique');
+      return null;
+    }
     
+    console.log('📱 Souscription aux push notifications...');
     // Subscribe to push notifications
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(
-        // VAPID public key - matches server configuration
-        'BKlRNay9G3ObXE1Z9bc3Qz80_NrAAU2PpYImuSsWFy0-1rHJ-IRHJ33ptl7knqW22TZcXtjp2WjaHuvgE5kPZoo'
-      )
+      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
     });
 
     console.log('✅ Souscription aux notifications push réussie');
+    console.log('📋 Détails de la souscription:', {
+      endpoint: subscription.endpoint.substring(0, 50) + '...',
+      hasKeys: !!subscription.getKey('p256dh') && !!subscription.getKey('auth')
+    });
+    
     return subscription;
   } catch (error) {
     console.error('❌ Erreur lors de la souscription aux notifications:', error);
