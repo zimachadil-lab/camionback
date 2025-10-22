@@ -194,12 +194,9 @@ export const clientTransporterContacts = pgTable("client_transporter_contacts", 
 export const stories = pgTable("stories", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   role: text("role").notNull(), // 'client', 'transporter', or 'all'
-  title: text("title").notNull(), // Short title (e.g., "Comment ça marche")
-  iconUrl: text("icon_url"), // URL or path to icon/image
-  description: text("description").notNull(), // 2-4 lines of explanatory text
-  ctaText: text("cta_text"), // Optional CTA button text (e.g., "Voir plus")
-  ctaLink: text("cta_link"), // Optional CTA link
-  duration: integer("duration").default(5), // Display duration in seconds
+  title: text("title").notNull(), // Short title for the story
+  content: text("content").notNull(), // Main content/description of the story
+  mediaUrl: text("media_url"), // Optional URL to image or video
   order: integer("order").default(0), // Display order (lower = first)
   isActive: boolean("is_active").default(true), // Active/Inactive status
   createdAt: timestamp("created_at").defaultNow(),
