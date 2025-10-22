@@ -147,15 +147,24 @@ export default function AdminDashboard() {
   });
 
   // Fetch all users for client/transporter details
-  const { data: users = [] } = useQuery({
+  const { data: users = [], isLoading: usersLoading, error: usersError } = useQuery({
     queryKey: ["/api/users"],
     queryFn: async () => {
+      console.log("🔄 Fetching /api/users...");
       const response = await fetch("/api/users");
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
-      console.log("📊 Admin: Loaded users:", data.length, "Sample:", data[0]);
+      console.log("📊 Admin: Loaded users:", data.length, "users");
+      console.log("   First user:", data[0]);
+      console.log("   Users array:", users);
       return data;
     },
   });
+
+  // Debug logging
+  console.log("🐛 Users state:", { usersLoading, usersError, usersCount: users.length });
 
   // Fetch admin settings for commission calculation
   const { data: adminSettings } = useQuery({
