@@ -181,11 +181,14 @@ self.addEventListener('push', (event) => {
   console.log('[Service Worker] Push event object:', event);
   console.log('[Service Worker] Has data:', !!event.data);
   
+  // Use absolute URLs for icons (required for push notifications)
+  const baseUrl = self.location.origin;
+  
   let notificationData = {
     title: 'CamionBack',
     body: 'Vous avez une nouvelle notification',
-    icon: '/icons/icon-192.png',
-    badge: '/icons/icon-192.png',
+    icon: `${baseUrl}/favicon.png`,
+    badge: `${baseUrl}/favicon-32x32.png`,
     url: '/'
   };
 
