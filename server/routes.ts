@@ -127,8 +127,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ success: false, debug: debugInfo });
       }
       
-      // Try to send push
-      const webpush = (await import('web-push')).default;
+      // Try to send push using the configured function
+      const { sendPushNotification } = await import('./push-notifications');
       const testNotification = {
         title: '🧪 Test CamionBack',
         body: 'Si vous voyez ceci, les push notifications fonctionnent !',
@@ -137,25 +137,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         badge: '/icons/icon-192.png'
       };
       
-      debugInfo.steps.push('5. Envoi en cours via Web Push...');
+      debugInfo.steps.push('5. Envoi en cours via Web Push (avec VAPID)...');
       
-      try {
-        const result = await webpush.sendNotification(subscription, JSON.stringify(testNotification));
+      const result = await sendPushNotification({
+        deviceToken: user.deviceToken,
+        notification: testNotification
+      });
+      
+      if (result) {
         debugInfo.steps.push('6. ✅ ✅ ✅ PUSH ENVOYÉE AVEC SUCCÈS !');
-        debugInfo.webPushStatusCode = result.statusCode;
-        debugInfo.webPushBody = result.body;
-        
         res.json({ 
           success: true, 
           message: 'Notification envoyée ! Vérifiez votre appareil.',
           debug: debugInfo 
         });
-      } catch (sendError: any) {
-        debugInfo.steps.push('6. ❌ Échec envoi Web Push');
-        debugInfo.errorCode = sendError.statusCode;
-        debugInfo.errorMessage = sendError.message;
-        debugInfo.errorBody = sendError.body;
-        
+      } else {
+        debugInfo.steps.push('6. ❌ Échec envoi Web Push (voir logs serveur)');
         res.json({ success: false, debug: debugInfo });
       }
     } catch (error: any) {
