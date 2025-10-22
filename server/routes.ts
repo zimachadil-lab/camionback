@@ -129,12 +129,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Try to send push using the configured function
       const { sendPushNotification } = await import('./push-notifications');
+      
+      const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+        ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
+        : 'https://camionback.com';
+      
       const testNotification = {
         title: '🧪 Test CamionBack',
         body: 'Si vous voyez ceci, les push notifications fonctionnent !',
         url: '/',
-        icon: '/favicon.png',
-        badge: '/favicon-32x32.png'
+        icon: `${baseUrl}/favicon.png`,
+        badge: `${baseUrl}/favicon-32x32.png`
       };
       
       debugInfo.steps.push('5. Envoi en cours via Web Push (avec VAPID)...');

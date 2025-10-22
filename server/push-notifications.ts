@@ -48,11 +48,16 @@ export async function sendPushNotification(options: SendPushOptions): Promise<bo
     }
     
     // Prepare the notification payload
+    // Note: Push notifications require absolute URLs for icons
+    const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
+      : 'https://camionback.com';
+    
     const payload = {
       title: options.notification.title,
       body: options.notification.body,
-      icon: options.notification.icon || '/favicon.png',
-      badge: options.notification.badge || '/favicon-32x32.png',
+      icon: options.notification.icon || `${baseUrl}/favicon.png`,
+      badge: options.notification.badge || `${baseUrl}/favicon-32x32.png`,
       url: options.notification.url || '/',
     };
 
