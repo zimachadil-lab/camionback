@@ -12,14 +12,15 @@ import {
   type Report, type InsertReport,
   type City, type InsertCity,
   type SmsHistory, type InsertSmsHistory,
-  type ClientTransporterContact, type InsertClientTransporterContact
+  type ClientTransporterContact, type InsertClientTransporterContact,
+  type Story, type InsertStory
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from './db.js';
 import { 
   users, otpCodes, transportRequests, offers, chatMessages,
   adminSettings, notifications, ratings, emptyReturns, contracts, reports, cities, smsHistory,
-  clientTransporterContacts
+  clientTransporterContacts, stories
 } from '@shared/schema';
 import { eq, and, or, desc, asc, lte, gte, sql } from 'drizzle-orm';
 
@@ -121,6 +122,15 @@ export interface IStorage {
   createSmsHistory(smsHistory: InsertSmsHistory): Promise<SmsHistory>;
   getAllSmsHistory(): Promise<SmsHistory[]>;
   deleteSmsHistory(id: string): Promise<void>;
+  
+  // Story operations
+  createStory(story: InsertStory): Promise<Story>;
+  getAllStories(): Promise<Story[]>;
+  getStoriesByRole(role: string): Promise<Story[]>;
+  getActiveStoriesByRole(role: string): Promise<Story[]>;
+  getStoryById(id: string): Promise<Story | undefined>;
+  updateStory(id: string, updates: Partial<Story>): Promise<Story | undefined>;
+  deleteStory(id: string): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -1074,6 +1084,29 @@ export class MemStorage implements IStorage {
     this.reports.set(id, updatedReport);
     return updatedReport;
   }
+
+  // Story operations (stubs - MemStorage not used in production)
+  async createStory(story: InsertStory): Promise<Story> {
+    throw new Error("MemStorage not implemented for stories");
+  }
+  async getAllStories(): Promise<Story[]> {
+    return [];
+  }
+  async getStoriesByRole(role: string): Promise<Story[]> {
+    return [];
+  }
+  async getActiveStoriesByRole(role: string): Promise<Story[]> {
+    return [];
+  }
+  async getStoryById(id: string): Promise<Story | undefined> {
+    return undefined;
+  }
+  async updateStory(id: string, updates: Partial<Story>): Promise<Story | undefined> {
+    return undefined;
+  }
+  async deleteStory(id: string): Promise<void> {
+    return;
+  }
 }
 
 export class DbStorage implements IStorage {
@@ -2003,6 +2036,50 @@ export class DbStorage implements IStorage {
 
   async deleteSmsHistory(id: string): Promise<void> {
     await db.delete(smsHistory).where(eq(smsHistory.id, id));
+  }
+
+  // Story operations
+  async createStory(insertStory: InsertStory): Promise<Story> {
+    const result = await db.insert(stories).values(insertStory).returning();
+    return result[0];
+  }
+
+  async getAllStories(): Promise<Story[]> {
+    return await db.select().from(stories).orderBy(asc(stories.order));
+  }
+
+  async getStoriesByRole(role: string): Promise<Story[]> {
+    return await db.select().from(stories)
+      .where(or(eq(stories.role, role), eq(stories.role, 'all')))
+      .orderBy(asc(stories.order));
+  }
+
+  async getActiveStoriesByRole(role: string): Promise<Story[]> {
+    return await db.select().from(stories)
+      .where(and(
+        or(eq(stories.role, role), eq(stories.role, 'all')),
+        eq(stories.isActive, true)
+      ))
+      .orderBy(asc(stories.order));
+  }
+
+  async getStoryById(id: string): Promise<Story | undefined> {
+    const result = await db.select().from(stories)
+      .where(eq(stories.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  async updateStory(id: string, updates: Partial<Story>): Promise<Story | undefined> {
+    const result = await db.update(stories)
+      .set(updates)
+      .where(eq(stories.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteStory(id: string): Promise<void> {
+    await db.delete(stories).where(eq(stories.id, id));
   }
 }
 

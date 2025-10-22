@@ -1,0 +1,130 @@
+Ajouter une barre de stories dynamiques en haut du tableau de bord client et transporteur, inspirée du style Instagram (cercles défilants).
+Chaque “story” affiche une info utile (fonctionnement, paiement, avis, nouveautés, etc.), selon le rôle de l’utilisateur.
+Le contenu est géré depuis le tableau de bord admin (titre, icône, description, durée, ordre, visibilité).
+
+✅ Tâches à développer
+
+1️⃣ Barre de stories côté client et transporteur
+
+Ajouter une section tout en haut du dashboard (/dashboard-client et /dashboard-transporteur).
+
+Affichage horizontal scrollable de cercles (“stories”) avec :
+
+Une icône (ou image) au centre du cercle
+
+Une bordure dégradée (ex: gradient CamionBack #163049 → #0a2540)
+
+Un titre court en dessous (ex: “Comment ça marche”, “Paiement”, “Top Transporteurs”)
+
+En cliquant sur un cercle :
+
+Ouvrir une fenêtre modale / popup avec :
+
+Un visuel (image ou animation optionnelle)
+
+Un petit texte explicatif (2 à 4 lignes max)
+
+Un bouton CTA éventuel (“Voir plus”, “Découvrir”, “Accéder à mes commandes”, etc.)
+
+Navigation entre stories possible par swipe ou flèches.
+
+La durée d’affichage automatique d’une story doit être configurable (ex: 5 secondes par story).
+
+2️⃣ Gestion du contenu côté Admin
+
+Ajouter une nouvelle vue / menu “Stories” sur le tableau de bord Admin.
+
+Cette vue permet :
+
+➕ Ajouter / ✏️ Modifier / ❌ Supprimer une story
+
+Choisir le rôle ciblé : “Client”, “Transporteur” ou “Tous”
+
+Définir :
+
+Titre
+
+Icône (upload ou URL)
+
+Texte de description
+
+Durée d’affichage (en secondes)
+
+Ordre d’apparition
+
+Statut (actif/inactif)
+
+Enregistrement en base de données (collection stories).
+
+Exemple structure MongoDB :
+
+{
+  id: "uuid",
+  role: "client", // ou "transporteur" ou "all"
+  title: "Comment ça marche",
+  iconUrl: "/icons/help.png",
+  description: "Découvrez comment publier une commande et recevoir vos devis en quelques clics.",
+  duration: 5,
+  order: 1,
+  isActive: true,
+  createdAt: "2025-10-22T00:00:00Z"
+}
+
+3️⃣ API Backend
+
+Créer un endpoint :
+
+GET /api/stories?role=client
+
+POST /api/stories (admin)
+
+PATCH /api/stories/:id (admin)
+
+DELETE /api/stories/:id (admin)
+
+Les stories sont filtrées côté front selon le rôle.
+
+4️⃣ Détails UX/UI
+
+Les cercles doivent être scrollables horizontalement avec effet de “snap”.
+
+L’animation de la bordure doit être subtile (gradient animé).
+
+Le titre en dessous doit être centré et lisible.
+
+La modale doit utiliser le style CamionBack : fond blanc, bord arrondi, bouton principal bleu foncé (#0a2540).
+
+Compatible mobile et desktop.
+
+5️⃣ Contenu de base à précharger
+
+Pour clients :
+
+💡 Comment ça marche → "Publiez votre commande, recevez des devis, choisissez le transporteur idéal."
+
+💳 Paiement & Sécurité → "Le paiement s’effectue après validation, sécurisé par CamionBack."
+
+⭐ Top Transporteurs → "Découvrez les meilleurs transporteurs de la semaine selon les avis."
+
+Pour transporteurs :
+
+🚀 Comment obtenir plus de missions → "Activez les notifications et proposez rapidement vos devis."
+
+💰 Paiement & Facturation → "Les paiements sont versés une fois la livraison confirmée."
+
+🧾 Avis clients → "Vos évaluations influencent votre classement et visibilité."
+
+6️⃣ Points techniques optionnels
+
+Les stories peuvent être mises à jour via WebSocket ou fetch régulier (toutes les 60 secondes).
+
+Possibilité de précharger les icônes (lazy loading).
+
+Si aucune story active → masquer la barre.
+
+🧩 Stack actuelle
+React + TypeScript + Tailwind + Express + MongoDB
+(conserver la cohérence visuelle avec les autres composants CamionBack)
+
+💬 Objectif final
+Que les utilisateurs aient une expérience plus vivante et interactive, et que l’administrateur puisse gérer entièrement ces stories dynamiques depuis son tableau de bord.
