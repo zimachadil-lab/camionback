@@ -177,10 +177,6 @@ self.addEventListener('fetch', (event) => {
 
 // Push notification event
 self.addEventListener('push', (event) => {
-  console.log('🔔 🔔 🔔 [Service Worker] PUSH EVENT RECEIVED! 🔔 🔔 🔔');
-  console.log('[Service Worker] Push event object:', event);
-  console.log('[Service Worker] Has data:', !!event.data);
-  
   // Use absolute URLs for icons (required for push notifications)
   const baseUrl = self.location.origin;
   
@@ -194,13 +190,8 @@ self.addEventListener('push', (event) => {
 
   // Parse push data if available
   if (event.data) {
-    console.log('[Service Worker] Push data exists, parsing...');
     try {
-      const rawData = event.data.text();
-      console.log('[Service Worker] Raw push data:', rawData);
-      
-      const data = JSON.parse(rawData);
-      console.log('[Service Worker] Parsed push data:', data);
+      const data = JSON.parse(event.data.text());
       
       notificationData = {
         title: data.title || notificationData.title,
@@ -209,13 +200,9 @@ self.addEventListener('push', (event) => {
         badge: data.badge || notificationData.badge,
         url: data.url || notificationData.url
       };
-      
-      console.log('[Service Worker] Final notification data:', notificationData);
     } catch (error) {
       console.error('[Service Worker] Error parsing push data:', error);
     }
-  } else {
-    console.warn('[Service Worker] No data in push event!');
   }
 
   const options = {
@@ -238,33 +225,9 @@ self.addEventListener('push', (event) => {
     ]
   };
 
-  console.log('[Service Worker] Calling showNotification with:', {
-    title: notificationData.title,
-    options: options
-  });
-  
-  console.log('[Service Worker] Full showNotification call:');
-  console.log('[Service Worker] - Title:', notificationData.title);
-  console.log('[Service Worker] - Body:', options.body);
-  console.log('[Service Worker] - Icon:', options.icon);
-  console.log('[Service Worker] - Badge:', options.badge);
-  console.log('[Service Worker] - Vibrate:', options.vibrate);
-  console.log('[Service Worker] - Data URL:', options.data.url);
-
   const showNotificationPromise = self.registration.showNotification(notificationData.title, options)
-    .then(() => {
-      console.log('✅ ✅ ✅ [Service Worker] NOTIFICATION DISPLAYED SUCCESSFULLY! ✅ ✅ ✅');
-      console.log('✅ showNotification() promise resolved without error');
-      console.log('✅ Si vous ne voyez toujours pas la notification sur votre écran,');
-      console.log('✅ le problème vient des paramètres Android (Ne pas déranger, etc.)');
-      return Promise.resolve();
-    })
     .catch((error) => {
-      console.error('❌ ❌ ❌ [Service Worker] ERROR DISPLAYING NOTIFICATION ❌ ❌ ❌');
-      console.error('❌ Type:', error.name);
-      console.error('❌ Message:', error.message);
-      console.error('❌ Stack:', error.stack);
-      console.error('❌ Full error:', error);
+      console.error('[Service Worker] Error displaying notification:', error);
       return Promise.reject(error);
     });
 

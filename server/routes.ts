@@ -84,10 +84,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // PWA - Test endpoint (GET) for easy browser testing with detailed debug info
+  // PWA - Test endpoint (GET) for easy browser testing
   app.get("/api/pwa/test-push-notification", async (req, res) => {
-    const debugInfo: any = { steps: [] };
-    
     try {
       const userId = req.query.userId as string;
       
@@ -95,39 +93,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "userId requis dans l'URL: ?userId=XXX" });
       }
 
-      debugInfo.userId = userId;
-      debugInfo.steps.push('1. UserId reçu');
-
-      // Check user exists
       const user = await storage.getUser(userId);
       if (!user) {
-        debugInfo.steps.push('2. ❌ Utilisateur introuvable');
-        return res.json({ success: false, debug: debugInfo });
+        return res.json({ success: false, error: 'Utilisateur introuvable' });
       }
       
-      debugInfo.steps.push('2. ✅ Utilisateur trouvé: ' + user.name + ' (' + user.phoneNumber + ')');
-      debugInfo.userRole = user.role;
-      
-      // Check device token
       if (!user.deviceToken) {
-        debugInfo.steps.push('3. ❌ Pas de device token');
-        return res.json({ success: false, debug: debugInfo });
+        return res.json({ success: false, error: 'Pas de device token' });
       }
       
-      debugInfo.steps.push('3. ✅ Device token présent (' + user.deviceToken.length + ' chars)');
-      
-      // Parse device token
-      let subscription;
-      try {
-        subscription = JSON.parse(user.deviceToken);
-        debugInfo.steps.push('4. ✅ Device token parsé OK');
-        debugInfo.subscriptionEndpoint = subscription.endpoint?.substring(0, 60) + '...';
-      } catch (parseError: any) {
-        debugInfo.steps.push('4. ❌ Erreur parsing device token: ' + parseError.message);
-        return res.json({ success: false, debug: debugInfo });
-      }
-      
-      // Try to send push using the configured function
       const { sendPushNotification } = await import('./push-notifications');
       
       const baseUrl = process.env.REPLIT_DEV_DOMAIN 
@@ -135,14 +109,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         : 'https://camionback.com';
       
       const testNotification = {
-        title: '🧪 Test CamionBack',
+        title: 'Test CamionBack',
         body: 'Si vous voyez ceci, les push notifications fonctionnent !',
         url: '/',
         icon: `${baseUrl}/apple-touch-icon.png`,
-        badge: `${baseUrl}/apple-touch-icon.png`
+        badge: `${baseUrl}/icons/notification-badge.png`
       };
-      
-      debugInfo.steps.push('5. Envoi en cours via Web Push (avec VAPID)...');
       
       const result = await sendPushNotification({
         deviceToken: user.deviceToken,
@@ -150,19 +122,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       if (result) {
-        debugInfo.steps.push('6. ✅ ✅ ✅ PUSH ENVOYÉE AVEC SUCCÈS !');
         res.json({ 
           success: true, 
-          message: 'Notification envoyée ! Vérifiez votre appareil.',
-          debug: debugInfo 
+          message: 'Notification envoyée ! Vérifiez votre appareil.'
         });
       } else {
-        debugInfo.steps.push('6. ❌ Échec envoi Web Push (voir logs serveur)');
-        res.json({ success: false, debug: debugInfo });
+        res.json({ success: false, error: 'Échec envoi Web Push' });
       }
     } catch (error: any) {
-      debugInfo.steps.push('❌ ERREUR CRITIQUE: ' + error.message);
-      res.status(500).json({ success: false, error: error.message, debug: debugInfo });
+      res.status(500).json({ success: false, error: error.message });
     }
   });
 
