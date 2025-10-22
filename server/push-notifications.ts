@@ -4,15 +4,14 @@ import webpush from "web-push";
 const INFOBIP_BASE_URL = process.env.INFOBIP_BASE_URL || "https://1g692n.api.infobip.com";
 const INFOBIP_API_KEY = process.env.INFOBIP_API_KEY;
 
-// VAPID keys for Web Push (generate with: npx web-push generate-vapid-keys)
-// ⚠️ IMPORTANT FOR PRODUCTION:
-// 1. Generate new VAPID keys with: npx web-push generate-vapid-keys
-// 2. Store them in environment variables: VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY
-// 3. NEVER commit private keys to source control
-// 4. Update client/src/lib/pwa.ts with the same public key
-// Default keys below are for development only - replace in production!
-const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
-const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || 'UUxXMr2vJ7gvmxUzTN9MhsLIu7oN3XZRkxqY9vXuPYM';
+// VAPID keys for Web Push - loaded from environment variables
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY!;
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY!;
+
+if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
+  console.error('⚠️ VAPID keys not configured! Push notifications will not work.');
+  console.error('Please set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY environment variables.');
+}
 
 // Configure web-push with VAPID details
 webpush.setVapidDetails(

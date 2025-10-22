@@ -257,6 +257,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`✅ Transporteur ${validated ? 'validé' : 'refusé'} - Nom: ${user.name}, Tél: ${user.phoneNumber}`);
 
+      // Send push notification if transporter is validated
+      if (validated) {
+        try {
+          if (user.deviceToken) {
+            const { sendNotificationToUser, NotificationTemplates } = await import('./push-notifications');
+            const notification = NotificationTemplates.accountValidated();
+            notification.url = `/transporter-dashboard`;
+            
+            await sendNotificationToUser(user.id, notification, storage);
+            console.log(`📨 Notification push envoyée pour validation de compte`);
+          }
+        } catch (pushError) {
+          console.error('❌ Erreur lors de l\'envoi de la notification push:', pushError);
+        }
+      }
+
       // Send SMS notification if transporter is validated
       if (validated && user.phoneNumber) {
         console.log(`📱 Envoi SMS activation à ${user.phoneNumber}`);
@@ -1466,6 +1482,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: `${transporter?.name || "Un transporteur"} a soumis une offre de ${clientAmount} MAD pour votre demande ${request.referenceId}`,
           relatedId: offer.id
         });
+        
+        // Send push notification to client
+        try {
+          const client = await storage.getUser(request.clientId);
+          if (client && client.deviceToken) {
+            const { sendNotificationToUser, NotificationTemplates } = await import('./push-notifications');
+            const notification = NotificationTemplates.newOffer(request.referenceId);
+            notification.url = `/client-dashboard`;
+            
+            await sendNotificationToUser(client.id, notification, storage);
+            console.log(`📨 Notification push envoyée au client pour nouvelle offre`);
+          }
+        } catch (pushError) {
+          console.error('❌ Erreur lors de l\'envoi de la notification push:', pushError);
+        }
 
         // Send email notification to admin (non-blocking)
         storage.getUser(request.clientId).then(client => {
@@ -1608,6 +1639,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: `${client?.name || "Le client"} a accepté votre offre de ${offer.amount} MAD pour la demande ${request?.referenceId}. Commission: ${commissionAmount.toFixed(2)} MAD. Total: ${totalWithCommission.toFixed(2)} MAD`,
         relatedId: offer.id
       });
+      
+      // Send push notification to transporter
+      try {
+        if (transporter && transporter.deviceToken && request) {
+          const { sendNotificationToUser, NotificationTemplates } = await import('./push-notifications');
+          const notification = NotificationTemplates.offerAccepted(request.referenceId);
+          notification.url = `/transporter-dashboard`;
+          
+          await sendNotificationToUser(transporter.id, notification, storage);
+          console.log(`📨 Notification push envoyée au transporteur pour offre acceptée`);
+        }
+      } catch (pushError) {
+        console.error('❌ Erreur lors de l\'envoi de la notification push:', pushError);
+      }
 
       // Create contract automatically
       if (request) {
@@ -1750,6 +1795,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('[DEBUG] Validation passed, creating message...');
       const message = await storage.createChatMessage(messageData);
       console.log('[DEBUG] Message created successfully:', message.id);
+      
+      // Send push notification to recipient
+      try {
+        const sender = await storage.getUser(messageData.senderId);
+        const recipient = await storage.getUser(messageData.receiverId);
+        
+        if (recipient && recipient.deviceToken && sender) {
+          const { sendNotificationToUser, NotificationTemplates } = await import('./push-notifications');
+          const notification = NotificationTemplates.newMessage(sender.name || sender.phoneNumber);
+          notification.url = `/messages?requestId=${messageData.requestId}`;
+          
+          await sendNotificationToUser(recipient.id, notification, storage);
+          console.log(`📨 Notification push envoyée à ${recipient.name || recipient.phoneNumber}`);
+        }
+      } catch (pushError) {
+        console.error('❌ Erreur lors de l\'envoi de la notification push:', pushError);
+        // Don't fail the message send if push notification fails
+      }
+      
       res.json(message);
     } catch (error) {
       console.error('[DEBUG] Error in POST /api/chat/messages:', error);

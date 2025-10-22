@@ -80,7 +80,7 @@ export async function requestPushPermission(): Promise<PushSubscription | null> 
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(
         // VAPID public key - matches server configuration
-        import.meta.env.VITE_VAPID_PUBLIC_KEY || 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U'
+        'BKlRNay9G3ObXE1Z9bc3Qz80_NrAAU2PpYImuSsWFy0-1rHJ-IRHJ33ptl7knqW22TZcXtjp2WjaHuvgE5kPZoo'
       )
     });
 
