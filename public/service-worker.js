@@ -1,8 +1,8 @@
 // Service Worker for CamionBack PWA
 // Handles push notifications and offline capabilities
-// Version: 2.3 - Monochrome badge icon for Android compatibility
+// Version: 2.4 - Fixed API cache error handling
 
-const VERSION = '2.3';
+const VERSION = '2.4';
 const CACHE_NAME = `camionback-v${VERSION}`;
 const STATIC_CACHE = `camionback-static-v${VERSION}`;
 const DYNAMIC_CACHE = `camionback-dynamic-v${VERSION}`;
@@ -114,16 +114,33 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          // Clone response to cache it
-          const responseClone = response.clone();
-          caches.open(DYNAMIC_CACHE).then((cache) => {
-            cache.put(request, responseClone);
-          });
+          // Only cache successful responses
+          if (response && response.ok && response.status === 200) {
+            const responseClone = response.clone();
+            caches.open(DYNAMIC_CACHE).then((cache) => {
+              cache.put(request, responseClone);
+            });
+          }
           return response;
         })
-        .catch(() => {
+        .catch((error) => {
+          console.log('[Service Worker] Network failed for API request, trying cache:', request.url);
           // If network fails, try cache
-          return caches.match(request);
+          return caches.match(request).then((cachedResponse) => {
+            if (cachedResponse) {
+              console.log('[Service Worker] Serving from cache:', request.url);
+              return cachedResponse;
+            }
+            // No cache available, return error response
+            console.error('[Service Worker] No cache available for:', request.url, error);
+            return new Response(JSON.stringify({ error: 'Network error and no cache available' }), {
+              status: 503,
+              statusText: 'Service Unavailable',
+              headers: new Headers({
+                'Content-Type': 'application/json'
+              })
+            });
+          });
         })
     );
     return;
