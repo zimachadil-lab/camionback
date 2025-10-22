@@ -206,10 +206,13 @@ export default function AdminDashboard() {
   });
 
   // Fetch transporters with stats
-  const { data: transportersWithStats = [] } = useQuery({
+  const { data: transportersWithStats = [], isLoading: transportersLoading, error: transportersError } = useQuery({
     queryKey: ["/api/admin/transporters"],
     queryFn: async () => {
       const response = await fetch("/api/admin/transporters");
+      if (!response.ok) {
+        throw new Error(`Failed to fetch transporters: ${response.status}`);
+      }
       return response.json();
     },
   });
