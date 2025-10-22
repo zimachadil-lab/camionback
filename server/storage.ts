@@ -184,6 +184,9 @@ export class MemStorage implements IStorage {
       totalTrips: insertUser.totalTrips ?? null,
       status: insertUser.status ?? null,
       accountStatus: insertUser.accountStatus ?? "active",
+      ribName: insertUser.ribName ?? null,
+      ribNumber: insertUser.ribNumber ?? null,
+      deviceToken: insertUser.deviceToken ?? null,
       isActive: insertUser.isActive ?? true,
       createdAt: new Date(),
     };
