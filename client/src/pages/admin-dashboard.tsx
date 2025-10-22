@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCircle, UserCheck, CreditCard, Phone, Eye, EyeOff, TruckIcon, MapPin, Calendar, FileText, MessageSquare, Trash2, Send, Flag, Pencil, Camera, RefreshCw } from "lucide-react";
+import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCircle, UserCheck, CreditCard, Phone, Eye, EyeOff, TruckIcon, MapPin, Calendar, FileText, MessageSquare, Trash2, Send, Flag, Pencil, Camera, RefreshCw, Circle, Edit } from "lucide-react";
 import { LoadingTruck } from "@/components/ui/loading-truck";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -64,6 +64,12 @@ export default function AdminDashboard() {
   const [requestDetailDialogOpen, setRequestDetailDialogOpen] = useState(false);
   const [newCityName, setNewCityName] = useState("");
   const [editingCity, setEditingCity] = useState<any>(null);
+  const [newStoryTitle, setNewStoryTitle] = useState("");
+  const [newStoryContent, setNewStoryContent] = useState("");
+  const [newStoryMediaUrl, setNewStoryMediaUrl] = useState("");
+  const [newStoryRole, setNewStoryRole] = useState("all");
+  const [newStoryOrder, setNewStoryOrder] = useState(0);
+  const [editingStory, setEditingStory] = useState<any>(null);
   const [selectedRibTransporter, setSelectedRibTransporter] = useState<any>(null);
   const [deleteOfferId, setDeleteOfferId] = useState<string | null>(null);
   const [editingOffer, setEditingOffer] = useState<any>(null);
@@ -280,6 +286,15 @@ export default function AdminDashboard() {
     queryKey: ["/api/cities"],
     queryFn: async () => {
       const response = await fetch("/api/cities");
+      return response.json();
+    },
+  });
+
+  // Fetch all stories
+  const { data: allStories = [], isLoading: storiesLoading } = useQuery({
+    queryKey: ["/api/stories"],
+    queryFn: async () => {
+      const response = await fetch(`/api/stories?adminId=${user.id}`);
       return response.json();
     },
   });
@@ -862,7 +877,7 @@ export default function AdminDashboard() {
             {/* Barre de navigation secondaire - Gestion */}
             <div className="bg-muted/30 p-2 rounded-lg">
               <p className="text-xs text-muted-foreground mb-2 px-2 font-medium">Gestion & Configuration</p>
-              <TabsList className="flex lg:grid w-full lg:grid-cols-8 overflow-x-auto text-xs sm:text-sm">
+              <TabsList className="flex lg:grid w-full lg:grid-cols-9 overflow-x-auto text-xs sm:text-sm">
                 <TabsTrigger value="drivers" data-testid="tab-drivers" className="flex-shrink-0">Transporteurs</TabsTrigger>
                 <TabsTrigger value="clients" data-testid="tab-clients" className="flex-shrink-0">Clients</TabsTrigger>
                 <TabsTrigger value="reports" data-testid="tab-reports" className="flex-shrink-0">
@@ -880,6 +895,7 @@ export default function AdminDashboard() {
                 </TabsTrigger>
                 <TabsTrigger value="facturation" data-testid="tab-facturation" className="flex-shrink-0">Facturation</TabsTrigger>
                 <TabsTrigger value="cities" data-testid="tab-cities" className="flex-shrink-0">Villes</TabsTrigger>
+                <TabsTrigger value="stories" data-testid="tab-stories" className="flex-shrink-0">Stories</TabsTrigger>
                 <TabsTrigger value="stats" data-testid="tab-stats" className="flex-shrink-0">Statistiques</TabsTrigger>
                 <TabsTrigger value="settings" data-testid="tab-settings" className="flex-shrink-0">Paramètres</TabsTrigger>
               </TabsList>
@@ -2606,6 +2622,276 @@ export default function AdminDashboard() {
                                       }
                                     }}
                                     data-testid={`button-delete-city-${city.id}`}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="stories" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Circle className="w-5 h-5" />
+                  Gestion des Stories
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Add new story form */}
+                <div className="bg-muted/50 p-4 rounded-lg space-y-4">
+                  <h4 className="font-medium">
+                    {editingStory ? "Modifier une story" : "Créer une nouvelle story"}
+                  </h4>
+                  <div className="space-y-3">
+                    <Input
+                      placeholder="Titre de la story"
+                      value={editingStory ? editingStory.title : newStoryTitle}
+                      onChange={(e) => editingStory 
+                        ? setEditingStory({...editingStory, title: e.target.value}) 
+                        : setNewStoryTitle(e.target.value)}
+                      data-testid="input-story-title"
+                    />
+                    <Textarea
+                      placeholder="Contenu de la story"
+                      value={editingStory ? editingStory.content : newStoryContent}
+                      onChange={(e) => editingStory 
+                        ? setEditingStory({...editingStory, content: e.target.value}) 
+                        : setNewStoryContent(e.target.value)}
+                      rows={4}
+                      data-testid="input-story-content"
+                    />
+                    <Input
+                      placeholder="URL de l'image/vidéo (optionnel)"
+                      value={editingStory ? (editingStory.mediaUrl || '') : newStoryMediaUrl}
+                      onChange={(e) => editingStory 
+                        ? setEditingStory({...editingStory, mediaUrl: e.target.value}) 
+                        : setNewStoryMediaUrl(e.target.value)}
+                      data-testid="input-story-media-url"
+                    />
+                    <Select
+                      value={editingStory ? editingStory.role : newStoryRole}
+                      onValueChange={(value) => editingStory
+                        ? setEditingStory({...editingStory, role: value})
+                        : setNewStoryRole(value)}
+                    >
+                      <SelectTrigger data-testid="select-story-role">
+                        <SelectValue placeholder="Sélectionner le public" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tous les utilisateurs</SelectItem>
+                        <SelectItem value="client">Clients uniquement</SelectItem>
+                        <SelectItem value="transporter">Transporteurs uniquement</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      type="number"
+                      placeholder="Ordre d'affichage (0 = premier)"
+                      value={editingStory ? editingStory.order : newStoryOrder}
+                      onChange={(e) => editingStory 
+                        ? setEditingStory({...editingStory, order: parseInt(e.target.value)}) 
+                        : setNewStoryOrder(parseInt(e.target.value))}
+                      data-testid="input-story-order"
+                    />
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={async () => {
+                          const title = editingStory ? editingStory.title : newStoryTitle;
+                          const content = editingStory ? editingStory.content : newStoryContent;
+                          const mediaUrl = editingStory ? editingStory.mediaUrl : newStoryMediaUrl;
+                          const role = editingStory ? editingStory.role : newStoryRole;
+                          const order = editingStory ? editingStory.order : newStoryOrder;
+                          
+                          if (!title.trim() || !content.trim() || !role) {
+                            toast({
+                              variant: "destructive",
+                              title: "Erreur",
+                              description: "Titre, contenu et public requis",
+                            });
+                            return;
+                          }
+                          
+                          try {
+                            if (editingStory) {
+                              await apiRequest("PATCH", `/api/stories/${editingStory.id}?adminId=${user.id}`, {
+                                title: title.trim(),
+                                content: content.trim(),
+                                mediaUrl: mediaUrl.trim() || null,
+                                role,
+                                order: order || 0,
+                              });
+                              toast({
+                                title: "Story modifiée",
+                                description: "La story a été modifiée avec succès",
+                              });
+                              setEditingStory(null);
+                            } else {
+                              await apiRequest("POST", `/api/stories?adminId=${user.id}`, {
+                                title: title.trim(),
+                                content: content.trim(),
+                                mediaUrl: mediaUrl.trim() || null,
+                                role,
+                                order: order || 0,
+                              });
+                              toast({
+                                title: "Story créée",
+                                description: `La story "${title}" a été créée avec succès`,
+                              });
+                              setNewStoryTitle("");
+                              setNewStoryContent("");
+                              setNewStoryMediaUrl("");
+                              setNewStoryRole("all");
+                              setNewStoryOrder(0);
+                            }
+                            queryClient.invalidateQueries({ queryKey: ["/api/stories"] });
+                          } catch (error: any) {
+                            toast({
+                              variant: "destructive",
+                              title: "Erreur",
+                              description: error.message || "Échec de l'opération",
+                            });
+                          }
+                        }}
+                        data-testid={editingStory ? "button-update-story" : "button-create-story"}
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        {editingStory ? "Modifier" : "Créer"}
+                      </Button>
+                      {editingStory && (
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setEditingStory(null);
+                            setNewStoryTitle("");
+                            setNewStoryContent("");
+                            setNewStoryMediaUrl("");
+                            setNewStoryRole("all");
+                            setNewStoryOrder(0);
+                          }}
+                          data-testid="button-cancel-edit-story"
+                        >
+                          Annuler
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stories list */}
+                <div>
+                  <h4 className="font-medium mb-4">Liste des stories ({allStories.length})</h4>
+                  {storiesLoading ? (
+                    <div className="text-center py-8">
+                      <LoadingTruck message="Chargement des stories..." size="md" />
+                    </div>
+                  ) : allStories.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Circle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">Aucune story enregistrée</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Titre</TableHead>
+                            <TableHead>Contenu</TableHead>
+                            <TableHead>Public</TableHead>
+                            <TableHead>Ordre</TableHead>
+                            <TableHead>Statut</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {allStories.map((story: any) => (
+                            <TableRow key={story.id}>
+                              <TableCell className="font-medium">{story.title}</TableCell>
+                              <TableCell className="max-w-xs truncate">{story.content}</TableCell>
+                              <TableCell>
+                                <Badge variant={
+                                  story.role === "all" ? "default" : 
+                                  story.role === "client" ? "secondary" : 
+                                  "outline"
+                                }>
+                                  {story.role === "all" ? "Tous" : 
+                                   story.role === "client" ? "Clients" : 
+                                   "Transporteurs"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>{story.order}</TableCell>
+                              <TableCell>
+                                <Badge variant={story.isActive ? "default" : "secondary"}>
+                                  {story.isActive ? "Active" : "Inactive"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex gap-2 justify-end">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={async () => {
+                                      try {
+                                        await apiRequest("PATCH", `/api/stories/${story.id}?adminId=${user.id}`, {
+                                          isActive: !story.isActive
+                                        });
+                                        toast({
+                                          title: story.isActive ? "Story désactivée" : "Story activée",
+                                          description: `La story est maintenant ${!story.isActive ? "active" : "inactive"}`,
+                                        });
+                                        queryClient.invalidateQueries({ queryKey: ["/api/stories"] });
+                                      } catch (error) {
+                                        toast({
+                                          variant: "destructive",
+                                          title: "Erreur",
+                                          description: "Échec du changement de statut",
+                                        });
+                                      }
+                                    }}
+                                    data-testid={`button-toggle-story-${story.id}`}
+                                  >
+                                    {story.isActive ? "Désactiver" : "Activer"}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setEditingStory(story);
+                                    }}
+                                    data-testid={`button-edit-story-${story.id}`}
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={async () => {
+                                      if (confirm(`Êtes-vous sûr de vouloir supprimer "${story.title}" ?`)) {
+                                        try {
+                                          await apiRequest("DELETE", `/api/stories/${story.id}?adminId=${user.id}`);
+                                          toast({
+                                            title: "Story supprimée",
+                                            description: `"${story.title}" a été supprimée avec succès`,
+                                          });
+                                          queryClient.invalidateQueries({ queryKey: ["/api/stories"] });
+                                        } catch (error) {
+                                          toast({
+                                            variant: "destructive",
+                                            title: "Erreur",
+                                            description: "Échec de la suppression",
+                                          });
+                                        }
+                                      }
+                                    }}
+                                    data-testid={`button-delete-story-${story.id}`}
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </Button>
