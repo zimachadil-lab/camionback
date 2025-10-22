@@ -2395,10 +2395,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Demande non trouvée" });
       }
 
-      // Get all validated transporters
+      // Get all validated and active transporters (exclude blocked accounts)
       const allUsers = await storage.getAllUsers();
       const validatedTransporters = allUsers.filter(
-        (u: any) => u.role === "transporter" && u.status === "validated"
+        (u: any) => u.role === "transporter" && u.status === "validated" && u.accountStatus === "active"
       );
 
       // Get active empty returns for same route (priority 1)
