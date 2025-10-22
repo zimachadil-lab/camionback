@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { ChatWindow } from "@/components/chat/chat-window";
 import { PhotoGalleryDialog } from "@/components/transporter/photo-gallery-dialog";
+import { StoriesBar } from "@/components/ui/stories-bar";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -415,6 +416,8 @@ export default function TransporterDashboard() {
         onAnnounceReturn={handleAnnounceReturn}
         onLogout={handleLogout}
       />
+      
+      <StoriesBar userRole="transporter" />
       
       {/* Pending validation message */}
       {user.status === "pending" && (

@@ -11,6 +11,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { LoadingTruck } from "@/components/ui/loading-truck";
+import { StoriesBar } from "@/components/ui/stories-bar";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1348,6 +1349,8 @@ export default function ClientDashboard() {
         onNewRequest={() => setShowNewRequest(true)}
         onLogout={handleLogout}
       />
+      
+      <StoriesBar userRole="client" />
       
       <div className="container mx-auto p-4 md:p-6 max-w-7xl space-y-6">
         <div>
