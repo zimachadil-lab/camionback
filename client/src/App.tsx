@@ -19,6 +19,7 @@ import TransporterProfile from "@/pages/transporter-profile";
 import MyRib from "@/pages/my-rib";
 import HowItWorksClient from "@/pages/how-it-works-client";
 import HowItWorksTransporter from "@/pages/how-it-works-transporter";
+import PushDiagnostic from "@/pages/push-diagnostic";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -39,6 +40,7 @@ function Router() {
       <Route path="/transporter/rib" component={MyRib} />
       <Route path="/how-it-works-client" component={HowItWorksClient} />
       <Route path="/how-it-works-transporter" component={HowItWorksTransporter} />
+      <Route path="/push-diagnostic" component={PushDiagnostic} />
       <Route component={NotFound} />
     </Switch>
   );
