@@ -138,8 +138,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         title: '🧪 Test CamionBack',
         body: 'Si vous voyez ceci, les push notifications fonctionnent !',
         url: '/',
-        icon: `${baseUrl}/favicon.png`,
-        badge: `${baseUrl}/favicon-32x32.png`
+        icon: `${baseUrl}/apple-touch-icon.png`,
+        badge: `${baseUrl}/apple-touch-icon.png`
       };
       
       debugInfo.steps.push('5. Envoi en cours via Web Push (avec VAPID)...');
