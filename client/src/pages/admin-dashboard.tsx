@@ -1025,7 +1025,10 @@ export default function AdminDashboard() {
                               <TableCell className="font-medium">{request.referenceId}</TableCell>
                               <TableCell className="text-sm">{formatDateWithTime(request.createdAt)}</TableCell>
                               <TableCell>
-                                {client?.phoneNumber || "Non défini"}
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{client?.clientId || "N/A"}</span>
+                                  <span className="text-xs text-muted-foreground">{client?.phoneNumber || "Non défini"}</span>
+                                </div>
                               </TableCell>
                               <TableCell>
                                 <div className="text-sm">
@@ -1165,10 +1168,16 @@ export default function AdminDashboard() {
                                 {request?.referenceId || "N/A"}
                               </TableCell>
                               <TableCell data-testid={`text-client-${offer.id}`}>
-                                Client {client?.clientId || "Non défini"}
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{client?.clientId || "Non défini"}</span>
+                                  <span className="text-xs text-muted-foreground">{client?.phoneNumber || ""}</span>
+                                </div>
                               </TableCell>
                               <TableCell data-testid={`text-transporter-${offer.id}`}>
-                                {transporter?.phoneNumber || "N/A"}
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{transporter?.name || "N/A"}</span>
+                                  <span className="text-xs text-muted-foreground">{transporter?.phoneNumber || ""}</span>
+                                </div>
                               </TableCell>
                               <TableCell data-testid={`text-client-date-${offer.id}`}>
                                 {formatDate(request?.dateTime)}
@@ -2391,7 +2400,10 @@ export default function AdminDashboard() {
                                     : "N/A"}
                                 </TableCell>
                                 <TableCell>
-                                  Client {client?.clientId || "Non défini"}
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">{client?.clientId || "Non défini"}</span>
+                                    <span className="text-xs text-muted-foreground">{client?.phoneNumber || ""}</span>
+                                  </div>
                                 </TableCell>
                                 <TableCell>
                                   <div>
@@ -3174,6 +3186,10 @@ export default function AdminDashboard() {
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">ID Client</p>
+                        <p className="font-medium">{client?.clientId || "N/A"}</p>
+                      </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Numéro de téléphone</p>
                         <p className="font-medium">{client?.phoneNumber || "Non défini"}</p>

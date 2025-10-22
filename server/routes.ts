@@ -926,7 +926,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Republish a request (reset to open status)
+  // Republish a request (reset to open status, optionally with new date)
   app.post("/api/requests/:id/republish", async (req, res) => {
     try {
       const request = await storage.getTransportRequest(req.params.id);
@@ -934,18 +934,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Request not found" });
       }
 
-      if (request.status !== "accepted" && request.status !== "completed") {
-        return res.status(400).json({ error: "Only accepted or completed requests can be republished" });
+      // Allow republishing for accepted, completed, or expired (open past-date) requests
+      const isExpired = request.status === "open" && new Date(request.dateTime) < new Date();
+      const canRepublish = request.status === "accepted" || request.status === "completed" || isExpired;
+
+      if (!canRepublish) {
+        return res.status(400).json({ error: "Only accepted, completed, or expired requests can be republished" });
       }
 
       // Delete all offers associated with this request
       await storage.deleteOffersByRequest(req.params.id);
 
-      // Reset request to open status
-      const updatedRequest = await storage.updateTransportRequest(req.params.id, {
+      // Prepare updates object
+      const updates: any = {
         status: "open",
         acceptedOfferId: null,
-      });
+      };
+
+      // If a new date is provided, update it
+      if (req.body.newDate) {
+        updates.dateTime = new Date(req.body.newDate);
+      }
+
+      // Reset request to open status
+      const updatedRequest = await storage.updateTransportRequest(req.params.id, updates);
 
       res.json({ success: true, request: updatedRequest });
     } catch (error) {

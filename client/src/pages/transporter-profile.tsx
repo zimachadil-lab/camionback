@@ -17,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { LoadingTruck } from "@/components/ui/loading-truck";
 
 type UserProfile = {
   id: string;
@@ -196,11 +197,8 @@ export default function TransporterProfile() {
     return (
       <div className="min-h-screen bg-background">
         <Header user={currentUser} onLogout={handleLogout} />
-        <div className="container py-8 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Chargement...</p>
-          </div>
+        <div className="container py-8 flex items-center justify-center min-h-[60vh]">
+          <LoadingTruck message="Chargement du profil..." size="lg" />
         </div>
       </div>
     );
