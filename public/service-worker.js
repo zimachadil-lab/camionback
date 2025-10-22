@@ -1,8 +1,8 @@
 // Service Worker for CamionBack PWA
 // Handles push notifications and offline capabilities
-// Version: 2.4 - Fixed API cache error handling
+// Version: 2.5 - Disabled API caching completely to prevent stale data
 
-const VERSION = '2.4';
+const VERSION = '2.5';
 const CACHE_NAME = `camionback-v${VERSION}`;
 const STATIC_CACHE = `camionback-static-v${VERSION}`;
 const DYNAMIC_CACHE = `camionback-dynamic-v${VERSION}`;
@@ -109,41 +109,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // API requests - network first, cache fallback
+  // API requests - BYPASS service worker completely (network only)
+  // Do NOT cache API requests to avoid stale data issues
   if (request.url.includes('/api/')) {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          // Only cache successful responses
-          if (response && response.ok && response.status === 200) {
-            const responseClone = response.clone();
-            caches.open(DYNAMIC_CACHE).then((cache) => {
-              cache.put(request, responseClone);
-            });
-          }
-          return response;
-        })
-        .catch((error) => {
-          console.log('[Service Worker] Network failed for API request, trying cache:', request.url);
-          // If network fails, try cache
-          return caches.match(request).then((cachedResponse) => {
-            if (cachedResponse) {
-              console.log('[Service Worker] Serving from cache:', request.url);
-              return cachedResponse;
-            }
-            // No cache available, return error response
-            console.error('[Service Worker] No cache available for:', request.url, error);
-            return new Response(JSON.stringify({ error: 'Network error and no cache available' }), {
-              status: 503,
-              statusText: 'Service Unavailable',
-              headers: new Headers({
-                'Content-Type': 'application/json'
-              })
-            });
-          });
-        })
-    );
-    return;
+    console.log('[Service Worker] Bypassing cache for API request:', request.url);
+    return; // Let the browser handle it directly without service worker interference
   }
 
   // Static assets - cache first, network fallback
