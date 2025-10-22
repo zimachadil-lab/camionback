@@ -1870,6 +1870,19 @@ export default function AdminDashboard() {
                                         🔓 Débloquer
                                       </Button>
                                     )}
+                                    <Button
+                                      size="icon"
+                                      variant="outline"
+                                      className="text-destructive hover:text-destructive"
+                                      onClick={() => {
+                                        if (confirm(`⚠️ Êtes-vous sûr de vouloir supprimer définitivement ce compte transporteur ?\n\nCette action supprimera aussi son mot de passe et toutes ses données associées (offres, messages, etc.).`)) {
+                                          deleteUserMutation.mutate(transporter.id);
+                                        }
+                                      }}
+                                      data-testid={`button-delete-transporter-${transporter.id}`}
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
                                   </div>
                                 </TableCell>
                               </TableRow>
