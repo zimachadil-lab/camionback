@@ -2780,6 +2780,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Send single SMS to specific phone number
+  app.post("/api/admin/sms/send-single", async (req, res) => {
+    try {
+      const { adminId, phoneNumber, message } = req.body;
+
+      if (!adminId || !phoneNumber || !message) {
+        return res.status(400).json({ error: "Tous les champs sont requis" });
+      }
+
+      // Verify admin role
+      const admin = await storage.getUser(adminId);
+      if (!admin || admin.role !== "admin") {
+        return res.status(403).json({ error: "Accès refusé - Admin requis" });
+      }
+
+      if (message.length > 160) {
+        return res.status(400).json({ error: "Le message ne peut pas dépasser 160 caractères" });
+      }
+
+      // Validate phone number format
+      const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+212${phoneNumber}`;
+      if (!/^\+212\d{9}$/.test(formattedPhone)) {
+        return res.status(400).json({ error: "Format de numéro invalide. Utilisez +212XXXXXXXXX" });
+      }
+
+      // Send SMS to single number
+      const result = await sendBulkSMS([formattedPhone], message);
+
+      // Save to history
+      await storage.createSmsHistory({
+        adminId,
+        targetAudience: `single:${formattedPhone}`,
+        message,
+        recipientCount: 1
+      });
+
+      res.json({
+        success: true,
+        sent: result.success,
+        failed: result.failed,
+        phoneNumber: formattedPhone
+      });
+    } catch (error) {
+      console.error("Erreur envoi SMS individuel:", error);
+      res.status(500).json({ error: "Erreur lors de l'envoi du SMS" });
+    }
+  });
+
   // Get SMS history
   app.get("/api/admin/sms/history", async (req, res) => {
     try {

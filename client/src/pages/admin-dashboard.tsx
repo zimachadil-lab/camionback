@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCircle, UserCheck, CreditCard, Phone, Eye, EyeOff, TruckIcon, MapPin, Calendar, FileText, MessageSquare, Trash2, Send, Flag, Pencil, Camera } from "lucide-react";
+import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCircle, UserCheck, CreditCard, Phone, Eye, EyeOff, TruckIcon, MapPin, Calendar, FileText, MessageSquare, Trash2, Send, Flag, Pencil, Camera, RefreshCw } from "lucide-react";
 import { LoadingTruck } from "@/components/ui/loading-truck";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -738,13 +738,31 @@ export default function AdminDashboard() {
             <h1 className="text-3xl font-bold">Administration</h1>
             <p className="text-muted-foreground mt-1">Gérez la plateforme CamionBack</p>
           </div>
-          <Button 
-            onClick={() => setAddTransporterOpen(true)}
-            data-testid="button-add-transporter"
-          >
-            <Plus className="mr-2 h-5 w-5" />
-            Ajouter transporteur
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline"
+              onClick={() => {
+                // Invalider toutes les queries pour rafraîchir les données
+                queryClient.invalidateQueries();
+                toast({
+                  title: "✅ Données actualisées",
+                  description: "Toutes les données ont été rafraîchies avec succès",
+                });
+              }}
+              data-testid="button-refresh-dashboard"
+              className="hover:text-[#17cfcf] hover:border-[#17cfcf]"
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Actualiser
+            </Button>
+            <Button 
+              onClick={() => setAddTransporterOpen(true)}
+              data-testid="button-add-transporter"
+            >
+              <Plus className="mr-2 h-5 w-5" />
+              Ajouter transporteur
+            </Button>
+          </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

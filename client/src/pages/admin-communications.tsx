@@ -4,9 +4,11 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Send, Megaphone, History, Eye, Trash2, Users } from "lucide-react";
+import { Send, Megaphone, History, Eye, Trash2, Users, Phone } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -33,6 +35,10 @@ export default function AdminCommunications() {
   const [customMessage, setCustomMessage] = useState("");
   const [targetAudience, setTargetAudience] = useState<string>("transporters");
   const [viewRecord, setViewRecord] = useState<SmsHistoryRecord | null>(null);
+  
+  // Single SMS states
+  const [singlePhoneNumber, setSinglePhoneNumber] = useState("");
+  const [singleMessage, setSingleMessage] = useState("");
 
   // Get current user from localStorage
   const userStr = localStorage.getItem("camionback_user");
@@ -91,6 +97,34 @@ export default function AdminCommunications() {
       toast({
         title: "Erreur d'envoi",
         description: error.message || "Impossible d'envoyer les SMS",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Send single SMS mutation
+  const sendSingleSmsMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/admin/sms/send-single", {
+        adminId: currentUser?.id,
+        phoneNumber: singlePhoneNumber.startsWith('+') ? singlePhoneNumber : `+212${singlePhoneNumber}`,
+        message: singleMessage
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "✅ SMS envoyé avec succès via CamionBack",
+        description: `Le message a été envoyé au numéro ${singlePhoneNumber}`,
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/admin/sms/history?adminId=${currentUser?.id}`] });
+      setSinglePhoneNumber("");
+      setSingleMessage("");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur d'envoi",
+        description: error.message || "Impossible d'envoyer le SMS",
         variant: "destructive",
       });
     },
@@ -159,6 +193,46 @@ export default function AdminCommunications() {
     }
 
     sendCustomSmsMutation.mutate();
+  };
+
+  const handleSendSingleSms = () => {
+    if (!currentUser?.id) {
+      toast({
+        title: "Erreur",
+        description: "Session expirée, veuillez vous reconnecter",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!singlePhoneNumber.trim()) {
+      toast({
+        title: "Numéro requis",
+        description: "Veuillez saisir un numéro de téléphone",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!singleMessage.trim()) {
+      toast({
+        title: "Message requis",
+        description: "Veuillez saisir un message à envoyer",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (singleMessage.length > 160) {
+      toast({
+        title: "Message trop long",
+        description: "Le message ne peut pas dépasser 160 caractères",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    sendSingleSmsMutation.mutate();
   };
 
   const getAudienceLabel = (audience: string) => {
@@ -272,6 +346,71 @@ export default function AdminCommunications() {
             >
               <Send className="h-4 w-4 mr-2" />
               {sendCustomSmsMutation.isPending ? "Envoi en cours..." : "Envoyer le SMS"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Block 2.5: Single SMS */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Phone className="h-5 w-5" />
+            Envoi SMS à un numéro spécifique
+          </CardTitle>
+          <CardDescription>
+            Envoyez un SMS personnalisé à un seul numéro de téléphone
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="single-phone">Numéro de téléphone</Label>
+              <div className="flex gap-2 mt-2">
+                <div className="flex items-center bg-muted px-3 rounded-md border">
+                  <span className="text-sm font-medium">+212</span>
+                </div>
+                <Input
+                  id="single-phone"
+                  placeholder="6XXXXXXXX"
+                  value={singlePhoneNumber}
+                  onChange={(e) => setSinglePhoneNumber(e.target.value.replace(/[^0-9]/g, ''))}
+                  maxLength={9}
+                  className="flex-1"
+                  data-testid="input-single-phone"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Format: 9 chiffres (ex: 664373534)
+              </p>
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <Label htmlFor="single-message">Message SMS</Label>
+                <span className={`text-xs ${singleMessage.length > 160 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                  {singleMessage.length}/160
+                </span>
+              </div>
+              <Textarea
+                id="single-message"
+                placeholder="Votre message personnalisé ici..."
+                value={singleMessage}
+                onChange={(e) => setSingleMessage(e.target.value)}
+                rows={4}
+                maxLength={160}
+                data-testid="textarea-single-message"
+              />
+            </div>
+
+            <Button
+              onClick={handleSendSingleSms}
+              disabled={sendSingleSmsMutation.isPending || !singlePhoneNumber.trim() || !singleMessage.trim() || singleMessage.length > 160}
+              className="w-full"
+              data-testid="button-send-single-sms"
+            >
+              <Send className="h-4 w-4 mr-2" />
+              {sendSingleSmsMutation.isPending ? "Envoi en cours..." : "Envoyer le SMS"}
             </Button>
           </div>
         </CardContent>
