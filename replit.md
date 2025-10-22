@@ -42,6 +42,8 @@ The backend is built with Express.js and TypeScript, providing RESTful JSON APIs
 - **Admin Transporter Profile Editing:** Admins can edit transporter profiles, reset PINs, and upload truck photos.
 - **CamioMatch - Intelligent Transporter Matching System:** Tinder-style swipe interface for clients to find prioritized transporters based on empty returns, activity, and ratings. Includes contact tracking and WhatsApp coordinator option.
 - **PWA with Push Notifications:** Full PWA implementation with offline support, advanced caching, Web Push API integration for notifications, and floating install button ("📲 Installer CamionBack") that appears on HTTPS sites when beforeinstallprompt fires. Manifest includes scope and id fields. Complete testing guide available in PWA_TESTING_GUIDE.md.
+- **Optimized Favicon System:** Comprehensive favicon implementation with multiple sizes (16x16, 32x32, 180x180 Apple, 192x192, 512x512) optimized via ImageMagick, properly linked in index.html and manifest.json.
+- **Secure Static File Serving:** Custom middleware with whitelist-based file validation using `path.resolve(publicPath, '.' + req.path)` to prevent path traversal attacks. Differential caching: service-worker.js served with `Cache-Control: no-cache, no-store, must-revalidate` for instant PWA updates, while favicons/icons use 1-year cache (`max-age=31536000`) for performance.
 
 ### System Design Choices
 **Data Storage:** PostgreSQL with Neon serverless and Drizzle ORM.
