@@ -181,9 +181,9 @@ export const smsHistory = pgTable("sms_history", {
 // Client-Transporter Contacts - Track when clients contact transporters via recommendations
 export const clientTransporterContacts = pgTable("client_transporter_contacts", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  requestId: varchar("request_id").notNull().references(() => transportRequests.id),
-  clientId: varchar("client_id").notNull().references(() => users.id),
-  transporterId: varchar("transporter_id").notNull().references(() => users.id),
+  requestId: varchar("request_id").notNull().references(() => transportRequests.id, { onDelete: 'cascade' }),
+  clientId: varchar("client_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  transporterId: varchar("transporter_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   contactType: text("contact_type").default("recommendation"), // 'recommendation' - for future expansion
   isRead: boolean("is_read").default(false), // Admin read status
   createdAt: timestamp("created_at").defaultNow(),
