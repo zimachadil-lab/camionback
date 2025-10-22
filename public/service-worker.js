@@ -232,16 +232,33 @@ self.addEventListener('push', (event) => {
     title: notificationData.title,
     options: options
   });
+  
+  console.log('[Service Worker] Full showNotification call:');
+  console.log('[Service Worker] - Title:', notificationData.title);
+  console.log('[Service Worker] - Body:', options.body);
+  console.log('[Service Worker] - Icon:', options.icon);
+  console.log('[Service Worker] - Badge:', options.badge);
+  console.log('[Service Worker] - Vibrate:', options.vibrate);
+  console.log('[Service Worker] - Data URL:', options.data.url);
 
-  event.waitUntil(
-    self.registration.showNotification(notificationData.title, options)
-      .then(() => {
-        console.log('✅ ✅ ✅ [Service Worker] NOTIFICATION DISPLAYED SUCCESSFULLY! ✅ ✅ ✅');
-      })
-      .catch((error) => {
-        console.error('❌ ❌ ❌ [Service Worker] ERROR DISPLAYING NOTIFICATION:', error);
-      })
-  );
+  const showNotificationPromise = self.registration.showNotification(notificationData.title, options)
+    .then(() => {
+      console.log('✅ ✅ ✅ [Service Worker] NOTIFICATION DISPLAYED SUCCESSFULLY! ✅ ✅ ✅');
+      console.log('✅ showNotification() promise resolved without error');
+      console.log('✅ Si vous ne voyez toujours pas la notification sur votre écran,');
+      console.log('✅ le problème vient des paramètres Android (Ne pas déranger, etc.)');
+      return Promise.resolve();
+    })
+    .catch((error) => {
+      console.error('❌ ❌ ❌ [Service Worker] ERROR DISPLAYING NOTIFICATION ❌ ❌ ❌');
+      console.error('❌ Type:', error.name);
+      console.error('❌ Message:', error.message);
+      console.error('❌ Stack:', error.stack);
+      console.error('❌ Full error:', error);
+      return Promise.reject(error);
+    });
+
+  event.waitUntil(showNotificationPromise);
 });
 
 // Notification click event
