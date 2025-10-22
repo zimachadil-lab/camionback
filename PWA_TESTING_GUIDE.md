@@ -16,11 +16,13 @@ Tous les fichiers nécessaires ont été configurés :
 - ✅ Support offline complet
 - ✅ Gestion des push notifications
 
-### 3. Bouton d'Installation
-- ✅ `client/src/components/pwa-install-button.tsx` - Bouton flottant
+### 3. Bouton d'Installation (Double implémentation pour robustesse)
+- ✅ **Vanilla JS dans `client/index.html`** - Script inline qui capture `beforeinstallprompt` immédiatement
+- ✅ **Composant React** `client/src/components/pwa-install-button.tsx` - Fallback React
 - ✅ Intégration dans App.tsx
-- ✅ Écoute de l'événement `beforeinstallprompt`
-- ✅ Design turquoise (#17cfcf) avec icône Smartphone
+- ✅ Écoute de l'événement `beforeinstallprompt` au niveau global
+- ✅ Design turquoise (#17cfcf) avec emoji 📲
+- ✅ Variable globale `window.deferredPrompt` pour partage entre vanilla JS et React
 
 ## 🧪 Comment Tester sur camionback.com
 
@@ -44,12 +46,14 @@ https://camionback.com/icons/icon-512.png
 ### Test 2 : Console du Navigateur
 1. Ouvrir Chrome DevTools (F12)
 2. Onglet **Console**
-3. Chercher les messages :
+3. Chercher ces messages (dans l'ordre) :
    ```
    🚀 Initialisation PWA CamionBack...
    ✅ Service Worker enregistré pour CamionBack: /
-   📱 PWA peut être installée - bouton affiché
+   📱 beforeinstallprompt déclenché
+   ✅ Bannière d'installation affichée
    ```
+4. **Important** : Le message `📱 beforeinstallprompt déclenché` est le plus important - il confirme que le navigateur reconnaît l'app comme installable
 
 ### Test 3 : Service Worker
 1. Chrome DevTools (F12)
@@ -108,15 +112,42 @@ Après installation :
 
 ### Le bouton d'installation n'apparaît pas
 **Causes possibles :**
-1. ❌ Site pas en HTTPS → Publier sur camionback.com avec HTTPS
+1. ❌ Site pas en HTTPS → Publier sur camionback.com avec HTTPS complet
 2. ❌ PWA déjà installée → Désinstaller puis réessayer
-3. ❌ Navigateur non supporté → Utiliser Chrome ou Edge
+3. ❌ Navigateur non supporté → Utiliser Chrome ou Edge (pas Safari pour le test du bouton)
 4. ❌ manifest.json non accessible → Vérifier l'URL
+5. ❌ Service Worker pas enregistré → Vérifier dans DevTools > Application
+6. ❌ Cache navigateur → Vider le cache (chrome://settings/clearBrowserData)
 
-**Solutions :**
-1. Ouvrir DevTools > Application > Manifest
-2. Voir les erreurs affichées
-3. Vérifier que tous les fichiers sont accessibles
+**Solutions détaillées :**
+
+**1. Vérifier que le site est en HTTPS complet**
+```
+chrome://inspect/#service-workers
+```
+Le site doit être listé avec HTTPS, pas HTTP
+
+**2. Vider complètement le cache**
+- Chrome > Paramètres > Confidentialité > Effacer les données
+- Cocher : Cookies, Cache, Fichiers hébergés
+- Période : Toutes les données
+
+**3. Vérifier dans DevTools**
+```
+F12 > Application Tab
+- Manifest : Doit être sans erreur
+- Service Workers : Status "activated and running"
+- Storage > Cache Storage : Doit montrer les caches
+```
+
+**4. Forcer le rechargement**
+- Ctrl+Shift+R (Windows) ou Cmd+Shift+R (Mac)
+- Ou Hard Reload dans DevTools (clic droit sur le bouton reload)
+
+**5. Tester en navigation privée**
+- Ouvrir une fenêtre Incognito
+- Visiter https://camionback.com
+- Le bouton devrait apparaître (si critères PWA remplis)
 
 ### Service Worker ne s'enregistre pas
 **Erreur dans Replit Preview :**

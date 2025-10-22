@@ -23,5 +23,75 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- PWA Install Prompt - Vanilla JS Fallback -->
+    <script>
+      // Global variable to store the install prompt
+      window.deferredPrompt = null;
+      
+      // Listen for beforeinstallprompt as early as possible
+      window.addEventListener('beforeinstallprompt', (e) => {
+        console.log('📱 beforeinstallprompt déclenché');
+        e.preventDefault();
+        window.deferredPrompt = e;
+        
+        // Create install button if it doesn't exist already
+        if (!document.getElementById('pwa-install-banner')) {
+          const banner = document.createElement('div');
+          banner.id = 'pwa-install-banner';
+          banner.setAttribute('data-testid', 'button-install-pwa');
+          banner.style.position = 'fixed';
+          banner.style.bottom = '20px';
+          banner.style.right = '20px';
+          banner.style.background = '#17cfcf';
+          banner.style.color = 'white';
+          banner.style.padding = '12px 20px';
+          banner.style.borderRadius = '10px';
+          banner.style.fontSize = '15px';
+          banner.style.fontWeight = '600';
+          banner.style.cursor = 'pointer';
+          banner.style.boxShadow = '0 4px 12px rgba(23, 207, 207, 0.4)';
+          banner.style.zIndex = '9999';
+          banner.style.display = 'flex';
+          banner.style.alignItems = 'center';
+          banner.style.gap = '8px';
+          banner.style.transition = 'all 0.2s ease';
+          banner.innerHTML = '📲 Installer CamionBack';
+          
+          banner.addEventListener('mouseenter', () => {
+            banner.style.transform = 'translateY(-2px)';
+            banner.style.boxShadow = '0 6px 16px rgba(23, 207, 207, 0.5)';
+          });
+          
+          banner.addEventListener('mouseleave', () => {
+            banner.style.transform = 'translateY(0)';
+            banner.style.boxShadow = '0 4px 12px rgba(23, 207, 207, 0.4)';
+          });
+          
+          banner.addEventListener('click', async () => {
+            if (window.deferredPrompt) {
+              banner.remove();
+              window.deferredPrompt.prompt();
+              const { outcome } = await window.deferredPrompt.userChoice;
+              console.log(outcome === 'accepted' ? '✅ CamionBack installé !' : 'ℹ️ Installation annulée');
+              window.deferredPrompt = null;
+            }
+          });
+          
+          document.body.appendChild(banner);
+          console.log('✅ Bannière d\'installation affichée');
+        }
+      });
+      
+      // Listen for app installed event
+      window.addEventListener('appinstalled', () => {
+        console.log('✅ CamionBack installé avec succès');
+        window.deferredPrompt = null;
+        const banner = document.getElementById('pwa-install-banner');
+        if (banner) {
+          banner.remove();
+        }
+      });
+    </script>
   </body>
 </html>

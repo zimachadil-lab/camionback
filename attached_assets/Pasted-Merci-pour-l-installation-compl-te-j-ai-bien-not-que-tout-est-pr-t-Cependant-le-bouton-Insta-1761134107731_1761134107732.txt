@@ -1,0 +1,79 @@
+Merci pour l’installation complète, j’ai bien noté que tout est prêt.
+Cependant, le bouton “📲 Installer CamionBack” n’apparaît toujours pas sur camionback.com lors du test mobile ou desktop.
+
+Voici les points à vérifier et ajuster pour forcer l’affichage :
+
+1️⃣ Vérifie que le site est servi en HTTPS sur le domaine principal (pas depuis Replit Preview).
+
+2️⃣ Assure-toi que le fichier manifest.json et le service-worker.js sont bien servis depuis la racine :
+https://camionback.com/manifest.json
+
+https://camionback.com/service-worker.js
+
+3️⃣ Ajoute ce script dans App.tsx ou index.html juste avant la fin du <body> :
+(il permet de forcer l’affichage du bouton d’installation même si le navigateur n’a pas encore déclenché l’événement automatiquement)
+
+window.addEventListener("load", () => {
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    let installPrompt = e;
+    const banner = document.createElement("div");
+    banner.style.position = "fixed";
+    banner.style.bottom = "20px";
+    banner.style.right = "20px";
+    banner.style.background = "#17cfcf";
+    banner.style.color = "white";
+    banner.style.padding = "15px 20px";
+    banner.style.borderRadius = "10px";
+    banner.style.fontSize = "16px";
+    banner.style.cursor = "pointer";
+    banner.style.boxShadow = "0 4px 10px rgba(0,0,0,0.3)";
+    banner.textContent = "📲 Installer CamionBack";
+    document.body.appendChild(banner);
+
+    banner.addEventListener("click", async () => {
+      banner.remove();
+      installPrompt.prompt();
+      const { outcome } = await installPrompt.userChoice;
+      if (outcome === "accepted") {
+        console.log("✅ CamionBack installé !");
+      }
+      installPrompt = null;
+    });
+  });
+});
+
+
+4️⃣ Teste sur Chrome Android (navigateur normal, pas Replit Preview)
+
+Vide le cache (chrome://settings/clearBrowserData)
+
+Recharge https://camionback.com
+
+Attends quelques secondes → le bouton doit apparaître automatiquement
+
+Clique dessus → tu verras le vrai installateur natif Android
+
+5️⃣ (Optionnel) Pour les appareils qui refusent l’affichage automatique, ajoute un bouton fixe “Installer CamionBack” sur la page d’accueil avec id="installAppBtn" et le script suivant :
+
+document.getElementById("installAppBtn")?.addEventListener("click", async () => {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const choice = await deferredPrompt.userChoice;
+    console.log("Résultat installation:", choice.outcome);
+    deferredPrompt = null;
+  } else {
+    alert("CamionBack est déjà installable !");
+  }
+});
+
+
+⚙️ Objectif final :
+
+Le bouton doit apparaître sur camionback.com en bas à droite
+
+Quand on clique dessus → le navigateur propose l’installation
+
+Une fois installé → l’app s’ouvre en plein écran sans barre d’adresse
+
+Merci de forcer le test sur camionback.com (pas sur replit.app) et de me confirmer dès que la bannière d’installation est visible ✅
