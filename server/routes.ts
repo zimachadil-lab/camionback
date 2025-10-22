@@ -84,8 +84,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // PWA - Test endpoint (GET) for easy browser testing
+  // PWA - Test endpoint (GET) for easy browser testing with detailed debug info
   app.get("/api/pwa/test-push-notification", async (req, res) => {
+    const debugInfo: any = { steps: [] };
+    
     try {
       const userId = req.query.userId as string;
       
@@ -93,37 +95,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "userId requis dans l'URL: ?userId=XXX" });
       }
 
-      console.log('🧪 === TEST PUSH NOTIFICATION (GET) ===');
-      console.log('🧪 Envoi d\'une notification de test à userId:', userId);
+      debugInfo.userId = userId;
+      debugInfo.steps.push('1. UserId reçu');
 
-      const { sendNotificationToUser, NotificationTemplates } = await import('./push-notifications');
+      // Check user exists
+      const user = await storage.getUserById(userId);
+      if (!user) {
+        debugInfo.steps.push('2. ❌ Utilisateur introuvable');
+        return res.json({ success: false, debug: debugInfo });
+      }
       
+      debugInfo.steps.push('2. ✅ Utilisateur trouvé: ' + user.name + ' (' + user.phoneNumber + ')');
+      debugInfo.userRole = user.role;
+      
+      // Check device token
+      if (!user.deviceToken) {
+        debugInfo.steps.push('3. ❌ Pas de device token');
+        return res.json({ success: false, debug: debugInfo });
+      }
+      
+      debugInfo.steps.push('3. ✅ Device token présent (' + user.deviceToken.length + ' chars)');
+      
+      // Parse device token
+      let subscription;
+      try {
+        subscription = JSON.parse(user.deviceToken);
+        debugInfo.steps.push('4. ✅ Device token parsé OK');
+        debugInfo.subscriptionEndpoint = subscription.endpoint?.substring(0, 60) + '...';
+      } catch (parseError: any) {
+        debugInfo.steps.push('4. ❌ Erreur parsing device token: ' + parseError.message);
+        return res.json({ success: false, debug: debugInfo });
+      }
+      
+      // Try to send push
+      const webpush = (await import('web-push')).default;
       const testNotification = {
-        title: '🧪 Test Notification CamionBack',
-        body: 'Ceci est une notification de test. Si vous la voyez, les push notifications fonctionnent !',
+        title: '🧪 Test CamionBack',
+        body: 'Si vous voyez ceci, les push notifications fonctionnent !',
         url: '/',
         icon: '/icons/icon-192.png',
         badge: '/icons/icon-192.png'
       };
-
-      const result = await sendNotificationToUser(userId, testNotification, storage);
-
-      if (result) {
-        console.log('🧪 ✅ Notification de test envoyée avec succès');
+      
+      debugInfo.steps.push('5. Envoi en cours via Web Push...');
+      
+      try {
+        const result = await webpush.sendNotification(subscription, JSON.stringify(testNotification));
+        debugInfo.steps.push('6. ✅ ✅ ✅ PUSH ENVOYÉE AVEC SUCCÈS !');
+        debugInfo.webPushStatusCode = result.statusCode;
+        debugInfo.webPushBody = result.body;
+        
         res.json({ 
           success: true, 
-          message: 'Notification de test envoyée. Vérifiez votre appareil !' 
+          message: 'Notification envoyée ! Vérifiez votre appareil.',
+          debug: debugInfo 
         });
-      } else {
-        console.log('🧪 ❌ Échec de l\'envoi de la notification de test');
-        res.json({ 
-          success: false, 
-          message: 'Échec de l\'envoi. Vérifiez les logs serveur pour plus de détails.' 
-        });
+      } catch (sendError: any) {
+        debugInfo.steps.push('6. ❌ Échec envoi Web Push');
+        debugInfo.errorCode = sendError.statusCode;
+        debugInfo.errorMessage = sendError.message;
+        debugInfo.errorBody = sendError.body;
+        
+        res.json({ success: false, debug: debugInfo });
       }
-    } catch (error) {
-      console.error('🧪 ❌ Erreur lors du test push:', error);
-      res.status(500).json({ error: "Erreur lors du test" });
+    } catch (error: any) {
+      debugInfo.steps.push('❌ ERREUR CRITIQUE: ' + error.message);
+      res.status(500).json({ success: false, error: error.message, debug: debugInfo });
     }
   });
 
