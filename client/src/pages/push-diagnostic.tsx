@@ -156,19 +156,47 @@ export default function PushDiagnostic() {
     }
   };
 
-  const testBrowserNotification = () => {
+  const testBrowserNotification = async () => {
+    console.log('🧪 [Test Navigateur] Début du test de notification navigateur');
+    console.log('🧪 [Test Navigateur] Permission actuelle:', Notification.permission);
+    
     if (Notification.permission === 'granted') {
-      new Notification('🧪 Test Navigateur', {
-        body: 'Ceci est une notification de test direct du navigateur (pas via Web Push)',
-        icon: '/icons/icon-192.png',
-        vibrate: [200, 100, 200] as any // vibrate is supported but not in TS types
-      });
-      
-      toast({
-        title: "✅ Notification navigateur envoyée",
-        description: "Si vous ne la voyez pas, vérifiez les paramètres Android"
-      });
+      try {
+        console.log('🧪 [Test Navigateur] Permission accordée, création de la notification...');
+        console.log('🧪 [Test Navigateur] Attente du Service Worker...');
+        
+        const registration = await navigator.serviceWorker.ready;
+        console.log('✅ [Test Navigateur] Service Worker prêt:', registration.active?.state);
+        
+        console.log('🧪 [Test Navigateur] Appel de registration.showNotification()...');
+        const notificationOptions = {
+          body: 'Ceci est une notification de test via Service Worker (compatible Android)',
+          icon: '/icons/icon-192.png',
+          badge: '/icons/icon-192.png',
+          vibrate: [200, 100, 200],
+          tag: 'test-notification',
+          requireInteraction: false
+        };
+        
+        await registration.showNotification('🧪 Test Navigateur', notificationOptions as any);
+        
+        console.log('✅ ✅ ✅ [Test Navigateur] NOTIFICATION AFFICHÉE AVEC SUCCÈS ! ✅ ✅ ✅');
+        console.log('✅ [Test Navigateur] Si vous ne voyez pas la notification, le problème vient des paramètres Android');
+        
+        toast({
+          title: "✅ Notification navigateur envoyée",
+          description: "Si vous ne la voyez pas, vérifiez les paramètres Android (Ne pas déranger, etc.)"
+        });
+      } catch (error) {
+        console.error('❌ [Test Navigateur] Erreur lors de l\'affichage de la notification:', error);
+        toast({
+          title: "❌ Erreur",
+          description: "Impossible d'afficher la notification. Voir console.",
+          variant: "destructive"
+        });
+      }
     } else {
+      console.log('❌ [Test Navigateur] Permission refusée:', Notification.permission);
       toast({
         title: "❌ Permission refusée",
         description: "Autorisez d'abord les notifications",
