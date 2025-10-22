@@ -1,8 +1,8 @@
 // Service Worker for CamionBack PWA
 // Handles push notifications and offline capabilities
-// Version: 2.2 - Apple touch icon for notifications
+// Version: 2.3 - Monochrome badge icon for Android compatibility
 
-const VERSION = '2.2';
+const VERSION = '2.3';
 const CACHE_NAME = `camionback-v${VERSION}`;
 const STATIC_CACHE = `camionback-static-v${VERSION}`;
 const DYNAMIC_CACHE = `camionback-dynamic-v${VERSION}`;
@@ -188,7 +188,7 @@ self.addEventListener('push', (event) => {
     title: 'CamionBack',
     body: 'Vous avez une nouvelle notification',
     icon: `${baseUrl}/apple-touch-icon.png`,
-    badge: `${baseUrl}/apple-touch-icon.png`,
+    badge: `${baseUrl}/icons/notification-badge.png`,
     url: '/'
   };
 

@@ -57,7 +57,7 @@ export async function sendPushNotification(options: SendPushOptions): Promise<bo
       title: options.notification.title,
       body: options.notification.body,
       icon: options.notification.icon || `${baseUrl}/apple-touch-icon.png`,
-      badge: options.notification.badge || `${baseUrl}/apple-touch-icon.png`,
+      badge: options.notification.badge || `${baseUrl}/icons/notification-badge.png`,
       url: options.notification.url || '/',
     };
 
