@@ -24,12 +24,13 @@ The backend is built with Express.js and TypeScript, providing RESTful JSON APIs
 - **Dynamic Admin Dashboard Statistics:** Real-time stats for users, conversion, ratings, orders, and payments.
 - **Automatic Client Identification:** Sequential C-XXXX IDs for clients.
 - **User Account Management:** Admins can block/unblock and permanently delete user accounts with cascade deletion.
-- **Request Management (Admin):** Admins can hide/unhide and delete transport requests.
+- **Request Management (Admin):** Admins can hide/unhide and delete transport requests. Request expiration system with backend support for republishing expired requests with new dates.
 - **Reporting and Dispute System:** Users can report issues with admin resolution tools.
 - **SMS Notification System (Infobip):** Fire-and-forget SMS for key events, admin bulk messaging, and individual SMS to specific phone numbers.
 - **Automated Email Notification System (Nodemailer):** Fire-and-forget emails for critical platform events.
-- **LoadingTruck Animation Component:** Reusable truck driving animation for consistent loading states across dashboards (replaces generic spinners).
+- **LoadingTruck Animation Component:** Reusable truck driving animation for consistent loading states across dashboards and transporter profiles.
 - **Admin Dashboard Refresh Control:** Dedicated button to refresh all dashboard data on-demand via TanStack Query cache invalidation.
+- **Enhanced Admin Data Display:** Comprehensive admin views showing client IDs with phone numbers in Demandes/Facturation, transporter names with phone numbers in Offres/Contrats/Retours, ensuring admins have complete contact information for all entities.
 - **File Upload:** Base64 for client photos, Multer for transporter truck photos, and multimedia messaging (photos/videos) in chat.
 - **Photo Gallery System:** Fullscreen modal with carousel navigation.
 - **Client Privacy & Anonymization:** Client details anonymized across interfaces except for admin.
