@@ -29,40 +29,69 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     
-    <!-- PWA Install Prompt - Vanilla JS Fallback -->
+    <!-- PWA Install Prompt - Enhanced System with Fallback -->
     <script>
-      // Global variable to store the install prompt
-      window.deferredPrompt = null;
-      
-      // Listen for beforeinstallprompt as early as possible
-      window.addEventListener('beforeinstallprompt', (e) => {
-        console.log('📱 beforeinstallprompt déclenché');
-        e.preventDefault();
-        window.deferredPrompt = e;
+      (function() {
+        'use strict';
         
-        // Create install button if it doesn't exist already
-        if (!document.getElementById('pwa-install-banner')) {
+        // Global state
+        window.deferredPrompt = null;
+        let installPromptFired = false;
+        let fallbackTimer = null;
+        
+        // Diagnostic logging
+        console.log('🔍 PWA Diagnostics:');
+        console.log('  - HTTPS:', window.location.protocol === 'https:');
+        console.log('  - Service Worker support:', 'serviceWorker' in navigator);
+        console.log('  - Standalone mode:', window.matchMedia('(display-mode: standalone)').matches);
+        console.log('  - iOS standalone:', window.navigator.standalone === true);
+        
+        // Check if already installed
+        const isInstalled = window.matchMedia('(display-mode: standalone)').matches || 
+                           window.navigator.standalone === true;
+        
+        if (isInstalled) {
+          console.log('✅ CamionBack déjà installé en mode standalone');
+          return; // Don't show install button if already installed
+        }
+        
+        // Create install banner
+        function createInstallBanner(useFallback = false) {
+          // Prevent duplicate banners
+          if (document.getElementById('pwa-install-banner')) {
+            return;
+          }
+          
           const banner = document.createElement('div');
           banner.id = 'pwa-install-banner';
           banner.setAttribute('data-testid', 'button-install-pwa');
-          banner.style.position = 'fixed';
-          banner.style.bottom = '20px';
-          banner.style.right = '20px';
-          banner.style.background = '#17cfcf';
-          banner.style.color = 'white';
-          banner.style.padding = '12px 20px';
-          banner.style.borderRadius = '10px';
-          banner.style.fontSize = '15px';
-          banner.style.fontWeight = '600';
-          banner.style.cursor = 'pointer';
-          banner.style.boxShadow = '0 4px 12px rgba(23, 207, 207, 0.4)';
-          banner.style.zIndex = '9999';
-          banner.style.display = 'flex';
-          banner.style.alignItems = 'center';
-          banner.style.gap = '8px';
-          banner.style.transition = 'all 0.2s ease';
-          banner.innerHTML = '📲 Installer CamionBack';
           
+          // Styles
+          Object.assign(banner.style, {
+            position: 'fixed',
+            bottom: '20px',
+            right: '20px',
+            background: '#17cfcf',
+            color: 'white',
+            padding: '12px 20px',
+            borderRadius: '10px',
+            fontSize: '15px',
+            fontWeight: '600',
+            cursor: 'pointer',
+            boxShadow: '0 4px 12px rgba(23, 207, 207, 0.4)',
+            zIndex: '9999',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            transition: 'all 0.2s ease',
+            maxWidth: '280px'
+          });
+          
+          banner.innerHTML = useFallback 
+            ? '📲 Installer CamionBack'
+            : '📲 Installer CamionBack';
+          
+          // Hover effects
           banner.addEventListener('mouseenter', () => {
             banner.style.transform = 'translateY(-2px)';
             banner.style.boxShadow = '0 6px 16px rgba(23, 207, 207, 0.5)';
@@ -73,30 +102,102 @@
             banner.style.boxShadow = '0 4px 12px rgba(23, 207, 207, 0.4)';
           });
           
+          // Click handler
           banner.addEventListener('click', async () => {
             if (window.deferredPrompt) {
-              banner.remove();
-              window.deferredPrompt.prompt();
-              const { outcome } = await window.deferredPrompt.userChoice;
-              console.log(outcome === 'accepted' ? '✅ CamionBack installé !' : 'ℹ️ Installation annulée');
-              window.deferredPrompt = null;
+              // Native install prompt available
+              try {
+                banner.remove();
+                await window.deferredPrompt.prompt();
+                const { outcome } = await window.deferredPrompt.userChoice;
+                console.log(outcome === 'accepted' ? '✅ CamionBack installé !' : 'ℹ️ Installation annulée');
+                window.deferredPrompt = null;
+              } catch (error) {
+                console.error('❌ Erreur lors de l\'installation:', error);
+                showManualInstructions();
+              }
+            } else {
+              // Fallback: show manual instructions
+              showManualInstructions();
             }
           });
           
           document.body.appendChild(banner);
-          console.log('✅ Bannière d\'installation affichée');
+          console.log(useFallback 
+            ? '⚠️ Bannière de fallback affichée (beforeinstallprompt non déclenché)'
+            : '✅ Bannière d\'installation affichée');
         }
-      });
-      
-      // Listen for app installed event
-      window.addEventListener('appinstalled', () => {
-        console.log('✅ CamionBack installé avec succès');
-        window.deferredPrompt = null;
-        const banner = document.getElementById('pwa-install-banner');
-        if (banner) {
-          banner.remove();
+        
+        // Show manual installation instructions
+        function showManualInstructions() {
+          const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+          const isAndroid = /Android/.test(navigator.userAgent);
+          
+          let instructions = '📲 Pour installer CamionBack :\n\n';
+          
+          if (isIOS) {
+            instructions += '1. Appuyez sur le bouton Partager (⬆️)\n';
+            instructions += '2. Faites défiler et sélectionnez "Sur l\'écran d\'accueil"\n';
+            instructions += '3. Appuyez sur "Ajouter"';
+          } else if (isAndroid) {
+            instructions += '1. Appuyez sur le menu (⋮) en haut à droite\n';
+            instructions += '2. Sélectionnez "Installer l\'application" ou "Ajouter à l\'écran d\'accueil"\n';
+            instructions += '3. Confirmez l\'installation';
+          } else {
+            instructions += '1. Cliquez sur l\'icône d\'installation dans la barre d\'adresse\n';
+            instructions += '2. Ou utilisez le menu du navigateur ⋮\n';
+            instructions += '3. Sélectionnez "Installer CamionBack"';
+          }
+          
+          alert(instructions);
         }
-      });
+        
+        // Listen for beforeinstallprompt event
+        window.addEventListener('beforeinstallprompt', (e) => {
+          console.log('📱 beforeinstallprompt déclenché sur', window.location.hostname);
+          e.preventDefault();
+          installPromptFired = true;
+          window.deferredPrompt = e;
+          
+          // Clear fallback timer if it exists
+          if (fallbackTimer) {
+            clearTimeout(fallbackTimer);
+            fallbackTimer = null;
+          }
+          
+          // Create install banner
+          createInstallBanner(false);
+        });
+        
+        // Listen for app installed event
+        window.addEventListener('appinstalled', () => {
+          console.log('✅ CamionBack installé avec succès');
+          window.deferredPrompt = null;
+          const banner = document.getElementById('pwa-install-banner');
+          if (banner) {
+            banner.remove();
+          }
+        });
+        
+        // Fallback: Show manual install button after 3 seconds if beforeinstallprompt hasn't fired
+        // Only on HTTPS and not already installed
+        window.addEventListener('load', () => {
+          if (window.location.protocol === 'https:' && !isInstalled) {
+            fallbackTimer = setTimeout(() => {
+              if (!installPromptFired && !document.getElementById('pwa-install-banner')) {
+                console.log('⚠️ beforeinstallprompt non déclenché après 3s, affichage du fallback');
+                console.log('💡 Raisons possibles:');
+                console.log('  - App déjà installée (vérifiez chrome://apps)');
+                console.log('  - Installation récemment refusée');
+                console.log('  - Critères PWA non remplis');
+                console.log('  - Navigateur ne supporte pas beforeinstallprompt');
+                createInstallBanner(true);
+              }
+            }, 3000);
+          }
+        });
+        
+      })();
     </script>
   </body>
 </html>

@@ -1,0 +1,102 @@
+Bonjour 👋
+
+Merci pour l’intégration complète de la PWA.
+Après tests sur Chrome Desktop et Android (sur le domaine camionback.com, HTTPS actif), le bouton “📲 Installer CamionBack” n’apparaît toujours pas.
+
+🔍 Vérifications effectuées :
+
+HTTPS activé sur camionback.com
+
+manifest.json et service-worker.js bien accessibles
+
+Aucun blocage navigateur détecté
+
+Tests effectués sur Chrome, Edge et Android
+
+🧩 Ce qu’il faut corriger / vérifier maintenant :
+
+1️⃣ Forcer le trigger beforeinstallprompt sur camionback.com
+Certains navigateurs (Chrome notamment) ne déclenchent plus automatiquement l’événement sans interaction utilisateur.
+
+➜ Merci d’ajouter ce code dans App.tsx (ou dans le composant global PWAInstallButton) pour forcer l’affichage du bouton :
+
+window.addEventListener("load", () => {
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    let deferredPrompt = e;
+    const banner = document.createElement("div");
+    banner.innerHTML = "📲 <b>Installer CamionBack</b>";
+    Object.assign(banner.style, {
+      position: "fixed",
+      bottom: "20px",
+      right: "20px",
+      background: "#17cfcf",
+      color: "#fff",
+      padding: "15px 20px",
+      borderRadius: "10px",
+      fontSize: "16px",
+      cursor: "pointer",
+      boxShadow: "0 4px 10px rgba(0,0,0,0.3)",
+      zIndex: "9999",
+    });
+    document.body.appendChild(banner);
+
+    banner.addEventListener("click", async () => {
+      banner.remove();
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === "accepted") {
+        console.log("✅ CamionBack installé !");
+      }
+      deferredPrompt = null;
+    });
+  });
+});
+
+
+2️⃣ Vérifie que les clés du manifest.json sont correctes :
+
+{
+  "name": "CamionBack",
+  "short_name": "CamionBack",
+  "start_url": "/",
+  "id": "/",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#17cfcf",
+  "background_color": "#ffffff",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
+
+
+3️⃣ Vide le cache du service worker et assure-toi qu’il se recharge bien en production :
+
+Supprimer le cache précédent (chrome://serviceworker-internals sur desktop)
+
+Forcer la mise à jour du service-worker.js
+
+4️⃣ Tester sur HTTPS (production, pas Replit)
+L’événement beforeinstallprompt ne fonctionne que sur domaine sécurisé, donc uniquement sur https://camionback.com
+.
+
+5️⃣ (Optionnel)
+Pour Chrome mobile : ajoute une invitation d’installation dans un bandeau en haut de page si le bouton ne s’affiche pas encore automatiquement.
+Exemple :
+
+if (navigator.standalone === false) {
+  alert("🚛 Installez CamionBack pour accéder plus rapidement à vos commandes !");
+}
+
+
+✅ Objectif attendu :
+
+Le bouton “📲 Installer CamionBack” s’affiche sur le site camionback.com
+
+Cliquer dessus déclenche la fenêtre d’installation native du navigateur
+
+L’app s’ajoute sur l’écran d’accueil avec icône turquoise
+
+En mode “standalone”, elle s’ouvre sans barre d’adresse
