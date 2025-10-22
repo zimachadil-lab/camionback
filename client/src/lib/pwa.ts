@@ -85,9 +85,10 @@ export async function requestPushPermission(): Promise<PushSubscription | null> 
   }
 
   try {
+    console.log('🔔 === DÉBUT CRÉATION PUSH SUBSCRIPTION ===');
     console.log('🔔 Demande de permission de notification...');
     const permission = await Notification.requestPermission();
-    console.log('🔔 Permission de notification:', permission);
+    console.log('🔔 Permission de notification reçue:', permission);
     
     if (permission !== 'granted') {
       console.log('ℹ️ Permission de notification refusée');
@@ -96,32 +97,54 @@ export async function requestPushPermission(): Promise<PushSubscription | null> 
 
     console.log('⏳ Attente du Service Worker...');
     const registration = await navigator.serviceWorker.ready;
-    console.log('✅ Service Worker prêt');
+    console.log('✅ Service Worker prêt:', registration.active?.state);
+
+    // Check if subscription already exists
+    console.log('🔍 Vérification subscription existante...');
+    const existingSubscription = await registration.pushManager.getSubscription();
+    if (existingSubscription) {
+      console.log('⚠️ Subscription existante trouvée, désabonnement...');
+      await existingSubscription.unsubscribe();
+      console.log('✅ Ancienne subscription supprimée');
+    }
 
     // Get VAPID public key from server
     console.log('🔑 Récupération de la clé VAPID publique...');
     const vapidPublicKey = await getVapidPublicKey();
+    console.log('🔑 Clé VAPID reçue:', vapidPublicKey ? `${vapidPublicKey.substring(0, 20)}...` : 'null');
+    
     if (!vapidPublicKey) {
       console.error('❌ Impossible de récupérer la clé VAPID publique');
       return null;
     }
     
-    console.log('📱 Souscription aux push notifications...');
+    console.log('🔄 Conversion de la clé VAPID en Uint8Array...');
+    const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey);
+    console.log('✅ Clé VAPID convertie, longueur:', applicationServerKey.length);
+    
+    console.log('📱 Souscription aux push notifications avec pushManager.subscribe()...');
+    console.log('📱 Options:', { userVisibleOnly: true, applicationServerKey: '(Uint8Array)' });
+    
     // Subscribe to push notifications
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+      applicationServerKey: applicationServerKey
     });
 
-    console.log('✅ Souscription aux notifications push réussie');
-    console.log('📋 Détails de la souscription:', {
-      endpoint: subscription.endpoint.substring(0, 50) + '...',
-      hasKeys: !!subscription.getKey('p256dh') && !!subscription.getKey('auth')
-    });
+    console.log('✅ ✅ ✅ PUSH SUBSCRIPTION CRÉÉE AVEC SUCCÈS ! ✅ ✅ ✅');
+    console.log('📋 Push subscription:', subscription);
+    console.log('📋 Endpoint:', subscription.endpoint);
+    console.log('📋 Clé p256dh:', subscription.getKey('p256dh'));
+    console.log('📋 Clé auth:', subscription.getKey('auth'));
+    console.log('📋 ExpirationTime:', subscription.expirationTime);
     
     return subscription;
   } catch (error) {
-    console.error('❌ Erreur lors de la souscription aux notifications:', error);
+    console.error('❌ ❌ ❌ ERREUR LORS DE LA SOUSCRIPTION AUX NOTIFICATIONS ❌ ❌ ❌');
+    console.error('❌ Type d\'erreur:', error instanceof Error ? error.name : typeof error);
+    console.error('❌ Message:', error instanceof Error ? error.message : String(error));
+    console.error('❌ Stack:', error instanceof Error ? error.stack : 'N/A');
+    console.error('❌ Objet complet:', error);
     return null;
   }
 }
@@ -165,17 +188,25 @@ export async function unsubscribePush(): Promise<boolean> {
  * Convert base64 string to Uint8Array for VAPID key
  */
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  console.log('🔄 urlBase64ToUint8Array - Input:', base64String.substring(0, 20) + '...');
+  
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
   const base64 = (base64String + padding)
     .replace(/\-/g, '+')
     .replace(/_/g, '/');
 
+  console.log('🔄 Base64 avec padding:', base64.substring(0, 20) + '...');
+
   const rawData = window.atob(base64);
+  console.log('🔄 Raw data length:', rawData.length);
+  
   const outputArray = new Uint8Array(rawData.length);
 
   for (let i = 0; i < rawData.length; ++i) {
     outputArray[i] = rawData.charCodeAt(i);
   }
+  
+  console.log('✅ Uint8Array créé, longueur:', outputArray.length);
   return outputArray;
 }
 

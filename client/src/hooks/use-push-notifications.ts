@@ -23,38 +23,51 @@ export function usePushNotifications({ userId, enabled }: UsePushNotificationsOp
     // Request push notification permission and register device token
     async function setupPushNotifications() {
       if (!enabled || !userId) {
-        console.log('ℹ️ Push notifications désactivées ou userId manquant');
+        console.log('ℹ️ [usePushNotifications] Push notifications désactivées ou userId manquant');
         return;
       }
 
       try {
-        console.log('🔔 Configuration des push notifications pour userId:', userId);
+        console.log('🔔 === [usePushNotifications] DÉBUT CONFIGURATION PUSH NOTIFICATIONS ===');
+        console.log('🔔 [usePushNotifications] userId:', userId);
+        console.log('🔔 [usePushNotifications] permission actuelle:', permission);
+        
         let subscription = null;
 
         // If permission already granted, get existing subscription
         if (permission === 'granted') {
-          console.log('✅ Permission déjà accordée, récupération de la souscription...');
+          console.log('✅ [usePushNotifications] Permission déjà accordée');
+          console.log('🔍 [usePushNotifications] Récupération de la souscription existante...');
+          
           const { getPushSubscription } = await import('@/lib/pwa');
           subscription = await getPushSubscription();
           
-          // If no subscription exists, request a new one
-          if (!subscription) {
-            console.log('ℹ️ Aucune souscription existante, création d\'une nouvelle...');
-            subscription = await requestPushPermission();
+          if (subscription) {
+            console.log('✅ [usePushNotifications] Souscription existante trouvée:', {
+              endpoint: subscription.endpoint.substring(0, 50) + '...',
+              expirationTime: subscription.expirationTime
+            });
           } else {
-            console.log('✅ Souscription existante trouvée');
+            console.log('⚠️ [usePushNotifications] Aucune souscription existante !');
+            console.log('🔧 [usePushNotifications] Création d\'une nouvelle subscription...');
+            subscription = await requestPushPermission();
           }
         } 
         // If permission is default, request permission
         else if (permission === 'default') {
-          console.log('🔔 Permission par défaut, demande de permission...');
+          console.log('🔔 [usePushNotifications] Permission par défaut, demande de permission...');
           subscription = await requestPushPermission();
+        } else if (permission === 'denied') {
+          console.log('❌ [usePushNotifications] Permission refusée par l\'utilisateur');
         }
         
         // If we have a subscription, register it with backend
         if (subscription) {
+          console.log('✅ [usePushNotifications] Subscription obtenue !');
+          
           const deviceToken = getDeviceTokenFromSubscription(subscription);
-          console.log('📤 Envoi du device token au serveur...');
+          console.log('📤 [usePushNotifications] Envoi du device token au serveur...');
+          console.log('📤 [usePushNotifications] Device token length:', deviceToken.length);
           
           await apiRequest('PATCH', `/api/users/${userId}/device-token`, {
             deviceToken
@@ -62,12 +75,13 @@ export function usePushNotifications({ userId, enabled }: UsePushNotificationsOp
           
           setIsSubscribed(true);
           setPermission('granted');
-          console.log('✅ Notifications push activées et synchronisées avec le serveur');
-        } else if (permission === 'denied') {
-          console.log('ℹ️ Permission de notification refusée par l\'utilisateur');
+          console.log('✅ ✅ ✅ [usePushNotifications] PUSH NOTIFICATIONS ACTIVÉES ET SYNCHRONISÉES ! ✅ ✅ ✅');
+        } else {
+          console.log('⚠️ [usePushNotifications] Aucune subscription obtenue');
         }
       } catch (error) {
-        console.error('❌ Erreur lors de la configuration des notifications:', error);
+        console.error('❌ ❌ ❌ [usePushNotifications] ERREUR CONFIGURATION ❌ ❌ ❌');
+        console.error('❌ [usePushNotifications] Erreur:', error);
       }
     }
 

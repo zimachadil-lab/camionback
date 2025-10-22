@@ -188,6 +188,40 @@ export default function PushDiagnostic() {
     }
   };
 
+  const forceCreateSubscription = async () => {
+    try {
+      console.log('🔧 Création forcée d\'une nouvelle subscription...');
+      
+      const { requestPushPermission } = await import('@/lib/pwa');
+      const subscription = await requestPushPermission();
+      
+      if (subscription) {
+        toast({
+          title: "✅ Subscription créée !",
+          description: "Rechargez la page pour voir les détails"
+        });
+        
+        // Refresh page to show new subscription
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } else {
+        toast({
+          title: "❌ Échec",
+          description: "Impossible de créer la subscription. Vérifiez la console.",
+          variant: "destructive"
+        });
+      }
+    } catch (error: any) {
+      console.error('❌ Erreur création subscription:', error);
+      toast({
+        title: "❌ Erreur",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
   const copyCurlCommand = () => {
     if (!pushSubscription || !user?.id) return;
 
@@ -310,6 +344,16 @@ export default function PushDiagnostic() {
                   data-testid="button-request-permission"
                 >
                   Demander la Permission
+                </Button>
+              )}
+
+              {notificationPermission === 'granted' && !pushSubscription && (
+                <Button 
+                  onClick={forceCreateSubscription}
+                  variant="default"
+                  data-testid="button-force-subscription"
+                >
+                  🔧 Forcer Création de la Subscription
                 </Button>
               )}
 
