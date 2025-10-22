@@ -170,7 +170,9 @@ self.addEventListener('fetch', (event) => {
 
 // Push notification event
 self.addEventListener('push', (event) => {
-  console.log('[Service Worker] Push received:', event);
+  console.log('🔔 🔔 🔔 [Service Worker] PUSH EVENT RECEIVED! 🔔 🔔 🔔');
+  console.log('[Service Worker] Push event object:', event);
+  console.log('[Service Worker] Has data:', !!event.data);
   
   let notificationData = {
     title: 'CamionBack',
@@ -182,8 +184,14 @@ self.addEventListener('push', (event) => {
 
   // Parse push data if available
   if (event.data) {
+    console.log('[Service Worker] Push data exists, parsing...');
     try {
-      const data = event.data.json();
+      const rawData = event.data.text();
+      console.log('[Service Worker] Raw push data:', rawData);
+      
+      const data = JSON.parse(rawData);
+      console.log('[Service Worker] Parsed push data:', data);
+      
       notificationData = {
         title: data.title || notificationData.title,
         body: data.body || notificationData.body,
@@ -191,9 +199,13 @@ self.addEventListener('push', (event) => {
         badge: data.badge || notificationData.badge,
         url: data.url || notificationData.url
       };
+      
+      console.log('[Service Worker] Final notification data:', notificationData);
     } catch (error) {
       console.error('[Service Worker] Error parsing push data:', error);
     }
+  } else {
+    console.warn('[Service Worker] No data in push event!');
   }
 
   const options = {
@@ -202,6 +214,8 @@ self.addEventListener('push', (event) => {
     badge: notificationData.badge,
     vibrate: [200, 100, 200],
     data: { url: notificationData.url },
+    requireInteraction: false,
+    tag: 'camionback-notification',
     actions: [
       {
         action: 'open',
@@ -214,8 +228,19 @@ self.addEventListener('push', (event) => {
     ]
   };
 
+  console.log('[Service Worker] Calling showNotification with:', {
+    title: notificationData.title,
+    options: options
+  });
+
   event.waitUntil(
     self.registration.showNotification(notificationData.title, options)
+      .then(() => {
+        console.log('✅ ✅ ✅ [Service Worker] NOTIFICATION DISPLAYED SUCCESSFULLY! ✅ ✅ ✅');
+      })
+      .catch((error) => {
+        console.error('❌ ❌ ❌ [Service Worker] ERROR DISPLAYING NOTIFICATION:', error);
+      })
   );
 });
 
