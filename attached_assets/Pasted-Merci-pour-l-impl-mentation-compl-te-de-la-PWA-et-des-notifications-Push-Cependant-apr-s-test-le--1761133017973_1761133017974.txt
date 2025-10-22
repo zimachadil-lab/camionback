@@ -1,0 +1,87 @@
+Merci pour l’implémentation complète de la PWA et des notifications Push.
+Cependant, après test, le bouton d’installation de l’application (“Installer CamionBack”) ne s’affiche pas encore dans le navigateur mobile (ni la bannière en haut de page).
+
+🔍 Voici quelques points à vérifier et corriger :
+
+1️⃣ Le fichier manifest.json
+
+Vérifie qu’il est bien accessible publiquement : https://camionback.com/manifest.json
+
+Vérifie que les champs suivants existent bien :
+
+"start_url": "/"
+
+"display": "standalone"
+
+"scope": "/"
+
+"id": "/"
+
+S’assure que le lien est bien présent dans le <head> :
+
+<link rel="manifest" href="/manifest.json">
+
+
+2️⃣ Le Service Worker
+
+Vérifie qu’il est bien enregistré à la racine (donc accessible via /service-worker.js).
+
+S’assure que le fichier contient bien :
+
+self.addEventListener("install", () => console.log("Service Worker installé"));
+self.addEventListener("activate", () => console.log("Service Worker actif"));
+
+
+3️⃣ Vérification HTTPS / Permissions
+
+Confirmer que le site est bien servi en HTTPS complet (sans avertissement de certificat).
+
+Si on teste depuis Replit en mode preview, il faut tester depuis le vrai domaine camionback.com.
+
+4️⃣ Ajout du script de déclenchement du prompt d’installation
+Merci d’ajouter ce script dans la page principale pour déclencher manuellement l’invite d’installation :
+
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const installBtn = document.createElement('button');
+  installBtn.textContent = '📲 Installer CamionBack';
+  installBtn.style.position = 'fixed';
+  installBtn.style.bottom = '20px';
+  installBtn.style.right = '20px';
+  installBtn.style.background = '#17cfcf';
+  installBtn.style.color = 'white';
+  installBtn.style.border = 'none';
+  installBtn.style.borderRadius = '10px';
+  installBtn.style.padding = '10px 20px';
+  installBtn.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
+  document.body.appendChild(installBtn);
+  installBtn.addEventListener('click', async () => {
+    installBtn.remove();
+    deferredPrompt.prompt();
+    const choice = await deferredPrompt.userChoice;
+    if (choice.outcome === 'accepted') {
+      console.log('CamionBack installé ✅');
+    }
+    deferredPrompt = null;
+  });
+});
+
+
+Ce script permet d’afficher un bouton flottant « 📲 Installer CamionBack » quand les conditions PWA sont remplies (Chrome, Edge, Android, etc.).
+
+5️⃣ Notifications Push
+Vérifie également que la demande de permission s’affiche bien lors du premier chargement du site (Notification.requestPermission()), et que le service-worker.js écoute correctement les événements push.
+
+🔧 En résumé :
+
+Corriger le lien manifest.json s’il est manquant.
+
+S’assurer que le service worker est bien à la racine.
+
+Ajouter le script beforeinstallprompt pour forcer l’affichage du bouton “Installer CamionBack”.
+
+Tester sur Chrome mobile depuis camionback.com, pas Replit Preview.
+
+Merci 🙏
