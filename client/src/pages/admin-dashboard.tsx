@@ -209,13 +209,34 @@ export default function AdminDashboard() {
   const { data: transportersWithStats = [], isLoading: transportersLoading, error: transportersError } = useQuery({
     queryKey: ["/api/admin/transporters"],
     queryFn: async () => {
+      console.log("🔍 [ADMIN] Fetching transporters from /api/admin/transporters");
       const response = await fetch("/api/admin/transporters");
+      console.log("📡 [ADMIN] Response status:", response.status, response.statusText);
       if (!response.ok) {
-        throw new Error(`Failed to fetch transporters: ${response.status}`);
+        const errorText = await response.text();
+        console.error("❌ [ADMIN] API Error:", errorText);
+        throw new Error(`Failed to fetch transporters: ${response.status} - ${errorText}`);
       }
-      return response.json();
+      const data = await response.json();
+      console.log("✅ [ADMIN] Transporters data received:", {
+        count: data.length,
+        firstItem: data[0],
+        allItems: data
+      });
+      return data;
     },
   });
+
+  // Debug logging
+  useEffect(() => {
+    console.log("🚛 [ADMIN] Transporters state update:", {
+      loading: transportersLoading,
+      error: transportersError?.message,
+      count: transportersWithStats?.length,
+      hasData: Array.isArray(transportersWithStats),
+      data: transportersWithStats
+    });
+  }, [transportersWithStats, transportersLoading, transportersError]);
 
   // Fetch clients with stats
   const { data: clientsWithStats = [] } = useQuery({
@@ -1662,10 +1683,24 @@ export default function AdminDashboard() {
                   </Select>
                 </div>
 
-                {transportersWithStats.length === 0 ? (
+                {transportersLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Chargement des transporteurs...</p>
+                  </div>
+                ) : transportersError ? (
+                  <div className="text-center py-8 text-destructive">
+                    <XCircle className="w-12 h-12 mx-auto mb-4" />
+                    <p className="font-semibold">Erreur lors du chargement</p>
+                    <p className="text-sm mt-2">{transportersError.message}</p>
+                  </div>
+                ) : transportersWithStats.length === 0 ? (
                   <div className="text-center py-8">
                     <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                     <p className="text-muted-foreground">Aucun transporteur validé</p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      (Vérifiez la console pour plus de détails)
+                    </p>
                   </div>
                 ) : (
                   (() => {
