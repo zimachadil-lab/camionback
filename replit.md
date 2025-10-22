@@ -39,7 +39,7 @@ The backend is built with Express.js and TypeScript, providing RESTful JSON APIs
 - **Empty Return Access Restriction:** Restricted to validated transporters with professional blocking dialog.
 - **Admin Transporter Profile Editing:** Admins can edit transporter profiles, reset PINs, and upload truck photos.
 - **CamioMatch - Intelligent Transporter Matching System:** Tinder-style swipe interface for clients to find prioritized transporters based on empty returns, activity, and ratings. Includes contact tracking and WhatsApp coordinator option.
-- **PWA with Push Notifications:** Full PWA implementation with offline support, advanced caching, and Web Push API integration for notifications.
+- **PWA with Push Notifications:** Full PWA implementation with offline support, advanced caching, Web Push API integration for notifications, and floating install button ("📲 Installer CamionBack") that appears on HTTPS sites when beforeinstallprompt fires. Manifest includes scope and id fields. Complete testing guide available in PWA_TESTING_GUIDE.md.
 
 ### System Design Choices
 **Data Storage:** PostgreSQL with Neon serverless and Drizzle ORM.
