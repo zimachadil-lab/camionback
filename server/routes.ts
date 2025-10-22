@@ -84,6 +84,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // PWA - Test endpoint (GET) for easy browser testing
+  app.get("/api/pwa/test-push-notification", async (req, res) => {
+    try {
+      const userId = req.query.userId as string;
+      
+      if (!userId) {
+        return res.status(400).json({ error: "userId requis dans l'URL: ?userId=XXX" });
+      }
+
+      console.log('🧪 === TEST PUSH NOTIFICATION (GET) ===');
+      console.log('🧪 Envoi d\'une notification de test à userId:', userId);
+
+      const { sendNotificationToUser, NotificationTemplates } = await import('./push-notifications');
+      
+      const testNotification = {
+        title: '🧪 Test Notification CamionBack',
+        body: 'Ceci est une notification de test. Si vous la voyez, les push notifications fonctionnent !',
+        url: '/',
+        icon: '/icons/icon-192.png',
+        badge: '/icons/icon-192.png'
+      };
+
+      const result = await sendNotificationToUser(userId, testNotification, storage);
+
+      if (result) {
+        console.log('🧪 ✅ Notification de test envoyée avec succès');
+        res.json({ 
+          success: true, 
+          message: 'Notification de test envoyée. Vérifiez votre appareil !' 
+        });
+      } else {
+        console.log('🧪 ❌ Échec de l\'envoi de la notification de test');
+        res.json({ 
+          success: false, 
+          message: 'Échec de l\'envoi. Vérifiez les logs serveur pour plus de détails.' 
+        });
+      }
+    } catch (error) {
+      console.error('🧪 ❌ Erreur lors du test push:', error);
+      res.status(500).json({ error: "Erreur lors du test" });
+    }
+  });
+
   // Auth routes - New PIN-based system
   
   // Check if phone number exists
