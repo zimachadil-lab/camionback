@@ -1,0 +1,250 @@
+AJOUT DU RÔLE “COORDINATEUR” (VERSION COMPLÈTE)
+
+🎯 Objectif :
+Créer un nouveau rôle utilisateur “Coordinateur” sur CamionBack.
+Le coordinateur doit pouvoir superviser toutes les commandes, interagir avec les transporteurs et clients, gérer les statuts, la facturation, et disposer d’un tableau de bord structuré comme celui des transporteurs, mais avec une visibilité et des permissions étendues.
+
+👤 1️⃣ ACCÈS ET CONNEXION
+
+Créer un compte coordinateur par défaut :
+
+Numéro : +212661040189
+
+Mot de passe : 040189
+
+Rôle à ajouter dans le modèle utilisateur :
+
+role: "coordinateur"
+
+
+Rediriger automatiquement ce rôle vers son tableau de bord dédié après connexion.
+
+🧭 2️⃣ INTERFACE COORDINATEUR
+
+Basée sur le tableau de bord transporteur, mais avec plus d’informations et de contrôle.
+
+Le coordinateur dispose des 3 vues principales identiques à celles du transporteur :
+
+📦 Vue 1 — “Commandes disponibles”
+
+Affiche toutes les commandes non encore confirmées (offres encore ouvertes).
+
+Pour chaque commande :
+
+Référence commande
+
+Nom + téléphone du client
+
+Nombre d’offres reçues
+
+Détails (lieux, date, marchandise, distance, photos)
+
+Bouton “👁️ Masquer / Réafficher” pour le tableau transporteurs
+
+Bouton “💬 Messagerie” pour voir les échanges en cours
+
+Bouton “📞 / 🟢 WhatsApp” pour contacter directement le transporteur si besoin.
+
+🔧 Vue 2 — “Commandes à traiter”
+
+Regroupe toutes les commandes en cours de livraison ou en coordination active.
+
+Même structure d’affichage que la première vue, avec en plus :
+
+Statut actuel (“En cours”, “En attente de livraison”, “Livré partiellement”)
+
+Possibilité pour le coordinateur de :
+
+Modifier la commande (texte, photos, date, etc.)
+
+Modifier le statut de la commande
+
+Modifier ou valider les statuts de facturation
+
+Accès complet aux contacts : téléphone, nom client, photo camion du transporteur.
+
+💰 Vue 3 — “À payer”
+
+Regroupe toutes les commandes dont la facturation est en attente ou en traitement.
+
+Chaque ligne affiche :
+
+Référence commande
+
+Montant à payer / à facturer
+
+Nom + téléphone client et transporteur
+
+Statut de paiement (“à facturer”, “payé par client”, “payé par CamionBack”)
+
+Ces commandes restent visibles jusqu’à ce que le client indique qu’elles sont payées.
+
+Dès que le paiement est marqué comme “payé”, la commande disparaît automatiquement de la vue coordinateur “À payer” et passe dans la section facturation du tableau de bord admin.
+
+🔍 3️⃣ FICHE DÉTAILLÉE D’UNE COMMANDE
+
+Le coordinateur peut cliquer sur une commande pour voir tous les détails :
+
+Informations visibles :
+
+Référence commande
+
+Client :
+
+Nom complet
+
+Numéro de téléphone (clic → appel direct)
+
+Date de création
+
+Email (si existant)
+
+Transporteur :
+
+Nom
+
+Numéro de téléphone
+
+Photo du camion
+
+Prix proposé
+
+Statut actuel
+
+Détails de la marchandise (type, poids, description, photos jointes)
+
+Actions disponibles :
+
+Accepter une offre (au nom du client)
+
+Modifier l’offre (prix, description, photos, etc.)
+
+Changer le statut de facturation :
+
+“À facturer”
+
+“Payé par client”
+
+“Payé par CamionBack”
+
+Masquer / réafficher la commande côté transporteur
+
+Contacter le transporteur :
+
+📞 Appel direct via tel:
+
+🟢 WhatsApp via https://wa.me/[numéro]
+
+Message automatique WhatsApp :
+
+Bonjour 👋,  
+Je suis coordinateur CamionBack.  
+Je souhaite coordonner avec vous au sujet de la commande référence [REF_COMMANDE].
+
+💬 4️⃣ MESSAGERIE ET INTERVENTION
+
+Le coordinateur peut :
+
+Voir toutes les conversations entre client et transporteur.
+
+Répondre directement depuis la messagerie.
+
+Ses messages affichent un badge “(Coordinateur CamionBack)” pour transparence.
+
+Les logs doivent garder la trace :
+
+“Coordinateur a répondu au message le [date/heure]”.
+
+🧾 5️⃣ FACTURATION ET STATUTS
+
+Accès complet à la mise à jour des statuts :
+
+Livraison : “en attente”, “confirmée”, “livrée”, “annulée”.
+
+Facturation : “à facturer”, “payé par client”, “payé par CamionBack”.
+
+Chaque action du coordinateur génère un log :
+
+Coordinateur a modifié le statut de facturation → Payé par client (24/10/2025 - 16:42)
+
+🧠 6️⃣ PERMISSIONS DU COORDINATEUR
+
+Autorisé à :
+
+Voir toutes les commandes (disponibles, à traiter, à payer)
+
+Modifier les informations clients et offres
+
+Accepter ou modifier les propositions transporteurs
+
+Changer statuts et facturation
+
+Masquer / réafficher des commandes
+
+Voir et répondre dans les messageries
+
+Contacter les transporteurs par téléphone ou WhatsApp
+
+Non autorisé à :
+
+Supprimer des commandes ou des comptes
+
+Modifier les accès administratifs
+
+🎨 7️⃣ DESIGN / UX
+
+Rôle coordinateur = bleu clair #5BC0EB.
+
+Icône rôle : ⚙️ ou 🧭 (en haut du tableau de bord).
+
+Badge “Coordinateur” sur chaque profil correspondant.
+
+Disposition des vues (identique à transporteur) :
+
+Commandes disponibles
+
+À traiter
+
+À payer
+
+Afficher sur chaque carte :
+
+Photo camion / logo client
+
+Nom + téléphone
+
+Nombre d’offres reçues
+
+Statut actuel + bouton d’action rapide
+
+🧩 8️⃣ BACK-OFFICE ADMIN
+
+Ajouter une vue “Coordinateurs” :
+
+Liste de tous les coordinateurs
+
+Nombre de commandes suivies
+
+Dernière activité
+
+Possibilité d’activer / désactiver le compte
+
+Intégrer les actions du coordinateur dans les logs de commande :
+
+“Coordinateur X a accepté une offre”
+
+“Coordinateur Y a marqué comme payé”
+
+✅ RÉSULTAT ATTENDU
+
+Le coordinateur dispose :
+
+d’un tableau de bord 3 vues (disponibles / à traiter / à payer)
+
+d’une fiche commande complète avec tous les contacts et documents
+
+d’un accès direct messagerie et WhatsApp
+
+d’une gestion complète de la facturation et du suivi opérationnel
+
+Toutes ses actions sont traçables et synchronisées avec l’interface admin.

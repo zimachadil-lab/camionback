@@ -41,6 +41,11 @@ export default function Home() {
     return <AdminDashboard />;
   }
 
+  if (user.role === "coordinateur") {
+    setLocation("/coordinator-dashboard");
+    return null;
+  }
+
   if (user.role === "transporter") {
     return <TransporterDashboard />;
   }

@@ -3,12 +3,12 @@ import { pgTable, text, varchar, integer, timestamp, boolean, decimal } from "dr
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Users table - supports Client, Transporter, and Admin roles
+// Users table - supports Client, Transporter, Coordinator, and Admin roles
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   phoneNumber: text("phone_number").notNull().unique(),
   passwordHash: text("password_hash").notNull(), // Bcrypt hash of 6-digit PIN
-  role: text("role"), // 'client', 'transporter', 'admin' - null until selected
+  role: text("role"), // 'client', 'transporter', 'coordinateur', 'admin' - null until selected
   clientId: text("client_id").unique(), // Auto-generated ID for clients (C-XXXX)
   name: text("name"),
   city: text("city"), // City of residence
@@ -88,7 +88,7 @@ export const chatMessages = pgTable("chat_messages", {
   fileSize: integer("file_size"), // File size in bytes
   filteredMessage: text("filtered_message"), // Message after phone/link filtering
   isRead: boolean("is_read").default(false),
-  senderType: text("sender_type"), // 'client', 'transporter', or 'admin'
+  senderType: text("sender_type"), // 'client', 'transporter', 'coordinateur', or 'admin'
   createdAt: timestamp("created_at").defaultNow(),
 });
 

@@ -131,6 +131,13 @@ export interface IStorage {
   getStoryById(id: string): Promise<Story | undefined>;
   updateStory(id: string, updates: Partial<Story>): Promise<Story | undefined>;
   deleteStory(id: string): Promise<void>;
+  
+  // Coordinator operations
+  getCoordinatorAvailableRequests(): Promise<any[]>;
+  getCoordinatorActiveRequests(): Promise<any[]>;
+  getCoordinatorPaymentRequests(): Promise<any[]>;
+  updateRequestVisibility(requestId: string, isHidden: boolean): Promise<TransportRequest | undefined>;
+  updateRequestPaymentStatus(requestId: string, paymentStatus: string): Promise<TransportRequest | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -2080,6 +2087,197 @@ export class DbStorage implements IStorage {
 
   async deleteStory(id: string): Promise<void> {
     await db.delete(stories).where(eq(stories.id, id));
+  }
+
+  // Coordinator operations
+  async getCoordinatorAvailableRequests(): Promise<any[]> {
+    // Get all open requests with client, transporter (if accepted), and offers
+    const requests = await db.select({
+      id: transportRequests.id,
+      referenceId: transportRequests.referenceId,
+      fromCity: transportRequests.fromCity,
+      toCity: transportRequests.toCity,
+      description: transportRequests.description,
+      goodsType: transportRequests.goodsType,
+      dateTime: transportRequests.dateTime,
+      budget: transportRequests.budget,
+      photos: transportRequests.photos,
+      status: transportRequests.status,
+      isHidden: transportRequests.isHidden,
+      paymentStatus: transportRequests.paymentStatus,
+      createdAt: transportRequests.createdAt,
+    })
+    .from(transportRequests)
+    .where(eq(transportRequests.status, 'open'))
+    .orderBy(desc(transportRequests.createdAt));
+
+    // Enrich each request with client, offers, and transporter data
+    const enrichedRequests = await Promise.all(
+      requests.map(async (request) => {
+        // Get client data
+        const clientData = await db.select().from(users)
+          .where(eq(users.id, request.id))
+          .limit(1);
+        
+        // Get offers for this request
+        const requestOffers = await db.select().from(offers)
+          .where(eq(offers.requestId, request.id));
+
+        return {
+          ...request,
+          client: clientData[0] || null,
+          offers: requestOffers,
+        };
+      })
+    );
+
+    return enrichedRequests;
+  }
+
+  async getCoordinatorActiveRequests(): Promise<any[]> {
+    // Get all accepted requests
+    const requests = await db.select({
+      id: transportRequests.id,
+      referenceId: transportRequests.referenceId,
+      fromCity: transportRequests.fromCity,
+      toCity: transportRequests.toCity,
+      description: transportRequests.description,
+      goodsType: transportRequests.goodsType,
+      dateTime: transportRequests.dateTime,
+      budget: transportRequests.budget,
+      photos: transportRequests.photos,
+      status: transportRequests.status,
+      isHidden: transportRequests.isHidden,
+      paymentStatus: transportRequests.paymentStatus,
+      acceptedOfferId: transportRequests.acceptedOfferId,
+      createdAt: transportRequests.createdAt,
+    })
+    .from(transportRequests)
+    .where(eq(transportRequests.status, 'accepted'))
+    .orderBy(desc(transportRequests.createdAt));
+
+    // Enrich with client, transporter, and accepted offer
+    const enrichedRequests = await Promise.all(
+      requests.map(async (request) => {
+        // Get client data  
+        const clientResult = await db.select().from(users)
+          .innerJoin(transportRequests, eq(transportRequests.clientId, users.id))
+          .where(eq(transportRequests.id, request.id))
+          .limit(1);
+        const client = clientResult[0]?.users || null;
+
+        // Get accepted offer and transporter
+        let acceptedOffer = null;
+        let transporter = null;
+        if (request.acceptedOfferId) {
+          const offerResult = await db.select().from(offers)
+            .where(eq(offers.id, request.acceptedOfferId))
+            .limit(1);
+          acceptedOffer = offerResult[0] || null;
+
+          if (acceptedOffer) {
+            const transporterResult = await db.select().from(users)
+              .where(eq(users.id, acceptedOffer.transporterId))
+              .limit(1);
+            transporter = transporterResult[0] || null;
+          }
+        }
+
+        return {
+          ...request,
+          client,
+          transporter,
+          acceptedOffer,
+        };
+      })
+    );
+
+    return enrichedRequests;
+  }
+
+  async getCoordinatorPaymentRequests(): Promise<any[]> {
+    // Get requests with payment pending statuses
+    const requests = await db.select({
+      id: transportRequests.id,
+      referenceId: transportRequests.referenceId,
+      fromCity: transportRequests.fromCity,
+      toCity: transportRequests.toCity,
+      description: transportRequests.description,
+      goodsType: transportRequests.goodsType,
+      dateTime: transportRequests.dateTime,
+      budget: transportRequests.budget,
+      photos: transportRequests.photos,
+      status: transportRequests.status,
+      paymentStatus: transportRequests.paymentStatus,
+      acceptedOfferId: transportRequests.acceptedOfferId,
+      createdAt: transportRequests.createdAt,
+    })
+    .from(transportRequests)
+    .where(
+      and(
+        eq(transportRequests.status, 'accepted'),
+        or(
+          eq(transportRequests.paymentStatus, 'pending'),
+          eq(transportRequests.paymentStatus, 'awaiting_payment'),
+          eq(transportRequests.paymentStatus, 'pending_admin_validation')
+        )
+      )
+    )
+    .orderBy(desc(transportRequests.createdAt));
+
+    // Enrich with client, transporter, and accepted offer
+    const enrichedRequests = await Promise.all(
+      requests.map(async (request) => {
+        // Get client data
+        const clientResult = await db.select().from(users)
+          .innerJoin(transportRequests, eq(transportRequests.clientId, users.id))
+          .where(eq(transportRequests.id, request.id))
+          .limit(1);
+        const client = clientResult[0]?.users || null;
+
+        // Get accepted offer and transporter
+        let acceptedOffer = null;
+        let transporter = null;
+        if (request.acceptedOfferId) {
+          const offerResult = await db.select().from(offers)
+            .where(eq(offers.id, request.acceptedOfferId))
+            .limit(1);
+          acceptedOffer = offerResult[0] || null;
+
+          if (acceptedOffer) {
+            const transporterResult = await db.select().from(users)
+              .where(eq(users.id, acceptedOffer.transporterId))
+              .limit(1);
+            transporter = transporterResult[0] || null;
+          }
+        }
+
+        return {
+          ...request,
+          client,
+          transporter,
+          acceptedOffer,
+        };
+      })
+    );
+
+    return enrichedRequests;
+  }
+
+  async updateRequestVisibility(requestId: string, isHidden: boolean): Promise<TransportRequest | undefined> {
+    const result = await db.update(transportRequests)
+      .set({ isHidden })
+      .where(eq(transportRequests.id, requestId))
+      .returning();
+    return result[0];
+  }
+
+  async updateRequestPaymentStatus(requestId: string, paymentStatus: string): Promise<TransportRequest | undefined> {
+    const result = await db.update(transportRequests)
+      .set({ paymentStatus })
+      .where(eq(transportRequests.id, requestId))
+      .returning();
+    return result[0];
   }
 }
 

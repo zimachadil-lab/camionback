@@ -3204,6 +3204,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ================================
+  // COORDINATOR ROUTES
+  // ================================
+
+  // Get available requests (open status) for coordinator
+  app.get("/api/coordinator/available-requests", async (req, res) => {
+    try {
+      const requests = await storage.getCoordinatorAvailableRequests();
+      res.json(requests);
+    } catch (error) {
+      console.error("Erreur récupération commandes disponibles:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération des commandes" });
+    }
+  });
+
+  // Get active requests (accepted status) for coordinator
+  app.get("/api/coordinator/active-requests", async (req, res) => {
+    try {
+      const requests = await storage.getCoordinatorActiveRequests();
+      res.json(requests);
+    } catch (error) {
+      console.error("Erreur récupération commandes actives:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération des commandes" });
+    }
+  });
+
+  // Get payment pending requests for coordinator
+  app.get("/api/coordinator/payment-requests", async (req, res) => {
+    try {
+      const requests = await storage.getCoordinatorPaymentRequests();
+      res.json(requests);
+    } catch (error) {
+      console.error("Erreur récupération commandes paiement:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération des commandes" });
+    }
+  });
+
+  // Toggle request visibility (hide/show from transporters)
+  app.patch("/api/coordinator/requests/:id/toggle-visibility", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { isHidden } = req.body;
+
+      const updated = await storage.updateRequestVisibility(id, isHidden);
+      res.json(updated);
+    } catch (error) {
+      console.error("Erreur modification visibilité:", error);
+      res.status(500).json({ error: "Erreur lors de la modification de la visibilité" });
+    }
+  });
+
+  // Update payment status
+  app.patch("/api/coordinator/requests/:id/payment-status", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { paymentStatus } = req.body;
+
+      const updated = await storage.updateRequestPaymentStatus(id, paymentStatus);
+      res.json(updated);
+    } catch (error) {
+      console.error("Erreur modification statut paiement:", error);
+      res.status(500).json({ error: "Erreur lors de la modification du statut" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // WebSocket server for real-time chat (using separate path to avoid Vite HMR conflict)

@@ -13,6 +13,7 @@ import CompleteProfile from "@/pages/complete-profile";
 import AdminDashboard from "@/pages/admin-dashboard";
 import ClientDashboard from "@/pages/client-dashboard";
 import TransporterDashboard from "@/pages/transporter-dashboard";
+import CoordinatorDashboard from "@/pages/coordinator-dashboard";
 import TransporterPayments from "@/pages/transporter-payments";
 import TransporterRatings from "@/pages/transporter-ratings";
 import TransporterProfile from "@/pages/transporter-profile";
@@ -33,6 +34,7 @@ function Router() {
       <Route path="/admin-dashboard" component={AdminDashboard} />
       <Route path="/client-dashboard" component={ClientDashboard} />
       <Route path="/transporter-dashboard" component={TransporterDashboard} />
+      <Route path="/coordinator-dashboard" component={CoordinatorDashboard} />
       <Route path="/notifications" component={NotificationsPage} />
       <Route path="/messages" component={MessagesPage} />
       <Route path="/transporter/payments" component={TransporterPayments} />
