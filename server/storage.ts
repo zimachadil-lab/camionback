@@ -2108,6 +2108,7 @@ export class DbStorage implements IStorage {
     const requests = await db.select({
       id: transportRequests.id,
       referenceId: transportRequests.referenceId,
+      clientId: transportRequests.clientId,
       fromCity: transportRequests.fromCity,
       toCity: transportRequests.toCity,
       description: transportRequests.description,
@@ -2129,7 +2130,7 @@ export class DbStorage implements IStorage {
       requests.map(async (request) => {
         // Get client data
         const clientData = await db.select().from(users)
-          .where(eq(users.id, request.id))
+          .where(eq(users.id, request.clientId))
           .limit(1);
         
         // Get offers for this request
