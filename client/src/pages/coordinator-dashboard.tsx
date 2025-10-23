@@ -26,11 +26,6 @@ function CoordinatorOffersView({ requestId, onAcceptOffer, isPending }: {
 }) {
   const { data: offers = [], isLoading } = useQuery({
     queryKey: ["/api/coordinator/requests", requestId, "offers"],
-    queryFn: async () => {
-      const response = await fetch(`/api/coordinator/requests/${requestId}/offers`);
-      if (!response.ok) throw new Error("Erreur lors de la récupération des offres");
-      return response.json();
-    },
     enabled: !!requestId,
   });
 
@@ -105,7 +100,9 @@ function CoordinatorOffersView({ requestId, onAcceptOffer, isPending }: {
                     const message = encodeURIComponent(
                       `Bonjour 👋,\nJe suis coordinateur CamionBack.\nJe souhaite discuter de votre offre pour cette commande.`
                     );
-                    window.open(`https://wa.me/${offer.transporter?.phoneNumber.replace(/\+/g, "")}?text=${message}`, "_blank");
+                    // Normalize phone number: remove spaces, dashes, and + sign
+                    const normalizedPhone = offer.transporter?.phoneNumber.replace(/[\s\-\+]/g, "");
+                    window.open(`https://wa.me/${normalizedPhone}?text=${message}`, "_blank");
                   }}
                   data-testid={`button-whatsapp-transporter-${offer.id}`}
                 >
