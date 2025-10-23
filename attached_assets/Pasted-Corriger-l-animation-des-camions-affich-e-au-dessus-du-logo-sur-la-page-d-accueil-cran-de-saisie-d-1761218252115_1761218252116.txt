@@ -1,0 +1,125 @@
+Corriger l’animation des camions affichée au-dessus du logo sur la page d’accueil (écran de saisie du numéro de téléphone) :
+
+Inverser le sens des déplacements pour qu’ils donnent une impression naturelle d’“aller-retour” vers l’avant.
+
+Éviter que les camions ne touchent le texte ou soient coupés en haut.
+
+Ajuster leur position verticale et leur zone d’animation pour un rendu propre et fluide sur mobile.
+
+🧭 Problèmes observés actuellement
+
+1️⃣ Les camions se déplacent dans un sens inversé : visuellement, on dirait qu’ils reculent.
+2️⃣ Le premier camion chevauche ou touche le texte “Pas de retour à vide 🚛💨”.
+3️⃣ Le haut du premier camion est masqué (sort du cadre visible).
+
+✅ Correctifs à appliquer
+🔄 1. Inverser les directions
+
+Camion du haut : doit partir de gauche vers la droite (→).
+
+Camion du bas : doit partir de droite vers la gauche (←).
+
+Exemple CSS corrigé :
+
+@keyframes truckTop {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes truckBottom {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+.truck-top {
+  animation: truckTop 6s linear infinite;
+}
+
+.truck-bottom {
+  animation: truckBottom 6s linear infinite;
+  margin-top: 8px;
+}
+
+📐 2. Ajuster la position verticale
+
+Remonter légèrement l’ensemble de la zone animation d’environ +15px à +20px pour qu’elle soit plus proche du bord supérieur de l’écran.
+
+Le texte “Pas de retour à vide 🚛💨” doit rester centré juste en dessous des deux camions, avec 8–10px d’espace entre les deux.
+
+Vérifier qu’aucune partie du camion n’est coupée en haut.
+
+Exemple CSS :
+
+.truck-container {
+  position: relative;
+  margin-top: -10px; /* permet de remonter le bloc */
+  overflow: visible; /* éviter la coupe du camion */
+}
+.truck-top, .truck-bottom {
+  display: block;
+  width: 42px;
+  height: auto;
+}
+
+✨ 3. Gérer le texte et la hiérarchie visuelle
+
+Le texte “Pas de retour à vide 🚛💨” doit toujours être centré horizontalement, en dessous des camions.
+
+Ajouter un espacement vertical fixe (margin-top: 10px;) pour éviter tout chevauchement.
+
+Exemple :
+
+.truck-text {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #CDE8E8;
+  opacity: 0.85;
+  text-align: center;
+}
+
+🧱 4. Ajustements responsive
+
+Tester le rendu sur plusieurs hauteurs d’écran mobile :
+
+Petit écran (Galaxy A10, iPhone SE) : aucun chevauchement.
+
+Grand écran (iPhone 13, S23) : espacement équilibré.
+
+Si besoin, ajouter une règle responsive :
+
+@media (max-height: 680px) {
+  .truck-container { transform: scale(0.9); margin-top: -4px; }
+}
+
+🧠 5. Vérifications finales
+
+Le premier camion n’est plus masqué.
+
+Les deux camions roulent dans le bon sens.
+
+Le texte reste lisible, bien centré et espacé.
+
+L’ensemble est visible sans scroll ni coupure sur écran mobile standard (6–6.5 pouces).
+
+💬 Résumé visuel attendu :
+🚚 ————————————→
+←———————————— 🚛
+    Pas de retour à vide 🚛💨
+
+[Logo CamionBack]
+[Champ de téléphone]
+[Bouton Continuer]
+
+
+💡 Option bonus :
+Ajouter un léger effet de rebond ou d’ombre sous chaque camion (box-shadow) pour donner une impression de mouvement réel sans alourdir la page.
+
+✅ Résultat final attendu :
+
+Les camions se déplacent naturellement (pas de marche arrière).
+
+Aucun élément masqué ou chevauchant.
+
+Animation fluide, centrée et équilibrée visuellement.
+
+L’identité CamionBack est immédiatement perceptible dès le premier écran.

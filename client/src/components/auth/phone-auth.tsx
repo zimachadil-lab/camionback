@@ -145,42 +145,54 @@ export function PhoneAuth({ onAuthSuccess }: { onAuthSuccess: (user: any) => voi
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-3 pb-4">
           {/* Animation des camions aller-retour */}
-          <div className="relative h-16 md:h-20 overflow-hidden mb-2">
+          <div className="relative mb-4" style={{ height: '90px' }}>
             <style dangerouslySetInnerHTML={{ __html: `
-              @keyframes truckLeft {
-                0% { transform: translateX(120%); }
-                100% { transform: translateX(-120%); }
+              @keyframes truckTop {
+                0% { transform: translateX(-120%); }
+                100% { transform: translateX(120%); }
               }
-              @keyframes truckRight {
-                0% { transform: translateX(-120%) scaleX(-1); }
-                100% { transform: translateX(120%) scaleX(-1); }
+              @keyframes truckBottom {
+                0% { transform: translateX(120%) scaleX(-1); }
+                100% { transform: translateX(-120%) scaleX(-1); }
               }
-              .truck-left {
-                animation: truckLeft 8s linear infinite;
+              .truck-top {
+                animation: truckTop 6s linear infinite;
+                display: block;
               }
-              .truck-right {
-                animation: truckRight 8s linear infinite;
-                animation-delay: 1s;
+              .truck-bottom {
+                animation: truckBottom 6s linear infinite;
+                animation-delay: 0.5s;
+                display: block;
               }
-              .truck-container.paused .truck-left,
-              .truck-container.paused .truck-right {
+              .truck-container.paused .truck-top,
+              .truck-container.paused .truck-bottom {
                 animation-play-state: paused;
               }
+              @media (max-height: 680px) {
+                .truck-container-wrapper {
+                  transform: scale(0.9);
+                  margin-top: -8px;
+                }
+              }
             `}} />
-            <div className={`truck-container flex flex-col items-center justify-center h-full ${isPaused ? 'paused' : ''}`}>
-              {/* Camion 1 - Bleu (droite vers gauche) */}
-              <div className="truck-left mb-2">
-                <Truck className="w-9 h-9 md:w-11 md:h-11 text-[#1CA6A6]" style={{ filter: 'drop-shadow(0 2px 4px rgba(28, 166, 166, 0.3))' }} />
+            <div className="truck-container-wrapper">
+              <div className={`truck-container ${isPaused ? 'paused' : ''}`} style={{ position: 'relative', height: '60px', overflow: 'visible', paddingTop: '8px' }}>
+                {/* Camion du haut - Turquoise (gauche vers droite →) */}
+                <div className="truck-top" style={{ position: 'absolute', top: '8px', left: 0, right: 0 }}>
+                  <Truck className="w-10 h-10 md:w-11 md:h-11 text-[#1CA6A6]" style={{ filter: 'drop-shadow(0 2px 4px rgba(28, 166, 166, 0.4))' }} />
+                </div>
+                {/* Camion du bas - Vert (droite vers gauche ←) */}
+                <div className="truck-bottom" style={{ position: 'absolute', top: '38px', left: 0, right: 0 }}>
+                  <Truck className="w-10 h-10 md:w-11 md:h-11 text-[#2BB673]" style={{ filter: 'drop-shadow(0 2px 4px rgba(43, 182, 115, 0.4))' }} />
+                </div>
               </div>
-              {/* Camion 2 - Vert (gauche vers droite) */}
-              <div className="truck-right">
-                <Truck className="w-9 h-9 md:w-11 md:h-11 text-[#2BB673]" style={{ filter: 'drop-shadow(0 2px 4px rgba(43, 182, 115, 0.3))' }} />
+              {/* Texte bonus - bien espacé sous les camions */}
+              <div style={{ marginTop: '10px', textAlign: 'center' }}>
+                <p className="text-[11px] md:text-xs text-[#CDE8E8]/85 font-medium">
+                  Pas de retour à vide 🚛💨
+                </p>
               </div>
             </div>
-            {/* Texte bonus */}
-            <p className="absolute bottom-0 left-0 right-0 text-center text-[10px] md:text-xs text-[#CDE8E8]/80 font-medium">
-              Pas de retour à vide 🚛💨
-            </p>
           </div>
 
           <div className="mx-auto w-full max-w-[200px]">
