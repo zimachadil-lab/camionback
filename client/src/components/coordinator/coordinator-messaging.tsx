@@ -68,8 +68,8 @@ export function CoordinatorMessaging({ userId }: CoordinatorMessagingProps) {
   const { toast } = useToast();
 
   const { data: conversations, isLoading } = useQuery<ConversationGroup[]>({
-    queryKey: [`/api/coordinator/conversations`],
-    enabled: isOpen,
+    queryKey: [`/api/coordinator/conversations?userId=${userId}`],
+    enabled: isOpen && !!userId,
     refetchInterval: 15000,
   });
 
