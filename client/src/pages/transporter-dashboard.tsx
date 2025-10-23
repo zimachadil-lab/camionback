@@ -13,6 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ChatWindow } from "@/components/chat/chat-window";
 import { PhotoGalleryDialog } from "@/components/transporter/photo-gallery-dialog";
 import { StoriesBar } from "@/components/ui/stories-bar";
+import { LoadingTruck } from "@/components/ui/loading-truck";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -401,10 +402,7 @@ export default function TransporterDashboard() {
   if (requestsLoading || offersLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Chargement...</p>
-        </div>
+        <LoadingTruck message="Chargement de votre tableau de bord..." size="lg" />
       </div>
     );
   }
