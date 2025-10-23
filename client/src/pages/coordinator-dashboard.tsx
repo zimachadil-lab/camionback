@@ -369,12 +369,12 @@ export default function CoordinatorDashboard() {
     setOffersDialogOpen(true);
   };
 
-  const filterRequests = (requests: any[]) => {
+  const filterRequests = (requests: any[], applyStatusFilter = true) => {
     return requests.filter((request) => {
       const matchesCity = selectedCity === "Toutes les villes" || 
         request.fromCity === selectedCity || 
         request.toCity === selectedCity;
-      const matchesStatus = selectedStatus === "Tous les statuts" || 
+      const matchesStatus = !applyStatusFilter || selectedStatus === "Tous les statuts" || 
         request.status === selectedStatus;
       const matchesSearch = searchQuery === "" ||
         request.referenceId.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -616,14 +616,23 @@ export default function CoordinatorDashboard() {
 
         <Tabs defaultValue="available" className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="available" data-testid="tab-available">
-              📦 Disponibles ({availableRequests.length})
+            <TabsTrigger value="available" data-testid="tab-available" className="gap-2">
+              Disponibles
+              <Badge className="bg-blue-500 hover:bg-blue-600 text-white ml-1">
+                {filterRequests(availableRequests).length}
+              </Badge>
             </TabsTrigger>
-            <TabsTrigger value="active" data-testid="tab-active">
-              🔧 À traiter ({activeRequests.length})
+            <TabsTrigger value="active" data-testid="tab-active" className="gap-2">
+              À traiter
+              <Badge className="bg-orange-500 hover:bg-orange-600 text-white ml-1">
+                {filterRequests(activeRequests, false).length}
+              </Badge>
             </TabsTrigger>
-            <TabsTrigger value="payment" data-testid="tab-payment">
-              💰 À payer ({paymentRequests.length})
+            <TabsTrigger value="payment" data-testid="tab-payment" className="gap-2">
+              À payer
+              <Badge className="bg-green-500 hover:bg-green-600 text-white ml-1">
+                {filterRequests(paymentRequests, false).length}
+              </Badge>
             </TabsTrigger>
           </TabsList>
 
@@ -649,7 +658,7 @@ export default function CoordinatorDashboard() {
               <div className="flex justify-center py-12">
                 <LoadingTruck />
               </div>
-            ) : filterRequests(activeRequests).length === 0 ? (
+            ) : filterRequests(activeRequests, false).length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center text-muted-foreground">
                   <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
@@ -657,7 +666,7 @@ export default function CoordinatorDashboard() {
                 </CardContent>
               </Card>
             ) : (
-              filterRequests(activeRequests).map((request) => renderRequestCard(request, false, false))
+              filterRequests(activeRequests, false).map((request) => renderRequestCard(request, false, false))
             )}
           </TabsContent>
 
@@ -666,7 +675,7 @@ export default function CoordinatorDashboard() {
               <div className="flex justify-center py-12">
                 <LoadingTruck />
               </div>
-            ) : filterRequests(paymentRequests).length === 0 ? (
+            ) : filterRequests(paymentRequests, false).length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center text-muted-foreground">
                   <DollarSign className="h-12 w-12 mx-auto mb-3 opacity-50" />
@@ -674,7 +683,7 @@ export default function CoordinatorDashboard() {
                 </CardContent>
               </Card>
             ) : (
-              filterRequests(paymentRequests).map((request) => (
+              filterRequests(paymentRequests, false).map((request) => (
                 <Card key={request.id} className="hover-elevate" data-testid={`card-payment-${request.id}`}>
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between gap-2">
