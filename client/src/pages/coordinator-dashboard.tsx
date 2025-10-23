@@ -30,6 +30,8 @@ export default function CoordinatorDashboard() {
   const [selectedReferenceId, setSelectedReferenceId] = useState("");
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  const [offersDialogOpen, setOffersDialogOpen] = useState(false);
+  const [selectedRequestForOffers, setSelectedRequestForOffers] = useState<any>(null);
   const { toast} = useToast();
 
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
@@ -187,6 +189,18 @@ export default function CoordinatorDashboard() {
     window.open(`https://wa.me/${phoneNumber.replace(/\+/g, "")}?text=${message}`, "_blank");
   };
 
+  const handleWhatsAppContactClient = (phoneNumber: string, referenceId: string) => {
+    const message = encodeURIComponent(
+      `Bonjour 👋,\nJe suis coordinateur CamionBack.\nJe souhaite vous aider à trouver un transporteur pour votre commande référence ${referenceId}.\nComment puis-je vous assister ?`
+    );
+    window.open(`https://wa.me/${phoneNumber.replace(/\+/g, "")}?text=${message}`, "_blank");
+  };
+
+  const handleViewOffers = (request: any) => {
+    setSelectedRequestForOffers(request);
+    setOffersDialogOpen(true);
+  };
+
   const filterRequests = (requests: any[]) => {
     return requests.filter((request) => {
       const matchesCity = selectedCity === "Toutes les villes" || 
@@ -310,9 +324,33 @@ export default function CoordinatorDashboard() {
               size="sm"
               variant="outline"
               onClick={() => handleWhatsAppContact(request.transporter.phoneNumber, request.referenceId)}
-              data-testid={`button-whatsapp-${request.id}`}
+              data-testid={`button-whatsapp-transporter-${request.id}`}
             >
-              🟢 WhatsApp
+              🟢 WhatsApp Transporteur
+            </Button>
+          )}
+
+          {request.client && showVisibilityToggle && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleWhatsAppContactClient(request.client.phoneNumber, request.referenceId)}
+              data-testid={`button-whatsapp-client-${request.id}`}
+            >
+              🟢 WhatsApp Client
+            </Button>
+          )}
+
+          {showVisibilityToggle && request.offers && request.offers.length > 0 && (
+            <Button
+              size="sm"
+              variant="default"
+              className="bg-[#5BC0EB] hover:bg-[#4AA8D8]"
+              onClick={() => handleViewOffers(request)}
+              data-testid={`button-view-offers-${request.id}`}
+            >
+              <CheckCircle className="h-4 w-4 mr-1" />
+              Offres ({request.offers.length})
             </Button>
           )}
 

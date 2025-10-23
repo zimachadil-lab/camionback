@@ -3269,6 +3269,139 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get offers for a specific request (with transporter details)
+  app.get("/api/coordinator/requests/:requestId/offers", async (req, res) => {
+    try {
+      const { requestId } = req.params;
+      
+      // Get all offers for this request
+      const offers = await storage.getOffersByRequest(requestId);
+      
+      // Get commission rate
+      const settings = await storage.getAdminSettings();
+      const commissionRate = parseFloat(settings?.commissionPercentage || "10");
+      
+      // Enrich offers with transporter details and calculated amounts
+      const enrichedOffers = await Promise.all(
+        offers.map(async (offer) => {
+          const transporter = await storage.getUser(offer.transporterId);
+          const offerAmount = parseFloat(offer.amount);
+          const commissionAmount = (offerAmount * commissionRate) / 100;
+          const totalWithCommission = offerAmount + commissionAmount;
+          
+          return {
+            ...offer,
+            transporter: transporter ? {
+              id: transporter.id,
+              name: transporter.name,
+              phoneNumber: transporter.phoneNumber,
+              city: transporter.city,
+              rating: transporter.rating,
+            } : null,
+            clientAmount: totalWithCommission.toFixed(2),
+            commissionAmount: commissionAmount.toFixed(2),
+          };
+        })
+      );
+      
+      res.json(enrichedOffers);
+    } catch (error) {
+      console.error("Erreur récupération offres:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération des offres" });
+    }
+  });
+
+  // Accept an offer on behalf of the client
+  app.post("/api/coordinator/offers/:offerId/accept", async (req, res) => {
+    try {
+      const { offerId } = req.params;
+      const offer = await storage.getOffer(offerId);
+      
+      if (!offer) {
+        return res.status(404).json({ error: "Offre introuvable" });
+      }
+
+      // Get transporter and request info
+      const transporter = await storage.getUser(offer.transporterId);
+      const request = await storage.getTransportRequest(offer.requestId);
+      const client = request ? await storage.getUser(request.clientId) : null;
+
+      // Get commission percentage
+      const settings = await storage.getAdminSettings();
+      const commissionRate = parseFloat(settings?.commissionPercentage || "10");
+      
+      // Calculate total with commission
+      const offerAmount = parseFloat(offer.amount);
+      const commissionAmount = (offerAmount * commissionRate) / 100;
+      const totalWithCommission = offerAmount + commissionAmount;
+
+      // Update offer status
+      await storage.updateOffer(offerId, { 
+        status: "accepted"
+      });
+
+      // Update request with accepted offer
+      await storage.updateTransportRequest(offer.requestId, {
+        status: "accepted",
+        acceptedOfferId: offerId,
+      });
+
+      // Clean up: Delete all other offers for this request
+      const allOffersForRequest = await storage.getOffersByRequest(offer.requestId);
+      for (const otherOffer of allOffersForRequest) {
+        if (otherOffer.id !== offerId) {
+          await storage.deleteOffer(otherOffer.id);
+        }
+      }
+
+      // Create notification for transporter
+      await storage.createNotification({
+        userId: offer.transporterId,
+        type: "offer_accepted",
+        title: "Offre acceptée !",
+        message: `Le coordinateur a accepté votre offre de ${offer.amount} MAD pour la demande ${request?.referenceId}. Commission: ${commissionAmount.toFixed(2)} MAD. Total: ${totalWithCommission.toFixed(2)} MAD`,
+        relatedId: offer.id
+      });
+      
+      // Send push notification to transporter
+      try {
+        if (transporter && transporter.deviceToken && request) {
+          const { sendNotificationToUser, NotificationTemplates } = await import('./push-notifications');
+          const notification = NotificationTemplates.offerAccepted(request.referenceId);
+          notification.url = `/transporter-dashboard`;
+          
+          await sendNotificationToUser(transporter.id, notification, storage);
+          console.log(`📨 Notification push envoyée au transporteur pour offre acceptée par coordinateur`);
+        }
+      } catch (pushError) {
+        console.error('❌ Erreur lors de l\'envoi de la notification push:', pushError);
+      }
+
+      // Send SMS notification
+      try {
+        if (transporter && transporter.phoneNumber && request) {
+          await sendOfferAcceptedSMS(
+            transporter.phoneNumber,
+            transporter.name || "Transporteur",
+            request.referenceId
+          );
+        }
+      } catch (smsError) {
+        console.error('❌ Erreur lors de l\'envoi du SMS:', smsError);
+      }
+
+      res.json({ 
+        success: true, 
+        offer,
+        transporter,
+        totalWithCommission: totalWithCommission.toFixed(2) 
+      });
+    } catch (error) {
+      console.error("Erreur acceptation offre:", error);
+      res.status(500).json({ error: "Erreur lors de l'acceptation de l'offre" });
+    }
+  });
+
   // ===== Admin - Coordinator Management Routes =====
   
   // Get all coordinators (Admin only)
