@@ -165,6 +165,7 @@ function CoordinatorOffersView({ requestId, onAcceptOffer, isPending }: {
 export default function CoordinatorDashboard() {
   const [, setLocation] = useLocation();
   const [selectedCity, setSelectedCity] = useState("Toutes les villes");
+  const [selectedStatus, setSelectedStatus] = useState("Tous les statuts");
   const [searchQuery, setSearchQuery] = useState("");
   const [chatOpen, setChatOpen] = useState(false);
   const [selectedParticipants, setSelectedParticipants] = useState<{ client: any; transporter: any } | null>(null);
@@ -373,11 +374,13 @@ export default function CoordinatorDashboard() {
       const matchesCity = selectedCity === "Toutes les villes" || 
         request.fromCity === selectedCity || 
         request.toCity === selectedCity;
+      const matchesStatus = selectedStatus === "Tous les statuts" || 
+        request.status === selectedStatus;
       const matchesSearch = searchQuery === "" ||
         request.referenceId.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (request.client?.name && request.client.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (request.transporter?.name && request.transporter.name.toLowerCase().includes(searchQuery.toLowerCase()));
-      return matchesCity && matchesSearch;
+      return matchesCity && matchesStatus && matchesSearch;
     });
   };
 
@@ -410,6 +413,9 @@ export default function CoordinatorDashboard() {
             <CardDescription className="text-sm mt-1">
               {request.fromCity} → {request.toCity}
             </CardDescription>
+            <p className="text-xs text-muted-foreground mt-1">
+              Créée le {format(new Date(request.createdAt), "dd MMM yyyy 'à' HH:mm", { locale: fr })}
+            </p>
           </div>
         </div>
       </CardHeader>
@@ -591,6 +597,19 @@ export default function CoordinatorDashboard() {
                   {city.name}
                 </SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+          <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+            <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-status">
+              <ListFilter className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Filtrer par statut" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Tous les statuts">Tous les statuts</SelectItem>
+              <SelectItem value="open">Ouvert</SelectItem>
+              <SelectItem value="accepted">Accepté</SelectItem>
+              <SelectItem value="completed">Terminé</SelectItem>
+              <SelectItem value="cancelled">Annulé</SelectItem>
             </SelectContent>
           </Select>
         </div>
