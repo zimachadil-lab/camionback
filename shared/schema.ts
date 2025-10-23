@@ -263,6 +263,17 @@ export const coordinatorLogs = pgTable("coordinator_logs", {
 
 export const insertCoordinatorLogSchema = createInsertSchema(coordinatorLogs).omit({ id: true, createdAt: true });
 
+// Coordinator-specific schemas for admin management
+export const createCoordinatorSchema = z.object({
+  phoneNumber: z.string().min(10, "Le numéro de téléphone doit contenir au moins 10 caractères"),
+  name: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
+  pin: z.string().length(6, "Le PIN doit contenir exactement 6 chiffres").regex(/^\d{6}$/, "Le PIN doit contenir uniquement des chiffres"),
+});
+
+export const resetCoordinatorPinSchema = z.object({
+  newPin: z.string().length(6, "Le PIN doit contenir exactement 6 chiffres").regex(/^\d{6}$/, "Le PIN doit contenir uniquement des chiffres"),
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -296,3 +307,5 @@ export type InsertStory = z.infer<typeof insertStorySchema>;
 export type Story = typeof stories.$inferSelect;
 export type InsertCoordinatorLog = z.infer<typeof insertCoordinatorLogSchema>;
 export type CoordinatorLog = typeof coordinatorLogs.$inferSelect;
+export type CreateCoordinator = z.infer<typeof createCoordinatorSchema>;
+export type ResetCoordinatorPin = z.infer<typeof resetCoordinatorPinSchema>;
