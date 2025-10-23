@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Truck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import camionbackLogo from "@assets/logo camion (14)_1760911574566.png";
 
@@ -16,6 +16,7 @@ export function PhoneAuth({ onAuthSuccess }: { onAuthSuccess: (user: any) => voi
   const [confirmPin, setConfirmPin] = useState("");
   const [showPin, setShowPin] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const { toast } = useToast();
 
   // Format phone number as user types (6 12 34 56 78)
@@ -140,9 +141,48 @@ export function PhoneAuth({ onAuthSuccess }: { onAuthSuccess: (user: any) => voi
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-[#0A2540] to-[#163049]">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-3 pb-4">
+          {/* Animation des camions aller-retour */}
+          <div className="relative h-16 md:h-20 overflow-hidden mb-2">
+            <style dangerouslySetInnerHTML={{ __html: `
+              @keyframes truckLeft {
+                0% { transform: translateX(120%); }
+                100% { transform: translateX(-120%); }
+              }
+              @keyframes truckRight {
+                0% { transform: translateX(-120%) scaleX(-1); }
+                100% { transform: translateX(120%) scaleX(-1); }
+              }
+              .truck-left {
+                animation: truckLeft 8s linear infinite;
+              }
+              .truck-right {
+                animation: truckRight 8s linear infinite;
+                animation-delay: 1s;
+              }
+              .truck-container.paused .truck-left,
+              .truck-container.paused .truck-right {
+                animation-play-state: paused;
+              }
+            `}} />
+            <div className={`truck-container flex flex-col items-center justify-center h-full ${isPaused ? 'paused' : ''}`}>
+              {/* Camion 1 - Bleu (droite vers gauche) */}
+              <div className="truck-left mb-2">
+                <Truck className="w-9 h-9 md:w-11 md:h-11 text-[#1CA6A6]" style={{ filter: 'drop-shadow(0 2px 4px rgba(28, 166, 166, 0.3))' }} />
+              </div>
+              {/* Camion 2 - Vert (gauche vers droite) */}
+              <div className="truck-right">
+                <Truck className="w-9 h-9 md:w-11 md:h-11 text-[#2BB673]" style={{ filter: 'drop-shadow(0 2px 4px rgba(43, 182, 115, 0.3))' }} />
+              </div>
+            </div>
+            {/* Texte bonus */}
+            <p className="absolute bottom-0 left-0 right-0 text-center text-[10px] md:text-xs text-[#CDE8E8]/80 font-medium">
+              Pas de retour à vide 🚛💨
+            </p>
+          </div>
+
           <div className="mx-auto w-full max-w-[200px]">
             <img 
               src={camionbackLogo} 
@@ -174,6 +214,8 @@ export function PhoneAuth({ onAuthSuccess }: { onAuthSuccess: (user: any) => voi
                     placeholder="6 12 34 56 78"
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
+                    onFocus={() => setIsPaused(true)}
+                    onBlur={() => setIsPaused(false)}
                     className="pl-16"
                     data-testid="input-phone"
                   />
@@ -205,6 +247,8 @@ export function PhoneAuth({ onAuthSuccess }: { onAuthSuccess: (user: any) => voi
                     placeholder="••••••"
                     value={pin}
                     onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    onFocus={() => setIsPaused(true)}
+                    onBlur={() => setIsPaused(false)}
                     className="text-center text-2xl tracking-widest pr-12"
                     maxLength={6}
                     data-testid="input-pin"
@@ -228,6 +272,8 @@ export function PhoneAuth({ onAuthSuccess }: { onAuthSuccess: (user: any) => voi
                     placeholder="••••••"
                     value={confirmPin}
                     onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    onFocus={() => setIsPaused(true)}
+                    onBlur={() => setIsPaused(false)}
                     className="text-center text-2xl tracking-widest"
                     maxLength={6}
                     data-testid="input-confirm-pin"

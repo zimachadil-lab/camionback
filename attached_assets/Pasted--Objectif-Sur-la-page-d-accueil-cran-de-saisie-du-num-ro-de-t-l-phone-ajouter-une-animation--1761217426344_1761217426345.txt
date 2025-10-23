@@ -1,0 +1,120 @@
+🎯 Objectif :
+Sur la page d’accueil (écran de saisie du numéro de téléphone), ajouter une animation subtile et fluide de deux camions dans la zone supérieure (juste au-dessus du logo CamionBack) afin d’occuper l’espace vide et d’illustrer le concept de trajets aller-retour.
+
+📍 Localisation exacte
+
+Zone concernée : la bande vide située au-dessus du logo CamionBack, entre la barre d’adresse du navigateur et le haut du bloc central (voir capture d’écran annotée).
+
+L’animation doit être centrée horizontalement dans cette zone.
+
+Hauteur du conteneur d’animation : environ 60–80px sur mobile.
+
+🚚 Contenu à afficher
+
+Deux camions animés représentant l’aller-retour :
+
+Camion 1 (bleu clair) : se déplace de droite vers gauche (→ ←).
+
+Camion 2 (vert) : placé juste en dessous, se déplace de gauche vers droite (← →).
+
+Les deux doivent boucler de manière continue, avec des mouvements fluides et décalés dans le temps.
+
+Schéma simplifié :
+
+🚛 ————————————→
+←———————————— 🚚
+
+
+Cela symbolise le principe de CamionBack : un camion qui part chargé, et un autre qui revient rempli.
+
+⚙️ Implémentation technique
+
+Ajouter un composant React/HTML (ex: <div class="truck-animation">) juste au-dessus du logo.
+
+Chaque camion peut être :
+
+Une icône SVG (Lucide, HeroIcons, Phosphor, etc.)
+
+Ou une image PNG légère / Lottie JSON (si animation fluide souhaitée)
+
+Exemple CSS d’animation :
+
+@keyframes truckLeft {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+@keyframes truckRight {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.truck-left {
+  animation: truckLeft 7s linear infinite;
+}
+.truck-right {
+  animation: truckRight 7s linear infinite;
+  margin-top: 6px;
+}
+
+
+Chaque camion dans un <div> distinct, contenu dans un <div class="truck-container"> centré :
+
+<div class="truck-container">
+  <img src="/icons/truck-blue.svg" class="truck-left" alt="Camion aller" />
+  <img src="/icons/truck-green.svg" class="truck-right" alt="Camion retour" />
+</div>
+
+🎨 Style visuel
+
+Camion 1 : couleur #1CA6A6
+
+Camion 2 : couleur #2BB673
+
+Taille : width: 42px; height: auto;
+
+Espace vertical entre les deux : 6–8px
+
+Fond inchangé : dégradé bleu actuel linear-gradient(180deg, #0A2540 0%, #163049 100%)
+
+Alignement : centré horizontalement, marge haute minimale (margin-top: 8px)
+
+💡 Améliorations UX (optionnelles mais conseillées)
+
+Ajouter une ombre très légère sous les camions pour un effet de mouvement (simuler une route).
+
+Démarrer les animations décalées de 1 seconde pour éviter la symétrie parfaite.
+
+Pauser les animations quand l’utilisateur saisit son numéro (onFocus sur le champ input) pour éviter toute distraction.
+
+Option bonus :
+Ajouter un petit texte discret juste en dessous de l’animation :
+
+“Pas de retour à vide 🚛💨”
+
+
+(en font-size: 12px; color: #CDE8E8; opacity: 0.8;)
+
+✅ Résultat attendu
+
+L’espace vide est remplacé par une animation vivante, fluide et cohérente avec le thème CamionBack.
+
+La page paraît plus équilibrée visuellement, sans alourdir le chargement.
+
+L’animation évoque immédiatement le concept clé : aller-retour des camions optimisés.
+
+🧪 Tests à effectuer
+
+Vérifier que l’animation fonctionne sur :
+
+Chrome Android ✅
+
+Safari iPhone ✅
+
+Edge desktop (responsive mode) ✅
+
+Vérifier qu’elle ne gêne pas la saisie du champ numéro ni ne décale le contenu.
+
+Vérifier qu’elle ne fait pas défiler la page inutilement.
+
+💬 En résumé :
+👉 Ajout de deux camions animés (aller-retour) dans la zone encadrée au-dessus du logo pour rendre la page d’accueil plus vivante, intuitive et fidèle à l’identité de CamionBack 🚛💨.
