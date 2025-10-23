@@ -616,21 +616,21 @@ export default function CoordinatorDashboard() {
 
         <Tabs defaultValue="available" className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="available" data-testid="tab-available" className="gap-2">
-              Disponibles
-              <Badge className="bg-blue-500 hover:bg-blue-600 text-white ml-1">
+            <TabsTrigger value="available" data-testid="tab-available" className="gap-1 px-2">
+              <span className="text-xs sm:text-sm">Dispo</span>
+              <Badge className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-1.5 py-0">
                 {filterRequests(availableRequests).length}
               </Badge>
             </TabsTrigger>
-            <TabsTrigger value="active" data-testid="tab-active" className="gap-2">
-              À traiter
-              <Badge className="bg-orange-500 hover:bg-orange-600 text-white ml-1">
+            <TabsTrigger value="active" data-testid="tab-active" className="gap-1 px-2">
+              <span className="text-xs sm:text-sm">À traiter</span>
+              <Badge className="bg-orange-500 hover:bg-orange-600 text-white text-xs px-1.5 py-0">
                 {filterRequests(activeRequests, false).length}
               </Badge>
             </TabsTrigger>
-            <TabsTrigger value="payment" data-testid="tab-payment" className="gap-2">
-              À payer
-              <Badge className="bg-green-500 hover:bg-green-600 text-white ml-1">
+            <TabsTrigger value="payment" data-testid="tab-payment" className="gap-1 px-2">
+              <span className="text-xs sm:text-sm">À payer</span>
+              <Badge className="bg-green-500 hover:bg-green-600 text-white text-xs px-1.5 py-0">
                 {filterRequests(paymentRequests, false).length}
               </Badge>
             </TabsTrigger>
