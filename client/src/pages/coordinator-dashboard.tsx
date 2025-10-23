@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck } from "lucide-react";
+import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, MessageCircle, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -388,6 +388,21 @@ export default function CoordinatorDashboard() {
           <div className="flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <CardTitle className="text-base">{request.referenceId}</CardTitle>
+              {request.client && (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-6 w-6 shrink-0"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleWhatsAppContactClient(request.client.phoneNumber, request.referenceId);
+                  }}
+                  data-testid={`button-whatsapp-client-${request.id}`}
+                  title="Contacter le client via WhatsApp"
+                >
+                  <MessageCircle className="h-4 w-4 text-green-500" />
+                </Button>
+              )}
               {getRequestStatusBadge(request.status)}
               {showPaymentControls && getPaymentStatusBadge(request.paymentStatus)}
               {request.isHidden && <Badge variant="secondary">Masqué</Badge>}
@@ -483,17 +498,6 @@ export default function CoordinatorDashboard() {
             >
               <MessageSquare className="h-4 w-4 mr-1" />
               Messagerie
-            </Button>
-          )}
-
-          {request.client && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => handleWhatsAppContactClient(request.client.phoneNumber, request.referenceId)}
-              data-testid={`button-whatsapp-client-${request.id}`}
-            >
-              🟢 WhatsApp Client
             </Button>
           )}
 
