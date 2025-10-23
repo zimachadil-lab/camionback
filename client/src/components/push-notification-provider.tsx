@@ -1,10 +1,11 @@
 // Provider pour gérer automatiquement les notifications push pour les utilisateurs connectés
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
 
 export function PushNotificationProvider({ children }: { children: React.ReactNode }) {
   // Use state to react to localStorage changes
   const [user, setUser] = useState<any>(null);
+  const userRef = useRef<any>(null);
 
   // Check localStorage on mount and listen for storage events
   useEffect(() => {
@@ -18,6 +19,7 @@ export function PushNotificationProvider({ children }: { children: React.ReactNo
         role: parsedUser.role,
         phoneNumber: parsedUser.phoneNumber
       } : 'null');
+      userRef.current = parsedUser;
       setUser(parsedUser);
     };
 
@@ -29,9 +31,10 @@ export function PushNotificationProvider({ children }: { children: React.ReactNo
       const currentUserJson = localStorage.getItem("camionback_user");
       const currentUser = currentUserJson ? JSON.parse(currentUserJson) : null;
       
-      // Compare with current state
-      if (JSON.stringify(currentUser) !== JSON.stringify(user)) {
+      // Compare with current state using ref
+      if (JSON.stringify(currentUser) !== JSON.stringify(userRef.current)) {
         console.log('🔄 [PushNotificationProvider] User change detected in localStorage, reloading...');
+        userRef.current = currentUser;
         setUser(currentUser);
       }
     }, 2000); // Check every 2 seconds
@@ -50,7 +53,7 @@ export function PushNotificationProvider({ children }: { children: React.ReactNo
       clearInterval(intervalId);
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, [user]);
+  }, []);
 
   // Enable push notifications for logged-in users
   const { permission } = usePushNotifications({

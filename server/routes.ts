@@ -1647,6 +1647,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           }
         }
+        
+        // Notify coordinators about new offer
+        try {
+          const allUsers = await storage.getAllUsers();
+          const coordinators = allUsers.filter(u => u.role === 'coordinateur' && u.status === 'validated');
+          
+          for (const coordinator of coordinators) {
+            await storage.createNotification({
+              userId: coordinator.id,
+              type: 'offer_received',
+              title: 'Nouvelle offre soumise',
+              message: `${transporter?.name || "Un transporteur"} a soumis une offre pour la demande ${request.referenceId}`,
+              relatedId: request.id // Use request ID so coordinators can group by request
+            });
+            
+            // Send push notification to coordinator
+            if (coordinator.deviceToken) {
+              try {
+                const { sendNotificationToUser, NotificationTemplates } = await import('./push-notifications');
+                const notification = NotificationTemplates.newOffer(request.referenceId);
+                notification.url = `/coordinator-dashboard`;
+                await sendNotificationToUser(coordinator.id, notification, storage);
+              } catch (pushError) {
+                console.error('❌ Erreur push notification coordinateur:', pushError);
+              }
+            }
+          }
+        } catch (coordError) {
+          console.error('❌ Erreur notification coordinateurs:', coordError);
+        }
       }
       
       res.json(offer);
@@ -1803,6 +1833,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (transporter?.phoneNumber) {
         await sendOfferAcceptedSMS(transporter.phoneNumber);
       }
+      
+      // Notify coordinators about offer acceptance
+      try {
+        const allUsers = await storage.getAllUsers();
+        const coordinators = allUsers.filter(u => u.role === 'coordinateur' && u.status === 'validated');
+        
+        for (const coordinator of coordinators) {
+          await storage.createNotification({
+            userId: coordinator.id,
+            type: 'offer_accepted',
+            title: 'Offre acceptée',
+            message: `${client?.name || "Le client"} a accepté l'offre de ${transporter?.name || "transporteur"} pour ${request?.referenceId}`,
+            relatedId: request?.id || offer.requestId
+          });
+          
+          // Send push notification to coordinator
+          if (coordinator.deviceToken && request) {
+            try {
+              const { sendNotificationToUser, NotificationTemplates } = await import('./push-notifications');
+              const notification = NotificationTemplates.offerAccepted(request.referenceId);
+              notification.url = `/coordinator-dashboard`;
+              await sendNotificationToUser(coordinator.id, notification, storage);
+            } catch (pushError) {
+              console.error('❌ Erreur push notification coordinateur:', pushError);
+            }
+          }
+        }
+      } catch (coordError) {
+        console.error('❌ Erreur notification coordinateurs:', coordError);
+      }
 
       res.json({ 
         success: true,
@@ -1938,6 +1998,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (pushError) {
         console.error('❌ Erreur lors de l\'envoi de la notification push:', pushError);
         // Don't fail the message send if push notification fails
+      }
+      
+      // Notify coordinators about new message (skip if sender is coordinator)
+      try {
+        const sender = await storage.getUser(messageData.senderId);
+        if (sender && sender.role !== 'coordinateur') {
+          const allUsers = await storage.getAllUsers();
+          const coordinators = allUsers.filter(u => u.role === 'coordinateur' && u.status === 'validated');
+          
+          const request = await storage.getTransportRequest(messageData.requestId);
+          
+          for (const coordinator of coordinators) {
+            await storage.createNotification({
+              userId: coordinator.id,
+              type: 'message_received',
+              title: 'Nouveau message',
+              message: `${sender.name || sender.phoneNumber} a envoyé un message pour ${request?.referenceId || 'une demande'}`,
+              relatedId: messageData.requestId
+            });
+            
+            // Send push notification to coordinator
+            if (coordinator.deviceToken) {
+              try {
+                const { sendNotificationToUser, NotificationTemplates } = await import('./push-notifications');
+                const notification = NotificationTemplates.newMessage(sender.name || sender.phoneNumber);
+                notification.url = `/coordinator-dashboard`;
+                await sendNotificationToUser(coordinator.id, notification, storage);
+              } catch (pushError) {
+                console.error('❌ Erreur push notification coordinateur:', pushError);
+              }
+            }
+          }
+        }
+      } catch (coordError) {
+        console.error('❌ Erreur notification coordinateurs:', coordError);
       }
       
       res.json(message);
