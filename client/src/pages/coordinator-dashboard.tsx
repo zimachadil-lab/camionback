@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink } from "lucide-react";
+import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -17,6 +17,153 @@ import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+
+// Component to display offers for coordinators with transporter contact info
+function CoordinatorOffersView({ requestId, onAcceptOffer, isPending }: { 
+  requestId: string; 
+  onAcceptOffer: (offerId: string) => void;
+  isPending: boolean;
+}) {
+  const { data: offers = [], isLoading } = useQuery({
+    queryKey: ["/api/coordinator/requests", requestId, "offers"],
+    queryFn: async () => {
+      const response = await fetch(`/api/coordinator/requests/${requestId}/offers`);
+      if (!response.ok) throw new Error("Erreur lors de la récupération des offres");
+      return response.json();
+    },
+    enabled: !!requestId,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-8" data-testid="loading-offers">
+        <LoadingTruck />
+      </div>
+    );
+  }
+
+  if (offers.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground" data-testid="text-no-offers">
+        <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
+        <p>Aucune offre reçue pour cette commande</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2 mt-4" data-testid="grid-offers">
+      {offers.map((offer: any) => (
+        <Card key={offer.id} className="overflow-hidden" data-testid={`card-offer-${offer.id}`}>
+          <CardContent className="p-4 space-y-3">
+            {/* Transporter Info */}
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <Truck className="h-4 w-4 text-[#5BC0EB]" />
+                  <h4 className="font-semibold" data-testid={`text-transporter-name-${offer.id}`}>
+                    {offer.transporter?.name || "Transporteur"}
+                  </h4>
+                </div>
+                {offer.transporter?.city && (
+                  <p className="text-sm text-muted-foreground flex items-center gap-1">
+                    <MapPin className="h-3 w-3" />
+                    {offer.transporter.city}
+                  </p>
+                )}
+                {offer.transporter?.rating && (
+                  <div className="flex items-center gap-1 mt-1">
+                    <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                    <span className="text-sm font-medium">{parseFloat(offer.transporter.rating).toFixed(1)}</span>
+                  </div>
+                )}
+              </div>
+              <Badge variant={offer.status === "pending" ? "default" : "secondary"}>
+                {offer.status === "pending" ? "En attente" : offer.status}
+              </Badge>
+            </div>
+
+            {/* Contact Info - Visible for Coordinator */}
+            <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase">Contact Transporteur</p>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Phone className="h-3 w-3 text-[#5BC0EB]" />
+                  <a 
+                    href={`tel:${offer.transporter?.phoneNumber}`}
+                    className="text-sm text-[#5BC0EB] hover:underline font-medium"
+                    data-testid={`link-call-transporter-${offer.id}`}
+                  >
+                    {offer.transporter?.phoneNumber}
+                  </a>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full text-xs"
+                  onClick={() => {
+                    const message = encodeURIComponent(
+                      `Bonjour 👋,\nJe suis coordinateur CamionBack.\nJe souhaite discuter de votre offre pour cette commande.`
+                    );
+                    window.open(`https://wa.me/${offer.transporter?.phoneNumber.replace(/\+/g, "")}?text=${message}`, "_blank");
+                  }}
+                  data-testid={`button-whatsapp-transporter-${offer.id}`}
+                >
+                  🟢 WhatsApp
+                </Button>
+              </div>
+            </div>
+
+            {/* Offer Details */}
+            <div className="space-y-2 pt-2 border-t">
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Montant transporteur:</span>
+                <span className="font-medium">{offer.amount} DH</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Commission:</span>
+                <span className="font-medium text-orange-600">+{offer.commissionAmount} DH</span>
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t">
+                <span className="text-sm font-semibold">Total client:</span>
+                <span className="text-lg font-bold text-[#5BC0EB]">{offer.clientAmount} DH</span>
+              </div>
+            </div>
+
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center gap-2">
+                <MapPin className="h-3 w-3 text-muted-foreground" />
+                <span className="text-muted-foreground">Type:</span>
+                <span className="font-medium">
+                  {offer.loadType === "return" ? "Retour à vide" : "Groupage"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Package className="h-3 w-3 text-muted-foreground" />
+                <span className="text-muted-foreground">Prise en charge:</span>
+                <span className="font-medium">
+                  {format(new Date(offer.pickupDate), "dd MMM yyyy", { locale: fr })}
+                </span>
+              </div>
+            </div>
+
+            {offer.status === "pending" && (
+              <Button
+                className="w-full bg-[#5BC0EB] hover:bg-[#4AA8D8]"
+                onClick={() => onAcceptOffer(offer.id)}
+                disabled={isPending}
+                data-testid={`button-accept-offer-${offer.id}`}
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                {isPending ? "Acceptation..." : "Accepter cette offre"}
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
 
 export default function CoordinatorDashboard() {
   const [, setLocation] = useLocation();
@@ -139,6 +286,29 @@ export default function CoordinatorDashboard() {
         variant: "destructive",
         title: "Erreur",
         description: "Échec de mise à jour du statut",
+      });
+    },
+  });
+
+  // Accept offer mutation for coordinator
+  const acceptOfferMutation = useMutation({
+    mutationFn: async (offerId: string) => {
+      return apiRequest("POST", `/api/coordinator/offers/${offerId}/accept`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/available-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/active-requests"] });
+      toast({
+        title: "Offre acceptée",
+        description: "L'offre a été acceptée avec succès au nom du client",
+      });
+      setOffersDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: error.message || "Impossible d'accepter l'offre",
       });
     },
   });
@@ -602,6 +772,25 @@ export default function CoordinatorDashboard() {
         onClose={() => setPhotoGalleryOpen(false)}
         referenceId={selectedReferenceId}
       />
+
+      {/* Offers Dialog */}
+      {selectedRequestForOffers && (
+        <Dialog open={offersDialogOpen} onOpenChange={setOffersDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto" data-testid="dialog-coordinator-offers">
+            <DialogHeader>
+              <DialogTitle>Offres reçues - {selectedRequestForOffers.referenceId}</DialogTitle>
+              <DialogDescription>
+                {selectedRequestForOffers.fromCity} → {selectedRequestForOffers.toCity}
+              </DialogDescription>
+            </DialogHeader>
+            <CoordinatorOffersView 
+              requestId={selectedRequestForOffers.id}
+              onAcceptOffer={(offerId) => acceptOfferMutation.mutate(offerId)}
+              isPending={acceptOfferMutation.isPending}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Request Details Dialog */}
       {selectedRequest && (
