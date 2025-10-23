@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCircle, UserCheck, CreditCard, Phone, Eye, EyeOff, TruckIcon, MapPin, Calendar, FileText, MessageSquare, Trash2, Send, Flag, Pencil, Camera, RefreshCw, Circle, Edit } from "lucide-react";
+import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCircle, UserCheck, CreditCard, Phone, Eye, EyeOff, TruckIcon, MapPin, Calendar, FileText, MessageSquare, Trash2, Send, Flag, Pencil, Camera, RefreshCw, Circle, Edit, Compass } from "lucide-react";
 import { LoadingTruck } from "@/components/ui/loading-truck";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -38,6 +38,7 @@ import {
 import { VoiceRecorder } from "@/components/chat/voice-recorder";
 import { VoiceMessagePlayer } from "@/components/chat/voice-message-player";
 import AdminCommunications from "@/pages/admin-communications";
+import { CoordinatorManagement } from "@/components/admin/coordinator-management";
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
@@ -877,9 +878,13 @@ export default function AdminDashboard() {
             {/* Barre de navigation secondaire - Gestion */}
             <div className="bg-muted/30 p-2 rounded-lg">
               <p className="text-xs text-muted-foreground mb-2 px-2 font-medium">Gestion & Configuration</p>
-              <TabsList className="flex lg:grid w-full lg:grid-cols-9 overflow-x-auto text-xs sm:text-sm">
+              <TabsList className="flex lg:grid w-full lg:grid-cols-10 overflow-x-auto text-xs sm:text-sm">
                 <TabsTrigger value="drivers" data-testid="tab-drivers" className="flex-shrink-0">Transporteurs</TabsTrigger>
                 <TabsTrigger value="clients" data-testid="tab-clients" className="flex-shrink-0">Clients</TabsTrigger>
+                <TabsTrigger value="coordinators" data-testid="tab-coordinators" className="flex-shrink-0">
+                  <Compass className="w-4 h-4 mr-1" />
+                  Coordinateurs
+                </TabsTrigger>
                 <TabsTrigger value="reports" data-testid="tab-reports" className="flex-shrink-0">
                   <Flag className="w-4 h-4 mr-1" />
                   Signalements
@@ -2101,6 +2106,10 @@ export default function AdminDashboard() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="coordinators" className="mt-6">
+            <CoordinatorManagement />
           </TabsContent>
 
           <TabsContent value="reports" className="mt-6">
