@@ -57,20 +57,20 @@ export default function SelectRole() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-background to-muted/20">
-      <div className="w-full max-w-5xl space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="relative flex items-center justify-center bg-gradient-to-b from-[#0A2540] to-[#163049] overflow-hidden" style={{ minHeight: '100vh', height: '100vh' }}>
+      <div className="w-full max-w-5xl px-4 py-3 md:py-8 flex flex-col justify-center items-center h-full relative animate-in fade-in duration-700">
         {/* Header Section */}
-        <div className="text-center space-y-3">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+        <div className="text-center mb-3 md:mb-8">
+          <h1 className="text-xl md:text-4xl lg:text-5xl font-bold tracking-tight text-white mb-1 md:mb-3">
             Bienvenue sur CamionBack 🚛
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-sm md:text-lg lg:text-xl text-white/80 max-w-2xl mx-auto">
             Choisissez comment vous souhaitez utiliser la plateforme :
           </p>
         </div>
 
         {/* Role Cards */}
-        <div className="grid md:grid-cols-2 gap-6 md:gap-8">
+        <div className="w-full grid md:grid-cols-2 gap-3 md:gap-6 lg:gap-8 flex-1 md:flex-none max-h-[70vh] md:max-h-none mb-12 md:mb-0">
           {/* Client Card */}
           <Card 
             className={`
@@ -78,6 +78,7 @@ export default function SelectRole() {
               hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98]
               ${selectedRole === "client" ? "ring-4 ring-[#1CA6A6] border-[#1CA6A6]" : "hover:border-[#1CA6A6]/50"}
               animate-in fade-in slide-in-from-bottom-6 duration-500
+              py-2 md:py-4
             `}
             onClick={() => !loading && handleSelectRole("client")}
             data-testid="card-role-client"
@@ -85,33 +86,33 @@ export default function SelectRole() {
             {/* Gradient Background */}
             <div className="absolute inset-0 bg-gradient-to-br from-[#1CA6A6]/5 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300" />
             
-            <CardHeader className="text-center space-y-6 relative">
+            <CardHeader className="text-center space-y-2 md:space-y-6 relative p-3 md:p-6">
               {/* Icon Container */}
-              <div className="mx-auto w-28 h-28 rounded-2xl bg-gradient-to-br from-[#1CA6A6]/20 to-[#1CA6A6]/10 flex items-center justify-center transition-transform duration-300 hover:scale-110 hover:rotate-3">
-                <Package className="w-14 h-14 text-[#1CA6A6] transition-transform duration-300 hover:scale-110" />
+              <div className="mx-auto w-12 h-12 md:w-28 md:h-28 rounded-xl md:rounded-2xl bg-gradient-to-br from-[#1CA6A6]/20 to-[#1CA6A6]/10 flex items-center justify-center transition-transform duration-300 hover:scale-110 hover:rotate-3">
+                <Package className="w-6 h-6 md:w-14 md:h-14 text-[#1CA6A6] transition-transform duration-300 hover:scale-110" />
               </div>
               
-              <div className="space-y-2">
-                <CardTitle className="text-2xl md:text-3xl font-bold">
+              <div className="space-y-1 md:space-y-2">
+                <CardTitle className="text-base md:text-2xl lg:text-3xl font-bold leading-tight">
                   Je veux envoyer quelque chose
                 </CardTitle>
-                <CardDescription className="text-base md:text-lg leading-relaxed">
+                <CardDescription className="text-xs md:text-base lg:text-lg leading-tight md:leading-relaxed">
                   Publiez une demande de transport pour vos meubles, colis ou marchandises.
                 </CardDescription>
               </div>
             </CardHeader>
             
-            <CardContent className="relative pb-8">
+            <CardContent className="relative pb-3 md:pb-8 px-3 md:px-6">
               <Button 
-                className="w-full h-12 text-base font-semibold bg-[#1CA6A6] hover:bg-[#1CA6A6]/90 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                className="w-full h-9 md:h-12 text-xs md:text-base font-semibold bg-[#1CA6A6] hover:bg-[#1CA6A6]/90 text-white shadow-lg hover:shadow-xl transition-all duration-300"
                 size="lg"
                 disabled={loading}
                 data-testid="button-select-client"
               >
                 {loading && selectedRole === "client" ? (
                   <span className="flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                    Sélection en cours...
+                    <div className="animate-spin rounded-full h-3 w-3 md:h-4 md:w-4 border-b-2 border-white" />
+                    <span className="text-xs md:text-base">Sélection en cours...</span>
                   </span>
                 ) : (
                   "Continuer comme Client"
@@ -127,6 +128,7 @@ export default function SelectRole() {
               hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98]
               ${selectedRole === "transporter" ? "ring-4 ring-[#2BB673] border-[#2BB673]" : "hover:border-[#2BB673]/50"}
               animate-in fade-in slide-in-from-bottom-6 duration-500 delay-100
+              py-2 md:py-4
             `}
             onClick={() => !loading && handleSelectRole("transporter")}
             data-testid="card-role-transporter"
@@ -134,33 +136,33 @@ export default function SelectRole() {
             {/* Gradient Background */}
             <div className="absolute inset-0 bg-gradient-to-br from-[#2BB673]/5 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300" />
             
-            <CardHeader className="text-center space-y-6 relative">
+            <CardHeader className="text-center space-y-2 md:space-y-6 relative p-3 md:p-6">
               {/* Icon Container */}
-              <div className="mx-auto w-28 h-28 rounded-2xl bg-gradient-to-br from-[#2BB673]/20 to-[#2BB673]/10 flex items-center justify-center transition-transform duration-300 hover:scale-110 hover:rotate-3">
-                <Truck className="w-14 h-14 text-[#2BB673] transition-transform duration-300 hover:scale-110" />
+              <div className="mx-auto w-12 h-12 md:w-28 md:h-28 rounded-xl md:rounded-2xl bg-gradient-to-br from-[#2BB673]/20 to-[#2BB673]/10 flex items-center justify-center transition-transform duration-300 hover:scale-110 hover:rotate-3">
+                <Truck className="w-6 h-6 md:w-14 md:h-14 text-[#2BB673] transition-transform duration-300 hover:scale-110" />
               </div>
               
-              <div className="space-y-2">
-                <CardTitle className="text-2xl md:text-3xl font-bold">
+              <div className="space-y-1 md:space-y-2">
+                <CardTitle className="text-base md:text-2xl lg:text-3xl font-bold leading-tight">
                   Je suis un transporteur
                 </CardTitle>
-                <CardDescription className="text-base md:text-lg leading-relaxed">
+                <CardDescription className="text-xs md:text-base lg:text-lg leading-tight md:leading-relaxed">
                   Recevez des demandes de livraison et proposez vos services.
                 </CardDescription>
               </div>
             </CardHeader>
             
-            <CardContent className="relative pb-8">
+            <CardContent className="relative pb-3 md:pb-8 px-3 md:px-6">
               <Button 
-                className="w-full h-12 text-base font-semibold bg-[#2BB673] hover:bg-[#2BB673]/90 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                className="w-full h-9 md:h-12 text-xs md:text-base font-semibold bg-[#2BB673] hover:bg-[#2BB673]/90 text-white shadow-lg hover:shadow-xl transition-all duration-300"
                 size="lg"
                 disabled={loading}
                 data-testid="button-select-transporter"
               >
                 {loading && selectedRole === "transporter" ? (
                   <span className="flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                    Sélection en cours...
+                    <div className="animate-spin rounded-full h-3 w-3 md:h-4 md:w-4 border-b-2 border-white" />
+                    <span className="text-xs md:text-base">Sélection en cours...</span>
                   </span>
                 ) : (
                   "Continuer comme Transporteur"
@@ -170,10 +172,10 @@ export default function SelectRole() {
           </Card>
         </div>
 
-        {/* Reassurance Message */}
-        <div className="text-center pt-4 animate-in fade-in duration-1000 delay-300">
-          <div className="inline-flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 px-4 py-2 rounded-full">
-            <Info className="w-4 h-4" />
+        {/* Reassurance Message - Fixed at bottom on mobile */}
+        <div className="absolute bottom-0 left-0 right-0 text-center pb-2 md:pb-4 animate-in fade-in duration-1000 delay-300">
+          <div className="inline-flex items-center gap-1 md:gap-2 text-[11px] md:text-sm text-white/70 bg-white/10 px-2 md:px-4 py-1 md:py-2 rounded-full backdrop-blur-sm">
+            <Info className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" />
             <span>Vous pourrez modifier votre rôle plus tard depuis votre profil.</span>
           </div>
         </div>

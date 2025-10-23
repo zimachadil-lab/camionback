@@ -1,0 +1,105 @@
+Garder le design actuel de la page de sélection de rôle (celui avec “Je veux envoyer quelque chose” et “Je suis un transporteur”),
+mais optimiser la mise en page mobile pour que tout le contenu tienne sur un seul écran sans avoir à défiler,
+en conservant le même style, couleurs et hiérarchie visuelle.
+
+⚙️ Instructions techniques précises
+1️⃣ Structure inchangée
+
+Garder la même structure HTML / JSX :
+
+Titre principal “Bienvenue sur CamionBack 🚛”
+
+Sous-texte “Choisissez comment vous souhaitez utiliser la plateforme”
+
+Carte Expéditeur (bleu clair)
+
+Carte Transporteur (vert)
+
+Ligne d’information en bas (“Vous pourrez modifier votre rôle plus tard…”)
+
+✅ Aucun changement de texte ni de couleurs, uniquement du layout responsive.
+
+2️⃣ Adaptation mobile sans scroll
+
+Sur les écrans ≤ 768 px de large :
+
+Réduire les marges verticales (margin-top / margin-bottom).
+
+Réduire les espacements internes (padding) des cartes :
+
+padding: 10px 12px;
+margin: 6px 0;
+
+
+Ajuster les tailles :
+
+Icônes : width: 40px; height: 40px;
+
+Titre : font-size: 16px;
+
+Description : font-size: 13px; line-height: 1.2;
+
+Bouton : height: 38px; font-size: 13px;
+
+Les deux cartes doivent occuper ensemble environ 85 % de la hauteur de l’écran.
+Utiliser un flex layout :
+
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: center;
+height: 100vh;
+
+3️⃣ Optimisation du header
+
+Réduire légèrement le texte :
+
+font-size: 18px; font-weight: 700;
+margin-bottom: 4px;
+
+
+Sous-titre :
+
+font-size: 13px; opacity: 0.8; margin-bottom: 8px;
+
+
+Supprimer les grands espaces au-dessus du titre (margin-top).
+
+4️⃣ Positionnement du texte d’aide
+
+La phrase “Vous pourrez modifier votre rôle plus tard…”
+doit être collée au bas de l’écran, centrée, avec une taille réduite :
+
+font-size: 11.5px;
+opacity: 0.7;
+padding-bottom: 6px;
+position: absolute;
+bottom: 0;
+width: 100%;
+text-align: center;
+
+5️⃣ Vérifications à faire
+
+Tester sur Chrome Android et Safari iPhone.
+
+Aucun scroll ne doit être nécessaire, même avec le clavier affiché.
+
+Le texte doit rester parfaitement lisible et équilibré.
+
+Garder la proportion visuelle agréable entre les deux cartes.
+
+✅ Résultat attendu
+
+Même design (mêmes couleurs, icônes, polices)
+
+Tout visible d’un seul coup d’œil sur écran 6.1 pouces
+
+Pas de barre de défilement
+
+Bonne lisibilité et équilibre visuel
+
+💡 Option bonus :
+
+Ajouter une petite animation d’apparition simultanée (fade-in des deux cartes à l’ouverture).
+
+Garder le fond dégradé existant : linear-gradient(180deg, #0A2540 0%, #163049 100%).
