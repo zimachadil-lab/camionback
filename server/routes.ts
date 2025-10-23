@@ -3380,11 +3380,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Send SMS notification
       try {
         if (transporter && transporter.phoneNumber && request) {
-          await sendOfferAcceptedSMS(
-            transporter.phoneNumber,
-            transporter.name || "Transporteur",
-            request.referenceId
-          );
+          await sendOfferAcceptedSMS(transporter.phoneNumber);
         }
       } catch (smsError) {
         console.error('❌ Erreur lors de l\'envoi du SMS:', smsError);
@@ -3399,6 +3395,276 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Erreur acceptation offre:", error);
       res.status(500).json({ error: "Erreur lors de l'acceptation de l'offre" });
+    }
+  });
+
+  // ===== Coordinator Notifications & Messaging Routes =====
+  
+  // Get all notifications for coordinator (grouped by request)
+  app.get("/api/coordinator/notifications", async (req, res) => {
+    try {
+      const { userId } = req.query;
+      
+      if (!userId) {
+        return res.status(400).json({ error: "userId requis" });
+      }
+
+      // Get all notifications for the coordinator
+      const notifications = await storage.getNotificationsByUser(userId as string);
+      
+      // Group notifications by request (using relatedId as requestId)
+      const groupedNotifications: any = {};
+      
+      for (const notification of notifications) {
+        // Try to find the request related to this notification
+        let requestId = notification.relatedId;
+        let requestInfo = null;
+        
+        // If relatedId is an offerId, get the request from the offer
+        if (notification.type === 'offer_received' || notification.type === 'offer_accepted') {
+          const offer = await storage.getOffer(notification.relatedId!);
+          if (offer) {
+            requestId = offer.requestId;
+          }
+        }
+        
+        // Get request details if we have a requestId
+        if (requestId) {
+          requestInfo = await storage.getTransportRequest(requestId);
+        }
+        
+        if (requestId) {
+          if (!groupedNotifications[requestId]) {
+            groupedNotifications[requestId] = {
+              requestId,
+              referenceId: requestInfo?.referenceId || 'N/A',
+              notifications: []
+            };
+          }
+          
+          groupedNotifications[requestId].notifications.push(notification);
+        }
+      }
+      
+      // Convert to array and sort by most recent
+      const result = Object.values(groupedNotifications).sort((a: any, b: any) => {
+        const aLatest = a.notifications[0]?.createdAt || new Date(0);
+        const bLatest = b.notifications[0]?.createdAt || new Date(0);
+        return new Date(bLatest).getTime() - new Date(aLatest).getTime();
+      });
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Erreur récupération notifications coordinateur:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération des notifications" });
+    }
+  });
+
+  // Mark coordinator notification as read
+  app.patch("/api/coordinator/notifications/:id/read", async (req, res) => {
+    try {
+      const notification = await storage.markAsRead(req.params.id);
+      
+      if (!notification) {
+        return res.status(404).json({ error: "Notification introuvable" });
+      }
+      
+      res.json(notification);
+    } catch (error) {
+      console.error("Erreur marquage notification:", error);
+      res.status(500).json({ error: "Erreur lors du marquage" });
+    }
+  });
+
+  // Mark all coordinator notifications as read
+  app.post("/api/coordinator/notifications/mark-all-read", async (req, res) => {
+    try {
+      const { userId } = req.body;
+      
+      if (!userId) {
+        return res.status(400).json({ error: "userId requis" });
+      }
+      
+      // Get all notifications and mark them as read
+      const notifications = await storage.getNotificationsByUser(userId);
+      for (const notification of notifications) {
+        if (!notification.read) {
+          await storage.markAsRead(notification.id);
+        }
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Erreur marquage notifications:", error);
+      res.status(500).json({ error: "Erreur lors du marquage" });
+    }
+  });
+
+  // Get all conversations grouped by request for coordinator
+  app.get("/api/coordinator/conversations", async (req, res) => {
+    try {
+      const { userId } = req.query;
+      
+      if (!userId) {
+        return res.status(400).json({ error: "userId requis" });
+      }
+
+      // Get all transport requests
+      const allRequests = await storage.getAllTransportRequests();
+      
+      const conversations = await Promise.all(
+        allRequests.map(async (request) => {
+          // Get messages for this request
+          const messages = await storage.getMessagesByRequest(request.id);
+          
+          if (messages.length === 0) {
+            return null; // Skip requests with no messages
+          }
+          
+          // Get client and transporter info
+          const client = await storage.getUser(request.clientId);
+          let transporter = null;
+          if (request.acceptedOfferId) {
+            const acceptedOffer = await storage.getOffer(request.acceptedOfferId);
+            if (acceptedOffer) {
+              transporter = await storage.getUser(acceptedOffer.transporterId);
+            }
+          }
+          
+          // Count unread messages (messages sent by client or transporter, not by coordinator)
+          const unreadCount = messages.filter(
+            (m: any) => !m.isRead && m.senderType !== 'coordinateur'
+          ).length;
+          
+          // Get last message
+          const lastMessage = messages[messages.length - 1];
+          
+          return {
+            requestId: request.id,
+            referenceId: request.referenceId,
+            fromCity: request.fromCity,
+            toCity: request.toCity,
+            status: request.status,
+            client: client ? {
+              id: client.id,
+              name: client.name,
+              phoneNumber: client.phoneNumber
+            } : null,
+            transporter: transporter ? {
+              id: transporter.id,
+              name: transporter.name,
+              phoneNumber: transporter.phoneNumber
+            } : null,
+            lastMessage: lastMessage ? {
+              content: lastMessage.messageType === 'text' ? lastMessage.message : 
+                       lastMessage.messageType === 'voice' ? '🎤 Message vocal' :
+                       lastMessage.messageType === 'photo' ? '📷 Photo' : '🎥 Vidéo',
+              createdAt: lastMessage.createdAt,
+              senderType: lastMessage.senderType
+            } : null,
+            unreadCount,
+            messageCount: messages.length
+          };
+        })
+      );
+      
+      // Filter out null values and sort by last message date
+      const filteredConversations = conversations
+        .filter(c => c !== null)
+        .sort((a, b) => {
+          const aTime = a!.lastMessage?.createdAt ? new Date(a!.lastMessage.createdAt).getTime() : 0;
+          const bTime = b!.lastMessage?.createdAt ? new Date(b!.lastMessage.createdAt).getTime() : 0;
+          return bTime - aTime;
+        });
+      
+      res.json(filteredConversations);
+    } catch (error) {
+      console.error("Erreur récupération conversations:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération des conversations" });
+    }
+  });
+
+  // Get messages for a specific request (conversation)
+  app.get("/api/coordinator/conversations/:requestId/messages", async (req, res) => {
+    try {
+      const { requestId } = req.params;
+      const messages = await storage.getMessagesByRequest(requestId);
+      res.json(messages);
+    } catch (error) {
+      console.error("Erreur récupération messages:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération des messages" });
+    }
+  });
+
+  // Send a message as coordinator to a conversation
+  app.post("/api/coordinator/conversations/:requestId/messages", async (req, res) => {
+    try {
+      const { requestId } = req.params;
+      const { senderId, receiverId, message, messageType } = req.body;
+      
+      if (!senderId || !receiverId || !message) {
+        return res.status(400).json({ error: "Données manquantes" });
+      }
+      
+      const newMessage = await storage.createChatMessage({
+        requestId,
+        senderId,
+        receiverId,
+        message,
+        messageType: messageType || 'text',
+        senderType: 'coordinateur'
+      });
+      
+      // Create notification for receiver
+      await storage.createNotification({
+        userId: receiverId,
+        type: 'message_received',
+        title: 'Nouveau message du coordinateur',
+        message: message.substring(0, 100),
+        relatedId: requestId
+      });
+      
+      // Send push notification to receiver
+      try {
+        const receiver = await storage.getUser(receiverId);
+        if (receiver && receiver.deviceToken) {
+          const { sendNotificationToUser, NotificationTemplates } = await import('./push-notifications');
+          const notification = NotificationTemplates.newMessage('Coordinateur');
+          notification.url = receiver.role === 'client' ? '/client-dashboard' : '/transporter-dashboard';
+          
+          await sendNotificationToUser(receiverId, notification, storage);
+          console.log(`📨 Notification push envoyée pour message coordinateur`);
+        }
+      } catch (pushError) {
+        console.error('❌ Erreur push notification:', pushError);
+      }
+      
+      res.json(newMessage);
+    } catch (error) {
+      console.error("Erreur envoi message coordinateur:", error);
+      res.status(500).json({ error: "Erreur lors de l'envoi du message" });
+    }
+  });
+
+  // Mark all messages in a conversation as read (for coordinator)
+  app.patch("/api/coordinator/conversations/:requestId/mark-read", async (req, res) => {
+    try {
+      const { requestId } = req.params;
+      
+      // Mark all messages in this conversation as read
+      // Since this is for coordinator view, we don't use userId filtering
+      // Instead, we'll manually update all unread messages
+      const messages = await storage.getMessagesByRequest(requestId);
+      for (const message of messages) {
+        if (!message.isRead) {
+          await storage.markAsRead(message.id);
+        }
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Erreur marquage messages:", error);
+      res.status(500).json({ error: "Erreur lors du marquage" });
     }
   });
 
