@@ -1,0 +1,171 @@
+🎯 Objectif :
+Refonte complète de la page de sélection de rôle (après saisie du numéro de téléphone) pour la rendre plus claire, intuitive et engageante.
+L’actuelle page “Expéditeur / Transporteur” prête à confusion.
+Le but est de clarifier le choix du rôle, de mieux expliquer les actions, et de différencier visuellement les deux profils.
+
+🧩 1️⃣ Contexte actuel
+
+Étape 1 : L’utilisateur entre son numéro de téléphone.
+
+Étape 2 : Il tombe sur une page avec deux blocs “Expéditeur” et “Transporteur”.
+
+Problème : visuellement trop similaires, texte peu explicite, pas clair sur la suite.
+
+🧭 2️⃣ Nouvelle structure UX/UI
+Titre principal (header)
+Bienvenue sur CamionBack 🚛
+Choisissez comment vous souhaitez utiliser la plateforme :
+
+
+(Texte centré, gros titre blanc, sous-titre gris clair)
+
+Cartes de choix de rôle (composants principaux)
+
+Deux cartes distinctes, contrastées, claires et modernes :
+
+🟢 Carte 1 : Client / Expéditeur
+
+Icône : 📦 (ou l’icône actuelle du cube, mais en couleur bleue claire)
+
+Couleur principale : #1CA6A6 (bleu-turquoise clair)
+
+Fond : blanc légèrement grisé, ombré
+
+Contenu :
+
+Titre : “Je veux envoyer quelque chose”
+
+Description :
+“Publiez une demande de transport pour vos meubles, colis ou marchandises.”
+
+Bouton principal (CTA) :
+
+Continuer comme Client
+
+
+Style : bouton bleu clair (plein), texte blanc, arrondi, ombre subtile.
+→ Action : redirige vers le tableau de bord client / page “Publier une commande”.
+
+🟠 Carte 2 : Transporteur
+
+Icône : 🚛 (ou icône camion, couleur orange/vert foncé)
+
+Couleur principale : #0a2540 ou #2BB673
+
+Fond : blanc légèrement grisé, ombré
+
+Contenu :
+
+Titre : “Je suis un transporteur”
+
+Description :
+“Recevez des demandes de livraison et proposez vos services.”
+
+Bouton principal (CTA) :
+
+Continuer comme Transporteur
+
+
+Style : bouton vert foncé (plein), texte blanc, arrondi, ombre subtile.
+→ Action : redirige vers le tableau de bord transporteur / page “Missions disponibles”.
+
+Section de rassurance en bas :
+ℹ️ Vous pourrez modifier votre rôle plus tard depuis votre profil.
+
+
+(Texte centré, petit, gris clair)
+→ But : rassurer les utilisateurs qui ont peur de se tromper.
+
+🧱 3️⃣ Design & Responsive
+
+Disposition verticale sur mobile (stack)
+
+Les deux cartes doivent occuper ~90 % de la largeur
+
+Espacement vertical confortable (≥24px)
+
+Ombres douces (shadow-lg)
+
+Coins arrondis (rounded-2xl)
+
+Icônes centrées avec effet “pulse” au survol ou au clic
+
+Texte aligné au centre, police claire et moderne (font-semibold pour les titres)
+
+⚙️ 4️⃣ Logique Front-end
+
+L’utilisateur choisit un rôle → sauvegarde le choix dans localStorage sous la clé :
+
+camionback_user_role = "client" ou "transporteur"
+
+Puis redirection immédiate vers :
+
+/dashboard-client pour un client
+
+/dashboard-transporteur pour un transporteur
+
+Si le rôle est déjà défini dans localStorage, passer automatiquement cette page au prochain login.
+
+🧰 5️⃣ Bonus UX à implémenter
+
+Animation d’entrée : chaque carte glisse légèrement depuis le bas avec fade-in.
+
+Hover / tap effect :
+
+La carte s’agrandit de 3 % et change légèrement de couleur au toucher.
+
+Icône légèrement animée (zoom court).
+
+Version Desktop : cartes côte à côte au lieu de verticales.
+
+Version Mobile : stackée avec scroll fluide.
+
+📦 6️⃣ Accessibilité & textes
+
+Langue : français
+
+Taille police : 18–22px pour les titres, 14–16px pour les descriptions
+
+Contraste respecté (WCAG AA minimum)
+
+Les boutons doivent être facilement cliquables même sur petit écran (≥48px de hauteur)
+
+🔐 7️⃣ Liens et intégration
+
+La page doit s’intégrer après la page “Connexion par téléphone”.
+
+Le composant doit être nommé RoleSelection.tsx et placé dans /src/pages/.
+
+Si le rôle est manquant à la connexion, redirection automatique ici.
+
+Intégrer la logique existante de useAuthContext si présente pour garder le userId.
+
+🧩 8️⃣ Exemple visuel attendu (description)
+┌────────────────────────────────────────────┐
+│ Bienvenue sur CamionBack 🚛               │
+│ Choisissez comment vous souhaitez          │
+│ utiliser la plateforme :                   │
+│                                            │
+│ [📦] Je veux envoyer quelque chose          │
+│ Publiez une demande de transport           │
+│ [ Continuer comme Client ]                │
+│                                            │
+│ [🚛] Je suis un transporteur               │
+│ Recevez des demandes et proposez vos       │
+│ services de livraison                      │
+│ [ Continuer comme Transporteur ]          │
+│                                            │
+│ ℹ️ Vous pourrez modifier votre rôle plus tard │
+└────────────────────────────────────────────┘
+
+✅ Livrable attendu
+
+Page fonctionnelle, responsive, connectée à la logique du rôle
+
+Texte et design conformes
+
+Animation légère
+
+Sauvegarde du rôle dans localStorage
+
+Redirection automatique après choix
