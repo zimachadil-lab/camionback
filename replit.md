@@ -1,7 +1,7 @@
 # CamionBack - Logistics Marketplace Platform
 
 ## Overview
-CamionBack is a full-stack logistics marketplace web application for the Moroccan market, connecting clients needing transportation with independent transporters. It supports Client, Transporter, and Administrator roles, facilitating request creation, service offers, and platform management. The platform aims to streamline logistics operations through a robust, user-friendly interface with a mobile-first, dark teal design, a French interface, and phone-based PIN authentication. The project's ambition is to become a leading logistics platform in Morocco, enhancing efficiency and connectivity within the transport sector.
+CamionBack is a full-stack logistics marketplace web application for the Moroccan market, connecting clients needing transportation with independent transporters. It supports Client, Transporter, Administrator, and Coordinator roles, facilitating request creation, service offers, platform management, and operational oversight. The platform aims to streamline logistics operations through a robust, user-friendly interface with a mobile-first, dark teal design, a French interface, and phone-based PIN authentication. The project's ambition is to become a leading logistics platform in Morocco, enhancing efficiency and connectivity within the transport sector.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -12,7 +12,7 @@ Preferred communication style: Simple, everyday language.
 The platform features a mobile-first, dark teal design with a French language interface. It utilizes React 18, TypeScript, Vite, Wouter for routing, TanStack Query for state management, and Tailwind CSS for styling. Shadcn/ui provides components, Radix UI ensures accessibility, and React Hook Form with Zod handles form management. Key UI enhancements include responsive admin navigation, clear messaging buttons, and role-based header navigation.
 
 ### Technical Implementations
-The backend is built with Express.js and TypeScript, providing RESTful JSON APIs. Authentication is phone number-based with 6-digit PIN verification and bcrypt hashing. User roles (Client, Transporter, Admin) are managed, with Transporters requiring admin validation. Session persistence uses localStorage, and access control is role and status-based. Real-time chat is implemented via WebSockets, and an in-app notification system provides alerts. The application uses PostgreSQL (via Neon Serverless) with Drizzle ORM for type-safe database operations.
+The backend is built with Express.js and TypeScript, providing RESTful JSON APIs. Authentication is phone number-based with 6-digit PIN verification and bcrypt hashing. User roles (Client, Transporter, Admin, Coordinator) are managed, with Transporters requiring admin validation. Session persistence uses localStorage, and access control is role and status-based. Real-time chat is implemented via WebSockets, and an in-app notification system provides alerts. The application uses PostgreSQL (via Neon Serverless) with Drizzle ORM for type-safe database operations.
 
 **Key Features:**
 - **Request and Payment Workflow:** Multi-status client request progression with admin-validated payment flows.
@@ -48,13 +48,16 @@ The backend is built with Express.js and TypeScript, providing RESTful JSON APIs
 - **Animated Truck Header on Login Page:** Subtle and fluid animation of two trucks (aller-retour concept) displayed above the CamionBack logo on the phone authentication page. First truck (turquoise #1CA6A6) travels right to left, second truck (green #2BB673) travels left to right in opposite direction. Animations are continuous with 8-second duration, 1-second offset for visual variety, and automatic pause when user focuses on input fields to reduce distraction. Includes tagline "Pas de retour à vide 🚛💨" below animation. Uses Lucide React Truck icons with drop-shadow effects for depth. Fully responsive with appropriate sizing for mobile and desktop.
 - **Optimized Favicon System:** Comprehensive favicon implementation with multiple sizes (16x16, 32x32, 180x180 Apple, 192x192, 512x512) optimized via ImageMagick, properly linked in index.html and manifest.json.
 - **Secure Static File Serving:** Custom middleware with whitelist-based file validation using `path.resolve(publicPath, '.' + req.path)` to prevent path traversal attacks. Differential caching: service-worker.js served with `Cache-Control: no-cache, no-store, must-revalidate` for instant PWA updates, while favicons/icons use 1-year cache (`max-age=31536000`) for performance.
+- **Coordinator Role & Management System:** Dedicated Coordinator role (#5BC0EB blue theme, compass icon 🧭) provides elevated permissions for operational oversight without full admin access. Coordinators can view all transport requests across three categorized dashboards (Disponibles for open requests, À traiter for active/accepted requests, À payer for payment-pending requests), toggle request visibility, update payment statuses, access all client-transporter messaging with intervention capabilities, and contact clients/transporters via WhatsApp or phone. Default coordinator account: `+212661040189`, PIN `040189`. Coordinators have read/modify permissions but cannot delete requests or users. Full API endpoints for coordinator operations including enriched request data with client, transporter, and offer details.
 
 ### System Design Choices
 **Data Storage:** PostgreSQL with Neon serverless and Drizzle ORM.
 **Authentication & Authorization:** Phone number-based PIN verification, role, and status-based access control.
 **Backend:** Express.js with TypeScript, ES Modules, `tsx`, and Multer.
-**Routing:** Dedicated dashboard routes (`/admin-dashboard`, `/client-dashboard`, `/transporter-dashboard`).
-**Admin Account:** Default admin account: `+212664373534`, PIN `040189`.
+**Routing:** Dedicated dashboard routes (`/admin-dashboard`, `/client-dashboard`, `/transporter-dashboard`, `/coordinator-dashboard`).
+**Default Accounts:**
+- Admin: `+212664373534`, PIN `040189`
+- Coordinator: `+212661040189`, PIN `040189`
 
 ## External Dependencies
 
