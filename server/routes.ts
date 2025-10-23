@@ -3507,28 +3507,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get all notifications for the coordinator
       const notifications = await storage.getNotificationsByUser(userId as string);
       
+      // Collect all offer IDs and request IDs to batch fetch
+      const offerIds = new Set<string>();
+      const requestIds = new Set<string>();
+      
+      for (const notification of notifications) {
+        if (notification.type === 'offer_received' || notification.type === 'offer_accepted') {
+          if (notification.relatedId) offerIds.add(notification.relatedId);
+        } else if (notification.relatedId) {
+          requestIds.add(notification.relatedId);
+        }
+      }
+      
+      // Batch fetch offers and requests
+      const offers = await Promise.all(Array.from(offerIds).map(id => storage.getOffer(id)));
+      const offerMap = new Map(offers.filter(o => o).map(o => [o!.id, o]));
+      
+      // Add request IDs from offers
+      offers.forEach(offer => {
+        if (offer) requestIds.add(offer.requestId);
+      });
+      
+      const requests = await Promise.all(Array.from(requestIds).map(id => storage.getTransportRequest(id)));
+      const requestMap = new Map(requests.filter(r => r).map(r => [r!.id, r]));
+      
       // Group notifications by request (using relatedId as requestId)
       const groupedNotifications: any = {};
       
       for (const notification of notifications) {
-        // Try to find the request related to this notification
         let requestId = notification.relatedId;
-        let requestInfo = null;
         
-        // If relatedId is an offerId, get the request from the offer
+        // If relatedId is an offerId, get the request from cached offers
         if (notification.type === 'offer_received' || notification.type === 'offer_accepted') {
-          const offer = await storage.getOffer(notification.relatedId!);
+          const offer = offerMap.get(notification.relatedId!);
           if (offer) {
             requestId = offer.requestId;
           }
         }
         
-        // Get request details if we have a requestId
         if (requestId) {
-          requestInfo = await storage.getTransportRequest(requestId);
-        }
-        
-        if (requestId) {
+          const requestInfo = requestMap.get(requestId);
+          
           if (!groupedNotifications[requestId]) {
             groupedNotifications[requestId] = {
               requestId,
@@ -3541,8 +3560,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Convert to array and sort by most recent
-      const result = Object.values(groupedNotifications).sort((a: any, b: any) => {
+      // Convert to array, add unread count, and sort by most recent
+      const result = Object.values(groupedNotifications).map((group: any) => ({
+        ...group,
+        unreadCount: group.notifications.filter((n: any) => !n.read).length
+      })).sort((a: any, b: any) => {
         const aLatest = a.notifications[0]?.createdAt || new Date(0);
         const bLatest = b.notifications[0]?.createdAt || new Date(0);
         return new Date(bLatest).getTime() - new Date(aLatest).getTime();

@@ -14,6 +14,8 @@ import { Badge } from "@/components/ui/badge";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { MessagesBadge } from "@/components/chat/messages-badge";
 import { ContactWhatsAppDialog } from "@/components/contact-whatsapp-dialog";
+import { CoordinatorNotifications } from "@/components/coordinator/coordinator-notifications";
+import { CoordinatorMessaging } from "@/components/coordinator/coordinator-messaging";
 
 interface HeaderProps {
   user: {
@@ -121,8 +123,17 @@ export function Header({ user, onNewRequest, onAnnounceReturn, onLogout }: Heade
             </Button>
           )}
 
-          <NotificationBell userId={user.id} />
-          <MessagesBadge userId={user.id} />
+          {user.role === "coordinateur" ? (
+            <>
+              <CoordinatorNotifications userId={user.id} />
+              <CoordinatorMessaging userId={user.id} />
+            </>
+          ) : (
+            <>
+              <NotificationBell userId={user.id} />
+              <MessagesBadge userId={user.id} />
+            </>
+          )}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
