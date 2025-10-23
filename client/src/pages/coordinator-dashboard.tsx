@@ -24,7 +24,7 @@ function CoordinatorOffersView({ requestId, onAcceptOffer, isPending }: {
   onAcceptOffer: (offerId: string) => void;
   isPending: boolean;
 }) {
-  const { data: offers = [], isLoading } = useQuery({
+  const { data: offers = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/coordinator/requests", requestId, "offers"],
     enabled: !!requestId,
   });
@@ -486,6 +486,17 @@ export default function CoordinatorDashboard() {
             </Button>
           )}
 
+          {request.client && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleWhatsAppContactClient(request.client.phoneNumber, request.referenceId)}
+              data-testid={`button-whatsapp-client-${request.id}`}
+            >
+              🟢 WhatsApp Client
+            </Button>
+          )}
+
           {request.transporter && (
             <Button
               size="sm"
@@ -494,17 +505,6 @@ export default function CoordinatorDashboard() {
               data-testid={`button-whatsapp-transporter-${request.id}`}
             >
               🟢 WhatsApp Transporteur
-            </Button>
-          )}
-
-          {request.client && showVisibilityToggle && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => handleWhatsAppContactClient(request.client.phoneNumber, request.referenceId)}
-              data-testid={`button-whatsapp-client-${request.id}`}
-            >
-              🟢 WhatsApp Client
             </Button>
           )}
 
