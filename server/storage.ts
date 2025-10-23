@@ -13,14 +13,15 @@ import {
   type City, type InsertCity,
   type SmsHistory, type InsertSmsHistory,
   type ClientTransporterContact, type InsertClientTransporterContact,
-  type Story, type InsertStory
+  type Story, type InsertStory,
+  type CoordinatorLog, type InsertCoordinatorLog
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from './db.js';
 import { 
   users, otpCodes, transportRequests, offers, chatMessages,
   adminSettings, notifications, ratings, emptyReturns, contracts, reports, cities, smsHistory,
-  clientTransporterContacts, stories
+  clientTransporterContacts, stories, coordinatorLogs
 } from '@shared/schema';
 import { eq, and, or, desc, asc, lte, gte, sql } from 'drizzle-orm';
 
@@ -138,6 +139,18 @@ export interface IStorage {
   getCoordinatorPaymentRequests(): Promise<any[]>;
   updateRequestVisibility(requestId: string, isHidden: boolean): Promise<TransportRequest | undefined>;
   updateRequestPaymentStatus(requestId: string, paymentStatus: string): Promise<TransportRequest | undefined>;
+  
+  // Coordinator management (Admin)
+  getAllCoordinators(): Promise<User[]>;
+  getCoordinatorById(id: string): Promise<User | undefined>;
+  updateCoordinatorStatus(id: string, accountStatus: string): Promise<User | undefined>;
+  deleteCoordinator(id: string): Promise<void>;
+  resetCoordinatorPin(id: string, newPin: string): Promise<User | undefined>;
+  
+  // Coordinator activity logs
+  createCoordinatorLog(log: InsertCoordinatorLog): Promise<CoordinatorLog>;
+  getCoordinatorLogs(coordinatorId?: string): Promise<CoordinatorLog[]>;
+  getRecentCoordinatorActivity(): Promise<any[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -2278,6 +2291,93 @@ export class DbStorage implements IStorage {
       .where(eq(transportRequests.id, requestId))
       .returning();
     return result[0];
+  }
+
+  // Coordinator management (Admin)
+  async getAllCoordinators(): Promise<User[]> {
+    return await db.select().from(users)
+      .where(eq(users.role, 'coordinateur'))
+      .orderBy(desc(users.createdAt));
+  }
+
+  async getCoordinatorById(id: string): Promise<User | undefined> {
+    const result = await db.select().from(users)
+      .where(and(
+        eq(users.id, id),
+        eq(users.role, 'coordinateur')
+      ))
+      .limit(1);
+    return result[0];
+  }
+
+  async updateCoordinatorStatus(id: string, accountStatus: string): Promise<User | undefined> {
+    const result = await db.update(users)
+      .set({ accountStatus })
+      .where(and(
+        eq(users.id, id),
+        eq(users.role, 'coordinateur')
+      ))
+      .returning();
+    return result[0];
+  }
+
+  async deleteCoordinator(id: string): Promise<void> {
+    await db.delete(users).where(and(
+      eq(users.id, id),
+      eq(users.role, 'coordinateur')
+    ));
+  }
+
+  async resetCoordinatorPin(id: string, newPin: string): Promise<User | undefined> {
+    const bcrypt = await import('bcrypt');
+    const passwordHash = await bcrypt.hash(newPin, 10);
+    const result = await db.update(users)
+      .set({ passwordHash })
+      .where(and(
+        eq(users.id, id),
+        eq(users.role, 'coordinateur')
+      ))
+      .returning();
+    return result[0];
+  }
+
+  // Coordinator activity logs
+  async createCoordinatorLog(insertLog: InsertCoordinatorLog): Promise<CoordinatorLog> {
+    const result = await db.insert(coordinatorLogs).values(insertLog).returning();
+    return result[0];
+  }
+
+  async getCoordinatorLogs(coordinatorId?: string): Promise<CoordinatorLog[]> {
+    if (coordinatorId) {
+      return await db.select().from(coordinatorLogs)
+        .where(eq(coordinatorLogs.coordinatorId, coordinatorId))
+        .orderBy(desc(coordinatorLogs.createdAt))
+        .limit(100);
+    }
+    return await db.select().from(coordinatorLogs)
+      .orderBy(desc(coordinatorLogs.createdAt))
+      .limit(100);
+  }
+
+  async getRecentCoordinatorActivity(): Promise<any[]> {
+    // Get recent logs with coordinator information
+    const logs = await db.select({
+      id: coordinatorLogs.id,
+      action: coordinatorLogs.action,
+      targetType: coordinatorLogs.targetType,
+      targetId: coordinatorLogs.targetId,
+      details: coordinatorLogs.details,
+      createdAt: coordinatorLogs.createdAt,
+      coordinatorId: users.id,
+      coordinatorName: users.name,
+      coordinatorPhone: users.phoneNumber,
+    })
+    .from(coordinatorLogs)
+    .innerJoin(users, eq(coordinatorLogs.coordinatorId, users.id))
+    .orderBy(desc(coordinatorLogs.createdAt))
+    .limit(50);
+
+    return logs;
   }
 }
 

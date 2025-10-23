@@ -3269,6 +3269,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== Admin - Coordinator Management Routes =====
+  
+  // Get all coordinators (Admin only)
+  app.get("/api/admin/coordinators", async (req, res) => {
+    try {
+      const coordinators = await storage.getAllCoordinators();
+      res.json(coordinators);
+    } catch (error) {
+      console.error("Erreur récupération coordinateurs:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération des coordinateurs" });
+    }
+  });
+
+  // Create a new coordinator (Admin only)
+  app.post("/api/admin/coordinators", async (req, res) => {
+    try {
+      const { phoneNumber, name, pin } = req.body;
+
+      // Validation
+      if (!phoneNumber || !name || !pin) {
+        return res.status(400).json({ error: "Téléphone, nom et PIN requis" });
+      }
+
+      // Validate PIN format (6 digits)
+      if (!/^\d{6}$/.test(pin)) {
+        return res.status(400).json({ error: "Le PIN doit contenir exactement 6 chiffres" });
+      }
+
+      // Check if phone number already exists
+      const existingUser = await storage.getUserByPhone(phoneNumber);
+      if (existingUser) {
+        return res.status(400).json({ error: "Ce numéro de téléphone est déjà utilisé" });
+      }
+
+      // Hash the PIN
+      const passwordHash = await bcrypt.hash(pin, 10);
+
+      // Create coordinator
+      const coordinator = await storage.createUser({
+        phoneNumber,
+        name,
+        passwordHash,
+        role: 'coordinateur',
+        accountStatus: 'active',
+        isActive: true
+      });
+
+      res.json(coordinator);
+    } catch (error) {
+      console.error("Erreur création coordinateur:", error);
+      res.status(500).json({ error: "Erreur lors de la création du coordinateur" });
+    }
+  });
+
+  // Toggle coordinator status (block/unblock)
+  app.patch("/api/admin/coordinators/:id/toggle-status", async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const coordinator = await storage.getCoordinatorById(id);
+      if (!coordinator) {
+        return res.status(404).json({ error: "Coordinateur non trouvé" });
+      }
+
+      const newStatus = coordinator.accountStatus === 'active' ? 'blocked' : 'active';
+      const updated = await storage.updateCoordinatorStatus(id, newStatus);
+      
+      res.json(updated);
+    } catch (error) {
+      console.error("Erreur modification statut coordinateur:", error);
+      res.status(500).json({ error: "Erreur lors de la modification du statut" });
+    }
+  });
+
+  // Reset coordinator PIN
+  app.patch("/api/admin/coordinators/:id/reset-pin", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { newPin } = req.body;
+
+      if (!newPin || !/^\d{6}$/.test(newPin)) {
+        return res.status(400).json({ error: "Le PIN doit contenir exactement 6 chiffres" });
+      }
+
+      const updated = await storage.resetCoordinatorPin(id, newPin);
+      
+      if (!updated) {
+        return res.status(404).json({ error: "Coordinateur non trouvé" });
+      }
+
+      res.json({ success: true, message: "PIN réinitialisé avec succès" });
+    } catch (error) {
+      console.error("Erreur réinitialisation PIN:", error);
+      res.status(500).json({ error: "Erreur lors de la réinitialisation du PIN" });
+    }
+  });
+
+  // Delete coordinator
+  app.delete("/api/admin/coordinators/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const coordinator = await storage.getCoordinatorById(id);
+      if (!coordinator) {
+        return res.status(404).json({ error: "Coordinateur non trouvé" });
+      }
+
+      await storage.deleteCoordinator(id);
+      res.json({ success: true, message: "Coordinateur supprimé avec succès" });
+    } catch (error) {
+      console.error("Erreur suppression coordinateur:", error);
+      res.status(500).json({ error: "Erreur lors de la suppression du coordinateur" });
+    }
+  });
+
+  // Get coordinator activity logs
+  app.get("/api/admin/coordinator-logs", async (req, res) => {
+    try {
+      const { coordinatorId } = req.query;
+      const logs = await storage.getCoordinatorLogs(coordinatorId as string | undefined);
+      res.json(logs);
+    } catch (error) {
+      console.error("Erreur récupération logs coordinateur:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération des logs" });
+    }
+  });
+
+  // Get recent coordinator activity (with coordinator details)
+  app.get("/api/admin/coordinator-activity", async (req, res) => {
+    try {
+      const activity = await storage.getRecentCoordinatorActivity();
+      res.json(activity);
+    } catch (error) {
+      console.error("Erreur récupération activité coordinateur:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération de l'activité" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // WebSocket server for real-time chat (using separate path to avoid Vite HMR conflict)

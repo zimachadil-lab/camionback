@@ -250,6 +250,19 @@ export const insertStorySchema = createInsertSchema(stories).omit({ id: true, cr
   role: z.enum(["client", "transporter", "all"]),
 });
 
+// Coordinator Activity Logs
+export const coordinatorLogs = pgTable("coordinator_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  coordinatorId: varchar("coordinator_id").notNull().references(() => users.id),
+  action: text("action").notNull(), // 'update_visibility', 'update_payment_status', 'view_request', 'send_message', 'view_chat'
+  targetType: text("target_type"), // 'request', 'chat', 'user'
+  targetId: varchar("target_id"), // ID of the affected entity
+  details: text("details"), // JSON string with additional details
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertCoordinatorLogSchema = createInsertSchema(coordinatorLogs).omit({ id: true, createdAt: true });
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -281,3 +294,5 @@ export type InsertClientTransporterContact = z.infer<typeof insertClientTranspor
 export type ClientTransporterContact = typeof clientTransporterContacts.$inferSelect;
 export type InsertStory = z.infer<typeof insertStorySchema>;
 export type Story = typeof stories.$inferSelect;
+export type InsertCoordinatorLog = z.infer<typeof insertCoordinatorLogSchema>;
+export type CoordinatorLog = typeof coordinatorLogs.$inferSelect;
