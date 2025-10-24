@@ -1700,26 +1700,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const settings = await storage.getAdminSettings();
         const commissionRate = parseFloat(settings?.commissionPercentage || "10");
         
+        // Batch fetch all unique transporters in a single query to avoid N+1
+        const transporterIds = [...new Set(offers.map(offer => offer.transporterId))];
+        const allTransporters = await storage.getUsersByIds(transporterIds);
+        const transportersMap = new Map(allTransporters.map(t => [t.id, t]));
+        
         // Add clientAmount (with commission) and transporter info with photo for each offer
-        const offersWithTransporters = await Promise.all(
-          offers.map(async (offer) => {
-            const transporter = await storage.getUser(offer.transporterId);
-            return {
-              ...offer,
-              clientAmount: (parseFloat(offer.amount) * (1 + commissionRate / 100)).toFixed(2),
-              transporter: transporter ? {
-                id: transporter.id,
-                name: transporter.name,
-                city: transporter.city,
-                phoneNumber: transporter.phoneNumber,
-                rating: transporter.rating,
-                totalTrips: transporter.totalTrips,
-                truckPhotos: transporter.truckPhotos,
-              } : null,
-            };
-          })
-        );
-        offers = offersWithTransporters;
+        offers = offers.map(offer => {
+          const transporter = transportersMap.get(offer.transporterId);
+          return {
+            ...offer,
+            clientAmount: (parseFloat(offer.amount) * (1 + commissionRate / 100)).toFixed(2),
+            transporter: transporter ? {
+              id: transporter.id,
+              name: transporter.name,
+              city: transporter.city,
+              phoneNumber: transporter.phoneNumber,
+              rating: transporter.rating,
+              totalTrips: transporter.totalTrips,
+              truckPhotos: transporter.truckPhotos,
+            } : null,
+          };
+        });
       } else if (transporterId) {
         offers = await storage.getOffersByTransporter(transporterId as string);
         // No commission markup for transporter view

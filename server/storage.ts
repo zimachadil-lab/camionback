@@ -23,11 +23,12 @@ import {
   adminSettings, notifications, ratings, emptyReturns, contracts, reports, cities, smsHistory,
   clientTransporterContacts, stories, coordinatorLogs
 } from '@shared/schema';
-import { eq, and, or, desc, asc, lte, gte, sql } from 'drizzle-orm';
+import { eq, and, or, desc, asc, lte, gte, sql, inArray } from 'drizzle-orm';
 
 export interface IStorage {
   // User operations
   getUser(id: string): Promise<User | undefined>;
+  getUsersByIds(ids: string[]): Promise<User[]>;
   getUserByPhone(phoneNumber: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
@@ -190,6 +191,10 @@ export class MemStorage implements IStorage {
 
   async getUser(id: string): Promise<User | undefined> {
     return this.users.get(id);
+  }
+
+  async getUsersByIds(ids: string[]): Promise<User[]> {
+    return ids.map(id => this.users.get(id)).filter((u): u is User => u !== undefined);
   }
 
   async getUserByPhone(phoneNumber: string): Promise<User | undefined> {
@@ -1139,6 +1144,11 @@ export class DbStorage implements IStorage {
   async getUserByPhone(phoneNumber: string): Promise<User | undefined> {
     const result = await db.select().from(users).where(eq(users.phoneNumber, phoneNumber)).limit(1);
     return result[0];
+  }
+
+  async getUsersByIds(ids: string[]): Promise<User[]> {
+    if (ids.length === 0) return [];
+    return await db.select().from(users).where(inArray(users.id, ids));
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
