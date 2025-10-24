@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -273,6 +273,11 @@ export default function AdminDashboard() {
     },
   });
 
+  // Combine clients and other users for unified lookup
+  const allUsers = useMemo(() => {
+    return [...clientsWithStats, ...users];
+  }, [clientsWithStats, users]);
+
   // Fetch all reports
   const { data: allReports = [], isLoading: reportsLoading } = useQuery({
     queryKey: ["/api/reports"],
@@ -324,7 +329,7 @@ export default function AdminDashboard() {
       // Filter by search query
       if (requestSearchQuery.trim() !== "") {
         const query = requestSearchQuery.toLowerCase().trim();
-        const client = users.find((u: any) => u.id === request.clientId);
+        const client = allUsers.find((u: any) => u.id === request.clientId);
         
         // Search by reference ID
         if (request.referenceId?.toString().toLowerCase().includes(query)) return true;
@@ -1009,7 +1014,7 @@ export default function AdminDashboard() {
                       </TableHeader>
                       <TableBody>
                         {filteredAndSortedRequests.map((request: any) => {
-                          const client = users.find((u: any) => u.id === request.clientId);
+                          const client = allUsers.find((u: any) => u.id === request.clientId);
                           
                           // Format date with time: JJ/MM/AAAA - HH:mm
                           const formatDateWithTime = (dateStr: string) => {
@@ -1164,8 +1169,8 @@ export default function AdminDashboard() {
                       <TableBody>
                         {allOffers.map((offer: any) => {
                           const request = allRequests.find((r: any) => r.id === offer.requestId);
-                          const client = users.find((u: any) => u.id === request?.clientId);
-                          const transporter = users.find((u: any) => u.id === offer.transporterId);
+                          const client = allUsers.find((u: any) => u.id === request?.clientId);
+                          const transporter = allUsers.find((u: any) => u.id === offer.transporterId);
                           
                           const formatDate = (dateStr: string) => {
                             if (!dateStr) return "N/A";
@@ -1316,8 +1321,8 @@ export default function AdminDashboard() {
                       </TableHeader>
                       <TableBody>
                         {contracts.map((contract: any) => {
-                          const client = users.find((u: any) => u.id === contract.clientId);
-                          const transporter = users.find((u: any) => u.id === contract.transporterId);
+                          const client = allUsers.find((u: any) => u.id === contract.clientId);
+                          const transporter = allUsers.find((u: any) => u.id === contract.transporterId);
                           
                           const formatDate = (dateStr: string) => {
                             if (!dateStr) return "N/A";
@@ -1626,7 +1631,7 @@ export default function AdminDashboard() {
                     </TableHeader>
                     <TableBody>
                       {pendingPayments.map((request: any) => {
-                        const client = users.find((u: any) => u.id === request.clientId);
+                        const client = allUsers.find((u: any) => u.id === request.clientId);
                         
                         // Get accepted offer details
                         const acceptedOffer = request.acceptedOfferId 
@@ -1635,7 +1640,7 @@ export default function AdminDashboard() {
                         
                         // Get transporter from accepted offer
                         const transporter = acceptedOffer 
-                          ? users.find((u: any) => u.id === acceptedOffer.transporterId)
+                          ? allUsers.find((u: any) => u.id === acceptedOffer.transporterId)
                           : null;
 
                         // Calculate net amount (base amount that transporter gets, without commission)
@@ -2166,8 +2171,8 @@ export default function AdminDashboard() {
                       </TableHeader>
                       <TableBody>
                         {allReports.map((report: any) => {
-                          const reporter = users.find((u: any) => u.id === report.reporterId);
-                          const reportedUser = users.find((u: any) => u.id === report.reportedUserId);
+                          const reporter = allUsers.find((u: any) => u.id === report.reporterId);
+                          const reportedUser = allUsers.find((u: any) => u.id === report.reportedUserId);
                           const request = allRequests.find((r: any) => r.id === report.requestId);
 
                           const getReportTypeLabel = (type: string) => {
@@ -2422,12 +2427,12 @@ export default function AdminDashboard() {
                         </TableHeader>
                         <TableBody>
                           {paidRequests.map((request: any) => {
-                            const client = users.find((u: any) => u.id === request.clientId);
+                            const client = allUsers.find((u: any) => u.id === request.clientId);
                             const acceptedOffer = request.acceptedOfferId 
                               ? allOffers.find((o: any) => o.id === request.acceptedOfferId)
                               : null;
                             const transporter = acceptedOffer 
-                              ? users.find((u: any) => u.id === acceptedOffer.transporterId)
+                              ? allUsers.find((u: any) => u.id === acceptedOffer.transporterId)
                               : null;
 
                             const netAmount = acceptedOffer ? parseFloat(acceptedOffer.amount) : 0;
@@ -3040,7 +3045,7 @@ export default function AdminDashboard() {
                     </TableHeader>
                     <TableBody>
                       {emptyReturns.map((emptyReturn: any) => {
-                        const transporter = users.find((u: any) => u.id === emptyReturn.transporterId);
+                        const transporter = allUsers.find((u: any) => u.id === emptyReturn.transporterId);
                         return (
                           <TableRow key={emptyReturn.id}>
                             <TableCell className="font-medium">
@@ -3167,7 +3172,7 @@ export default function AdminDashboard() {
               return (
                 <div className="space-y-3">
                   {openRequests.map((request: any) => {
-                    const client = users.find((u: any) => u.id === request.clientId);
+                    const client = allUsers.find((u: any) => u.id === request.clientId);
                     return (
                       <Card 
                         key={request.id}
@@ -3231,8 +3236,8 @@ export default function AdminDashboard() {
           {selectedContract && (() => {
             const request = allRequests.find((r: any) => r.id === selectedContract.requestId);
             const offer = allOffers.find((o: any) => o.id === selectedContract.offerId);
-            const client = users.find((u: any) => u.id === selectedContract.clientId);
-            const transporter = users.find((u: any) => u.id === selectedContract.transporterId);
+            const client = allUsers.find((u: any) => u.id === selectedContract.clientId);
+            const transporter = allUsers.find((u: any) => u.id === selectedContract.transporterId);
 
             return (
               <div className="mt-4 space-y-6">
@@ -3455,7 +3460,7 @@ export default function AdminDashboard() {
           </DialogHeader>
 
           {selectedRequest && (() => {
-            const client = users.find((u: any) => u.id === selectedRequest.clientId);
+            const client = allUsers.find((u: any) => u.id === selectedRequest.clientId);
             const formatDate = (dateStr: string) => {
               if (!dateStr) return "N/A";
               try {
@@ -3662,7 +3667,7 @@ export default function AdminDashboard() {
                       <CardContent>
                         <div className="space-y-3">
                           {requestOffers.map((offer: any) => {
-                            const transporter = users.find((u: any) => u.id === offer.transporterId);
+                            const transporter = allUsers.find((u: any) => u.id === offer.transporterId);
                             const formatOfferDate = (dateStr: string) => {
                               if (!dateStr) return "N/A";
                               try {
@@ -3989,12 +3994,12 @@ export default function AdminDashboard() {
             </DialogDescription>
           </DialogHeader>
           {selectedInvoice && (() => {
-            const client = users.find((u: any) => u.id === selectedInvoice.clientId);
+            const client = allUsers.find((u: any) => u.id === selectedInvoice.clientId);
             const acceptedOffer = selectedInvoice.acceptedOfferId 
               ? allOffers.find((o: any) => o.id === selectedInvoice.acceptedOfferId)
               : null;
             const transporter = acceptedOffer 
-              ? users.find((u: any) => u.id === acceptedOffer.transporterId)
+              ? allUsers.find((u: any) => u.id === acceptedOffer.transporterId)
               : null;
 
             const netAmount = acceptedOffer ? parseFloat(acceptedOffer.amount) : 0;
