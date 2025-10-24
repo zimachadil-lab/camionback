@@ -2443,6 +2443,7 @@ export class DbStorage implements IStorage {
   async getTransporterReferenceByTransporterId(transporterId: string): Promise<TransporterReference | undefined> {
     const result = await db.select().from(transporterReferences)
       .where(eq(transporterReferences.transporterId, transporterId))
+      .orderBy(desc(transporterReferences.createdAt))
       .limit(1);
     return result[0];
   }

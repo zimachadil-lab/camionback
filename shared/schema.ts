@@ -206,7 +206,7 @@ export const stories = pgTable("stories", {
 // Transporter References - Professional references for transporter validation
 export const transporterReferences = pgTable("transporter_references", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  transporterId: varchar("transporter_id").notNull().unique().references(() => users.id, { onDelete: 'cascade' }),
+  transporterId: varchar("transporter_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   referenceName: text("reference_name").notNull(), // Full name of the reference
   referencePhone: text("reference_phone").notNull(), // Phone number of the reference
   referenceRelation: text("reference_relation").notNull(), // 'Client', 'Transporteur', 'Autre'

@@ -3217,8 +3217,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check if transporter already has a reference
       const existingRef = await storage.getTransporterReferenceByTransporterId(transporterId);
-      if (existingRef) {
-        return res.status(400).json({ error: "Ce transporteur a déjà soumis une référence" });
+      
+      // Allow new submission only if:
+      // 1. No existing reference OR
+      // 2. Existing reference was rejected (allowing resubmission)
+      if (existingRef && existingRef.status !== "rejected") {
+        return res.status(400).json({ error: "Ce transporteur a déjà soumis une référence en attente ou validée" });
       }
 
       const reference = await storage.createTransporterReference({

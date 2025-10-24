@@ -476,19 +476,24 @@ export default function TransporterDashboard() {
       
       <StoriesBar userRole="transporter" />
       
-      {/* Reference request banner - Only show if pending and no reference submitted */}
-      {user.status === "pending" && !transporterReference && !referenceLoading && (
+      {/* Reference request banner - Show if pending and (no reference OR reference was rejected) */}
+      {user.status === "pending" && (!transporterReference || transporterReference.status === "rejected") && !referenceLoading && (
         <Card className="mx-4 mt-4 border-l-4 border-primary">
           <CardContent className="p-6">
             <div className="flex items-start gap-3 mb-4">
               <TruckIcon className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
               <div>
                 <h3 className="text-xl font-semibold text-foreground">
-                  🚛 Pour activer votre compte CamionBack, ajoutez un référent professionnel
+                  {transporterReference?.status === "rejected" 
+                    ? "🔄 Soumettez une nouvelle référence professionnelle"
+                    : "🚛 Pour activer votre compte CamionBack, ajoutez un référent professionnel"
+                  }
                 </h3>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Afin d'assurer la qualité du réseau, chaque transporteur doit fournir une personne de confiance 
-                  (client, partenaire ou autre transporteur) que notre équipe contactera pour confirmer son sérieux.
+                  {transporterReference?.status === "rejected" && transporterReference.rejectionReason 
+                    ? `Raison du rejet : ${transporterReference.rejectionReason}. Merci de fournir une nouvelle référence.`
+                    : "Afin d'assurer la qualité du réseau, chaque transporteur doit fournir une personne de confiance (client, partenaire ou autre transporteur) que notre équipe contactera pour confirmer son sérieux."
+                  }
                 </p>
               </div>
             </div>
@@ -588,8 +593,8 @@ export default function TransporterDashboard() {
         </div>
       )}
 
-      {/* Reference rejected message */}
-      {user.status === "pending" && transporterReference && transporterReference.status === "rejected" && (
+      {/* Reference rejected message - This message is now integrated into the form banner above, so we remove this separate banner to avoid duplication */}
+      {/* {user.status === "pending" && transporterReference && transporterReference.status === "rejected" && (
         <div className="bg-red-50 dark:bg-red-950/30 border-l-4 border-red-500 p-4 mx-4 mt-4">
           <div className="flex items-start gap-3">
             <Flag className="w-5 h-5 text-red-600 dark:text-red-500 mt-0.5 flex-shrink-0" />
