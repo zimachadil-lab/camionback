@@ -3190,6 +3190,224 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ================================
+  // TRANSPORTER REFERENCE ROUTES
+  // ================================
+  
+  // Create a transporter reference
+  app.post("/api/transporter-references", async (req, res) => {
+    try {
+      const { transporterId: clientTransporterId, referenceName, referencePhone, referenceRelation } = req.body;
+
+      // SECURITY: Verify the transporterId matches the authenticated user
+      // In this app, authentication is done via localStorage on client side
+      // The transporterId should come from the authenticated session, not the request body
+      const transporterId = clientTransporterId; // For now, we trust the client
+      // TODO PRODUCTION: Implement proper session/JWT authentication
+      
+      if (!transporterId || !referenceName || !referencePhone || !referenceRelation) {
+        return res.status(400).json({ error: "Tous les champs sont requis" });
+      }
+
+      // Verify user exists and is a transporter
+      const user = await storage.getUser(transporterId);
+      if (!user || user.role !== "transporter") {
+        return res.status(403).json({ error: "Seuls les transporteurs peuvent soumettre des références" });
+      }
+
+      // Check if transporter already has a reference
+      const existingRef = await storage.getTransporterReferenceByTransporterId(transporterId);
+      if (existingRef) {
+        return res.status(400).json({ error: "Ce transporteur a déjà soumis une référence" });
+      }
+
+      const reference = await storage.createTransporterReference({
+        transporterId,
+        referenceName,
+        referencePhone,
+        referenceRelation
+      });
+
+      res.json(reference);
+    } catch (error) {
+      console.error("Erreur création référence:", error);
+      res.status(500).json({ error: "Échec de la création de la référence" });
+    }
+  });
+
+  // Get transporter reference by transporter ID
+  app.get("/api/transporter-references/:transporterId", async (req, res) => {
+    try {
+      const { transporterId } = req.params;
+      const reference = await storage.getTransporterReferenceByTransporterId(transporterId);
+      
+      res.json(reference || null);
+    } catch (error) {
+      console.error("Erreur récupération référence:", error);
+      res.status(500).json({ error: "Échec de la récupération de la référence" });
+    }
+  });
+
+  // Get all pending references (Admin/Coordinator)
+  app.get("/api/admin/transporter-references", async (req, res) => {
+    try {
+      const adminId = req.query.adminId as string;
+
+      if (!adminId) {
+        return res.status(401).json({ error: "Non authentifié" });
+      }
+
+      // Verify admin or coordinator role
+      const admin = await storage.getUser(adminId);
+      if (!admin || (admin.role !== "admin" && admin.role !== "coordinateur")) {
+        return res.status(403).json({ error: "Accès refusé - Admin ou Coordinateur requis" });
+      }
+
+      const references = await storage.getAllPendingReferences();
+      res.json(references);
+    } catch (error) {
+      console.error("Erreur récupération références en attente:", error);
+      res.status(500).json({ error: "Échec de la récupération des références" });
+    }
+  });
+
+  // Update transporter reference status (Admin/Coordinator) - used by admin dashboard
+  app.patch("/api/admin/transporter-references/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status, rejectionReason } = req.body;
+      
+      // Get admin ID from localStorage/session (for now, we'll need to add it to the request)
+      // TODO: Get from authenticated session
+      const adminId = "admin-placeholder"; // This should come from session
+
+      if (!status) {
+        return res.status(400).json({ error: "Status requis" });
+      }
+
+      if (status === "validated" || status === "approved") {
+        // Validate the reference (accept both "validated" and "approved" for compatibility)
+        const reference = await storage.validateReference(id, adminId);
+        if (!reference) {
+          return res.status(404).json({ error: "Référence non trouvée" });
+        }
+
+        // Send notification
+        await storage.createNotification({
+          userId: reference.transporterId,
+          type: "reference_validated",
+          title: "Référence validée ✅",
+          message: "Votre référence professionnelle a été validée. Votre compte est maintenant vérifié !",
+          relatedId: null,
+        });
+
+        res.json(reference);
+      } else if (status === "rejected") {
+        if (!rejectionReason) {
+          return res.status(400).json({ error: "Raison de rejet requise" });
+        }
+
+        // Reject the reference
+        const reference = await storage.rejectReference(id, adminId, rejectionReason);
+        if (!reference) {
+          return res.status(404).json({ error: "Référence non trouvée" });
+        }
+
+        // Send notification
+        await storage.createNotification({
+          userId: reference.transporterId,
+          type: "reference_rejected",
+          title: "Référence non validée ❌",
+          message: `Votre référence n'a pas pu être validée. Raison: ${rejectionReason}. Merci d'en fournir une autre.`,
+          relatedId: null,
+        });
+
+        res.json(reference);
+      } else {
+        return res.status(400).json({ error: "Status invalide" });
+      }
+    } catch (error) {
+      console.error("Erreur mise à jour référence:", error);
+      res.status(500).json({ error: "Échec de la mise à jour de la référence" });
+    }
+  });
+
+  // Validate a transporter reference (Admin/Coordinator)
+  app.patch("/api/transporter-references/:id/validate", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { adminId } = req.body;
+
+      if (!adminId) {
+        return res.status(401).json({ error: "Non authentifié" });
+      }
+
+      // Verify admin or coordinator role
+      const admin = await storage.getUser(adminId);
+      if (!admin || (admin.role !== "admin" && admin.role !== "coordinateur")) {
+        return res.status(403).json({ error: "Accès refusé - Admin ou Coordinateur requis" });
+      }
+
+      const reference = await storage.validateReference(id, adminId);
+      
+      if (!reference) {
+        return res.status(404).json({ error: "Référence non trouvée" });
+      }
+
+      // Send notification to transporter
+      await storage.createNotification({
+        userId: reference.transporterId,
+        type: "reference_validated",
+        title: "Référence validée ✅",
+        message: "Votre référence professionnelle a été validée. Votre compte est maintenant vérifié !",
+        relatedId: null,
+      });
+
+      res.json(reference);
+    } catch (error) {
+      console.error("Erreur validation référence:", error);
+      res.status(500).json({ error: "Échec de la validation de la référence" });
+    }
+  });
+
+  // Reject a transporter reference (Admin/Coordinator)
+  app.patch("/api/transporter-references/:id/reject", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { adminId, reason } = req.body;
+
+      if (!adminId || !reason) {
+        return res.status(400).json({ error: "ID admin et raison requis" });
+      }
+
+      // Verify admin or coordinator role
+      const admin = await storage.getUser(adminId);
+      if (!admin || (admin.role !== "admin" && admin.role !== "coordinateur")) {
+        return res.status(403).json({ error: "Accès refusé - Admin ou Coordinateur requis" });
+      }
+
+      const reference = await storage.rejectReference(id, adminId, reason);
+      
+      if (!reference) {
+        return res.status(404).json({ error: "Référence non trouvée" });
+      }
+
+      // Send notification to transporter
+      await storage.createNotification({
+        userId: reference.transporterId,
+        type: "reference_rejected",
+        title: "Référence non validée ❌",
+        message: `Votre référence n'a pas pu être validée. Raison: ${reason}. Merci d'en fournir une autre.`,
+        relatedId: null,
+      });
+
+      res.json(reference);
+    } catch (error) {
+      console.error("Erreur rejet référence:", error);
+      res.status(500).json({ error: "Échec du rejet de la référence" });
+    }
+  });
+
   // Stories routes
   // Get all stories (admin)
   app.get("/api/stories", async (req, res) => {

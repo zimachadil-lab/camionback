@@ -92,6 +92,9 @@ export default function AdminDashboard() {
   const [editTransporterPhoto, setEditTransporterPhoto] = useState<File | null>(null);
   const [viewPhotoTransporterId, setViewPhotoTransporterId] = useState<string | null>(null);
   const [viewPhotoDialogOpen, setViewPhotoDialogOpen] = useState(false);
+  const [rejectReferenceDialogOpen, setRejectReferenceDialogOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [selectedReference, setSelectedReference] = useState<any>(null);
   const { toast} = useToast();
 
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
@@ -142,6 +145,15 @@ export default function AdminDashboard() {
     queryKey: ["/api/admin/pending-drivers"],
     queryFn: async () => {
       const response = await fetch("/api/admin/pending-drivers");
+      return response.json();
+    },
+  });
+
+  // Fetch pending references
+  const { data: pendingReferences = [], isLoading: referencesLoading } = useQuery({
+    queryKey: ["/api/admin/transporter-references"],
+    queryFn: async () => {
+      const response = await fetch("/api/admin/transporter-references");
       return response.json();
     },
   });
@@ -657,6 +669,56 @@ export default function AdminDashboard() {
     },
   });
 
+  // Validate reference mutation
+  const validateReferenceMutation = useMutation({
+    mutationFn: async (referenceId: string) => {
+      return await apiRequest("PATCH", `/api/admin/transporter-references/${referenceId}`, {
+        status: "validated",
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Référence validée",
+        description: "La référence a été validée avec succès",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/transporter-references"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pending-drivers"] });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de valider la référence",
+      });
+    },
+  });
+
+  // Reject reference mutation
+  const rejectReferenceMutation = useMutation({
+    mutationFn: async ({ referenceId, reason }: { referenceId: string; reason: string }) => {
+      return await apiRequest("PATCH", `/api/admin/transporter-references/${referenceId}`, {
+        status: "rejected",
+        rejectionReason: reason,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Référence rejetée",
+        description: "La référence a été rejetée",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/transporter-references"] });
+      setRejectReferenceDialogOpen(false);
+      setRejectionReason("");
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de rejeter la référence",
+      });
+    },
+  });
+
   // Delete user mutation (for permanent account deletion)
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: string) => {
@@ -875,6 +937,14 @@ export default function AdminDashboard() {
                   {pendingDrivers.length > 0 && (
                     <Badge variant="destructive" className="ml-2 px-1.5 py-0 h-5 min-w-5 text-xs">
                       {pendingDrivers.length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="references" data-testid="tab-references" className="flex-shrink-0">
+                  Références
+                  {pendingReferences.length > 0 && (
+                    <Badge variant="destructive" className="ml-2 px-1.5 py-0 h-5 min-w-5 text-xs">
+                      {pendingReferences.length}
                     </Badge>
                   )}
                 </TabsTrigger>
@@ -1604,6 +1674,93 @@ export default function AdminDashboard() {
                           </TableCell>
                         </TableRow>
                       ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="references" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5" />
+                  Validation des références professionnelles
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {referencesLoading ? (
+                  <div className="text-center py-8">
+                    <LoadingTruck message="Chargement des références..." size="md" />
+                  </div>
+                ) : pendingReferences.length === 0 ? (
+                  <div className="text-center py-8">
+                    <CheckCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">Aucune référence en attente de validation</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Transporteur</TableHead>
+                        <TableHead>Référent</TableHead>
+                        <TableHead>Téléphone référent</TableHead>
+                        <TableHead>Relation</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pendingReferences.map((reference: any) => {
+                        const transporter = users.find((u: any) => u.id === reference.transporterId);
+                        return (
+                          <TableRow key={reference.id}>
+                            <TableCell className="font-medium">{transporter?.name || "N/A"}</TableCell>
+                            <TableCell>{reference.referenceName}</TableCell>
+                            <TableCell>
+                              <a href={`tel:${reference.referencePhone}`} className="text-primary hover:underline">
+                                {reference.referencePhone}
+                              </a>
+                            </TableCell>
+                            <TableCell>{reference.referenceRelation}</TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex gap-2 justify-end">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => window.open(`tel:${reference.referencePhone}`, "_self")}
+                                  data-testid={`button-call-${reference.id}`}
+                                >
+                                  <Phone className="w-4 h-4 mr-1" />
+                                  Appeler
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  onClick={() => validateReferenceMutation.mutate(reference.id)}
+                                  disabled={validateReferenceMutation.isPending}
+                                  data-testid={`button-validate-ref-${reference.id}`}
+                                >
+                                  <CheckCircle className="w-4 h-4 mr-1" />
+                                  Valider
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => {
+                                    setSelectedReference(reference);
+                                    setRejectReferenceDialogOpen(true);
+                                  }}
+                                  data-testid={`button-reject-ref-${reference.id}`}
+                                >
+                                  <XCircle className="w-4 h-4 mr-1" />
+                                  Refuser
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 )}
@@ -4275,6 +4432,53 @@ export default function AdminDashboard() {
               className="max-w-full max-h-[600px] object-contain rounded-lg"
               data-testid="img-enlarged-truck"
             />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reject Reference Dialog */}
+      <Dialog open={rejectReferenceDialogOpen} onOpenChange={setRejectReferenceDialogOpen}>
+        <DialogContent data-testid="dialog-reject-reference">
+          <DialogHeader>
+            <DialogTitle>Refuser la référence</DialogTitle>
+            <DialogDescription>
+              Indiquez la raison du refus de cette référence professionnelle
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Textarea
+              placeholder="Ex: Référence impossible à joindre, informations incorrectes..."
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              data-testid="textarea-rejection-reason"
+            />
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setRejectReferenceDialogOpen(false);
+                  setRejectionReason("");
+                }}
+                data-testid="button-cancel-reject"
+              >
+                Annuler
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (selectedReference) {
+                    rejectReferenceMutation.mutate({
+                      referenceId: selectedReference.id,
+                      reason: rejectionReason || "Raison non spécifiée",
+                    });
+                  }
+                }}
+                disabled={rejectReferenceMutation.isPending}
+                data-testid="button-confirm-reject"
+              >
+                {rejectReferenceMutation.isPending ? "Rejet..." : "Confirmer le refus"}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

@@ -1,0 +1,152 @@
+SYSTÈME DE RÉFÉRENT TRANSPORTEUR (VERSION LÉGÈRE ET OPTIMISÉE)
+🎯 Objectif :
+
+Mettre en place un système de recommandation obligatoire uniquement pour les transporteurs, directement après la création du compte (dans leur tableau de bord).
+Le transporteur doit ajouter un seul référent professionnel (client ou autre transporteur) pour que son compte soit validé.
+Ce système permettra à l’équipe CamionBack de :
+
+vérifier la fiabilité du transporteur,
+
+conserver un historique complet,
+
+et donner plus de visibilité aux profils validés avec un badge “✅ Vérifié”.
+
+🧱 1. Emplacement et affichage
+
+Dès qu’un transporteur termine son inscription (informations personnelles + photo du camion),
+le message actuel “Votre compte est en cours de validation” doit être remplacé par une bannière visible en haut de son tableau de bord.
+
+🧾 2. Contenu de la bannière
+
+Titre clair :
+
+🚛 Pour activer votre compte CamionBack, ajoutez un référent professionnel.
+
+Texte explicatif :
+
+Afin d’assurer la qualité du réseau, chaque transporteur doit fournir une personne de confiance (client, partenaire ou autre transporteur) que notre équipe contactera pour confirmer son sérieux.
+
+Champs du formulaire :
+Champ	Type	Détails
+Nom complet du référent	Input texte	Obligatoire
+Relation professionnelle	Dropdown	Options : “Client”, “Transporteur”, “Autre”
+Numéro de téléphone du référent	Input téléphone (format +212)	Obligatoire
+Bouton CTA	[Soumettre ma référence]	CTA principal
+
+➡️ Après soumission :
+
+✅ Votre référence a été enregistrée.
+Notre équipe vous informera une fois votre profil validé.
+
+Le statut reste “En attente de validation par référence” tant qu’aucune vérification n’a été faite.
+
+🧰 3. Vue côté Admin / Coordinateur
+
+Créer une nouvelle section dans le tableau de bord admin :
+
+Références transporteurs à valider
+
+Contenu du tableau :
+Transporteur	Téléphone	Référent	Rôle	Statut	Actions
+Karim L.	+2126...	Youssef B.	Client	En attente	[Appeler] [Valider] [Refuser]
+Fonctionnalités :
+
+Appeler → ouvre tel:+212...
+
+Valider → change le statut du transporteur en isVerified: true
+
+Refuser → affiche message côté transporteur :
+
+❌ Votre référence n’a pas pu être validée. Merci d’en fournir une autre.
+
+Validation manuelle possible si l’admin connaît déjà le transporteur :
+
+“Validé manuellement par [Nom coordinateur] — profil déjà connu.”
+
+🏅 4. Badge “Vérifié CamionBack”
+
+Une fois la référence validée :
+
+Le profil transporteur reçoit le badge :
+
+✅ Vérifié par CamionBack
+Profil validé par recommandation professionnelle.
+
+Le badge est visible :
+
+Sur la fiche du transporteur
+
+Dans les résultats CamioMatch
+
+Sur la vue Admin et Client
+
+Style :
+
+Icône ✅ turquoise (#17cfcf) avec fond clair.
+➡️ Les transporteurs vérifiés apparaissent en premier dans les recherches.
+
+🧩 5. Base de données (simplifiée)
+{
+  "transporterId": "xxxx",
+  "reference": {
+    "name": "Youssef B.",
+    "phone": "+212661223344",
+    "relation": "Client",
+    "status": "pending / validated / rejected",
+    "validatedBy": "AdminID",
+    "validatedAt": "2025-10-25T00:00:00Z"
+  },
+  "isVerified": true
+}
+
+🧮 6. Fonctionnalités Admin supplémentaires
+
+Filtres rapides :
+
+🟢 Vérifiés
+
+🟠 En attente
+
+🔴 Refusés
+
+Recherche par :
+
+Nom du transporteur
+
+Nom du référent
+
+Numéro de téléphone
+
+Historique exportable CSV
+
+⚙️ 7. Scénarios automatiques
+Cas 1 : Référence non confirmée après 5 jours
+
+→ Notification :
+
+⚠️ Votre référence n’a pas encore été validée.
+Vous pouvez en ajouter une nouvelle si nécessaire.
+
+Cas 2 : Référence refusée
+
+→ Message rouge :
+
+❌ Votre référence n’a pas été validée.
+Merci d’en fournir une autre personne à contacter.
+
+💬 8. Option future (à préparer)
+
+Prévoir un endpoint Infobip pour automatiser l’envoi d’un SMS/WhatsApp au référent :
+
+“Bonjour, vous avez été indiqué comme référent de [Nom Transporteur] sur CamionBack.
+Le connaissez-vous professionnellement ? Répondez par ✅ OUI ou ❌ NON.”
+
+✅ = validation automatique
+❌ = rejet automatique
+
+🧠 9. Explication UX et stratégique
+
+L’objectif est de rendre la validation plus claire et rapide pour le transporteur sans le surcharger.
+Il complète son profil, voit directement la demande de référence en haut, et comprend pourquoi elle est nécessaire.
+Côté admin, on garde une trace complète et on peut valider manuellement les profils connus.
+Les transporteurs validés gagnent en visibilité et deviennent les ambassadeurs du sérieux CamionBack.

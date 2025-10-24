@@ -14,14 +14,15 @@ import {
   type SmsHistory, type InsertSmsHistory,
   type ClientTransporterContact, type InsertClientTransporterContact,
   type Story, type InsertStory,
-  type CoordinatorLog, type InsertCoordinatorLog
+  type CoordinatorLog, type InsertCoordinatorLog,
+  type TransporterReference, type InsertTransporterReference
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from './db.js';
 import { 
   users, otpCodes, transportRequests, offers, chatMessages,
   adminSettings, notifications, ratings, emptyReturns, contracts, reports, cities, smsHistory,
-  clientTransporterContacts, stories, coordinatorLogs
+  clientTransporterContacts, stories, coordinatorLogs, transporterReferences
 } from '@shared/schema';
 import { eq, and, or, desc, asc, lte, gte, sql, inArray } from 'drizzle-orm';
 
@@ -152,6 +153,14 @@ export interface IStorage {
   createCoordinatorLog(log: InsertCoordinatorLog): Promise<CoordinatorLog>;
   getCoordinatorLogs(coordinatorId?: string): Promise<CoordinatorLog[]>;
   getRecentCoordinatorActivity(): Promise<any[]>;
+  
+  // Transporter Reference operations
+  createTransporterReference(reference: InsertTransporterReference): Promise<TransporterReference>;
+  getTransporterReferenceByTransporterId(transporterId: string): Promise<TransporterReference | undefined>;
+  getAllPendingReferences(): Promise<any[]>;
+  validateReference(id: string, adminId: string): Promise<TransporterReference | undefined>;
+  rejectReference(id: string, adminId: string, reason: string): Promise<TransporterReference | undefined>;
+  updateTransporterReference(id: string, updates: Partial<TransporterReference>): Promise<TransporterReference | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -1131,6 +1140,26 @@ export class MemStorage implements IStorage {
   }
   async deleteStory(id: string): Promise<void> {
     return;
+  }
+
+  // Transporter Reference operations (stubs - MemStorage not used in production)
+  async createTransporterReference(reference: InsertTransporterReference): Promise<TransporterReference> {
+    throw new Error("MemStorage not implemented for transporter references");
+  }
+  async getTransporterReferenceByTransporterId(transporterId: string): Promise<TransporterReference | undefined> {
+    return undefined;
+  }
+  async getAllPendingReferences(): Promise<any[]> {
+    return [];
+  }
+  async validateReference(id: string, adminId: string): Promise<TransporterReference | undefined> {
+    return undefined;
+  }
+  async rejectReference(id: string, adminId: string, reason: string): Promise<TransporterReference | undefined> {
+    return undefined;
+  }
+  async updateTransporterReference(id: string, updates: Partial<TransporterReference>): Promise<TransporterReference | undefined> {
+    return undefined;
   }
 }
 
@@ -2403,6 +2432,86 @@ export class DbStorage implements IStorage {
     .limit(50);
 
     return logs;
+  }
+
+  // Transporter Reference operations
+  async createTransporterReference(reference: InsertTransporterReference): Promise<TransporterReference> {
+    const result = await db.insert(transporterReferences).values(reference).returning();
+    return result[0];
+  }
+
+  async getTransporterReferenceByTransporterId(transporterId: string): Promise<TransporterReference | undefined> {
+    const result = await db.select().from(transporterReferences)
+      .where(eq(transporterReferences.transporterId, transporterId))
+      .limit(1);
+    return result[0];
+  }
+
+  async getAllPendingReferences(): Promise<any[]> {
+    const references = await db.select({
+      id: transporterReferences.id,
+      transporterId: transporterReferences.transporterId,
+      transporterName: users.name,
+      transporterPhone: users.phoneNumber,
+      transporterCity: users.city,
+      referenceName: transporterReferences.referenceName,
+      referencePhone: transporterReferences.referencePhone,
+      referenceRelation: transporterReferences.referenceRelation,
+      status: transporterReferences.status,
+      createdAt: transporterReferences.createdAt,
+    })
+    .from(transporterReferences)
+    .innerJoin(users, eq(transporterReferences.transporterId, users.id))
+    .where(eq(transporterReferences.status, 'pending'))
+    .orderBy(desc(transporterReferences.createdAt));
+
+    return references;
+  }
+
+  async validateReference(id: string, adminId: string): Promise<TransporterReference | undefined> {
+    // Update reference status to validated
+    const result = await db.update(transporterReferences)
+      .set({ 
+        status: 'validated',
+        validatedBy: adminId,
+        validatedAt: new Date()
+      })
+      .where(eq(transporterReferences.id, id))
+      .returning();
+
+    if (result[0]) {
+      // Also update the transporter's isVerified status
+      await db.update(users)
+        .set({ 
+          isVerified: true,
+          status: 'validated'
+        })
+        .where(eq(users.id, result[0].transporterId));
+    }
+
+    return result[0];
+  }
+
+  async rejectReference(id: string, adminId: string, reason: string): Promise<TransporterReference | undefined> {
+    const result = await db.update(transporterReferences)
+      .set({ 
+        status: 'rejected',
+        validatedBy: adminId,
+        validatedAt: new Date(),
+        rejectionReason: reason
+      })
+      .where(eq(transporterReferences.id, id))
+      .returning();
+
+    return result[0];
+  }
+
+  async updateTransporterReference(id: string, updates: Partial<TransporterReference>): Promise<TransporterReference | undefined> {
+    const result = await db.update(transporterReferences)
+      .set(updates)
+      .where(eq(transporterReferences.id, id))
+      .returning();
+    return result[0];
   }
 }
 

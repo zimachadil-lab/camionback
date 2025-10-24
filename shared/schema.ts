@@ -22,6 +22,7 @@ export const users = pgTable("users", {
   ribNumber: text("rib_number"), // 24-digit RIB number (for transporters)
   deviceToken: text("device_token"), // Push notification subscription token (JSON)
   isActive: boolean("is_active").default(true),
+  isVerified: boolean("is_verified").default(false), // Verified by professional reference (transporters only)
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -202,6 +203,20 @@ export const stories = pgTable("stories", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Transporter References - Professional references for transporter validation
+export const transporterReferences = pgTable("transporter_references", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  transporterId: varchar("transporter_id").notNull().unique().references(() => users.id, { onDelete: 'cascade' }),
+  referenceName: text("reference_name").notNull(), // Full name of the reference
+  referencePhone: text("reference_phone").notNull(), // Phone number of the reference
+  referenceRelation: text("reference_relation").notNull(), // 'Client', 'Transporteur', 'Autre'
+  status: text("status").default("pending"), // 'pending', 'validated', 'rejected'
+  validatedBy: varchar("validated_by").references(() => users.id), // Admin/Coordinator who validated
+  validatedAt: timestamp("validated_at"), // When it was validated
+  rejectionReason: text("rejection_reason"), // Reason for rejection if rejected
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertOtpCodeSchema = createInsertSchema(otpCodes).omit({ id: true, createdAt: true, verified: true });
@@ -248,6 +263,9 @@ export const insertSmsHistorySchema = createInsertSchema(smsHistory).omit({ id: 
 export const insertClientTransporterContactSchema = createInsertSchema(clientTransporterContacts).omit({ id: true, createdAt: true, isRead: true });
 export const insertStorySchema = createInsertSchema(stories).omit({ id: true, createdAt: true }).extend({
   role: z.enum(["client", "transporter", "all"]),
+});
+export const insertTransporterReferenceSchema = createInsertSchema(transporterReferences).omit({ id: true, createdAt: true, status: true, validatedBy: true, validatedAt: true, rejectionReason: true }).extend({
+  referenceRelation: z.enum(["Client", "Transporteur", "Autre"]),
 });
 
 // Coordinator Activity Logs
@@ -305,6 +323,8 @@ export type InsertClientTransporterContact = z.infer<typeof insertClientTranspor
 export type ClientTransporterContact = typeof clientTransporterContacts.$inferSelect;
 export type InsertStory = z.infer<typeof insertStorySchema>;
 export type Story = typeof stories.$inferSelect;
+export type InsertTransporterReference = z.infer<typeof insertTransporterReferenceSchema>;
+export type TransporterReference = typeof transporterReferences.$inferSelect;
 export type InsertCoordinatorLog = z.infer<typeof insertCoordinatorLogSchema>;
 export type CoordinatorLog = typeof coordinatorLogs.$inferSelect;
 export type CreateCoordinator = z.infer<typeof createCoordinatorSchema>;
