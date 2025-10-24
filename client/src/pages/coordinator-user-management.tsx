@@ -231,6 +231,8 @@ export default function CoordinatorUserManagement() {
   const [addType, setAddType] = useState<"client" | "transporter">("client");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [photoDialogOpen, setPhotoDialogOpen] = useState(false);
+  const [selectedTransporter, setSelectedTransporter] = useState<any>(null);
 
   // Fetch user from localStorage
   const userStr = localStorage.getItem("camionback_user");
@@ -283,6 +285,11 @@ export default function CoordinatorUserManagement() {
   const handleEditUser = (user: any, type: "client" | "transporter") => {
     setSelectedUser({ ...user, type });
     setEditDialogOpen(true);
+  };
+
+  const handleViewPhoto = (transporter: any) => {
+    setSelectedTransporter(transporter);
+    setPhotoDialogOpen(true);
   };
 
   if (!user || user.role !== "coordinateur") {
@@ -425,10 +432,16 @@ export default function CoordinatorUserManagement() {
                         <div className="flex-1">
                           <CardTitle className="text-base">{transporter.name}</CardTitle>
                           {transporter.hasTruckPhoto && (
-                            <Badge variant="outline" className="mt-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="mt-1 h-6 px-2 text-xs"
+                              onClick={() => handleViewPhoto(transporter)}
+                              data-testid={`button-view-photo-${transporter.id}`}
+                            >
                               <Camera className="h-3 w-3 mr-1" />
                               Photo
-                            </Badge>
+                            </Button>
                           )}
                         </div>
                         <Button
@@ -501,6 +514,38 @@ export default function CoordinatorUserManagement() {
           <p className="text-sm text-muted-foreground">
             Cette fonctionnalité sera disponible prochainement pour permettre la modification des informations utilisateur.
           </p>
+        </DialogContent>
+      </Dialog>
+
+      {/* Photo Dialog */}
+      <Dialog open={photoDialogOpen} onOpenChange={setPhotoDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Photos du camion - {selectedTransporter?.name}</DialogTitle>
+            <DialogDescription>
+              Photos du véhicule du transporteur
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedTransporter?.truckPhotos && selectedTransporter.truckPhotos.length > 0 ? (
+              <div className="grid gap-4">
+                {selectedTransporter.truckPhotos.map((photo: string, index: number) => (
+                  <img
+                    key={index}
+                    src={photo}
+                    alt={`Photo du camion ${index + 1}`}
+                    className="w-full h-auto rounded-lg"
+                    data-testid={`img-truck-photo-${index}`}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">
+                <Truck className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p>Aucune photo disponible pour ce camion</p>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
