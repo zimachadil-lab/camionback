@@ -145,7 +145,7 @@ export default function TransporterDashboard() {
     refetchInterval: 5000,
   });
 
-  const { data: allRequests = [] } = useQuery({
+  const { data: allRequests = [], isLoading: allRequestsLoading } = useQuery({
     queryKey: ["/api/requests/all"],
     queryFn: async () => {
       const response = await fetch("/api/requests");
@@ -469,7 +469,7 @@ export default function TransporterDashboard() {
     return acc;
   }, {});
 
-  if (requestsLoading || offersLoading || citiesLoading || acceptedLoading) {
+  if (requestsLoading || offersLoading || citiesLoading || acceptedLoading || allRequestsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingTruck message="Chargement de votre tableau de bord..." size="lg" />
