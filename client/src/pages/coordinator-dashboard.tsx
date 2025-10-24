@@ -30,20 +30,8 @@ function CoordinatorOffersView({ requestId, onAcceptOffer, isPending }: {
   });
 
   // State for managing truck photo viewing
-  const [selectedPhotoTransporterId, setSelectedPhotoTransporterId] = useState<string | null>(null);
+  const [selectedTruckPhoto, setSelectedTruckPhoto] = useState<string | null>(null);
   const [photoDialogOpen, setPhotoDialogOpen] = useState(false);
-
-  // Fetch truck photo for selected transporter
-  const { data: truckPhotoData } = useQuery({
-    queryKey: ["/api/admin/transporters", selectedPhotoTransporterId, "photo"],
-    queryFn: async () => {
-      if (!selectedPhotoTransporterId) return null;
-      const response = await fetch(`/api/admin/transporters/${selectedPhotoTransporterId}/photo`);
-      if (!response.ok) return null;
-      return response.json();
-    },
-    enabled: photoDialogOpen && !!selectedPhotoTransporterId,
-  });
 
   if (isLoading) {
     return (
@@ -62,8 +50,9 @@ function CoordinatorOffersView({ requestId, onAcceptOffer, isPending }: {
     );
   }
 
-  const handleViewTruckPhoto = (transporterId: string) => {
-    setSelectedPhotoTransporterId(transporterId);
+  const handleViewTruckPhoto = (truckPhotos: string[] | null) => {
+    const photo = truckPhotos && truckPhotos.length > 0 ? truckPhotos[0] : null;
+    setSelectedTruckPhoto(photo);
     setPhotoDialogOpen(true);
   };
 
@@ -74,13 +63,13 @@ function CoordinatorOffersView({ requestId, onAcceptOffer, isPending }: {
           <Card key={offer.id} className="overflow-hidden" data-testid={`card-offer-${offer.id}`}>
             <CardContent className="p-4 space-y-3">
               {/* Truck Photo Button */}
-              {offer.transporter?.id && (
+              {offer.transporter?.truckPhotos && offer.transporter.truckPhotos.length > 0 && (
                 <div className="mb-2">
                   <Button
                     variant="outline"
                     size="sm"
                     className="w-full gap-2"
-                    onClick={() => handleViewTruckPhoto(offer.transporter.id)}
+                    onClick={() => handleViewTruckPhoto(offer.transporter.truckPhotos)}
                     data-testid={`button-view-truck-photo-${offer.id}`}
                   >
                     <Truck className="h-4 w-4" />
@@ -205,9 +194,9 @@ function CoordinatorOffersView({ requestId, onAcceptOffer, isPending }: {
             <DialogTitle>Photo du camion</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            {truckPhotoData?.truckPhoto ? (
+            {selectedTruckPhoto ? (
               <img
-                src={truckPhotoData.truckPhoto}
+                src={selectedTruckPhoto}
                 alt="Photo du camion"
                 className="w-full h-auto rounded-lg"
                 data-testid="img-truck-photo"

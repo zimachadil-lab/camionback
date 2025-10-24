@@ -3393,28 +3393,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const settings = await storage.getAdminSettings();
       const commissionRate = parseFloat(settings?.commissionPercentage || "10");
       
+      // Batch fetch all unique transporters in a single query to avoid N+1
+      const transporterIds = [...new Set(offers.map(offer => offer.transporterId))];
+      const allTransporters = await storage.getUsersByIds(transporterIds);
+      const transportersMap = new Map(allTransporters.map(t => [t.id, t]));
+      
       // Enrich offers with transporter details and calculated amounts
-      const enrichedOffers = await Promise.all(
-        offers.map(async (offer) => {
-          const transporter = await storage.getUser(offer.transporterId);
-          const offerAmount = parseFloat(offer.amount);
-          const commissionAmount = (offerAmount * commissionRate) / 100;
-          const totalWithCommission = offerAmount + commissionAmount;
-          
-          return {
-            ...offer,
-            transporter: transporter ? {
-              id: transporter.id,
-              name: transporter.name,
-              phoneNumber: transporter.phoneNumber,
-              city: transporter.city,
-              rating: transporter.rating,
-            } : null,
-            clientAmount: totalWithCommission.toFixed(2),
-            commissionAmount: commissionAmount.toFixed(2),
-          };
-        })
-      );
+      const enrichedOffers = offers.map((offer) => {
+        const transporter = transportersMap.get(offer.transporterId);
+        const offerAmount = parseFloat(offer.amount);
+        const commissionAmount = (offerAmount * commissionRate) / 100;
+        const totalWithCommission = offerAmount + commissionAmount;
+        
+        return {
+          ...offer,
+          transporter: transporter ? {
+            id: transporter.id,
+            name: transporter.name,
+            phoneNumber: transporter.phoneNumber,
+            city: transporter.city,
+            rating: transporter.rating,
+            truckPhotos: transporter.truckPhotos,
+          } : null,
+          clientAmount: totalWithCommission.toFixed(2),
+          commissionAmount: commissionAmount.toFixed(2),
+        };
+      });
       
       res.json(enrichedOffers);
     } catch (error) {
