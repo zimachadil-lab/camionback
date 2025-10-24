@@ -151,11 +151,17 @@ export default function AdminDashboard() {
 
   // Fetch pending references
   const { data: pendingReferences = [], isLoading: referencesLoading } = useQuery({
-    queryKey: ["/api/admin/transporter-references"],
+    queryKey: ["/api/admin/transporter-references", user?.id],
     queryFn: async () => {
-      const response = await fetch("/api/admin/transporter-references");
+      if (!user?.id) return [];
+      const response = await fetch(`/api/admin/transporter-references?adminId=${user.id}`);
+      if (!response.ok) {
+        console.error("Failed to fetch references:", await response.text());
+        return [];
+      }
       return response.json();
     },
+    enabled: !!user?.id,
   });
 
   // Fetch all requests for payment validation
