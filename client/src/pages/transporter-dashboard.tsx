@@ -153,7 +153,7 @@ export default function TransporterDashboard() {
     enabled: !!user.id, // Only load when user is loaded
   });
 
-  const { data: users = [] } = useQuery({
+  const { data: users = [], isLoading: usersLoading } = useQuery({
     queryKey: ["/api/users"],
     queryFn: async () => {
       const response = await fetch("/api/users");
@@ -464,7 +464,7 @@ export default function TransporterDashboard() {
     return acc;
   }, {});
 
-  if (requestsLoading || offersLoading) {
+  if (requestsLoading || offersLoading || usersLoading || citiesLoading || acceptedLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingTruck message="Chargement de votre tableau de bord..." size="lg" />
