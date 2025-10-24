@@ -232,7 +232,13 @@ export default function CoordinatorUserManagement() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [photoDialogOpen, setPhotoDialogOpen] = useState(false);
-  const [selectedTransporter, setSelectedTransporter] = useState<any>(null);
+  const [selectedTransporterId, setSelectedTransporterId] = useState<string | null>(null);
+
+  // Fetch truck photo for selected transporter
+  const { data: photoData, isLoading: photoLoading } = useQuery<{ truckPhoto: string | null }>({
+    queryKey: [`/api/admin/transporters/${selectedTransporterId}/photo`],
+    enabled: photoDialogOpen && !!selectedTransporterId,
+  });
 
   // Fetch user from localStorage
   const userStr = localStorage.getItem("camionback_user");
@@ -287,8 +293,8 @@ export default function CoordinatorUserManagement() {
     setEditDialogOpen(true);
   };
 
-  const handleViewPhoto = (transporter: any) => {
-    setSelectedTransporter(transporter);
+  const handleViewPhoto = (transporterId: string) => {
+    setSelectedTransporterId(transporterId);
     setPhotoDialogOpen(true);
   };
 
@@ -436,7 +442,7 @@ export default function CoordinatorUserManagement() {
                               variant="outline"
                               size="sm"
                               className="mt-1 h-6 px-2 text-xs"
-                              onClick={() => handleViewPhoto(transporter)}
+                              onClick={() => handleViewPhoto(transporter.id)}
                               data-testid={`button-view-photo-${transporter.id}`}
                             >
                               <Camera className="h-3 w-3 mr-1" />
@@ -521,24 +527,24 @@ export default function CoordinatorUserManagement() {
       <Dialog open={photoDialogOpen} onOpenChange={setPhotoDialogOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Photos du camion - {selectedTransporter?.name}</DialogTitle>
+            <DialogTitle>Photos du camion</DialogTitle>
             <DialogDescription>
               Photos du véhicule du transporteur
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            {selectedTransporter?.truckPhotos && selectedTransporter.truckPhotos.length > 0 ? (
-              <div className="grid gap-4">
-                {selectedTransporter.truckPhotos.map((photo: string, index: number) => (
-                  <img
-                    key={index}
-                    src={photo}
-                    alt={`Photo du camion ${index + 1}`}
-                    className="w-full h-auto rounded-lg"
-                    data-testid={`img-truck-photo-${index}`}
-                  />
-                ))}
+            {photoLoading ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <Truck className="h-12 w-12 mx-auto mb-3 opacity-50 animate-pulse" />
+                <p>Chargement de la photo...</p>
               </div>
+            ) : photoData?.truckPhoto ? (
+              <img
+                src={photoData.truckPhoto}
+                alt="Photo du camion"
+                className="w-full h-auto rounded-lg"
+                data-testid="img-truck-photo"
+              />
             ) : (
               <div className="text-center py-12 text-muted-foreground">
                 <Truck className="h-12 w-12 mx-auto mb-3 opacity-50" />

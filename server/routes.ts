@@ -2526,7 +2526,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           lastActivity: lastActivityDate,
           totalRatings: transporter.totalRatings || 0,
           hasTruckPhoto: transporter.truckPhotos && transporter.truckPhotos.length > 0,
-          truckPhotos: transporter.truckPhotos || [],
           accountStatus: transporter.accountStatus || "active",
           ribName: transporter.ribName || null,
           ribNumber: transporter.ribNumber || null,
