@@ -29,6 +29,22 @@ function CoordinatorOffersView({ requestId, onAcceptOffer, isPending }: {
     enabled: !!requestId,
   });
 
+  // State for managing truck photo viewing
+  const [selectedPhotoTransporterId, setSelectedPhotoTransporterId] = useState<string | null>(null);
+  const [photoDialogOpen, setPhotoDialogOpen] = useState(false);
+
+  // Fetch truck photo for selected transporter
+  const { data: truckPhotoData } = useQuery({
+    queryKey: ["/api/admin/transporters", selectedPhotoTransporterId, "photo"],
+    queryFn: async () => {
+      if (!selectedPhotoTransporterId) return null;
+      const response = await fetch(`/api/admin/transporters/${selectedPhotoTransporterId}/photo`);
+      if (!response.ok) return null;
+      return response.json();
+    },
+    enabled: photoDialogOpen && !!selectedPhotoTransporterId,
+  });
+
   if (isLoading) {
     return (
       <div className="flex justify-center py-8" data-testid="loading-offers">
@@ -46,37 +62,59 @@ function CoordinatorOffersView({ requestId, onAcceptOffer, isPending }: {
     );
   }
 
+  const handleViewTruckPhoto = (transporterId: string) => {
+    setSelectedPhotoTransporterId(transporterId);
+    setPhotoDialogOpen(true);
+  };
+
   return (
-    <div className="grid gap-4 md:grid-cols-2 mt-4" data-testid="grid-offers">
-      {offers.map((offer: any) => (
-        <Card key={offer.id} className="overflow-hidden" data-testid={`card-offer-${offer.id}`}>
-          <CardContent className="p-4 space-y-3">
-            {/* Transporter Info */}
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <Truck className="h-4 w-4 text-[#5BC0EB]" />
-                  <h4 className="font-semibold" data-testid={`text-transporter-name-${offer.id}`}>
-                    {offer.transporter?.name || "Transporteur"}
-                  </h4>
+    <>
+      <div className="grid gap-4 md:grid-cols-2 mt-4" data-testid="grid-offers">
+        {offers.map((offer: any) => (
+          <Card key={offer.id} className="overflow-hidden" data-testid={`card-offer-${offer.id}`}>
+            <CardContent className="p-4 space-y-3">
+              {/* Truck Photo Button */}
+              {offer.transporter?.id && (
+                <div className="mb-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full gap-2"
+                    onClick={() => handleViewTruckPhoto(offer.transporter.id)}
+                    data-testid={`button-view-truck-photo-${offer.id}`}
+                  >
+                    <Truck className="h-4 w-4" />
+                    Voir photo du camion
+                  </Button>
                 </div>
-                {offer.transporter?.city && (
-                  <p className="text-sm text-muted-foreground flex items-center gap-1">
-                    <MapPin className="h-3 w-3" />
-                    {offer.transporter.city}
-                  </p>
-                )}
-                {offer.transporter?.rating && (
-                  <div className="flex items-center gap-1 mt-1">
-                    <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                    <span className="text-sm font-medium">{parseFloat(offer.transporter.rating).toFixed(1)}</span>
+              )}
+
+              {/* Transporter Info */}
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Truck className="h-4 w-4 text-[#5BC0EB]" />
+                    <h4 className="font-semibold" data-testid={`text-transporter-name-${offer.id}`}>
+                      {offer.transporter?.name || "Transporteur"}
+                    </h4>
                   </div>
-                )}
+                  {offer.transporter?.city && (
+                    <p className="text-sm text-muted-foreground flex items-center gap-1">
+                      <MapPin className="h-3 w-3" />
+                      {offer.transporter.city}
+                    </p>
+                  )}
+                  {offer.transporter?.rating && (
+                    <div className="flex items-center gap-1 mt-1">
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                      <span className="text-sm font-medium">{parseFloat(offer.transporter.rating).toFixed(1)}</span>
+                    </div>
+                  )}
+                </div>
+                <Badge variant={offer.status === "pending" ? "default" : "secondary"}>
+                  {offer.status === "pending" ? "En attente" : offer.status}
+                </Badge>
               </div>
-              <Badge variant={offer.status === "pending" ? "default" : "secondary"}>
-                {offer.status === "pending" ? "En attente" : offer.status}
-              </Badge>
-            </div>
 
             {/* Contact Info - Visible for Coordinator */}
             <div className="bg-muted/50 rounded-lg p-3 space-y-2">
@@ -158,7 +196,32 @@ function CoordinatorOffersView({ requestId, onAcceptOffer, isPending }: {
           </CardContent>
         </Card>
       ))}
-    </div>
+      </div>
+
+      {/* Truck Photo Dialog */}
+      <Dialog open={photoDialogOpen} onOpenChange={setPhotoDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Photo du camion</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {truckPhotoData?.truckPhoto ? (
+              <img
+                src={truckPhotoData.truckPhoto}
+                alt="Photo du camion"
+                className="w-full h-auto rounded-lg"
+                data-testid="img-truck-photo"
+              />
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">
+                <Truck className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p>Aucune photo disponible pour ce camion</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

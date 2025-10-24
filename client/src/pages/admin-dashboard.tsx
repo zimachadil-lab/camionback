@@ -24,6 +24,7 @@ import {
 import { Header } from "@/components/layout/header";
 import { KpiCard } from "@/components/admin/kpi-card";
 import { AddTransporterForm } from "@/components/admin/add-transporter-form";
+import { AddClientForm } from "@/components/admin/add-client-form";
 import { TransporterRibDialog } from "@/components/admin/transporter-rib-dialog";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -43,6 +44,7 @@ import { CoordinatorManagement } from "@/components/admin/coordinator-management
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const [addTransporterOpen, setAddTransporterOpen] = useState(false);
+  const [addClientOpen, setAddClientOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [commissionRate, setCommissionRate] = useState("10");
   const [selectedReceipt, setSelectedReceipt] = useState<string>("");
@@ -778,6 +780,14 @@ export default function AdminDashboard() {
             >
               <RefreshCw className="mr-2 h-4 w-4" />
               Actualiser
+            </Button>
+            <Button 
+              onClick={() => setAddClientOpen(true)}
+              variant="secondary"
+              data-testid="button-add-client"
+            >
+              <Plus className="mr-2 h-5 w-5" />
+              Ajouter client
             </Button>
             <Button 
               onClick={() => setAddTransporterOpen(true)}
@@ -3092,6 +3102,12 @@ export default function AdminDashboard() {
       <AddTransporterForm
         open={addTransporterOpen}
         onClose={() => setAddTransporterOpen(false)}
+        onSuccess={() => {}}
+      />
+
+      <AddClientForm
+        open={addClientOpen}
+        onClose={() => setAddClientOpen(false)}
         onSuccess={() => {}}
       />
 

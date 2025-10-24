@@ -89,13 +89,15 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
   });
 
   const offersWithTransporters = offers.map((offer: any) => {
-    const transporter = users.find((u: any) => u.id === offer.transporterId);
+    // Use transporter data from offer if available (new API format)
+    // Otherwise fall back to users array for backward compatibility
+    const transporterData = offer.transporter || users.find((u: any) => u.id === offer.transporterId);
     return {
       ...offer,
-      transporterName: transporter?.name || "Transporteur",
-      rating: parseFloat(transporter?.rating || "0"),
-      totalTrips: transporter?.totalTrips || 0,
-      truckPhoto: transporter?.truckPhotos?.[0],
+      transporterName: transporterData?.name || "Transporteur",
+      rating: parseFloat(transporterData?.rating || "0"),
+      totalTrips: transporterData?.totalTrips || 0,
+      truckPhoto: transporterData?.truckPhotos?.[0] || offer.truckPhoto,
     };
   });
 

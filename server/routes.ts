@@ -1700,11 +1700,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const settings = await storage.getAdminSettings();
         const commissionRate = parseFloat(settings?.commissionPercentage || "10");
         
-        // Add clientAmount (with commission) for each offer
-        offers = offers.map(offer => ({
-          ...offer,
-          clientAmount: (parseFloat(offer.amount) * (1 + commissionRate / 100)).toFixed(2)
-        }));
+        // Add clientAmount (with commission) and transporter info with photo for each offer
+        const offersWithTransporters = await Promise.all(
+          offers.map(async (offer) => {
+            const transporter = await storage.getUser(offer.transporterId);
+            return {
+              ...offer,
+              clientAmount: (parseFloat(offer.amount) * (1 + commissionRate / 100)).toFixed(2),
+              transporter: transporter ? {
+                id: transporter.id,
+                name: transporter.name,
+                city: transporter.city,
+                phoneNumber: transporter.phoneNumber,
+                rating: transporter.rating,
+                totalTrips: transporter.totalTrips,
+                truckPhotos: transporter.truckPhotos,
+              } : null,
+            };
+          })
+        );
+        offers = offersWithTransporters;
       } else if (transporterId) {
         offers = await storage.getOffersByTransporter(transporterId as string);
         // No commission markup for transporter view

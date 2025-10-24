@@ -55,6 +55,12 @@ export function Header({ user, onNewRequest, onAnnounceReturn, onLogout }: Heade
         { label: "Tableau de bord", icon: Package, href: "/" },
         { label: "Nous contacter", icon: MessageCircle, onClick: () => setShowContactDialog(true) },
       ];
+    } else if (user.role === "coordinateur") {
+      return [
+        { label: "Tableau de bord", icon: Package, href: "/" },
+        { label: "Gestions des Utilisateurs", icon: User, href: "/coordinator/users" },
+        { label: "Nous contacter", icon: MessageCircle, onClick: () => setShowContactDialog(true) },
+      ];
     }
     return [];
   };
