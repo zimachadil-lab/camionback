@@ -273,10 +273,10 @@ export default function AdminDashboard() {
     },
   });
 
-  // Combine clients and other users for unified lookup
+  // Combine clients, transporters and other users for unified lookup
   const allUsers = useMemo(() => {
-    return [...clientsWithStats, ...users];
-  }, [clientsWithStats, users]);
+    return [...clientsWithStats, ...transportersWithStats, ...users];
+  }, [clientsWithStats, transportersWithStats, users]);
 
   // Fetch all reports
   const { data: allReports = [], isLoading: reportsLoading } = useQuery({
