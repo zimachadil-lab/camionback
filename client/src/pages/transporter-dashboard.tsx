@@ -125,13 +125,14 @@ export default function TransporterDashboard() {
     }
   };
 
+  // Load requests with a limit of 50 initially for better performance
   const { data: requests = [], isLoading: requestsLoading } = useQuery({
     queryKey: ["/api/requests", user.id],
     queryFn: async () => {
-      const response = await fetch(`/api/requests?status=open&transporterId=${user.id}`);
+      const response = await fetch(`/api/requests?status=open&transporterId=${user.id}&limit=50`);
       return response.json();
     },
-    enabled: !!user.id, // Only load when user is loaded
+    enabled: !!user.id,
   });
 
   const { data: myOffers = [], isLoading: offersLoading } = useQuery({
