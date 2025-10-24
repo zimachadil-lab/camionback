@@ -154,7 +154,7 @@ export default function AdminDashboard() {
   });
 
   // Fetch all users for client/transporter details
-  const { data: users = [] } = useQuery({
+  const { data: users = [], isLoading: usersLoading } = useQuery({
     queryKey: ["/api/users"],
     queryFn: async () => {
       const response = await fetch("/api/users");
@@ -1050,8 +1050,12 @@ export default function AdminDashboard() {
                               <TableCell className="text-sm">{formatDateWithTime(request.createdAt)}</TableCell>
                               <TableCell>
                                 <div className="flex flex-col">
-                                  <span className="font-medium">{client?.phoneNumber || "Non défini"}</span>
-                                  <span className="text-xs text-muted-foreground">{client?.clientId || "N/A"}</span>
+                                  <span className="font-medium">
+                                    {usersLoading ? "Chargement..." : (client?.phoneNumber || "Non défini")}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {usersLoading ? "..." : (client?.clientId || "N/A")}
+                                  </span>
                                 </div>
                               </TableCell>
                               <TableCell>
