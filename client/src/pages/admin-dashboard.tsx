@@ -1197,14 +1197,22 @@ export default function AdminDashboard() {
                               </TableCell>
                               <TableCell data-testid={`text-client-${offer.id}`}>
                                 <div className="flex flex-col">
-                                  <span className="font-medium">{client?.clientId || "Non défini"}</span>
-                                  <span className="text-xs text-muted-foreground">{client?.phoneNumber || ""}</span>
+                                  <span className="font-medium">
+                                    {usersLoading ? "Chargement..." : (client?.clientId || "Non défini")}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {usersLoading ? "..." : (client?.phoneNumber || "")}
+                                  </span>
                                 </div>
                               </TableCell>
                               <TableCell data-testid={`text-transporter-${offer.id}`}>
                                 <div className="flex flex-col">
-                                  <span className="font-medium">{transporter?.name || "N/A"}</span>
-                                  <span className="text-xs text-muted-foreground">{transporter?.phoneNumber || ""}</span>
+                                  <span className="font-medium">
+                                    {usersLoading ? "Chargement..." : (transporter?.name || "N/A")}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {usersLoading ? "..." : (transporter?.phoneNumber || "")}
+                                  </span>
                                 </div>
                               </TableCell>
                               <TableCell data-testid={`text-client-date-${offer.id}`}>
@@ -1335,12 +1343,14 @@ export default function AdminDashboard() {
                                 {contract.referenceId || "N/A"}
                               </TableCell>
                               <TableCell data-testid={`text-contract-client-${contract.id}`}>
-                                Client {client?.clientId || "Non défini"}
+                                Client {usersLoading ? "Chargement..." : (client?.clientId || "Non défini")}
                               </TableCell>
                               <TableCell data-testid={`text-contract-transporter-${contract.id}`}>
                                 <div className="flex flex-col">
-                                  <span>{transporter?.name || "N/A"}</span>
-                                  <span className="text-xs text-muted-foreground">{transporter?.phoneNumber || ""}</span>
+                                  <span>{usersLoading ? "Chargement..." : (transporter?.name || "N/A")}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {usersLoading ? "..." : (transporter?.phoneNumber || "")}
+                                  </span>
                                 </div>
                               </TableCell>
                               <TableCell className="font-semibold" data-testid={`text-contract-amount-${contract.id}`}>
@@ -1642,15 +1652,17 @@ export default function AdminDashboard() {
                           <TableRow key={request.id}>
                             <TableCell className="font-medium">{request.referenceId}</TableCell>
                             <TableCell>
-                              Client {client?.clientId || "Non défini"}
+                              Client {usersLoading ? "Chargement..." : (client?.clientId || "Non défini")}
                             </TableCell>
                             <TableCell>
                               <div>
-                                <p className="font-medium">{transporter?.name || "Transporteur"}</p>
+                                <p className="font-medium">
+                                  {usersLoading ? "Chargement..." : (transporter?.name || "Transporteur")}
+                                </p>
                                 <div className="flex items-center gap-1 text-sm text-muted-foreground">
                                   <Phone className="w-3 h-3" />
                                   <a href={`tel:${transporter?.phoneNumber}`} className="hover:underline">
-                                    {transporter?.phoneNumber || "N/A"}
+                                    {usersLoading ? "..." : (transporter?.phoneNumber || "N/A")}
                                   </a>
                                 </div>
                               </div>
