@@ -233,12 +233,12 @@ export default function CoordinatorUserManagement() {
   const [selectedUser, setSelectedUser] = useState<any>(null);
 
   // Fetch user from localStorage
-  const userStr = localStorage.getItem("user");
+  const userStr = localStorage.getItem("camionback_user");
   const user = userStr ? JSON.parse(userStr) : null;
 
   // Logout function
   const handleLogout = () => {
-    localStorage.removeItem("user");
+    localStorage.removeItem("camionback_user");
     navigate("/login");
   };
 
