@@ -1701,7 +1701,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const commissionRate = parseFloat(settings?.commissionPercentage || "10");
         
         // Batch fetch all unique transporters in a single query to avoid N+1
-        const transporterIds = [...new Set(offers.map(offer => offer.transporterId))];
+        const uniqueTransporterIds = new Set(offers.map(offer => offer.transporterId));
+        const transporterIds = Array.from(uniqueTransporterIds);
         const allTransporters = await storage.getUsersByIds(transporterIds);
         const transportersMap = new Map(allTransporters.map(t => [t.id, t]));
         
@@ -3395,7 +3396,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const commissionRate = parseFloat(settings?.commissionPercentage || "10");
       
       // Batch fetch all unique transporters in a single query to avoid N+1
-      const transporterIds = [...new Set(offers.map(offer => offer.transporterId))];
+      const uniqueTransporterIds = new Set(offers.map(offer => offer.transporterId));
+      const transporterIds = Array.from(uniqueTransporterIds);
       const allTransporters = await storage.getUsersByIds(transporterIds);
       const transportersMap = new Map(allTransporters.map(t => [t.id, t]));
       
