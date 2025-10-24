@@ -469,7 +469,8 @@ export default function TransporterDashboard() {
     return acc;
   }, {});
 
-  if (requestsLoading || offersLoading || citiesLoading || acceptedLoading || allRequestsLoading) {
+  // Only wait for critical data - allow render even if some data is still loading
+  if (requestsLoading || citiesLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingTruck message="Chargement de votre tableau de bord..." size="lg" />
