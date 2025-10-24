@@ -3275,14 +3275,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/admin/transporter-references/:id", async (req, res) => {
     try {
       const { id } = req.params;
-      const { status, rejectionReason } = req.body;
+      const { status, rejectionReason, adminId } = req.body;
       
-      // Get admin ID from localStorage/session (for now, we'll need to add it to the request)
-      // TODO: Get from authenticated session
-      const adminId = "admin-placeholder"; // This should come from session
+      if (!adminId) {
+        return res.status(401).json({ error: "Non authentifié - adminId requis" });
+      }
 
       if (!status) {
         return res.status(400).json({ error: "Status requis" });
+      }
+
+      // Verify admin or coordinator role
+      const admin = await storage.getUser(adminId);
+      if (!admin || (admin.role !== "admin" && admin.role !== "coordinateur")) {
+        return res.status(403).json({ error: "Accès refusé - Admin ou Coordinateur requis" });
       }
 
       if (status === "validated" || status === "approved") {

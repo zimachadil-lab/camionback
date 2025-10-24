@@ -678,8 +678,10 @@ export default function AdminDashboard() {
   // Validate reference mutation
   const validateReferenceMutation = useMutation({
     mutationFn: async (referenceId: string) => {
+      if (!user?.id) throw new Error("Non authentifié");
       return await apiRequest("PATCH", `/api/admin/transporter-references/${referenceId}`, {
         status: "validated",
+        adminId: user.id,
       });
     },
     onSuccess: () => {
@@ -687,8 +689,9 @@ export default function AdminDashboard() {
         title: "Référence validée",
         description: "La référence a été validée avec succès",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/transporter-references"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/transporter-references", user?.id] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/pending-drivers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/transporters"] });
     },
     onError: () => {
       toast({
@@ -702,9 +705,11 @@ export default function AdminDashboard() {
   // Reject reference mutation
   const rejectReferenceMutation = useMutation({
     mutationFn: async ({ referenceId, reason }: { referenceId: string; reason: string }) => {
+      if (!user?.id) throw new Error("Non authentifié");
       return await apiRequest("PATCH", `/api/admin/transporter-references/${referenceId}`, {
         status: "rejected",
         rejectionReason: reason,
+        adminId: user.id,
       });
     },
     onSuccess: () => {
@@ -712,7 +717,9 @@ export default function AdminDashboard() {
         title: "Référence rejetée",
         description: "La référence a été rejetée",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/transporter-references"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/transporter-references", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/pending-drivers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/transporters"] });
       setRejectReferenceDialogOpen(false);
       setRejectionReason("");
     },
