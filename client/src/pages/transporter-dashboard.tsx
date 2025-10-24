@@ -49,7 +49,6 @@ export default function TransporterDashboard() {
   const [, setLocation] = useLocation();
   const [selectedCity, setSelectedCity] = useState("Toutes les villes");
   const [searchQuery, setSearchQuery] = useState("");
-  const [requestsLimit, setRequestsLimit] = useState(50); // Start with 50 requests
   const [offerDialogOpen, setOfferDialogOpen] = useState(false);
   const [selectedRequestId, setSelectedRequestId] = useState<string>("");
   const [chatOpen, setChatOpen] = useState(false);
@@ -126,11 +125,11 @@ export default function TransporterDashboard() {
     }
   };
 
-  // Load requests with dynamic limit for progressive loading
+  // Load requests with limit of 50 for better performance
   const { data: requests = [], isLoading: requestsLoading } = useQuery({
-    queryKey: ["/api/requests", user.id, requestsLimit],
+    queryKey: ["/api/requests", user.id],
     queryFn: async () => {
-      const response = await fetch(`/api/requests?status=open&transporterId=${user.id}&limit=${requestsLimit}`);
+      const response = await fetch(`/api/requests?status=open&transporterId=${user.id}&limit=50`);
       return response.json();
     },
     enabled: !!user.id,
@@ -675,37 +674,19 @@ export default function TransporterDashboard() {
             </div>
 
             {filteredRequests.length > 0 ? (
-              <>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {filteredRequests.map((request: any) => (
-                    <RequestCard
-                      key={request.id}
-                      request={request}
-                      onMakeOffer={handleMakeOffer}
-                      userStatus={user.status}
-                      offerCount={offerCounts[request.id] || 0}
-                      onDecline={handleDeclineRequest}
-                      onTrackView={() => trackViewMutation.mutate(request.id)}
-                    />
-                  ))}
-                </div>
-                
-                {/* Load More button - only show if we have loaded exactly the limit (means there might be more) */}
-                {requests.length === requestsLimit && (
-                  <div className="flex justify-center mt-6">
-                    <Button
-                      onClick={() => setRequestsLimit(prev => prev + 50)}
-                      variant="outline"
-                      size="lg"
-                      data-testid="button-load-more-requests"
-                      className="gap-2"
-                    >
-                      <Package className="w-4 h-4" />
-                      Charger plus de demandes
-                    </Button>
-                  </div>
-                )}
-              </>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {filteredRequests.map((request: any) => (
+                  <RequestCard
+                    key={request.id}
+                    request={request}
+                    onMakeOffer={handleMakeOffer}
+                    userStatus={user.status}
+                    offerCount={offerCounts[request.id] || 0}
+                    onDecline={handleDeclineRequest}
+                    onTrackView={() => trackViewMutation.mutate(request.id)}
+                  />
+                ))}
+              </div>
             ) : (
               <div className="text-center py-12">
                 <Search className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
