@@ -131,6 +131,7 @@ export default function TransporterDashboard() {
       const response = await fetch(`/api/requests?status=open&transporterId=${user.id}`);
       return response.json();
     },
+    enabled: !!user.id, // Only load when user is loaded
   });
 
   const { data: myOffers = [], isLoading: offersLoading } = useQuery({
@@ -139,6 +140,7 @@ export default function TransporterDashboard() {
       const response = await fetch(`/api/offers?transporterId=${user.id}`);
       return response.json();
     },
+    enabled: !!user.id, // Only load when user is loaded
     refetchInterval: 5000,
   });
 
@@ -148,6 +150,7 @@ export default function TransporterDashboard() {
       const response = await fetch("/api/requests");
       return response.json();
     },
+    enabled: !!user.id, // Only load when user is loaded
   });
 
   const { data: users = [] } = useQuery({
@@ -156,6 +159,7 @@ export default function TransporterDashboard() {
       const response = await fetch("/api/users");
       return response.json();
     },
+    enabled: !!user.id, // Only load when user is loaded
   });
 
   const { data: acceptedRequests = [], isLoading: acceptedLoading } = useQuery({
@@ -164,6 +168,7 @@ export default function TransporterDashboard() {
       const response = await fetch(`/api/requests?accepted=true&transporterId=${user.id}`);
       return response.json();
     },
+    enabled: !!user.id, // Only load when user is loaded
     refetchInterval: 5000,
   });
 
@@ -206,6 +211,7 @@ export default function TransporterDashboard() {
       const response = await fetch("/api/cities");
       return response.json();
     },
+    enabled: !!user.id, // Only load when user is loaded
   });
 
   // Fetch transporter reference
