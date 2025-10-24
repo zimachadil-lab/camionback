@@ -46,7 +46,9 @@ const referenceSchema = z.object({
 });
 
 export default function TransporterDashboard() {
+  console.log("🚛 TransporterDashboard START");
   const [, setLocation] = useLocation();
+  console.log("🚛 useState initialized");
   const [selectedCity, setSelectedCity] = useState("Toutes les villes");
   const [searchQuery, setSearchQuery] = useState("");
   const [offerDialogOpen, setOfferDialogOpen] = useState(false);
