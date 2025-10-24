@@ -1792,6 +1792,8 @@ export class DbStorage implements IStorage {
       
       let transporterName = "Transporteur inconnu";
       let transporterId = null;
+      
+      // First try to get transporter from accepted offer
       if (request.acceptedOfferId) {
         const offer = await this.getOffer(request.acceptedOfferId);
         if (offer) {
@@ -1801,10 +1803,22 @@ export class DbStorage implements IStorage {
         }
       }
       
+      // If no accepted offer, try to find transporter from message participants
+      if (!transporterId) {
+        const transporterMessage = messages.find(m => m.senderType === 'transporter');
+        if (transporterMessage) {
+          const transporter = await this.getUser(transporterMessage.senderId);
+          if (transporter && transporter.role === 'transporter') {
+            transporterId = transporter.id;
+            transporterName = transporter.name || transporter.phoneNumber || "Transporteur inconnu";
+          }
+        }
+      }
+      
       conversations.push({
         requestId,
         referenceId: request.referenceId,
-        clientId: request.clientId,
+        clientId: client?.clientId || request.clientId,
         clientName,
         transporterId,
         transporterName,
