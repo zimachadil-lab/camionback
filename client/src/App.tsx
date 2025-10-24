@@ -4,7 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { PushNotificationProvider } from "@/components/push-notification-provider";
-import { PWAInstallButton } from "@/components/pwa-install-button";
+import { PWAInstallToast } from "@/components/pwa-install-toast";
 import Home from "@/pages/home";
 import NotificationsPage from "@/pages/notifications-page";
 import MessagesPage from "@/pages/messages-page";
@@ -57,7 +57,7 @@ function App() {
         <PushNotificationProvider>
           <Toaster />
           <Router />
-          <PWAInstallButton />
+          <PWAInstallToast />
         </PushNotificationProvider>
       </TooltipProvider>
     </QueryClientProvider>

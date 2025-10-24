@@ -23,6 +23,7 @@ The backend is built with Express.js and TypeScript, providing RESTful JSON APIs
 - **File Management:** Base64 for client photos, Multer for transporter truck photos, and multimedia messaging.
 - **CamioMatch:** Intelligent, Tinder-style transporter matching for clients based on various criteria.
 - **PWA Enhancements:** Offline support, advanced caching, and native-like push notifications for key events.
+- **Contextual PWA Installation Toast:** Modern, non-intrusive installation prompt replacing fixed button. Toast appears after 10 seconds of user inactivity (scroll, click, touch events reset timer), displays in top-right on desktop and bottom-right on mobile with elegant slide+fade animation. Features two actions: "Installer" (triggers native beforeinstallprompt) and "Plus tard" (dismisses and stores preference in localStorage). Auto-dismisses after 15 seconds if no interaction. Shown only once per session and respects user's previous dismissal choice. Smooth animations (0.4s transition) and responsive design ensure premium UX without interfering with dashboard CTAs. Component: PWAInstallToast with inactivity detection, localStorage persistence, and automatic hide logic.
 - **Optimized Favicon System:** Multiple sizes and optimized linking.
 - **Secure Static File Serving:** Custom middleware with whitelist validation and differential caching.
 

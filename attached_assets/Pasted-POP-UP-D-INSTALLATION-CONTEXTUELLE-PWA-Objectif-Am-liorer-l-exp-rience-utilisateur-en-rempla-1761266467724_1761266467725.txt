@@ -1,0 +1,165 @@
+POP-UP D’INSTALLATION CONTEXTUELLE (PWA)
+
+🎯 Objectif :
+Améliorer l’expérience utilisateur en remplaçant le bouton fixe “Installer CamionBack” (actuellement en bas d’écran) par une pop-up d’installation contextuelle (toast), élégante et intelligente.
+Cette pop-up doit apparaître au bon moment, sans perturber la navigation, et encourager les nouveaux visiteurs à installer la PWA sans agression visuelle.
+
+🧩 1️⃣ Pourquoi ce changement
+
+Le bouton fixe actuel en bas de page perturbe l’expérience :
+
+Il chevauche les CTA principaux du tableau de bord (modifier, accepter, etc.).
+
+Il gêne la lecture et donne une impression d’encombrement visuel.
+
+Sur mobile, l’utilisateur doit garder un espace clair pour interagir facilement.
+
+L’objectif est d’obtenir un équilibre entre visibilité et discrétion.
+
+💡 En UX moderne, un “toast d’installation contextuel” est beaucoup plus fluide :
+il apparaît quand l’utilisateur est réceptif, reste léger, et disparaît sans gêner.
+
+🧠 2️⃣ Fonctionnement attendu
+
+La pop-up “Installer CamionBack” s’affiche :
+
+Uniquement si l’app n’est pas déjà installée (PWA non active)
+
+Après 5 à 10 secondes d’inactivité (aucun scroll, clic ou tap)
+
+Une seule fois par session (jusqu’à ce que l’utilisateur clique sur Installer ou Plus tard)
+
+Après interaction :
+
+Si l’utilisateur clique sur “Installer” → lancer le prompt PWA (beforeinstallprompt).
+
+Si l’utilisateur clique sur “Plus tard” → cacher la pop-up et stocker un flag dans localStorage (pwaPromptDismissed=true).
+
+🖼️ 3️⃣ Design et positionnement
+📱 Position :
+
+En haut à droite sur desktop
+
+En bas à droite sur mobile (style toast flottant)
+
+🎨 Apparence :
+
+Style “carte flottante” avec légère ombre et coins arrondis (border-radius: 10px)
+
+Fond clair (#ffffff ou #f9fbfc) avec une ombre douce (rgba(0,0,0,0.15))
+
+Icône 📲 à gauche du texte
+
+Boutons :
+
+Installer (vert principal #00BFA5)
+
+Plus tard (texte gris neutre)
+
+Animation d’apparition en fade + slide (0.4s)
+
+Disparition automatique au bout de 15 secondes si aucune action n’est faite.
+
+Exemple visuel :
+
+┌────────────────────────────────────────────┐
+📲  Installez CamionBack pour un accès rapide !
+[Installer]     [Plus tard]
+└────────────────────────────────────────────┘
+
+⚙️ 4️⃣ Logique technique
+
+Détection PWA :
+
+Vérifier window.matchMedia('(display-mode: standalone)').matches
+
+OU tester la présence du beforeinstallprompt event.
+
+Gestion du timing :
+
+Déclencher la pop-up après setTimeout(10000) (10 secondes d’inactivité).
+
+Réinitialiser le timer dès que l’utilisateur interagit.
+
+Gestion du stockage :
+
+Si localStorage.getItem('pwaPromptDismissed') === true, ne plus afficher.
+
+Actions :
+
+Installer → déclencher le prompt PWA capturé.
+
+Plus tard → cacher la pop-up + stocker pwaPromptDismissed=true.
+
+Animation et UX :
+
+Transition douce (fade + slide-up / slide-down).
+
+Responsive (mobile friendly, pas de chevauchement d’éléments).
+
+🧩 5️⃣ Exemple de logique JS simplifiée :
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+});
+
+function showInstallToast() {
+  if (localStorage.getItem('pwaPromptDismissed')) return;
+  const toast = document.createElement('div');
+  toast.classList.add('install-toast');
+  toast.innerHTML = `
+    <div class="toast-content">
+      <span>📲 Installez CamionBack pour un accès rapide !</span>
+      <div class="toast-actions">
+        <button id="installBtn">Installer</button>
+        <button id="laterBtn">Plus tard</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(toast);
+
+  document.getElementById('installBtn').onclick = async () => {
+    toast.remove();
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const choice = await deferredPrompt.userChoice;
+      if (choice.outcome === 'accepted') console.log('PWA installée ✅');
+    }
+  };
+
+  document.getElementById('laterBtn').onclick = () => {
+    toast.remove();
+    localStorage.setItem('pwaPromptDismissed', true);
+  };
+
+  setTimeout(() => toast.remove(), 15000);
+}
+
+// Affichage après 10s d’inactivité
+let idleTimer;
+window.addEventListener('mousemove', resetTimer);
+window.addEventListener('scroll', resetTimer);
+window.addEventListener('touchstart', resetTimer);
+
+function resetTimer() {
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(showInstallToast, 10000);
+}
+
+✅ 6️⃣ Résultat attendu
+
+Une pop-up fluide, moderne et non intrusive.
+
+L’utilisateur comprend le bénéfice → “accès rapide”.
+
+Le CTA n’interfère plus avec les éléments du tableau de bord.
+
+L’expérience devient propre, agréable et cohérente sur mobile.
+
+💬 Note finale pour le développeur :
+Ce type de toast contextuel améliore la perception de qualité de la plateforme.
+Il montre que l’expérience utilisateur a été pensée jusqu’au détail,
+tout en respectant la hiérarchie visuelle et l’attention du visiteur.
+C’est exactement le genre de finition qui fait paraître CamionBack comme une app “premium”.
