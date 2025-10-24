@@ -804,7 +804,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/requests", async (req, res) => {
     try {
-      const { clientId, status, transporterId, accepted, payments } = req.query;
+      const { clientId, status, transporterId, accepted, payments, limit, offset } = req.query;
+      
+      // Parse pagination params
+      const limitNum = limit ? parseInt(limit as string) : undefined;
+      const offsetNum = offset ? parseInt(offset as string) : undefined;
       
       let requests;
       if (clientId) {
@@ -814,7 +818,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (accepted === "true" && transporterId) {
         requests = await storage.getAcceptedRequestsByTransporter(transporterId as string);
       } else if (status === "open") {
-        requests = await storage.getOpenRequests(transporterId as string | undefined);
+        requests = await storage.getOpenRequests(transporterId as string | undefined, limitNum, offsetNum);
       } else {
         requests = await storage.getAllTransportRequests();
       }

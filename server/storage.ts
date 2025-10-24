@@ -51,7 +51,7 @@ export interface IStorage {
   getTransportRequest(id: string): Promise<TransportRequest | undefined>;
   getAllTransportRequests(): Promise<TransportRequest[]>;
   getRequestsByClient(clientId: string): Promise<TransportRequest[]>;
-  getOpenRequests(transporterId?: string): Promise<TransportRequest[]>;
+  getOpenRequests(transporterId?: string, limit?: number, offset?: number): Promise<TransportRequest[]>;
   getAcceptedRequestsByTransporter(transporterId: string): Promise<TransportRequest[]>;
   getPaymentsByTransporter(transporterId: string): Promise<TransportRequest[]>;
   updateTransportRequest(id: string, updates: Partial<TransportRequest>): Promise<TransportRequest | undefined>;
@@ -474,7 +474,7 @@ export class MemStorage implements IStorage {
     );
   }
 
-  async getOpenRequests(transporterId?: string): Promise<TransportRequest[]> {
+  async getOpenRequests(transporterId?: string, limit?: number, offset?: number): Promise<TransportRequest[]> {
     const openRequests = Array.from(this.transportRequests.values()).filter(
       (req) => req.status === "open"
     );
@@ -488,7 +488,18 @@ export class MemStorage implements IStorage {
           filteredRequests.push(request);
         }
       }
+      
+      // Apply pagination if limit/offset provided
+      if (limit !== undefined && offset !== undefined) {
+        return filteredRequests.slice(offset, offset + limit);
+      }
+      
       return filteredRequests;
+    }
+    
+    // Apply pagination if limit/offset provided
+    if (limit !== undefined && offset !== undefined) {
+      return openRequests.slice(offset, offset + limit);
     }
     
     return openRequests;
@@ -1401,9 +1412,21 @@ export class DbStorage implements IStorage {
       .where(eq(transportRequests.clientId, clientId));
   }
 
-  async getOpenRequests(transporterId?: string): Promise<TransportRequest[]> {
-    const openRequests = await db.select().from(transportRequests)
-      .where(eq(transportRequests.status, 'open'));
+  async getOpenRequests(transporterId?: string, limit?: number, offset?: number): Promise<TransportRequest[]> {
+    // Build query with optional pagination
+    let query = db.select().from(transportRequests)
+      .where(eq(transportRequests.status, 'open'))
+      .orderBy(sql`${transportRequests.createdAt} DESC`);
+    
+    // Apply pagination if specified
+    if (limit !== undefined) {
+      query = query.limit(limit) as any;
+    }
+    if (offset !== undefined) {
+      query = query.offset(offset) as any;
+    }
+    
+    const openRequests = await query;
     
     // If transporterId provided, apply transporter-specific filters
     if (transporterId) {
