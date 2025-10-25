@@ -25,6 +25,13 @@ export default function Home() {
   const handleAuthSuccess = (userData: any) => {
     localStorage.setItem("camionback_user", JSON.stringify(userData));
     setUser(userData);
+    
+    // Check for redirect after login
+    const redirectPath = localStorage.getItem("redirectAfterLogin");
+    if (redirectPath) {
+      localStorage.removeItem("redirectAfterLogin");
+      setLocation(redirectPath);
+    }
   };
 
   const handleLogout = () => {
