@@ -181,7 +181,9 @@ export default function TransporterDashboard() {
       if (!response.ok) throw new Error(`Failed: ${response.statusText}`);
       if (response.status === 304 || response.status === 204) return [];
       const text = await response.text();
-      return text ? JSON.parse(text) : [];
+      const offers = text ? JSON.parse(text) : [];
+      console.log("🔍 [MyOffers] First offer:", offers[0]);
+      return offers;
     },
     enabled: !!user.id, // Only load when user is loaded
     refetchInterval: 5000,
