@@ -824,7 +824,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Enrich requests with offers count
-      const enrichedRequests = await Promise.all(
+      let enrichedRequests = await Promise.all(
         requests.map(async (request) => {
           const offers = await storage.getOffersByRequest(request.id);
           return {
@@ -833,6 +833,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
         })
       );
+      
+      // Special enrichment for accepted requests: map city IDs to names and transform field names
+      if (accepted === "true" && transporterId) {
+        const allCities = await storage.getAllCities();
+        const citiesMap = new Map(allCities.map(c => [c.id, c.name]));
+        
+        enrichedRequests = enrichedRequests.map(request => ({
+          ...request,
+          // Transform field names for frontend compatibility
+          requestId: request.referenceId,
+          cargoType: request.goodsType,
+          departureCity: citiesMap.get(request.fromCity) || request.fromCity,
+          arrivalCity: citiesMap.get(request.toCity) || request.toCity,
+          preferredDate: request.dateTime,
+          description: request.description,
+          status: request.status,
+          clientId: request.clientId,
+        }));
+      }
       
       res.json(enrichedRequests);
     } catch (error) {
