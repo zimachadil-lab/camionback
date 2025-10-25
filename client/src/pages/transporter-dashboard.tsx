@@ -494,12 +494,40 @@ export default function TransporterDashboard() {
       
       <StoriesBar userRole="transporter" />
       
-      <div className="container mx-auto p-4">
-        <h1 className="text-3xl font-bold">DEBUG: Dashboard chargé ✅</h1>
-        <p>User: {user.name}</p>
-        <p>Status: {user.status}</p>
-        <p>Requests: {requests?.length}</p>
-        <p>Filtered: {filteredRequests?.length}</p>
+      <div className="container mx-auto p-4 md:p-6 max-w-7xl space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Tableau de bord</h1>
+          <p className="text-muted-foreground mt-1">Trouvez des demandes de transport</p>
+        </div>
+
+        <Tabs defaultValue="available" className="w-full">
+          <TabsList className="grid w-full max-w-3xl grid-cols-3">
+            <TabsTrigger value="available" data-testid="tab-available">
+              <Search className="mr-2 h-4 w-4" />
+              Disponibles ({filteredRequests.length})
+            </TabsTrigger>
+            <TabsTrigger value="my-offers" data-testid="tab-my-offers">
+              <Package className="mr-2 h-4 w-4" />
+              Mes offres
+            </TabsTrigger>
+            <TabsTrigger value="to-process" data-testid="tab-to-process">
+              <CheckCircle className="mr-2 h-4 w-4" />
+              À traiter ({acceptedRequests.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="available" className="mt-6 space-y-6">
+            <p className="text-muted-foreground">Tab Disponibles - Contenu à venir</p>
+          </TabsContent>
+
+          <TabsContent value="my-offers" className="mt-6 space-y-6">
+            <p className="text-muted-foreground">Tab Mes offres - Contenu à venir</p>
+          </TabsContent>
+
+          <TabsContent value="to-process" className="mt-6 space-y-6">
+            <p className="text-muted-foreground">Tab À traiter - Contenu à venir</p>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
