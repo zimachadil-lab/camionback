@@ -513,8 +513,9 @@ export default function TransporterDashboard() {
       
       <StoriesBar userRole="transporter" />
       
+      {/* TEMPORARILY DISABLED - Testing if reference banner causes crash */}
       {/* Reference request banner - Show if pending and (no reference OR reference was rejected) */}
-      {user.status === "pending" && (!transporterReference || transporterReference.status === "rejected") && !referenceLoading && (
+      {/* {user.status === "pending" && (!transporterReference || transporterReference.status === "rejected") && !referenceLoading && (
         <Card className="mx-4 mt-4 border-l-4 border-primary">
           <CardContent className="p-6">
             <div className="flex items-start gap-3 mb-4">
@@ -611,7 +612,7 @@ export default function TransporterDashboard() {
             </Form>
           </CardContent>
         </Card>
-      )}
+      )} */}
 
       {/* Reference pending validation message */}
       {user.status === "pending" && transporterReference && transporterReference.status === "pending" && (
