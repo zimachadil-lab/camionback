@@ -31,6 +31,7 @@ export const getQueryFn: <T>(options: {
   async ({ queryKey }) => {
     const res = await fetch(queryKey.join("/") as string, {
       credentials: "include",
+      cache: "no-store",
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
@@ -38,6 +39,18 @@ export const getQueryFn: <T>(options: {
     }
 
     await throwIfResNotOk(res);
+    
+    // Handle 304 Not Modified and 204 No Content (empty body)
+    if (res.status === 304 || res.status === 204) {
+      return null;
+    }
+    
+    // Check if response has content before parsing JSON
+    const contentLength = res.headers.get('content-length');
+    if (contentLength === '0') {
+      return null;
+    }
+    
     return await res.json();
   };
 
