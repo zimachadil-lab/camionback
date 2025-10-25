@@ -1728,11 +1728,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
         });
       } else if (transporterId) {
+        console.log(`[GET /api/offers] Fetching offers for transporter ${transporterId}`);
         offers = await storage.getOffersByTransporter(transporterId as string);
+        console.log(`[GET /api/offers] Found ${offers.length} offers`);
+        
         // Enrich offers with request data for transporter view
         const uniqueRequestIds = new Set(offers.map(offer => offer.requestId));
         const requestIds = Array.from(uniqueRequestIds);
+        console.log(`[GET /api/offers] Fetching ${requestIds.length} unique requests:`, requestIds);
         const allRequests = await storage.getRequestsByIds(requestIds);
+        console.log(`[GET /api/offers] Got ${allRequests.length} requests from storage`);
         const requestsMap = new Map(allRequests.map(r => [r.id, r]));
         
         offers = offers.map(offer => {
@@ -1752,6 +1757,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             } : null,
           };
         });
+        console.log(`[GET /api/offers] Enriched offers. First offer has request:`, offers[0]?.request !== undefined);
       } else {
         // Return all offers (for admin view)
         offers = await storage.getAllOffers();
