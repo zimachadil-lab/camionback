@@ -511,6 +511,13 @@ export default function TransporterDashboard() {
         onLogout={handleLogout}
       />
       
+      <div className="p-4 text-white">
+        <h1>DEBUG: Dashboard chargé</h1>
+        <p>Requests: {requests.length}</p>
+        <p>Offers: {myOffers.length}</p>
+        <p>Cities: {cities.length}</p>
+      </div>
+      
       <StoriesBar userRole="transporter" />
       
       {/* TEMPORARILY DISABLED - Testing if reference banner causes crash */}
