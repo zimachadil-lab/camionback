@@ -27,6 +27,9 @@ The backend is built with Express.js and TypeScript, providing RESTful JSON APIs
 - **Optimized Favicon System:** Multiple sizes and optimized linking.
 - **Secure Static File Serving:** Custom middleware with whitelist validation and differential caching.
 
+### Performance Optimizations
+- **Transporter Dashboard Loading:** Optimized loading condition to only wait for critical data (requests and cities) instead of blocking on all queries. This allows faster initial render while non-critical data loads progressively. The dashboard uses commit `ba73e76` which eliminated the catastrophic `/api/users` query that was taking 100+ seconds to load 185 users. Client information is now efficiently extracted directly from request/offer data structures instead of requiring a separate heavy query.
+
 ### System Design Choices
 **Data Storage:** PostgreSQL with Neon serverless and Drizzle ORM.
 **Authentication & Authorization:** Phone number-based PIN verification, role, and status-based access control.
