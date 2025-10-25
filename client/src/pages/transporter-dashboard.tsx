@@ -864,6 +864,30 @@ export default function TransporterDashboard() {
                 </div>
               )}
 
+              {/* Informations du client */}
+              <div className="bg-muted/50 rounded-lg p-4">
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <Phone className="h-4 w-4" />
+                  Contact Client
+                </h4>
+                <div className="space-y-3">
+                  <div>
+                    <span className="text-muted-foreground text-sm">Nom :</span>
+                    <p className="font-medium">{selectedAcceptedRequest.clientName || "Non disponible"}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground text-sm">Téléphone :</span>
+                    <a 
+                      href={`tel:${selectedAcceptedRequest.clientPhone}`}
+                      className="font-medium text-primary hover:underline flex items-center gap-2"
+                    >
+                      <Phone className="h-3 w-3" />
+                      {selectedAcceptedRequest.clientPhone || "Non disponible"}
+                    </a>
+                  </div>
+                </div>
+              </div>
+
               {/* Informations supplémentaires */}
               <div className="bg-muted/50 rounded-lg p-4">
                 <h4 className="font-semibold mb-3">Informations supplémentaires</h4>

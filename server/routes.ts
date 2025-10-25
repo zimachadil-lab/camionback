@@ -835,23 +835,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
       );
       
-      // Special enrichment for accepted requests: map city IDs to names and transform field names
+      // Special enrichment for accepted requests: map city IDs to names, add client info and transform field names
       if (accepted === "true" && transporterId) {
         const allCities = await storage.getAllCities();
         const citiesMap = new Map(allCities.map(c => [c.id, c.name]));
         
-        enrichedRequests = enrichedRequests.map(request => ({
-          ...request,
-          // Transform field names for frontend compatibility
-          requestId: request.referenceId,
-          cargoType: request.goodsType,
-          departureCity: citiesMap.get(request.fromCity) || request.fromCity,
-          arrivalCity: citiesMap.get(request.toCity) || request.toCity,
-          preferredDate: request.dateTime,
-          description: request.description,
-          status: request.status,
-          clientId: request.clientId,
-        }));
+        // Fetch all unique client IDs
+        const clientIds = Array.from(new Set(enrichedRequests.map(r => r.clientId)));
+        const clients = await Promise.all(
+          clientIds.map(id => storage.getUser(id))
+        );
+        const clientsMap = new Map(clients.filter(c => c).map(c => [c!.id, c]));
+        
+        enrichedRequests = enrichedRequests.map(request => {
+          const client = clientsMap.get(request.clientId);
+          return {
+            ...request,
+            // Transform field names for frontend compatibility
+            requestId: request.referenceId,
+            cargoType: request.goodsType,
+            departureCity: citiesMap.get(request.fromCity) || request.fromCity,
+            arrivalCity: citiesMap.get(request.toCity) || request.toCity,
+            preferredDate: request.dateTime,
+            description: request.description,
+            status: request.status,
+            clientId: request.clientId,
+            clientPhotos: (request as any).clientPhotos || [],
+            // Add client information
+            clientName: client?.name || client?.clientId || "Client inconnu",
+            clientPhone: client?.phoneNumber || "Non disponible",
+          };
+        });
       }
       
       res.json(enrichedRequests);
