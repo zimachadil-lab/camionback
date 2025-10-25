@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,9 +12,11 @@ export default function CommandDetail() {
   const [, params] = useRoute("/commande/:id");
   const [, setLocation] = useLocation();
   const commandId = params?.id;
-
-  const { data: user, isLoading: isLoadingUser } = useQuery<User>({
-    queryKey: ["/api/auth/me"],
+  
+  // Récupérer l'utilisateur depuis localStorage
+  const [user, setUser] = useState<User | null>(() => {
+    const storedUser = localStorage.getItem("camionback_user");
+    return storedUser ? JSON.parse(storedUser) : null;
   });
 
   const { data: request, isLoading: isLoadingRequest, error } = useQuery<TransportRequest & { offersCount?: number; pickupDate?: string; offerAmount?: number; loadType?: string }>({
@@ -24,12 +26,12 @@ export default function CommandDetail() {
 
   // Redirection si non connecté
   useEffect(() => {
-    if (!user && !isLoadingUser) {
+    if (!user) {
       // Sauvegarder l'URL pour rediriger après connexion
       localStorage.setItem("redirectAfterLogin", `/commande/${commandId}`);
       setLocation("/login");
     }
-  }, [user, isLoadingUser, commandId, setLocation]);
+  }, [user, commandId, setLocation]);
 
   // Vérifier les droits d'accès
   useEffect(() => {
@@ -38,7 +40,7 @@ export default function CommandDetail() {
     }
   }, [user, setLocation]);
 
-  if (isLoadingUser || isLoadingRequest || !user) {
+  if (isLoadingRequest || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
