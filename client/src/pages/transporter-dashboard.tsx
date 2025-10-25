@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare,
 import { Header } from "@/components/layout/header";
 import { RequestCard } from "@/components/transporter/request-card";
 import { OfferForm } from "@/components/transporter/offer-form";
+import { InteractiveCalendar } from "@/components/transporter/interactive-calendar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { ChatWindow } from "@/components/chat/chat-window";
@@ -23,6 +24,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+import { format, isSameDay, parseISO } from "date-fns";
+import { fr } from "date-fns/locale";
 
 const reportSchema = z.object({
   description: z.string().min(10, "Description minimale: 10 caractères"),
@@ -68,6 +71,7 @@ export default function TransporterDashboard() {
   const [editOfferDialogOpen, setEditOfferDialogOpen] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState<any>(null);
   const [notValidatedDialogOpen, setNotValidatedDialogOpen] = useState(false);
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | null>(null);
 
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
 
@@ -166,6 +170,22 @@ export default function TransporterDashboard() {
     },
     refetchInterval: 5000,
   });
+
+  // Filter accepted requests by selected calendar date
+  const filteredAcceptedRequests = useMemo(() => {
+    if (!selectedCalendarDate) return acceptedRequests;
+
+    return acceptedRequests.filter((request: any) => {
+      const requestDate = request.pickupDate || request.deliveryDate;
+      if (!requestDate) return false;
+      
+      try {
+        return isSameDay(parseISO(requestDate), selectedCalendarDate);
+      } catch (error) {
+        return false;
+      }
+    });
+  }, [acceptedRequests, selectedCalendarDate]);
 
   const handleMakeOffer = (requestId: string) => {
     setSelectedRequestId(requestId);
@@ -811,9 +831,39 @@ export default function TransporterDashboard() {
           </TabsContent>
 
           <TabsContent value="to-process" className="mt-6 space-y-6">
-            {acceptedRequests.length > 0 ? (
+            {/* Interactive Calendar */}
+            {acceptedRequests.length > 0 && (
+              <InteractiveCalendar
+                requests={acceptedRequests}
+                selectedDate={selectedCalendarDate}
+                onDateSelect={setSelectedCalendarDate}
+              />
+            )}
+
+            {/* Display message when date is selected but no requests match */}
+            {selectedCalendarDate && filteredAcceptedRequests.length === 0 && acceptedRequests.length > 0 && (
+              <Card>
+                <CardContent className="py-8 text-center">
+                  <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">
+                    Aucune commande prévue pour le {format(selectedCalendarDate, "d MMMM yyyy", { locale: fr })}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedCalendarDate(null)}
+                    className="mt-4"
+                    data-testid="button-clear-date-filter-empty"
+                  >
+                    Voir toutes les commandes
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {filteredAcceptedRequests.length > 0 ? (
               <div className="space-y-4">
-                {acceptedRequests.map((request: any) => {
+                {filteredAcceptedRequests.map((request: any) => {
                   const client = users.find((u: any) => u.id === request.clientId);
                   const isMarkedForBilling = request.paymentStatus === "awaiting_payment";
 

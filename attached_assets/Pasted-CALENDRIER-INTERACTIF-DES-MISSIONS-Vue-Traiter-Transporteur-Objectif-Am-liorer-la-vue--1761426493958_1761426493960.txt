@@ -1,0 +1,165 @@
+CALENDRIER INTERACTIF DES MISSIONS (Vue “À Traiter” Transporteur)
+🎯 Objectif :
+
+Améliorer la vue “À Traiter” du tableau de bord transporteur en ajoutant un calendrier mensuel interactif, inspiré de la maquette ci-jointe 📅.
+Ce calendrier permettra :
+
+de visualiser les jours où le transporteur a des commandes planifiées,
+
+de filtrer automatiquement les commandes selon le jour sélectionné,
+
+et d’avoir une vue synthétique et intuitive de son activité mensuelle.
+
+🧩 1. Emplacement et affichage
+
+Le calendrier s’affiche en haut de la section “À Traiter”, juste au-dessus de la liste des commandes.
+
+Format :
+
+Vue mensuelle (mois en cours par défaut)
+
+Titre : “📅 Mes commandes à traiter – Novembre 2025”
+
+Boutons navigation :
+
+◀ Mois précédent / Mois suivant ▶
+
+Icône de sélection rapide pour changer l’année
+
+🎨 2. Design et ergonomie
+
+Le style doit s’inspirer du design de la maquette fournie (cf. capture ci-jointe) :
+
+Fond clair (#f9f9f9 ou transparent selon thème)
+
+Jours avec texte foncé
+
+✅ Jour avec commande → pastille verte vive (#16c79a ou #00d67b)
+
+⚪ Jour sans commande → neutre
+
+🔵 Jour sélectionné → encadré bleu ou turquoise (accent CamionBack)
+
+💡 Suggestion visuelle :
+
+Lun Mar Mer Jeu Ven Sam Dim
+ 30  1  2  3  4  5  6
+ 7   8  9 10 11 12 13
+ 14 15 16 17 18 19 20
+ 21 22 23 24 25 26 27
+ 28 29 30
+
+
+→ Les jours avec une commande à traiter (ex. 22, 25) auront une pastille verte animée 🟢
+→ Si l’utilisateur clique sur le jour 22 → la liste des commandes se filtre automatiquement pour ne montrer que celles de cette date.
+
+⚙️ 3. Fonctionnalités principales
+✅ a. Filtrage intelligent
+
+Quand le transporteur clique sur une date :
+
+Le filtre “dateLivraison = jour sélectionné” s’applique automatiquement
+
+Les commandes correspondantes s’affichent juste en dessous
+
+Un message s’affiche si aucune commande :
+
+“Aucune commande prévue pour cette date.”
+
+🔁 b. Navigation entre mois et années
+
+Flèches gauche/droite pour naviguer entre les mois
+
+Sélecteur d’année (dropdown)
+
+Si un mois ne contient pas de commande → aucune pastille visible
+
+📊 c. Résumé rapide en dessous du calendrier
+
+Afficher un petit résumé sous le calendrier :
+
+🚛 3 commandes à traiter ce mois-ci
+💰 Revenu estimé : 5 600 MAD
+🗓️ Prochaine livraison : 22 novembre
+
+🧠 4. Bonus UX (améliorations intelligentes)
+🌍 a. Couleurs par statut
+
+Vert vif 🟢 : commande planifiée à traiter
+
+Bleu 🟦 : commande en cours de livraison
+
+Gris ⚪ : commande livrée (historique)
+
+⏰ b. Afficher un petit point ou icône camion 🚚 sur les jours avec plusieurs commandes
+🔔 c. Intégration future (optionnelle)
+
+Quand un jour est sélectionné, possibilité d’afficher un petit bouton :
+
+“Voir sur la carte 🗺️”
+→ ouvre une mini carte affichant la position des livraisons de cette date.
+
+🗃️ 5. Données à exploiter
+
+Le calendrier doit s’appuyer sur les données des commandes existantes :
+
+pickupDate ou deliveryDate
+
+status (pending / accepted / delivered)
+
+amount
+
+route (ville départ → ville arrivée)
+
+⚙️ Exemple JSON :
+
+[
+  {
+    "id": "CMD-2025-00029",
+    "pickupCity": "Agadir",
+    "deliveryCity": "Casablanca",
+    "deliveryDate": "2025-11-22",
+    "status": "accepted",
+    "amount": 2300
+  },
+  {
+    "id": "CMD-2025-00030",
+    "pickupCity": "Agadir",
+    "deliveryCity": "Rabat",
+    "deliveryDate": "2025-11-25",
+    "status": "accepted",
+    "amount": 2500
+  }
+]
+
+
+→ Dans cet exemple, les jours 22 et 25 novembre doivent être mis en surbrillance sur le calendrier.
+
+🧩 6. Récapitulatif visuel du composant
+--------------------------------------------------
+📅 Mes commandes à traiter – Novembre 2025
+[◀] [Novembre 2025 ▼] [▶]
+
+🗓️ Calendrier avec pastilles colorées
+
+🚛 3 commandes ce mois-ci | 💰 5 600 MAD
+Prochaine livraison : 22 novembre 2025
+
+--------------------------------------------------
+Liste filtrée des commandes
+CMD-2025-00029 | Agadir → Casablanca | 2 300 MAD
+CMD-2025-00030 | Agadir → Rabat | 2 500 MAD
+--------------------------------------------------
+
+💬 7. Explication stratégique (à transmettre au dev)
+
+L’idée est d’apporter au transporteur une vue planifiée et claire de ses livraisons, sans passer par une liste monotone.
+Ce calendrier agit comme un mini agenda intelligent, lui permettant :
+
+de visualiser les jours actifs d’un coup d’œil,
+
+d’accéder directement aux commandes d’un jour précis,
+
+et d’avoir un aperçu de sa charge de travail du mois.
+
+En plus, cette vue crée un effet “pro” et encourage la planification à long terme — un vrai avantage différenciateur pour CamionBack.
