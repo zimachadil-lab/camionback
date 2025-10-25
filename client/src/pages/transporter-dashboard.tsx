@@ -535,28 +535,6 @@ export default function TransporterDashboard() {
         onLogout={handleLogout}
       />
       
-      {/* Temporairement désactivé - Réactiver ensuite */}
-      {/* <StoriesBar userRole="transporter" /> */}
-      
-      <div className="p-4">
-        <h1 className="text-2xl font-bold text-foreground">Dashboard Transporteur</h1>
-        <p className="text-muted-foreground mt-2">Utilisateur : {user.name}</p>
-        <p className="text-muted-foreground">Statut : {user.status}</p>
-        <p className="text-muted-foreground">Demandes : {requests.length}</p>
-        <p className="text-muted-foreground">Villes : {cities.length}</p>
-      </div>
-    </div>
-  );
-
-  // ANCIEN CODE - À supprimer après validation
-  return (
-    <div className="min-h-screen bg-background">
-      <Header
-        user={user}
-        onAnnounceReturn={handleAnnounceReturn}
-        onLogout={handleLogout}
-      />
-      
       <StoriesBar userRole="transporter" />
       
       {/* Reference request banner - Show if pending and (no reference OR reference was rejected) */}
