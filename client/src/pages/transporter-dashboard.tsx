@@ -446,6 +446,15 @@ export default function TransporterDashboard() {
     }
   };
 
+  // Only wait for critical data - allow render even if some data is still loading
+  if (requestsLoading || citiesLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingTruck message="Chargement de votre tableau de bord..." size="lg" />
+      </div>
+    );
+  }
+
   const filteredRequests = requests
     .filter((req: any) => {
       // Exclude requests declined by this transporter
@@ -468,15 +477,6 @@ export default function TransporterDashboard() {
     acc[offer.requestId] = (acc[offer.requestId] || 0) + 1;
     return acc;
   }, {});
-
-  // Only wait for critical data - allow render even if some data is still loading
-  if (requestsLoading || citiesLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingTruck message="Chargement de votre tableau de bord..." size="lg" />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">
