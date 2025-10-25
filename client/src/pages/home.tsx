@@ -15,6 +15,14 @@ export default function Home() {
       const userData = JSON.parse(storedUser);
       setUser(userData);
       
+      // Check for redirect after login first
+      const redirectPath = localStorage.getItem("redirectAfterLogin");
+      if (redirectPath) {
+        localStorage.removeItem("redirectAfterLogin");
+        setLocation(redirectPath);
+        return;
+      }
+      
       // Redirect to role selection if user has no role
       if (!userData.role) {
         setLocation("/select-role");
