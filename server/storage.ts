@@ -50,6 +50,7 @@ export interface IStorage {
   createTransportRequest(request: InsertTransportRequest): Promise<TransportRequest>;
   getTransportRequest(id: string): Promise<TransportRequest | undefined>;
   getAllTransportRequests(): Promise<TransportRequest[]>;
+  getRequestsByIds(ids: string[]): Promise<TransportRequest[]>;
   getRequestsByClient(clientId: string): Promise<TransportRequest[]>;
   getOpenRequests(transporterId?: string, limit?: number, offset?: number): Promise<TransportRequest[]>;
   getAcceptedRequestsByTransporter(transporterId: string): Promise<TransportRequest[]>;
@@ -466,6 +467,10 @@ export class MemStorage implements IStorage {
 
   async getAllTransportRequests(): Promise<TransportRequest[]> {
     return Array.from(this.transportRequests.values());
+  }
+
+  async getRequestsByIds(ids: string[]): Promise<TransportRequest[]> {
+    return ids.map(id => this.transportRequests.get(id)).filter((r): r is TransportRequest => r !== undefined);
   }
 
   async getRequestsByClient(clientId: string): Promise<TransportRequest[]> {
@@ -1405,6 +1410,11 @@ export class DbStorage implements IStorage {
 
   async getAllTransportRequests(): Promise<TransportRequest[]> {
     return await db.select().from(transportRequests);
+  }
+
+  async getRequestsByIds(ids: string[]): Promise<TransportRequest[]> {
+    if (ids.length === 0) return [];
+    return await db.select().from(transportRequests).where(inArray(transportRequests.id, ids));
   }
 
   async getRequestsByClient(clientId: string): Promise<TransportRequest[]> {

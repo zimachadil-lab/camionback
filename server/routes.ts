@@ -1729,7 +1729,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       } else if (transporterId) {
         offers = await storage.getOffersByTransporter(transporterId as string);
-        // No commission markup for transporter view
+        // Enrich offers with request data for transporter view
+        const uniqueRequestIds = new Set(offers.map(offer => offer.requestId));
+        const requestIds = Array.from(uniqueRequestIds);
+        const allRequests = await storage.getRequestsByIds(requestIds);
+        const requestsMap = new Map(allRequests.map(r => [r.id, r]));
+        
+        offers = offers.map(offer => {
+          const request = requestsMap.get(offer.requestId);
+          return {
+            ...offer,
+            request: request ? {
+              id: request.id,
+              requestId: request.referenceId,
+              cargoType: request.goodsType,
+              departureCity: request.fromCity,
+              arrivalCity: request.toCity,
+              preferredDate: request.dateTime,
+              description: request.description,
+              status: request.status,
+              clientId: request.clientId,
+            } : null,
+          };
+        });
       } else {
         // Return all offers (for admin view)
         offers = await storage.getAllOffers();

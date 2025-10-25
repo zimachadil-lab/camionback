@@ -617,8 +617,7 @@ export default function TransporterDashboard() {
             {myOffers.length > 0 ? (
               <div className="space-y-4">
                 {myOffers.map((offer: any) => {
-                  const request = requests.find((r: any) => r.id === offer.requestId);
-                  if (!request) return null;
+                  if (!offer.request) return null;
                   
                   return (
                     <Card key={offer.id} className="overflow-hidden">
@@ -626,7 +625,7 @@ export default function TransporterDashboard() {
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
-                              <span className="text-sm font-mono text-muted-foreground">{request.requestId}</span>
+                              <span className="text-sm font-mono text-muted-foreground">{offer.request.requestId}</span>
                               <Badge variant={
                                 offer.status === "accepted" ? "default" :
                                 offer.status === "rejected" ? "destructive" :
@@ -637,21 +636,21 @@ export default function TransporterDashboard() {
                                  "En attente"}
                               </Badge>
                             </div>
-                            <h3 className="font-semibold text-lg">{request.cargoType}</h3>
+                            <h3 className="font-semibold text-lg">{offer.request.cargoType}</h3>
                             <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
                               <MapPin className="h-4 w-4" />
-                              {request.departureCity} → {request.arrivalCity}
+                              {offer.request.departureCity} → {offer.request.arrivalCity}
                             </p>
                           </div>
                           <div className="text-right">
-                            <p className="text-2xl font-bold text-primary">{offer.price} DH</p>
+                            <p className="text-2xl font-bold text-primary">{offer.amount} DH</p>
                           </div>
                         </div>
                         
                         <div className="grid grid-cols-2 gap-4 text-sm">
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <Calendar className="h-4 w-4" />
-                            {new Date(request.preferredDate).toLocaleDateString('fr-FR')}
+                            {new Date(offer.request.preferredDate).toLocaleDateString('fr-FR')}
                           </div>
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <Clock className="h-4 w-4" />
