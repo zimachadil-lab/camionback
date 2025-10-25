@@ -517,7 +517,57 @@ export default function TransporterDashboard() {
           </TabsList>
 
           <TabsContent value="available" className="mt-6 space-y-6">
-            <p className="text-muted-foreground">Tab Disponibles - Contenu à venir</p>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher par description..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                  data-testid="input-search-requests"
+                />
+              </div>
+              <Select value={selectedCity} onValueChange={setSelectedCity}>
+                <SelectTrigger className="w-full sm:w-48" data-testid="select-city-filter">
+                  <ListFilter className="mr-2 h-4 w-4" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Toutes les villes">Toutes les villes</SelectItem>
+                  {citiesLoading ? (
+                    <div className="p-2 text-sm text-muted-foreground">Chargement...</div>
+                  ) : (
+                    cities.map((city: any) => (
+                      <SelectItem key={city.id} value={city.name}>{city.name}</SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {filteredRequests.length > 0 ? (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {filteredRequests.map((request: any) => (
+                  <RequestCard
+                    key={request.id}
+                    request={request}
+                    onMakeOffer={handleMakeOffer}
+                    userStatus={user.status}
+                    offerCount={offerCounts[request.id] || 0}
+                    onDecline={handleDeclineRequest}
+                    onTrackView={() => trackViewMutation.mutate(request.id)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Search className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">
+                  Aucune demande trouvée
+                </p>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="my-offers" className="mt-6 space-y-6">
