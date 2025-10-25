@@ -70,6 +70,8 @@ export default function TransporterDashboard() {
   const [editOfferDialogOpen, setEditOfferDialogOpen] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState<any>(null);
   const [notValidatedDialogOpen, setNotValidatedDialogOpen] = useState(false);
+  const [acceptedRequestDetailsOpen, setAcceptedRequestDetailsOpen] = useState(false);
+  const [selectedAcceptedRequest, setSelectedAcceptedRequest] = useState<any>(null);
 
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
   console.log("👤 [TransporterDashboard] User from localStorage:", user);
@@ -706,11 +708,47 @@ export default function TransporterDashboard() {
                       </div>
 
                       <div className="flex gap-2 mt-4">
-                        <Button variant="outline" size="sm" className="flex-1">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={async () => {
+                            try {
+                              // Fetch client details
+                              const clientResponse = await fetch(`/api/users/${request.clientId}`);
+                              if (!clientResponse.ok) throw new Error("Client non trouvé");
+                              const clientData = await clientResponse.json();
+                              
+                              setSelectedClient({
+                                id: clientData.id,
+                                name: clientData.name || clientData.clientId || clientData.phoneNumber,
+                                role: clientData.role,
+                              });
+                              setChatRequestId(request.id);
+                              setChatOpen(true);
+                            } catch (error) {
+                              console.error("Error opening chat:", error);
+                              toast({
+                                title: "Erreur",
+                                description: "Impossible d'ouvrir le chat",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                          data-testid={`button-contact-client-${request.id}`}
+                        >
                           <MessageCircle className="mr-2 h-4 w-4" />
                           Contacter le client
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            setSelectedAcceptedRequest(request);
+                            setAcceptedRequestDetailsOpen(true);
+                          }}
+                          data-testid={`button-view-details-${request.id}`}
+                        >
                           <Info className="h-4 w-4" />
                         </Button>
                       </div>
@@ -729,6 +767,130 @@ export default function TransporterDashboard() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Dialogue pour afficher les détails complets d'une demande acceptée */}
+      <Dialog open={acceptedRequestDetailsOpen} onOpenChange={setAcceptedRequestDetailsOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Détails de la commande</DialogTitle>
+            <DialogDescription>
+              Informations complètes sur cette demande de transport
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedAcceptedRequest && (
+            <div className="space-y-6">
+              {/* En-tête de la commande */}
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-sm font-mono text-muted-foreground">
+                      {selectedAcceptedRequest.requestId}
+                    </span>
+                    <Badge variant="default">À traiter</Badge>
+                  </div>
+                  <h3 className="font-semibold text-xl">{selectedAcceptedRequest.cargoType}</h3>
+                </div>
+              </div>
+
+              {/* Trajet */}
+              <div className="bg-muted/50 rounded-lg p-4">
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  Trajet
+                </h4>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-primary rounded-full"></div>
+                    <span className="font-medium">Départ :</span>
+                    <span>{selectedAcceptedRequest.departureCity}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-destructive rounded-full"></div>
+                    <span className="font-medium">Arrivée :</span>
+                    <span>{selectedAcceptedRequest.arrivalCity}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Date préférée */}
+              <div className="bg-muted/50 rounded-lg p-4">
+                <h4 className="font-semibold mb-2 flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Date préférée
+                </h4>
+                <p>{new Date(selectedAcceptedRequest.preferredDate).toLocaleDateString('fr-FR', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}</p>
+              </div>
+
+              {/* Description */}
+              <div className="bg-muted/50 rounded-lg p-4">
+                <h4 className="font-semibold mb-2 flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  Description
+                </h4>
+                <p className="text-sm whitespace-pre-wrap">{selectedAcceptedRequest.description}</p>
+              </div>
+
+              {/* Photos du client si disponibles */}
+              {selectedAcceptedRequest.clientPhotos && selectedAcceptedRequest.clientPhotos.length > 0 && (
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4" />
+                    Photos du client ({selectedAcceptedRequest.clientPhotos.length})
+                  </h4>
+                  <div className="grid grid-cols-3 gap-2">
+                    {selectedAcceptedRequest.clientPhotos.map((photo: string, index: number) => (
+                      <div 
+                        key={index}
+                        className="relative aspect-square rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => {
+                          setSelectedPhotos(selectedAcceptedRequest.clientPhotos);
+                          setPhotoGalleryOpen(true);
+                        }}
+                      >
+                        <img
+                          src={photo}
+                          alt={`Photo ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Informations supplémentaires */}
+              <div className="bg-muted/50 rounded-lg p-4">
+                <h4 className="font-semibold mb-3">Informations supplémentaires</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Statut :</span>
+                    <p className="font-medium capitalize">{selectedAcceptedRequest.status}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Client ID :</span>
+                    <p className="font-medium font-mono text-xs">{selectedAcceptedRequest.clientId}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setAcceptedRequestDetailsOpen(false)}
+            >
+              Fermer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
