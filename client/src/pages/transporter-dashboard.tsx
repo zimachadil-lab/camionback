@@ -542,11 +542,47 @@ export default function TransporterDashboard() {
           <h1 className="text-3xl font-bold">Tableau de bord</h1>
           <p className="text-muted-foreground mt-1">Trouvez des demandes de transport</p>
         </div>
-        <div className="text-muted-foreground">
-          <p>Demandes disponibles : {filteredRequests.length}</p>
-          <p>Villes : {cities.length}</p>
-          <p>Mes offres : {myOffers.length}</p>
-        </div>
+
+        <Tabs defaultValue="available" className="w-full">
+          <TabsList className="grid w-full max-w-3xl grid-cols-3">
+            <TabsTrigger value="available" data-testid="tab-available">
+              <Search className="mr-2 h-4 w-4" />
+              Disponibles (<span className="text-[#00ff99]">{filteredRequests.length}</span>)
+            </TabsTrigger>
+            <TabsTrigger value="my-offers" data-testid="tab-my-offers">
+              <Package className="mr-2 h-4 w-4" />
+              Mes offres ({myOffers.length})
+            </TabsTrigger>
+            <TabsTrigger value="to-process" data-testid="tab-to-process">
+              <CheckCircle className="mr-2 h-4 w-4" />
+              À traiter ({acceptedRequests.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="available" className="mt-6">
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">
+                {filteredRequests.length} demandes disponibles
+              </p>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="my-offers" className="mt-6">
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">
+                {myOffers.length} offres soumises
+              </p>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="to-process" className="mt-6">
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">
+                {acceptedRequests.length} demandes à traiter
+              </p>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
