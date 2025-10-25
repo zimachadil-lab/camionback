@@ -804,6 +804,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/requests", async (req, res) => {
     try {
+      console.log(`[GET /api/requests] Query params:`, req.query);
       const { clientId, status, transporterId, accepted, payments, limit, offset } = req.query;
       
       // Parse pagination params
