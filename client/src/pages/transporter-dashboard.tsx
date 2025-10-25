@@ -535,6 +535,31 @@ export default function TransporterDashboard() {
         onLogout={handleLogout}
       />
       
+      {/* <StoriesBar userRole="transporter" /> */}
+      
+      <div className="container mx-auto p-4 md:p-6 max-w-7xl space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Tableau de bord</h1>
+          <p className="text-muted-foreground mt-1">Trouvez des demandes de transport</p>
+        </div>
+        <div className="text-muted-foreground">
+          <p>Demandes disponibles : {filteredRequests.length}</p>
+          <p>Villes : {cities.length}</p>
+          <p>Mes offres : {myOffers.length}</p>
+        </div>
+      </div>
+    </div>
+  );
+  
+  // CODE ORIGINAL COMMENTÉ TEMPORAIREMENT
+  return (
+    <div className="min-h-screen bg-background">
+      <Header
+        user={user}
+        onAnnounceReturn={handleAnnounceReturn}
+        onLogout={handleLogout}
+      />
+      
       <StoriesBar userRole="transporter" />
       
       {/* Reference request banner - Show if pending and (no reference OR reference was rejected) */}
