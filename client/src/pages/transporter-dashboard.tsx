@@ -46,8 +46,10 @@ const referenceSchema = z.object({
 });
 
 export default function TransporterDashboard() {
+  console.log("🚀 [TransporterDashboard] Component START");
   const [, setLocation] = useLocation();
   const [selectedCity, setSelectedCity] = useState("Toutes les villes");
+  console.log("✅ [TransporterDashboard] State initialized");
   const [searchQuery, setSearchQuery] = useState("");
   const [offerDialogOpen, setOfferDialogOpen] = useState(false);
   const [selectedRequestId, setSelectedRequestId] = useState<string>("");
@@ -70,8 +72,10 @@ export default function TransporterDashboard() {
   const [notValidatedDialogOpen, setNotValidatedDialogOpen] = useState(false);
 
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
+  console.log("👤 [TransporterDashboard] User from localStorage:", user);
 
   // Initialize forms FIRST (before mutations that use them)
+  console.log("📝 [TransporterDashboard] Initializing forms...");
   const reportForm = useForm({
     resolver: zodResolver(reportSchema),
     defaultValues: {
@@ -98,8 +102,11 @@ export default function TransporterDashboard() {
     },
   });
 
+  console.log("📝 [TransporterDashboard] All forms initialized");
+
   // Refresh user data from database on mount to get latest status
   useEffect(() => {
+    console.log("🔄 [TransporterDashboard] useEffect for refreshing user data");
     const refreshUserData = async () => {
       try {
         const response = await fetch(`/api/auth/me/${user.id}`);
@@ -151,6 +158,8 @@ export default function TransporterDashboard() {
       setNotValidatedDialogOpen(true);
     }
   };
+
+  console.log("📊 [TransporterDashboard] Setting up queries...");
 
   // Load requests with limit of 50 for better performance
   const { data: requests = [], isLoading: requestsLoading } = useQuery({
@@ -496,7 +505,16 @@ export default function TransporterDashboard() {
   }, {});
 
   // Only wait for critical data - allow render even if some data is still loading
+  console.log("⏳ [TransporterDashboard] Loading states:", { requestsLoading, citiesLoading });
+  console.log("📦 [TransporterDashboard] Data counts:", {
+    requests: requests.length,
+    cities: cities.length,
+    myOffers: myOffers.length,
+    acceptedRequests: acceptedRequests.length
+  });
+  
   if (requestsLoading || citiesLoading) {
+    console.log("⏳ [TransporterDashboard] Showing loading truck...");
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingTruck message="Chargement de votre tableau de bord..." size="lg" />
@@ -504,6 +522,24 @@ export default function TransporterDashboard() {
     );
   }
 
+  console.log("✅ [TransporterDashboard] RENDERING DASHBOARD NOW!");
+  console.log("👤 [TransporterDashboard] User status:", user.status);
+  console.log("📋 [TransporterDashboard] Reference data:", transporterReference);
+  console.log("📊 [TransporterDashboard] About to return JSX...");
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="p-4">
+        <h1 className="text-2xl font-bold text-foreground">Dashboard Transporteur - TEST</h1>
+        <p className="text-muted-foreground mt-2">Utilisateur : {user.name}</p>
+        <p className="text-muted-foreground">Statut : {user.status}</p>
+        <p className="text-muted-foreground">Demandes : {requests.length}</p>
+        <p className="text-muted-foreground">Villes : {cities.length}</p>
+      </div>
+    </div>
+  );
+
+  // TEMPORAIREMENT COMMENTÉ - Réactiver progressivement
   return (
     <div className="min-h-screen bg-background">
       <Header
