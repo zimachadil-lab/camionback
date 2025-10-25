@@ -50,9 +50,8 @@ export interface IStorage {
   createTransportRequest(request: InsertTransportRequest): Promise<TransportRequest>;
   getTransportRequest(id: string): Promise<TransportRequest | undefined>;
   getAllTransportRequests(): Promise<TransportRequest[]>;
-  getRequestsByIds(ids: string[]): Promise<TransportRequest[]>;
   getRequestsByClient(clientId: string): Promise<TransportRequest[]>;
-  getOpenRequests(transporterId?: string, limit?: number, offset?: number): Promise<TransportRequest[]>;
+  getOpenRequests(transporterId?: string): Promise<TransportRequest[]>;
   getAcceptedRequestsByTransporter(transporterId: string): Promise<TransportRequest[]>;
   getPaymentsByTransporter(transporterId: string): Promise<TransportRequest[]>;
   updateTransportRequest(id: string, updates: Partial<TransportRequest>): Promise<TransportRequest | undefined>;
@@ -469,17 +468,13 @@ export class MemStorage implements IStorage {
     return Array.from(this.transportRequests.values());
   }
 
-  async getRequestsByIds(ids: string[]): Promise<TransportRequest[]> {
-    return ids.map(id => this.transportRequests.get(id)).filter((r): r is TransportRequest => r !== undefined);
-  }
-
   async getRequestsByClient(clientId: string): Promise<TransportRequest[]> {
     return Array.from(this.transportRequests.values()).filter(
       (req) => req.clientId === clientId
     );
   }
 
-  async getOpenRequests(transporterId?: string, limit?: number, offset?: number): Promise<TransportRequest[]> {
+  async getOpenRequests(transporterId?: string): Promise<TransportRequest[]> {
     const openRequests = Array.from(this.transportRequests.values()).filter(
       (req) => req.status === "open"
     );
@@ -493,18 +488,7 @@ export class MemStorage implements IStorage {
           filteredRequests.push(request);
         }
       }
-      
-      // Apply pagination if limit/offset provided
-      if (limit !== undefined && offset !== undefined) {
-        return filteredRequests.slice(offset, offset + limit);
-      }
-      
       return filteredRequests;
-    }
-    
-    // Apply pagination if limit/offset provided
-    if (limit !== undefined && offset !== undefined) {
-      return openRequests.slice(offset, offset + limit);
     }
     
     return openRequests;
@@ -1412,31 +1396,14 @@ export class DbStorage implements IStorage {
     return await db.select().from(transportRequests);
   }
 
-  async getRequestsByIds(ids: string[]): Promise<TransportRequest[]> {
-    if (ids.length === 0) return [];
-    return await db.select().from(transportRequests).where(inArray(transportRequests.id, ids));
-  }
-
   async getRequestsByClient(clientId: string): Promise<TransportRequest[]> {
     return await db.select().from(transportRequests)
       .where(eq(transportRequests.clientId, clientId));
   }
 
-  async getOpenRequests(transporterId?: string, limit?: number, offset?: number): Promise<TransportRequest[]> {
-    // Build query with optional pagination
-    let query = db.select().from(transportRequests)
-      .where(eq(transportRequests.status, 'open'))
-      .orderBy(sql`${transportRequests.createdAt} DESC`);
-    
-    // Apply pagination if specified
-    if (limit !== undefined) {
-      query = query.limit(limit) as any;
-    }
-    if (offset !== undefined) {
-      query = query.offset(offset) as any;
-    }
-    
-    const openRequests = await query;
+  async getOpenRequests(transporterId?: string): Promise<TransportRequest[]> {
+    const openRequests = await db.select().from(transportRequests)
+      .where(eq(transportRequests.status, 'open'));
     
     // If transporterId provided, apply transporter-specific filters
     if (transporterId) {
@@ -2476,7 +2443,6 @@ export class DbStorage implements IStorage {
   async getTransporterReferenceByTransporterId(transporterId: string): Promise<TransporterReference | undefined> {
     const result = await db.select().from(transporterReferences)
       .where(eq(transporterReferences.transporterId, transporterId))
-      .orderBy(desc(transporterReferences.createdAt))
       .limit(1);
     return result[0];
   }

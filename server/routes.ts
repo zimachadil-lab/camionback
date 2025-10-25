@@ -804,12 +804,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/requests", async (req, res) => {
     try {
-      console.log(`[GET /api/requests] Query params:`, req.query);
-      const { clientId, status, transporterId, accepted, payments, limit, offset } = req.query;
-      
-      // Parse pagination params
-      const limitNum = limit ? parseInt(limit as string) : undefined;
-      const offsetNum = offset ? parseInt(offset as string) : undefined;
+      const { clientId, status, transporterId, accepted, payments } = req.query;
       
       let requests;
       if (clientId) {
@@ -819,13 +814,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (accepted === "true" && transporterId) {
         requests = await storage.getAcceptedRequestsByTransporter(transporterId as string);
       } else if (status === "open") {
-        requests = await storage.getOpenRequests(transporterId as string | undefined, limitNum, offsetNum);
+        requests = await storage.getOpenRequests(transporterId as string | undefined);
       } else {
         requests = await storage.getAllTransportRequests();
       }
       
       // Enrich requests with offers count
-      let enrichedRequests = await Promise.all(
+      const enrichedRequests = await Promise.all(
         requests.map(async (request) => {
           const offers = await storage.getOffersByRequest(request.id);
           return {
@@ -834,39 +829,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
         })
       );
-      
-      // Special enrichment for accepted requests: map city IDs to names, add client info and transform field names
-      if (accepted === "true" && transporterId) {
-        const allCities = await storage.getAllCities();
-        const citiesMap = new Map(allCities.map(c => [c.id, c.name]));
-        
-        // Fetch all unique client IDs
-        const clientIds = Array.from(new Set(enrichedRequests.map(r => r.clientId)));
-        const clients = await Promise.all(
-          clientIds.map(id => storage.getUser(id))
-        );
-        const clientsMap = new Map(clients.filter(c => c).map(c => [c!.id, c]));
-        
-        enrichedRequests = enrichedRequests.map(request => {
-          const client = clientsMap.get(request.clientId);
-          return {
-            ...request,
-            // Transform field names for frontend compatibility
-            requestId: request.referenceId,
-            cargoType: request.goodsType,
-            departureCity: citiesMap.get(request.fromCity) || request.fromCity,
-            arrivalCity: citiesMap.get(request.toCity) || request.toCity,
-            preferredDate: request.dateTime,
-            description: request.description,
-            status: request.status,
-            clientId: request.clientId,
-            clientPhotos: (request as any).clientPhotos || [],
-            // Add client information
-            clientName: client?.name || client?.clientId || "Client inconnu",
-            clientPhone: client?.phoneNumber || "Non disponible",
-          };
-        });
-      }
       
       res.json(enrichedRequests);
     } catch (error) {
@@ -1762,36 +1724,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
         });
       } else if (transporterId) {
-        console.log(`[GET /api/offers] Fetching offers for transporter ${transporterId}`);
         offers = await storage.getOffersByTransporter(transporterId as string);
-        console.log(`[GET /api/offers] Found ${offers.length} offers`);
-        
-        // Enrich offers with request data for transporter view
-        const uniqueRequestIds = new Set(offers.map(offer => offer.requestId));
-        const requestIds = Array.from(uniqueRequestIds);
-        console.log(`[GET /api/offers] Fetching ${requestIds.length} unique requests:`, requestIds);
-        const allRequests = await storage.getRequestsByIds(requestIds);
-        console.log(`[GET /api/offers] Got ${allRequests.length} requests from storage`);
-        const requestsMap = new Map(allRequests.map(r => [r.id, r]));
-        
-        offers = offers.map(offer => {
-          const request = requestsMap.get(offer.requestId);
-          return {
-            ...offer,
-            request: request ? {
-              id: request.id,
-              requestId: request.referenceId,
-              cargoType: request.goodsType,
-              departureCity: request.fromCity,
-              arrivalCity: request.toCity,
-              preferredDate: request.dateTime,
-              description: request.description,
-              status: request.status,
-              clientId: request.clientId,
-            } : null,
-          };
-        });
-        console.log(`[GET /api/offers] Enriched offers. First offer has request:`, offers[0]?.request !== undefined);
+        // No commission markup for transporter view
       } else {
         // Return all offers (for admin view)
         offers = await storage.getAllOffers();
@@ -3283,12 +3217,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check if transporter already has a reference
       const existingRef = await storage.getTransporterReferenceByTransporterId(transporterId);
-      
-      // Allow new submission only if:
-      // 1. No existing reference OR
-      // 2. Existing reference was rejected (allowing resubmission)
-      if (existingRef && existingRef.status !== "rejected") {
-        return res.status(400).json({ error: "Ce transporteur a déjà soumis une référence en attente ou validée" });
+      if (existingRef) {
+        return res.status(400).json({ error: "Ce transporteur a déjà soumis une référence" });
       }
 
       const reference = await storage.createTransporterReference({

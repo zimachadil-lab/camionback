@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, MessageCircle, Info, Image as ImageIcon, Clock, Calendar, Flag, Edit, TruckIcon } from "lucide-react";
+import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, Image as ImageIcon, Clock, Calendar, Flag, Edit, TruckIcon } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { RequestCard } from "@/components/transporter/request-card";
 import { OfferForm } from "@/components/transporter/offer-form";
@@ -46,10 +46,8 @@ const referenceSchema = z.object({
 });
 
 export default function TransporterDashboard() {
-  console.log("🚀 [TransporterDashboard] Component START");
   const [, setLocation] = useLocation();
   const [selectedCity, setSelectedCity] = useState("Toutes les villes");
-  console.log("✅ [TransporterDashboard] State initialized");
   const [searchQuery, setSearchQuery] = useState("");
   const [offerDialogOpen, setOfferDialogOpen] = useState(false);
   const [selectedRequestId, setSelectedRequestId] = useState<string>("");
@@ -70,45 +68,11 @@ export default function TransporterDashboard() {
   const [editOfferDialogOpen, setEditOfferDialogOpen] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState<any>(null);
   const [notValidatedDialogOpen, setNotValidatedDialogOpen] = useState(false);
-  const [acceptedRequestDetailsOpen, setAcceptedRequestDetailsOpen] = useState(false);
-  const [selectedAcceptedRequest, setSelectedAcceptedRequest] = useState<any>(null);
 
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
-  console.log("👤 [TransporterDashboard] User from localStorage:", user);
-
-  // Initialize forms FIRST (before mutations that use them)
-  console.log("📝 [TransporterDashboard] Initializing forms...");
-  const reportForm = useForm({
-    resolver: zodResolver(reportSchema),
-    defaultValues: {
-      description: "",
-      type: "",
-    },
-  });
-
-  const editOfferForm = useForm({
-    resolver: zodResolver(editOfferSchema),
-    defaultValues: {
-      amount: "",
-      pickupDate: "",
-      loadType: "return" as const,
-    },
-  });
-
-  const referenceForm = useForm({
-    resolver: zodResolver(referenceSchema),
-    defaultValues: {
-      referenceName: "",
-      referencePhone: "+212",
-      referenceRelation: "Client" as const,
-    },
-  });
-
-  console.log("📝 [TransporterDashboard] All forms initialized");
 
   // Refresh user data from database on mount to get latest status
   useEffect(() => {
-    console.log("🔄 [TransporterDashboard] useEffect for refreshing user data");
     const refreshUserData = async () => {
       try {
         const response = await fetch(`/api/auth/me/${user.id}`);
@@ -161,71 +125,45 @@ export default function TransporterDashboard() {
     }
   };
 
-  console.log("📊 [TransporterDashboard] Setting up queries...");
-
-  // Load requests with limit of 50 for better performance
   const { data: requests = [], isLoading: requestsLoading } = useQuery({
     queryKey: ["/api/requests", user.id],
     queryFn: async () => {
-      const response = await fetch(`/api/requests?status=open&transporterId=${user.id}&limit=50`, { cache: "no-store" });
-      if (!response.ok) throw new Error(`Failed: ${response.statusText}`);
-      if (response.status === 304 || response.status === 204) return [];
-      const text = await response.text();
-      return text ? JSON.parse(text) : [];
+      const response = await fetch(`/api/requests?status=open&transporterId=${user.id}`);
+      return response.json();
     },
-    enabled: !!user.id,
   });
 
   const { data: myOffers = [], isLoading: offersLoading } = useQuery({
     queryKey: ["/api/offers", user.id],
     queryFn: async () => {
-      const response = await fetch(`/api/offers?transporterId=${user.id}`, { cache: "no-store" });
-      if (!response.ok) throw new Error(`Failed: ${response.statusText}`);
-      if (response.status === 304 || response.status === 204) return [];
-      const text = await response.text();
-      const offers = text ? JSON.parse(text) : [];
-      console.log("🔍 [MyOffers] First offer:", offers[0]);
-      return offers;
+      const response = await fetch(`/api/offers?transporterId=${user.id}`);
+      return response.json();
     },
-    enabled: !!user.id, // Only load when user is loaded
     refetchInterval: 5000,
   });
 
-  const { data: allRequests = [], isLoading: allRequestsLoading } = useQuery({
+  const { data: allRequests = [] } = useQuery({
     queryKey: ["/api/requests/all"],
     queryFn: async () => {
-      const response = await fetch("/api/requests", { cache: "no-store" });
-      if (!response.ok) throw new Error(`Failed: ${response.statusText}`);
-      if (response.status === 304 || response.status === 204) return [];
-      const text = await response.text();
-      return text ? JSON.parse(text) : [];
+      const response = await fetch("/api/requests");
+      return response.json();
     },
-    enabled: !!user.id, // Only load when user is loaded
   });
 
-  // Helper function to get client info from requests (avoid loading ALL users)
-  const getClientInfo = (clientId: string) => {
-    // Try to find client info in requests or acceptedRequests
-    const allReqs = [...requests, ...acceptedRequests, ...allRequests];
-    const req = allReqs.find((r: any) => r.clientId === clientId);
-    return req ? {
-      id: req.clientId,
-      clientId: req.clientIdentifier || clientId,
-      phoneNumber: req.clientPhone || "Non disponible",
-      city: req.fromCity || "Non spécifiée"
-    } : null;
-  };
+  const { data: users = [] } = useQuery({
+    queryKey: ["/api/users"],
+    queryFn: async () => {
+      const response = await fetch("/api/users");
+      return response.json();
+    },
+  });
 
   const { data: acceptedRequests = [], isLoading: acceptedLoading } = useQuery({
     queryKey: ["/api/requests/accepted", user.id],
     queryFn: async () => {
-      const response = await fetch(`/api/requests?accepted=true&transporterId=${user.id}`, { cache: "no-store" });
-      if (!response.ok) throw new Error(`Failed: ${response.statusText}`);
-      if (response.status === 304 || response.status === 204) return [];
-      const text = await response.text();
-      return text ? JSON.parse(text) : [];
+      const response = await fetch(`/api/requests?accepted=true&transporterId=${user.id}`);
+      return response.json();
     },
-    enabled: !!user.id, // Only load when user is loaded
     refetchInterval: 5000,
   });
 
@@ -251,12 +189,12 @@ export default function TransporterDashboard() {
   };
 
   const handleViewClientDetails = (request: any) => {
-    const clientInfo = getClientInfo(request.clientId);
+    const client = users.find((u: any) => u.id === request.clientId);
     setSelectedClientDetails({
       ...request,
-      clientId: clientInfo?.clientId || request.clientIdentifier,
-      clientPhone: clientInfo?.phoneNumber || "Non disponible",
-      clientCity: clientInfo?.city || request.fromCity,
+      clientId: client?.clientId,
+      clientPhone: client?.phoneNumber,
+      clientCity: client?.city,
     });
     setClientDetailsOpen(true);
   };
@@ -265,13 +203,9 @@ export default function TransporterDashboard() {
   const { data: cities = [], isLoading: citiesLoading } = useQuery({
     queryKey: ["/api/cities"],
     queryFn: async () => {
-      const response = await fetch("/api/cities", { cache: "no-store" });
-      if (!response.ok) throw new Error(`Failed: ${response.statusText}`);
-      if (response.status === 304 || response.status === 204) return [];
-      const text = await response.text();
-      return text ? JSON.parse(text) : [];
+      const response = await fetch("/api/cities");
+      return response.json();
     },
-    enabled: !!user.id, // Only load when user is loaded
   });
 
   // Fetch transporter reference
@@ -288,16 +222,6 @@ export default function TransporterDashboard() {
     createdAt: string;
   } | null>({
     queryKey: [`/api/transporter-references/${user.id}`],
-    queryFn: async () => {
-      const response = await fetch(`/api/transporter-references/${user.id}`, { cache: "no-store" });
-      if (!response.ok) {
-        if (response.status === 404) return null;
-        throw new Error(`Failed: ${response.statusText}`);
-      }
-      if (response.status === 304 || response.status === 204) return null;
-      const text = await response.text();
-      return text ? JSON.parse(text) : null;
-    },
     enabled: user.role === "transporter" && !!user.id,
   });
 
@@ -405,6 +329,32 @@ export default function TransporterDashboard() {
     },
   });
 
+  const reportForm = useForm({
+    resolver: zodResolver(reportSchema),
+    defaultValues: {
+      description: "",
+      type: "",
+    },
+  });
+
+  const editOfferForm = useForm({
+    resolver: zodResolver(editOfferSchema),
+    defaultValues: {
+      amount: "",
+      pickupDate: "",
+      loadType: "return" as const,
+    },
+  });
+
+  const referenceForm = useForm({
+    resolver: zodResolver(referenceSchema),
+    defaultValues: {
+      referenceName: "",
+      referencePhone: "+212",
+      referenceRelation: "Client" as const,
+    },
+  });
+
   const updateOfferMutation = useMutation({
     mutationFn: async (data: { offerId: string; amount: number; pickupDate: string; loadType: string }) => {
       return await apiRequest("PATCH", `/api/offers/${data.offerId}`, {
@@ -508,28 +458,13 @@ export default function TransporterDashboard() {
     return acc;
   }, {});
 
-  // Only wait for critical data - allow render even if some data is still loading
-  console.log("⏳ [TransporterDashboard] Loading states:", { requestsLoading, citiesLoading });
-  console.log("📦 [TransporterDashboard] Data counts:", {
-    requests: requests.length,
-    cities: cities.length,
-    myOffers: myOffers.length,
-    acceptedRequests: acceptedRequests.length
-  });
-  
-  if (requestsLoading || citiesLoading) {
-    console.log("⏳ [TransporterDashboard] Showing loading truck...");
+  if (requestsLoading || offersLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingTruck message="Chargement de votre tableau de bord..." size="lg" />
       </div>
     );
   }
-
-  console.log("✅ [TransporterDashboard] RENDERING DASHBOARD NOW!");
-  console.log("👤 [TransporterDashboard] User status:", user.status);
-  console.log("📋 [TransporterDashboard] Reference data:", transporterReference);
-  console.log("📊 [TransporterDashboard] About to return JSX...");
 
   return (
     <div className="min-h-screen bg-background">
@@ -539,7 +474,136 @@ export default function TransporterDashboard() {
         onLogout={handleLogout}
       />
       
-      {/* <StoriesBar userRole="transporter" /> */}
+      <StoriesBar userRole="transporter" />
+      
+      {/* Reference request banner - Only show if pending and no reference submitted */}
+      {user.status === "pending" && !transporterReference && !referenceLoading && (
+        <Card className="mx-4 mt-4 border-l-4 border-primary">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-3 mb-4">
+              <TruckIcon className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
+              <div>
+                <h3 className="text-xl font-semibold text-foreground">
+                  🚛 Pour activer votre compte CamionBack, ajoutez un référent professionnel
+                </h3>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Afin d'assurer la qualité du réseau, chaque transporteur doit fournir une personne de confiance 
+                  (client, partenaire ou autre transporteur) que notre équipe contactera pour confirmer son sérieux.
+                </p>
+              </div>
+            </div>
+
+            <Form {...referenceForm}>
+              <form 
+                onSubmit={referenceForm.handleSubmit((data) => submitReferenceMutation.mutate(data))} 
+                className="space-y-4"
+              >
+                <FormField
+                  control={referenceForm.control}
+                  name="referenceName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nom complet du référent <span className="text-destructive">*</span></FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Ex: Ahmed Benjelloun"
+                          data-testid="input-reference-name"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={referenceForm.control}
+                  name="referencePhone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Numéro de téléphone du référent <span className="text-destructive">*</span></FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="+212612345678"
+                          data-testid="input-reference-phone"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={referenceForm.control}
+                  name="referenceRelation"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Relation professionnelle <span className="text-destructive">*</span></FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-reference-relation">
+                            <SelectValue placeholder="Sélectionnez la relation" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Client">Client</SelectItem>
+                          <SelectItem value="Transporteur">Transporteur</SelectItem>
+                          <SelectItem value="Autre">Autre</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Button
+                  type="submit"
+                  disabled={submitReferenceMutation.isPending}
+                  className="w-full sm:w-auto"
+                  data-testid="button-submit-reference"
+                >
+                  {submitReferenceMutation.isPending ? "Soumission..." : "Soumettre ma référence"}
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Reference pending validation message */}
+      {user.status === "pending" && transporterReference && transporterReference.status === "pending" && (
+        <div className="bg-blue-50 dark:bg-blue-950/30 border-l-4 border-blue-500 p-4 mx-4 mt-4">
+          <div className="flex items-start gap-3">
+            <Clock className="w-5 h-5 text-blue-600 dark:text-blue-500 mt-0.5 flex-shrink-0" />
+            <div>
+              <h3 className="font-semibold text-blue-900 dark:text-blue-100">
+                ✅ Votre référence a été enregistrée
+              </h3>
+              <p className="text-sm text-blue-800 dark:text-blue-200 mt-1">
+                Notre équipe vous informera une fois votre profil validé. Merci de votre patience !
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reference rejected message */}
+      {user.status === "pending" && transporterReference && transporterReference.status === "rejected" && (
+        <div className="bg-red-50 dark:bg-red-950/30 border-l-4 border-red-500 p-4 mx-4 mt-4">
+          <div className="flex items-start gap-3">
+            <Flag className="w-5 h-5 text-red-600 dark:text-red-500 mt-0.5 flex-shrink-0" />
+            <div>
+              <h3 className="font-semibold text-red-900 dark:text-red-100">
+                ❌ Votre référence n'a pas été validée
+              </h3>
+              <p className="text-sm text-red-800 dark:text-red-200 mt-1">
+                {transporterReference.rejectionReason || "Merci d'en fournir une autre personne à contacter."}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       
       <div className="container mx-auto p-4 md:p-6 max-w-7xl space-y-6">
         <div>
@@ -555,7 +619,7 @@ export default function TransporterDashboard() {
             </TabsTrigger>
             <TabsTrigger value="my-offers" data-testid="tab-my-offers">
               <Package className="mr-2 h-4 w-4" />
-              Mes offres ({myOffers.length})
+              Mes offres
             </TabsTrigger>
             <TabsTrigger value="to-process" data-testid="tab-to-process">
               <CheckCircle className="mr-2 h-4 w-4" />
@@ -621,46 +685,116 @@ export default function TransporterDashboard() {
             {myOffers.length > 0 ? (
               <div className="space-y-4">
                 {myOffers.map((offer: any) => {
-                  if (!offer.request) return null;
-                  
+                  const request = allRequests.find((r: any) => r.id === offer.requestId);
+                  const client = users.find((u: any) => u.id === request?.clientId);
+                  const isAccepted = offer.status === "accepted";
+
                   return (
-                    <Card key={offer.id} className="overflow-hidden">
-                      <CardContent className="p-6">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="text-sm font-mono text-muted-foreground">{offer.request.requestId}</span>
-                              <Badge variant={
+                    <Card key={offer.id} className="hover-elevate">
+                      <CardContent className="p-6 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Badge 
+                              variant={
+                                offer.status === "pending" ? "outline" :
                                 offer.status === "accepted" ? "default" :
-                                offer.status === "rejected" ? "destructive" :
                                 "secondary"
-                              }>
-                                {offer.status === "accepted" ? "Acceptée" :
-                                 offer.status === "rejected" ? "Refusée" :
-                                 "En attente"}
-                              </Badge>
+                              }
+                              className={isAccepted ? "bg-green-600" : ""}
+                            >
+                              {isAccepted && <CheckCircle className="w-3 h-3 mr-1" />}
+                              {offer.status === "pending" ? "En attente" :
+                               offer.status === "accepted" ? "Acceptée" :
+                               "Refusée"}
+                            </Badge>
+                            <span className="text-sm text-muted-foreground">
+                              Référence: <span className="font-semibold text-foreground">{request?.referenceId}</span>
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl font-bold text-primary">{offer.amount} MAD</span>
+                            {offer.status === "pending" && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => {
+                                  setSelectedOffer(offer);
+                                  setEditOfferDialogOpen(true);
+                                }}
+                                data-testid={`button-edit-offer-${offer.id}`}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+
+                        {request && (
+                          <>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <MapPin className="w-4 h-4" />
+                              <span>{request.fromCity} → {request.toCity}</span>
                             </div>
-                            <h3 className="font-semibold text-lg">{offer.request.cargoType}</h3>
-                            <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
-                              <MapPin className="h-4 w-4" />
-                              {offer.request.departureCity} → {offer.request.arrivalCity}
+
+                            {request.photos && request.photos.length > 0 && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewPhotos(request.photos, request.referenceId)}
+                                className="gap-2"
+                                data-testid={`button-view-offer-photos-${offer.id}`}
+                              >
+                                <ImageIcon className="w-4 h-4" />
+                                Voir les photos ({request.photos.length})
+                              </Button>
+                            )}
+                          </>
+                        )}
+
+                        {isAccepted && client && (
+                          <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg p-4 space-y-3">
+                            <p className="text-sm font-medium text-green-900 dark:text-green-100 flex items-center gap-2">
+                              <CheckCircle className="w-4 h-4" />
+                              Votre offre a été acceptée !
                             </p>
+                            <div className="space-y-2">
+                              <p className="text-sm text-green-800 dark:text-green-200">
+                                Vous pouvez maintenant contacter le client :
+                              </p>
+                              <div className="flex items-center gap-2">
+                                <Phone className="w-4 h-4 text-green-700 dark:text-green-300" />
+                                <a 
+                                  href={`tel:${client.phoneNumber}`} 
+                                  className="text-lg font-semibold text-green-700 dark:text-green-300 hover:underline"
+                                  data-testid={`link-client-phone-${offer.id}`}
+                                >
+                                  {client.phoneNumber}
+                                </a>
+                              </div>
+                              <p className="text-xs text-green-700 dark:text-green-400">
+                                Client {client.clientId || "Non défini"}
+                              </p>
+                              {request && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleChat(client.id, client.clientId || "Client", request.id)}
+                                  className="gap-2 mt-2 w-full"
+                                  data-testid={`button-chat-${offer.id}`}
+                                >
+                                  <MessageSquare className="w-4 h-4" />
+                                  Envoyer un message
+                                </Button>
+                              )}
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <p className="text-2xl font-bold text-primary">{offer.amount} DH</p>
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Calendar className="h-4 w-4" />
-                            {new Date(offer.request.preferredDate).toLocaleDateString('fr-FR')}
-                          </div>
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Clock className="h-4 w-4" />
-                            Soumise le {new Date(offer.createdAt).toLocaleDateString('fr-FR')}
-                          </div>
-                        </div>
+                        )}
+
+                        {offer.message && (
+                          <p className="text-sm text-muted-foreground border-l-2 border-primary pl-3">
+                            {offer.message}
+                          </p>
+                        )}
                       </CardContent>
                     </Card>
                   );
@@ -670,7 +804,7 @@ export default function TransporterDashboard() {
               <div className="text-center py-12">
                 <Package className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">
-                  Vous n'avez pas encore soumis d'offres
+                  Vous n'avez pas encore fait d'offres
                 </p>
               </div>
             )}
@@ -679,88 +813,122 @@ export default function TransporterDashboard() {
           <TabsContent value="to-process" className="mt-6 space-y-6">
             {acceptedRequests.length > 0 ? (
               <div className="space-y-4">
-                {acceptedRequests.map((request: any) => (
-                  <Card key={request.id} className="overflow-hidden border-l-4 border-l-primary">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="text-sm font-mono text-muted-foreground">{request.requestId}</span>
-                            <Badge variant="default">À traiter</Badge>
-                          </div>
-                          <h3 className="font-semibold text-lg">{request.cargoType}</h3>
-                          <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
-                            <MapPin className="h-4 w-4" />
-                            {request.departureCity} → {request.arrivalCity}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Calendar className="h-4 w-4" />
-                          {new Date(request.preferredDate).toLocaleDateString('fr-FR')}
-                        </div>
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Package className="h-4 w-4" />
-                          {request.description}
-                        </div>
-                      </div>
+                {acceptedRequests.map((request: any) => {
+                  const client = users.find((u: any) => u.id === request.clientId);
+                  const isMarkedForBilling = request.paymentStatus === "awaiting_payment";
 
-                      <div className="flex gap-2 mt-4">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="flex-1"
-                          onClick={async () => {
-                            try {
-                              // Fetch client details
-                              const clientResponse = await fetch(`/api/users/${request.clientId}`);
-                              if (!clientResponse.ok) throw new Error("Client non trouvé");
-                              const clientData = await clientResponse.json();
-                              
-                              setSelectedClient({
-                                id: clientData.id,
-                                name: clientData.name || clientData.clientId || clientData.phoneNumber,
-                                role: clientData.role,
-                              });
-                              setChatRequestId(request.id);
-                              setChatOpen(true);
-                            } catch (error) {
-                              console.error("Error opening chat:", error);
-                              toast({
-                                title: "Erreur",
-                                description: "Impossible d'ouvrir le chat",
-                                variant: "destructive",
-                              });
-                            }
-                          }}
-                          data-testid={`button-contact-client-${request.id}`}
-                        >
-                          <MessageCircle className="mr-2 h-4 w-4" />
-                          Contacter le client
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => {
-                            setSelectedAcceptedRequest(request);
-                            setAcceptedRequestDetailsOpen(true);
-                          }}
-                          data-testid={`button-view-details-${request.id}`}
-                        >
-                          <Info className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                  return (
+                    <Card key={request.id} className="hover-elevate">
+                      <CardContent className="p-6 space-y-4">
+                        <div className="flex items-center justify-between flex-wrap gap-3">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="text-lg font-semibold">{request.referenceId}</h3>
+                              {isMarkedForBilling && (
+                                <Badge variant="default" className="bg-orange-600">
+                                  En attente de paiement client
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              {request.fromCity} → {request.toCity}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewClientDetails(request)}
+                              className="gap-2"
+                              data-testid={`button-view-client-${request.id}`}
+                            >
+                              <Phone className="h-4 w-4" />
+                              Voir les détails
+                            </Button>
+                            {!isMarkedForBilling && request.status !== "completed" && request.paymentStatus !== "paid" && (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => markForBillingMutation.mutate(request.id)}
+                                disabled={markForBillingMutation.isPending}
+                                className="gap-2"
+                                data-testid={`button-mark-billing-${request.id}`}
+                              >
+                                <CheckCircle className="h-4 w-4" />
+                                Marquer comme à facturer
+                              </Button>
+                            )}
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleOpenReportDialog(request.id)}
+                              data-testid={`button-report-${request.id}`}
+                              className="gap-2"
+                            >
+                              <Flag className="h-4 w-4" />
+                              <span className="hidden sm:inline">Signaler</span>
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <p className="text-muted-foreground">Type de marchandise</p>
+                              <p className="font-medium">{request.goodsType}</p>
+                            </div>
+                            {request.estimatedWeight && (
+                              <div>
+                                <p className="text-muted-foreground">Poids estimé</p>
+                                <p className="font-medium">{request.estimatedWeight}</p>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {request.description && (
+                            <div>
+                              <p className="text-sm text-muted-foreground">Description</p>
+                              <p className="text-sm">{request.description}</p>
+                            </div>
+                          )}
+                          
+                          {request.photos && request.photos.length > 0 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewPhotos(request.photos, request.referenceId)}
+                              className="gap-2"
+                              data-testid={`button-view-request-photos-${request.id}`}
+                            >
+                              <ImageIcon className="w-4 h-4" />
+                              Voir les photos ({request.photos.length})
+                            </Button>
+                          )}
+                        </div>
+
+                        {client && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleChat(client.id, client.clientId || "Client", request.id)}
+                            className="gap-2 w-full sm:w-auto bg-[#00cc88] hover:bg-[#00cc88]/90 text-white border-[#00cc88]"
+                            data-testid={`button-chat-request-${request.id}`}
+                            style={{ textShadow: "0 1px 1px rgba(0,0,0,0.2)" }}
+                          >
+                            <MessageSquare className="w-4 w-4" />
+                            Envoyer un message au client
+                          </Button>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-12">
                 <CheckCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">
-                  Aucune demande acceptée à traiter
+                  Aucune commande à traiter
                 </p>
               </div>
             )}
@@ -768,147 +936,402 @@ export default function TransporterDashboard() {
         </Tabs>
       </div>
 
-      {/* Dialogue pour afficher les détails complets d'une demande acceptée */}
-      <Dialog open={acceptedRequestDetailsOpen} onOpenChange={setAcceptedRequestDetailsOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <OfferForm
+        open={offerDialogOpen}
+        onClose={() => setOfferDialogOpen(false)}
+        requestId={selectedRequestId}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/offers"] });
+        }}
+      />
+
+      {selectedClient && (
+        <ChatWindow
+          open={chatOpen}
+          onClose={() => setChatOpen(false)}
+          otherUser={selectedClient}
+          currentUserId={user.id}
+          currentUserRole="transporter"
+          requestId={chatRequestId}
+        />
+      )}
+
+      <PhotoGalleryDialog
+        open={photoGalleryOpen}
+        onClose={() => setPhotoGalleryOpen(false)}
+        photos={selectedPhotos}
+        referenceId={selectedReferenceId}
+      />
+
+      <Dialog open={clientDetailsOpen} onOpenChange={setClientDetailsOpen}>
+        <DialogContent className="max-w-[90vw] sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Détails de la commande</DialogTitle>
-            <DialogDescription>
-              Informations complètes sur cette demande de transport
-            </DialogDescription>
+            <DialogTitle className="text-xl">Détails du client</DialogTitle>
           </DialogHeader>
-          
-          {selectedAcceptedRequest && (
-            <div className="space-y-6">
-              {/* En-tête de la commande */}
-              <div className="flex items-start justify-between">
+          {selectedClientDetails && (
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Commande</p>
+                <p className="font-semibold text-lg">{selectedClientDetails.referenceId}</p>
+              </div>
+              
+              <div>
+                <p className="text-sm text-muted-foreground">Identifiant</p>
+                <p className="font-medium">Client {selectedClientDetails.clientId || "Non défini"}</p>
+              </div>
+
+              {selectedClientDetails.clientCity && (
                 <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-sm font-mono text-muted-foreground">
-                      {selectedAcceptedRequest.requestId}
-                    </span>
-                    <Badge variant="default">À traiter</Badge>
-                  </div>
-                  <h3 className="font-semibold text-xl">{selectedAcceptedRequest.cargoType}</h3>
-                </div>
-              </div>
-
-              {/* Trajet */}
-              <div className="bg-muted/50 rounded-lg p-4">
-                <h4 className="font-semibold mb-3 flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
-                  Trajet
-                </h4>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-primary rounded-full"></div>
-                    <span className="font-medium">Départ :</span>
-                    <span>{selectedAcceptedRequest.departureCity}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-destructive rounded-full"></div>
-                    <span className="font-medium">Arrivée :</span>
-                    <span>{selectedAcceptedRequest.arrivalCity}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Date préférée */}
-              <div className="bg-muted/50 rounded-lg p-4">
-                <h4 className="font-semibold mb-2 flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  Date préférée
-                </h4>
-                <p>{new Date(selectedAcceptedRequest.preferredDate).toLocaleDateString('fr-FR', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}</p>
-              </div>
-
-              {/* Description */}
-              <div className="bg-muted/50 rounded-lg p-4">
-                <h4 className="font-semibold mb-2 flex items-center gap-2">
-                  <Package className="h-4 w-4" />
-                  Description
-                </h4>
-                <p className="text-sm whitespace-pre-wrap">{selectedAcceptedRequest.description}</p>
-              </div>
-
-              {/* Photos du client si disponibles */}
-              {selectedAcceptedRequest.clientPhotos && selectedAcceptedRequest.clientPhotos.length > 0 && (
-                <div className="bg-muted/50 rounded-lg p-4">
-                  <h4 className="font-semibold mb-3 flex items-center gap-2">
-                    <ImageIcon className="h-4 w-4" />
-                    Photos du client ({selectedAcceptedRequest.clientPhotos.length})
-                  </h4>
-                  <div className="grid grid-cols-3 gap-2">
-                    {selectedAcceptedRequest.clientPhotos.map((photo: string, index: number) => (
-                      <div 
-                        key={index}
-                        className="relative aspect-square rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
-                        onClick={() => {
-                          setSelectedPhotos(selectedAcceptedRequest.clientPhotos);
-                          setPhotoGalleryOpen(true);
-                        }}
-                      >
-                        <img
-                          src={photo}
-                          alt={`Photo ${index + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    ))}
-                  </div>
+                  <p className="text-sm text-muted-foreground">Ville</p>
+                  <p className="font-medium">{selectedClientDetails.clientCity}</p>
                 </div>
               )}
-
-              {/* Informations du client */}
-              <div className="bg-muted/50 rounded-lg p-4">
-                <h4 className="font-semibold mb-3 flex items-center gap-2">
-                  <Phone className="h-4 w-4" />
-                  Contact Client
-                </h4>
-                <div className="space-y-3">
-                  <div>
-                    <span className="text-muted-foreground text-sm">Nom :</span>
-                    <p className="font-medium">{selectedAcceptedRequest.clientName || "Non disponible"}</p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground text-sm">Téléphone :</span>
-                    <a 
-                      href={`tel:${selectedAcceptedRequest.clientPhone}`}
-                      className="font-medium text-primary hover:underline flex items-center gap-2"
-                    >
-                      <Phone className="h-3 w-3" />
-                      {selectedAcceptedRequest.clientPhone || "Non disponible"}
-                    </a>
-                  </div>
+              
+              <div>
+                <p className="text-sm text-muted-foreground">Téléphone</p>
+                <div className="flex items-center gap-2">
+                  <Phone className="w-4 h-4 text-primary" />
+                  <a 
+                    href={`tel:${selectedClientDetails.clientPhone}`} 
+                    className="font-semibold text-primary hover:underline text-lg"
+                    data-testid="link-client-phone-details"
+                  >
+                    {selectedClientDetails.clientPhone}
+                  </a>
                 </div>
               </div>
 
-              {/* Informations supplémentaires */}
-              <div className="bg-muted/50 rounded-lg p-4">
-                <h4 className="font-semibold mb-3">Informations supplémentaires</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">Statut :</span>
-                    <p className="font-medium capitalize">{selectedAcceptedRequest.status}</p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Client ID :</span>
-                    <p className="font-medium font-mono text-xs">{selectedAcceptedRequest.clientId}</p>
-                  </div>
+              <div className="border-t pt-4">
+                <p className="text-sm text-muted-foreground mb-2">Trajet</p>
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-muted-foreground" />
+                  <p className="font-medium">
+                    {selectedClientDetails.fromCity} → {selectedClientDetails.toCity}
+                  </p>
                 </div>
               </div>
+
+              <Button
+                onClick={() => setClientDetailsOpen(false)}
+                className="w-full"
+                data-testid="button-close-client-details"
+              >
+                Fermer
+              </Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
 
+      {/* Announce Empty Return Dialog */}
+      <Dialog open={announceReturnOpen} onOpenChange={setAnnounceReturnOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Annoncer un retour à vide</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Ville de départ</label>
+              <Select value={returnFromCity} onValueChange={setReturnFromCity}>
+                <SelectTrigger data-testid="select-return-from-city">
+                  <SelectValue placeholder="Sélectionner la ville de départ" />
+                </SelectTrigger>
+                <SelectContent>
+                  {citiesLoading ? (
+                    <div className="p-2 text-sm text-muted-foreground">Chargement...</div>
+                  ) : (
+                    cities.map((city: any) => (
+                      <SelectItem key={city.id} value={city.name}>
+                        {city.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Ville d'arrivée</label>
+              <Select value={returnToCity} onValueChange={setReturnToCity}>
+                <SelectTrigger data-testid="select-return-to-city">
+                  <SelectValue placeholder="Sélectionner la ville d'arrivée" />
+                </SelectTrigger>
+                <SelectContent>
+                  {citiesLoading ? (
+                    <div className="p-2 text-sm text-muted-foreground">Chargement...</div>
+                  ) : (
+                    cities.map((city: any) => (
+                      <SelectItem key={city.id} value={city.name}>
+                        {city.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Date de retour</label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="date"
+                  value={returnDate}
+                  onChange={(e) => setReturnDate(e.target.value)}
+                  className="pl-10"
+                  data-testid="input-return-date"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setAnnounceReturnOpen(false)}
+                className="flex-1"
+                data-testid="button-cancel-return"
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={() => {
+                  if (!returnFromCity || !returnToCity || !returnDate) {
+                    toast({
+                      variant: "destructive",
+                      title: "Erreur",
+                      description: "Veuillez remplir tous les champs",
+                    });
+                    return;
+                  }
+                  announceReturnMutation.mutate({
+                    fromCity: returnFromCity,
+                    toCity: returnToCity,
+                    returnDate,
+                  });
+                }}
+                disabled={announceReturnMutation.isPending}
+                className="flex-1 bg-[#00d4b2] hover:bg-[#00d4b2] border border-[#00d4b2]"
+                data-testid="button-submit-return"
+              >
+                {announceReturnMutation.isPending ? "En cours..." : "Annoncer"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Offer Dialog */}
+      <Dialog open={editOfferDialogOpen} onOpenChange={(open) => {
+        setEditOfferDialogOpen(open);
+        if (!open) {
+          editOfferForm.reset();
+          setSelectedOffer(null);
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Modifier votre offre</DialogTitle>
+            <DialogDescription>
+              Modifiez le montant, la date ou le type de chargement de votre offre
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...editOfferForm}>
+            <form 
+              onSubmit={editOfferForm.handleSubmit((data) => {
+                if (!selectedOffer) return;
+                const amount = typeof data.amount === 'number' ? data.amount : Number(data.amount);
+                updateOfferMutation.mutate({
+                  offerId: selectedOffer.id,
+                  amount,
+                  pickupDate: data.pickupDate,
+                  loadType: data.loadType,
+                });
+              })}
+              className="space-y-4"
+            >
+              <FormField
+                control={editOfferForm.control}
+                name="amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Montant (MAD) <span className="text-destructive">*</span></FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="Ex: 5000"
+                        data-testid="input-edit-amount"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editOfferForm.control}
+                name="pickupDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Date de prise en charge <span className="text-destructive">*</span></FormLabel>
+                    <FormControl>
+                      <Input
+                        type="date"
+                        data-testid="input-edit-pickup-date"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editOfferForm.control}
+                name="loadType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Type de chargement <span className="text-destructive">*</span></FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-edit-load-type">
+                          <SelectValue placeholder="Sélectionnez le type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="return">Retour (camion vide)</SelectItem>
+                        <SelectItem value="shared">Groupage / Partagé</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setEditOfferDialogOpen(false);
+                    editOfferForm.reset();
+                    setSelectedOffer(null);
+                  }}
+                  data-testid="button-cancel-edit-offer"
+                >
+                  Annuler
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={updateOfferMutation.isPending}
+                  data-testid="button-submit-edit-offer"
+                >
+                  {updateOfferMutation.isPending ? "Modification..." : "Modifier l'offre"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
+        <DialogContent className="max-w-[90vw] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Signaler un problème</DialogTitle>
+            <DialogDescription>
+              Décrivez le problème rencontré avec ce client.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...reportForm}>
+            <form onSubmit={reportForm.handleSubmit(handleSubmitReport)} className="space-y-4">
+              <FormField
+                control={reportForm.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Type de problème <span className="text-destructive">*</span></FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-report-type">
+                          <SelectValue placeholder="Sélectionnez un type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="no-show">Client absent</SelectItem>
+                        <SelectItem value="payment">Problème de paiement</SelectItem>
+                        <SelectItem value="communication">Problème de communication</SelectItem>
+                        <SelectItem value="incorrect-info">Informations incorrectes</SelectItem>
+                        <SelectItem value="damaged-goods">Marchandises non conformes</SelectItem>
+                        <SelectItem value="other">Autre</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={reportForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description détaillée <span className="text-destructive">*</span></FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Décrivez en détail le problème rencontré..."
+                        className="resize-none h-32"
+                        data-testid="textarea-report-description"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowReportDialog(false)}
+                  data-testid="button-cancel-report"
+                >
+                  Annuler
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createReportMutation.isPending}
+                  data-testid="button-submit-report"
+                >
+                  {createReportMutation.isPending ? "Envoi en cours..." : "Envoyer le signalement"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Account Not Validated Dialog */}
+      <Dialog open={notValidatedDialogOpen} onOpenChange={setNotValidatedDialogOpen}>
+        <DialogContent className="max-w-[90vw] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <Flag className="h-5 w-5 text-amber-600" />
+              Compte non validé
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <p className="text-muted-foreground leading-relaxed">
+              Votre compte CamionBack n'est pas encore validé par notre équipe.
+            </p>
+            <p className="text-muted-foreground leading-relaxed">
+              Vous pourrez annoncer vos retours et bénéficier de toutes les fonctionnalités dès que votre compte sera activé.
+            </p>
+            <p className="text-muted-foreground leading-relaxed flex items-center gap-2">
+              <TruckIcon className="h-4 w-4 text-[#00d4b2]" />
+              Merci pour votre patience.
+            </p>
+          </div>
           <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setAcceptedRequestDetailsOpen(false)}
+            <Button
+              onClick={() => setNotValidatedDialogOpen(false)}
+              className="w-full"
+              data-testid="button-close-not-validated"
             >
               Fermer
             </Button>
