@@ -831,7 +831,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // For accepted requests, add the pickup date from the accepted offer
           if (request.acceptedOfferId) {
             const acceptedOffer = await storage.getOffer(request.acceptedOfferId);
-            if (acceptedOffer) {
+            // Verify the offer belongs to the current transporter (if transporterId is provided)
+            if (acceptedOffer && (!transporterId || acceptedOffer.transporterId === transporterId)) {
               enrichedRequest.pickupDate = acceptedOffer.pickupDate;
               enrichedRequest.offerAmount = acceptedOffer.amount;
               enrichedRequest.loadType = acceptedOffer.loadType;
