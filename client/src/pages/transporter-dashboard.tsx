@@ -511,11 +511,10 @@ export default function TransporterDashboard() {
         onLogout={handleLogout}
       />
       
-      {/* TEMPORARILY DISABLED - StoriesBar causing crashes */}
+      {/* TEMPORAIREMENT DÉSACTIVÉ StoriesBar */}
       {/* <StoriesBar userRole="transporter" /> */}
       
-      {/* TEMPORARILY DISABLED - Reference request banner causing crashes */}
-      {/* Reference request banner - Show if pending and (no reference OR reference was rejected) */}
+      {/* Reference request banner - Show if pending and (no reference OR reference was rejected) - TEMPORAIREMENT DÉSACTIVÉ */}
       {false && user.status === "pending" && (!transporterReference || transporterReference.status === "rejected") && !referenceLoading && (
         <Card className="mx-4 mt-4 border-l-4 border-primary">
           <CardContent className="p-6">
@@ -615,7 +614,7 @@ export default function TransporterDashboard() {
         </Card>
       )}
 
-      {/* TEMPORARILY DISABLED - Reference pending validation message */}
+      {/* Reference pending validation message - TEMPORAIREMENT DÉSACTIVÉ */}
       {false && user.status === "pending" && transporterReference && transporterReference.status === "pending" && (
         <div className="bg-blue-50 dark:bg-blue-950/30 border-l-4 border-blue-500 p-4 mx-4 mt-4">
           <div className="flex items-start gap-3">
