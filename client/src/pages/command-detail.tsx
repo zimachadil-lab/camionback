@@ -13,23 +13,23 @@ export default function CommandDetail() {
   const [, setLocation] = useLocation();
   const commandId = params?.id;
 
-  const { data: user } = useQuery<User>({
+  const { data: user, isLoading: isLoadingUser } = useQuery<User>({
     queryKey: ["/api/auth/me"],
   });
 
-  const { data: request, isLoading, error } = useQuery<TransportRequest & { offersCount?: number; pickupDate?: string; offerAmount?: number; loadType?: string }>({
+  const { data: request, isLoading: isLoadingRequest, error } = useQuery<TransportRequest & { offersCount?: number; pickupDate?: string; offerAmount?: number; loadType?: string }>({
     queryKey: ["/api/requests", commandId],
     enabled: !!commandId && !!user,
   });
 
   // Redirection si non connecté
   useEffect(() => {
-    if (!user && !isLoading) {
+    if (!user && !isLoadingUser) {
       // Sauvegarder l'URL pour rediriger après connexion
       localStorage.setItem("redirectAfterLogin", `/commande/${commandId}`);
       setLocation("/login");
     }
-  }, [user, isLoading, commandId, setLocation]);
+  }, [user, isLoadingUser, commandId, setLocation]);
 
   // Vérifier les droits d'accès
   useEffect(() => {
@@ -38,7 +38,7 @@ export default function CommandDetail() {
     }
   }, [user, setLocation]);
 
-  if (isLoading || !user) {
+  if (isLoadingUser || isLoadingRequest || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
