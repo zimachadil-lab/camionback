@@ -1725,10 +1725,9 @@ export default function AdminDashboard() {
                     </TableHeader>
                     <TableBody>
                       {pendingReferences.map((reference: any) => {
-                        const transporter = users.find((u: any) => u.id === reference.transporterId);
                         return (
                           <TableRow key={reference.id}>
-                            <TableCell className="font-medium">{transporter?.name || "N/A"}</TableCell>
+                            <TableCell className="font-medium">{reference.transporterName || "N/A"}</TableCell>
                             <TableCell>{reference.referenceName}</TableCell>
                             <TableCell>
                               <a href={`tel:${reference.referencePhone}`} className="text-primary hover:underline">
