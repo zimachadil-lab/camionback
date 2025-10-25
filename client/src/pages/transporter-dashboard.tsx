@@ -71,6 +71,33 @@ export default function TransporterDashboard() {
 
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
 
+  // Initialize forms FIRST (before mutations that use them)
+  const reportForm = useForm({
+    resolver: zodResolver(reportSchema),
+    defaultValues: {
+      description: "",
+      type: "",
+    },
+  });
+
+  const editOfferForm = useForm({
+    resolver: zodResolver(editOfferSchema),
+    defaultValues: {
+      amount: "",
+      pickupDate: "",
+      loadType: "return" as const,
+    },
+  });
+
+  const referenceForm = useForm({
+    resolver: zodResolver(referenceSchema),
+    defaultValues: {
+      referenceName: "",
+      referencePhone: "+212",
+      referenceRelation: "Client" as const,
+    },
+  });
+
   // Refresh user data from database on mount to get latest status
   useEffect(() => {
     const refreshUserData = async () => {
@@ -365,32 +392,6 @@ export default function TransporterDashboard() {
     },
   });
 
-  const reportForm = useForm({
-    resolver: zodResolver(reportSchema),
-    defaultValues: {
-      description: "",
-      type: "",
-    },
-  });
-
-  const editOfferForm = useForm({
-    resolver: zodResolver(editOfferSchema),
-    defaultValues: {
-      amount: "",
-      pickupDate: "",
-      loadType: "return" as const,
-    },
-  });
-
-  const referenceForm = useForm({
-    resolver: zodResolver(referenceSchema),
-    defaultValues: {
-      referenceName: "",
-      referencePhone: "+212",
-      referenceRelation: "Client" as const,
-    },
-  });
-
   const updateOfferMutation = useMutation({
     mutationFn: async (data: { offerId: string; amount: number; pickupDate: string; loadType: string }) => {
       return await apiRequest("PATCH", `/api/offers/${data.offerId}`, {
@@ -511,10 +512,10 @@ export default function TransporterDashboard() {
         onLogout={handleLogout}
       />
       
-      {/* <StoriesBar userRole="transporter" /> */}
+      <StoriesBar userRole="transporter" />
       
       {/* Reference request banner - Show if pending and (no reference OR reference was rejected) */}
-      {false && user.status === "pending" && (!transporterReference || transporterReference.status === "rejected") && !referenceLoading && (
+      {user.status === "pending" && (!transporterReference || transporterReference.status === "rejected") && !referenceLoading && (
         <Card className="mx-4 mt-4 border-l-4 border-primary">
           <CardContent className="p-6">
             <div className="flex items-start gap-3 mb-4">
@@ -614,7 +615,7 @@ export default function TransporterDashboard() {
       )}
 
       {/* Reference pending validation message */}
-      {false && user.status === "pending" && transporterReference && transporterReference.status === "pending" && (
+      {user.status === "pending" && transporterReference && transporterReference.status === "pending" && (
         <div className="bg-blue-50 dark:bg-blue-950/30 border-l-4 border-blue-500 p-4 mx-4 mt-4">
           <div className="flex items-start gap-3">
             <Clock className="w-5 h-5 text-blue-600 dark:text-blue-500 mt-0.5 flex-shrink-0" />
