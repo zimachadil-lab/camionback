@@ -18,7 +18,7 @@ export default function CommandDetail() {
   });
 
   const { data: request, isLoading: isLoadingRequest, error } = useQuery<TransportRequest & { offersCount?: number; pickupDate?: string; offerAmount?: number; loadType?: string }>({
-    queryKey: [`/api/requests/${commandId}`],
+    queryKey: ["/api", "requests", commandId],
     enabled: !!commandId && !!user,
   });
 
