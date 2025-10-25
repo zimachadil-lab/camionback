@@ -7,6 +7,7 @@ import { MapPin, Package, Calendar, DollarSign, Image as ImageIcon, AlertCircle,
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { PhotoGalleryDialog } from "./photo-gallery-dialog";
+import { ShareCommandButton } from "@/components/share-command-button";
 
 interface RequestCardProps {
   request: {
@@ -185,26 +186,29 @@ export function RequestCard({
       </CardContent>
 
       {showOfferButton && request.status === "open" && (
-        <CardFooter className="p-4 pt-0 flex flex-row gap-2">
-          {onDecline && (
+        <CardFooter className="p-4 pt-0 flex flex-col gap-2">
+          <div className="flex flex-row gap-2 w-full">
+            {onDecline && (
+              <Button 
+                onClick={() => onDecline(request.id)} 
+                className="flex-1 bg-red-600 hover:bg-red-700"
+                variant="destructive"
+                data-testid={`button-decline-${request.id}`}
+              >
+                <X className="w-4 h-4 mr-1" />
+                Décliner
+              </Button>
+            )}
             <Button 
-              onClick={() => onDecline(request.id)} 
-              className="flex-1 bg-red-600 hover:bg-red-700"
-              variant="destructive"
-              data-testid={`button-decline-${request.id}`}
+              onClick={handleOfferClick} 
+              className="flex-1"
+              variant={!isUserValidated ? "secondary" : "default"}
+              data-testid={`button-make-offer-${request.id}`}
             >
-              <X className="w-4 h-4 mr-1" />
-              Décliner
+              Faire une offre
             </Button>
-          )}
-          <Button 
-            onClick={handleOfferClick} 
-            className="flex-1"
-            variant={!isUserValidated ? "secondary" : "default"}
-            data-testid={`button-make-offer-${request.id}`}
-          >
-            Faire une offre
-          </Button>
+          </div>
+          <ShareCommandButton commandId={request.id} />
         </CardFooter>
       )}
     </Card>
