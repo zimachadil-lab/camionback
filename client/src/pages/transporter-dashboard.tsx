@@ -125,13 +125,14 @@ export default function TransporterDashboard() {
     }
   };
 
+  // Load requests with limit of 50 for better performance
   const { data: requests = [], isLoading: requestsLoading } = useQuery({
     queryKey: ["/api/requests", user.id],
     queryFn: async () => {
-      const response = await fetch(`/api/requests?status=open&transporterId=${user.id}`);
+      const response = await fetch(`/api/requests?status=open&transporterId=${user.id}&limit=50`);
       return response.json();
     },
-    enabled: !!user.id, // Only load when user is loaded
+    enabled: !!user.id,
   });
 
   const { data: myOffers = [], isLoading: offersLoading } = useQuery({
@@ -144,7 +145,7 @@ export default function TransporterDashboard() {
     refetchInterval: 5000,
   });
 
-  const { data: allRequests = [] } = useQuery({
+  const { data: allRequests = [], isLoading: allRequestsLoading } = useQuery({
     queryKey: ["/api/requests/all"],
     queryFn: async () => {
       const response = await fetch("/api/requests");
@@ -153,14 +154,18 @@ export default function TransporterDashboard() {
     enabled: !!user.id, // Only load when user is loaded
   });
 
-  const { data: users = [] } = useQuery({
-    queryKey: ["/api/users"],
-    queryFn: async () => {
-      const response = await fetch("/api/users");
-      return response.json();
-    },
-    enabled: !!user.id, // Only load when user is loaded
-  });
+  // Helper function to get client info from requests (avoid loading ALL users)
+  const getClientInfo = (clientId: string) => {
+    // Try to find client info in requests or acceptedRequests
+    const allReqs = [...requests, ...acceptedRequests, ...allRequests];
+    const req = allReqs.find((r: any) => r.clientId === clientId);
+    return req ? {
+      id: req.clientId,
+      clientId: req.clientIdentifier || clientId,
+      phoneNumber: req.clientPhone || "Non disponible",
+      city: req.fromCity || "Non spécifiée"
+    } : null;
+  };
 
   const { data: acceptedRequests = [], isLoading: acceptedLoading } = useQuery({
     queryKey: ["/api/requests/accepted", user.id],
@@ -194,12 +199,12 @@ export default function TransporterDashboard() {
   };
 
   const handleViewClientDetails = (request: any) => {
-    const client = users.find((u: any) => u.id === request.clientId);
+    const clientInfo = getClientInfo(request.clientId);
     setSelectedClientDetails({
       ...request,
-      clientId: client?.clientId,
-      clientPhone: client?.phoneNumber,
-      clientCity: client?.city,
+      clientId: clientInfo?.clientId || request.clientIdentifier,
+      clientPhone: clientInfo?.phoneNumber || "Non disponible",
+      clientCity: clientInfo?.city || request.fromCity,
     });
     setClientDetailsOpen(true);
   };
@@ -464,10 +469,8 @@ export default function TransporterDashboard() {
     return acc;
   }, {});
 
-  console.log("🚛 Loading state:", { requestsLoading, offersLoading });
-  
-  if (requestsLoading || offersLoading) {
-    console.log("🚛 SHOWING LOADING SCREEN");
+  // Only wait for critical data - allow render even if some data is still loading
+  if (requestsLoading || citiesLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingTruck message="Chargement de votre tableau de bord..." size="lg" />
@@ -475,8 +478,6 @@ export default function TransporterDashboard() {
     );
   }
 
-  console.log("🚛 RENDERING DASHBOARD CONTENT");
-  
   return (
     <div className="min-h-screen bg-background">
       <Header
@@ -702,7 +703,7 @@ export default function TransporterDashboard() {
               <div className="space-y-4">
                 {myOffers.map((offer: any) => {
                   const request = allRequests.find((r: any) => r.id === offer.requestId);
-                  const client = users.find((u: any) => u.id === request?.clientId);
+                  const clientInfo = request ? getClientInfo(request.clientId) : null;
                   const isAccepted = offer.status === "accepted";
 
                   return (
@@ -767,7 +768,7 @@ export default function TransporterDashboard() {
                           </>
                         )}
 
-                        {isAccepted && client && (
+                        {isAccepted && clientInfo && (
                           <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg p-4 space-y-3">
                             <p className="text-sm font-medium text-green-900 dark:text-green-100 flex items-center gap-2">
                               <CheckCircle className="w-4 h-4" />
@@ -780,21 +781,21 @@ export default function TransporterDashboard() {
                               <div className="flex items-center gap-2">
                                 <Phone className="w-4 h-4 text-green-700 dark:text-green-300" />
                                 <a 
-                                  href={`tel:${client.phoneNumber}`} 
+                                  href={`tel:${clientInfo.phoneNumber}`} 
                                   className="text-lg font-semibold text-green-700 dark:text-green-300 hover:underline"
                                   data-testid={`link-client-phone-${offer.id}`}
                                 >
-                                  {client.phoneNumber}
+                                  {clientInfo.phoneNumber}
                                 </a>
                               </div>
                               <p className="text-xs text-green-700 dark:text-green-400">
-                                Client {client.clientId || "Non défini"}
+                                Client {clientInfo.clientId || "Non défini"}
                               </p>
                               {request && (
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => handleChat(client.id, client.clientId || "Client", request.id)}
+                                  onClick={() => handleChat(clientInfo.id, clientInfo.clientId || "Client", request.id)}
                                   className="gap-2 mt-2 w-full"
                                   data-testid={`button-chat-${offer.id}`}
                                 >
@@ -830,7 +831,7 @@ export default function TransporterDashboard() {
             {acceptedRequests.length > 0 ? (
               <div className="space-y-4">
                 {acceptedRequests.map((request: any) => {
-                  const client = users.find((u: any) => u.id === request.clientId);
+                  const clientInfo = getClientInfo(request.clientId);
                   const isMarkedForBilling = request.paymentStatus === "awaiting_payment";
 
                   return (
@@ -922,11 +923,11 @@ export default function TransporterDashboard() {
                           )}
                         </div>
 
-                        {client && (
+                        {clientInfo && (
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleChat(client.id, client.clientId || "Client", request.id)}
+                            onClick={() => handleChat(clientInfo.id, clientInfo.clientId || "Client", request.id)}
                             className="gap-2 w-full sm:w-auto bg-[#00cc88] hover:bg-[#00cc88]/90 text-white border-[#00cc88]"
                             data-testid={`button-chat-request-${request.id}`}
                             style={{ textShadow: "0 1px 1px rgba(0,0,0,0.2)" }}
