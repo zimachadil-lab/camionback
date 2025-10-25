@@ -613,20 +613,118 @@ export default function TransporterDashboard() {
             )}
           </TabsContent>
 
-          <TabsContent value="my-offers" className="mt-6">
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">
-                {myOffers.length} offres soumises
-              </p>
-            </div>
+          <TabsContent value="my-offers" className="mt-6 space-y-6">
+            {myOffers.length > 0 ? (
+              <div className="space-y-4">
+                {myOffers.map((offer: any) => {
+                  const request = requests.find((r: any) => r.id === offer.requestId);
+                  if (!request) return null;
+                  
+                  return (
+                    <Card key={offer.id} className="overflow-hidden">
+                      <CardContent className="p-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-sm font-mono text-muted-foreground">{request.requestId}</span>
+                              <Badge variant={
+                                offer.status === "accepted" ? "default" :
+                                offer.status === "rejected" ? "destructive" :
+                                "secondary"
+                              }>
+                                {offer.status === "accepted" ? "Acceptée" :
+                                 offer.status === "rejected" ? "Refusée" :
+                                 "En attente"}
+                              </Badge>
+                            </div>
+                            <h3 className="font-semibold text-lg">{request.cargoType}</h3>
+                            <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
+                              <MapPin className="h-4 w-4" />
+                              {request.departureCity} → {request.arrivalCity}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-2xl font-bold text-primary">{offer.price} DH</p>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Calendar className="h-4 w-4" />
+                            {new Date(request.preferredDate).toLocaleDateString('fr-FR')}
+                          </div>
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Clock className="h-4 w-4" />
+                            Soumise le {new Date(offer.createdAt).toLocaleDateString('fr-FR')}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Package className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">
+                  Vous n'avez pas encore soumis d'offres
+                </p>
+              </div>
+            )}
           </TabsContent>
 
-          <TabsContent value="to-process" className="mt-6">
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">
-                {acceptedRequests.length} demandes à traiter
-              </p>
-            </div>
+          <TabsContent value="to-process" className="mt-6 space-y-6">
+            {acceptedRequests.length > 0 ? (
+              <div className="space-y-4">
+                {acceptedRequests.map((request: any) => (
+                  <Card key={request.id} className="overflow-hidden border-l-4 border-l-primary">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-sm font-mono text-muted-foreground">{request.requestId}</span>
+                            <Badge variant="default">À traiter</Badge>
+                          </div>
+                          <h3 className="font-semibold text-lg">{request.cargoType}</h3>
+                          <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
+                            <MapPin className="h-4 w-4" />
+                            {request.departureCity} → {request.arrivalCity}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Calendar className="h-4 w-4" />
+                          {new Date(request.preferredDate).toLocaleDateString('fr-FR')}
+                        </div>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Package className="h-4 w-4" />
+                          {request.description}
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 mt-4">
+                        <Button variant="outline" size="sm" className="flex-1">
+                          <MessageCircle className="mr-2 h-4 w-4" />
+                          Contacter le client
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          <Info className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <CheckCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">
+                  Aucune demande acceptée à traiter
+                </p>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>
