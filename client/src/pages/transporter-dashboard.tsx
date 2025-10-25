@@ -129,8 +129,13 @@ export default function TransporterDashboard() {
   const { data: requests = [], isLoading: requestsLoading } = useQuery({
     queryKey: ["/api/requests", user.id],
     queryFn: async () => {
-      const response = await fetch(`/api/requests?status=open&transporterId=${user.id}&limit=50`);
-      return response.json();
+      const response = await fetch(`/api/requests?status=open&transporterId=${user.id}&limit=50`, {
+        cache: "no-store",
+      });
+      if (!response.ok) throw new Error(`Failed to fetch requests: ${response.statusText}`);
+      if (response.status === 304 || response.status === 204) return [];
+      const text = await response.text();
+      return text ? JSON.parse(text) : [];
     },
     enabled: !!user.id,
   });
@@ -138,8 +143,13 @@ export default function TransporterDashboard() {
   const { data: myOffers = [], isLoading: offersLoading } = useQuery({
     queryKey: ["/api/offers", user.id],
     queryFn: async () => {
-      const response = await fetch(`/api/offers?transporterId=${user.id}`);
-      return response.json();
+      const response = await fetch(`/api/offers?transporterId=${user.id}`, {
+        cache: "no-store",
+      });
+      if (!response.ok) throw new Error(`Failed to fetch offers: ${response.statusText}`);
+      if (response.status === 304 || response.status === 204) return [];
+      const text = await response.text();
+      return text ? JSON.parse(text) : [];
     },
     enabled: !!user.id, // Only load when user is loaded
     refetchInterval: 5000,
@@ -148,8 +158,13 @@ export default function TransporterDashboard() {
   const { data: allRequests = [], isLoading: allRequestsLoading } = useQuery({
     queryKey: ["/api/requests/all"],
     queryFn: async () => {
-      const response = await fetch("/api/requests");
-      return response.json();
+      const response = await fetch("/api/requests", {
+        cache: "no-store",
+      });
+      if (!response.ok) throw new Error(`Failed to fetch all requests: ${response.statusText}`);
+      if (response.status === 304 || response.status === 204) return [];
+      const text = await response.text();
+      return text ? JSON.parse(text) : [];
     },
     enabled: !!user.id, // Only load when user is loaded
   });
@@ -170,8 +185,13 @@ export default function TransporterDashboard() {
   const { data: acceptedRequests = [], isLoading: acceptedLoading } = useQuery({
     queryKey: ["/api/requests/accepted", user.id],
     queryFn: async () => {
-      const response = await fetch(`/api/requests?accepted=true&transporterId=${user.id}`);
-      return response.json();
+      const response = await fetch(`/api/requests?accepted=true&transporterId=${user.id}`, {
+        cache: "no-store",
+      });
+      if (!response.ok) throw new Error(`Failed to fetch accepted requests: ${response.statusText}`);
+      if (response.status === 304 || response.status === 204) return [];
+      const text = await response.text();
+      return text ? JSON.parse(text) : [];
     },
     enabled: !!user.id, // Only load when user is loaded
     refetchInterval: 5000,
@@ -213,8 +233,13 @@ export default function TransporterDashboard() {
   const { data: cities = [], isLoading: citiesLoading } = useQuery({
     queryKey: ["/api/cities"],
     queryFn: async () => {
-      const response = await fetch("/api/cities");
-      return response.json();
+      const response = await fetch("/api/cities", {
+        cache: "no-store",
+      });
+      if (!response.ok) throw new Error(`Failed to fetch cities: ${response.statusText}`);
+      if (response.status === 304 || response.status === 204) return [];
+      const text = await response.text();
+      return text ? JSON.parse(text) : [];
     },
     enabled: !!user.id, // Only load when user is loaded
   });
