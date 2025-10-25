@@ -934,6 +934,18 @@ export default function TransporterDashboard() {
                               </div>
                             )}
                           </div>
+
+                          {request.pickupDate && (
+                            <div className="bg-primary/5 border border-primary/20 rounded-md p-3 mt-3">
+                              <p className="text-sm text-muted-foreground flex items-center gap-2">
+                                <Calendar className="w-4 h-4" />
+                                Date de la mission
+                              </p>
+                              <p className="text-base font-semibold text-primary mt-1">
+                                {format(new Date(request.pickupDate), "EEEE d MMMM yyyy", { locale: fr })}
+                              </p>
+                            </div>
+                          )}
                           
                           {request.description && (
                             <div>

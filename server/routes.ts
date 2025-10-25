@@ -819,14 +819,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         requests = await storage.getAllTransportRequests();
       }
       
-      // Enrich requests with offers count
+      // Enrich requests with offers count and accepted offer details
       const enrichedRequests = await Promise.all(
         requests.map(async (request) => {
           const offers = await storage.getOffersByRequest(request.id);
-          return {
+          let enrichedRequest: any = {
             ...request,
             offersCount: offers.length,
           };
+          
+          // For accepted requests, add the pickup date from the accepted offer
+          if (request.acceptedOfferId) {
+            const acceptedOffer = await storage.getOffer(request.acceptedOfferId);
+            if (acceptedOffer) {
+              enrichedRequest.pickupDate = acceptedOffer.pickupDate;
+              enrichedRequest.offerAmount = acceptedOffer.amount;
+              enrichedRequest.loadType = acceptedOffer.loadType;
+            }
+          }
+          
+          return enrichedRequest;
         })
       );
       
