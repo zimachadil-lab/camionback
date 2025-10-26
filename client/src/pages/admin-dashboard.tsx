@@ -832,9 +832,10 @@ export default function AdminDashboard() {
   // Toggle WhatsApp notification mutation
   const toggleWhatsappMutation = useMutation({
     mutationFn: async (transporterId: string) => {
-      return await apiRequest("POST", `/api/admin/whatsapp/toggle/${transporterId}`, {
+      const res = await apiRequest("POST", `/api/admin/whatsapp/toggle/${transporterId}`, {
         adminId: user.id,
       });
+      return await res.json();
     },
     onSuccess: (data: any) => {
       toast({
