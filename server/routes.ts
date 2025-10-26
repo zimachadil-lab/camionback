@@ -2593,6 +2593,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       });
       
+      // Debug: Log first transporter to verify isWhatsappActive is included
+      if (transportersWithStats.length > 0) {
+        console.log("🔍 [DEBUG] Premier transporteur retourné:", JSON.stringify(transportersWithStats[0], null, 2));
+      }
+      
       res.json(transportersWithStats);
     } catch (error) {
       console.error("Error fetching transporters stats:", error);
