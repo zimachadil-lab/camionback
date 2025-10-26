@@ -14,13 +14,19 @@ class WhatsAppService {
   private backupInterval: NodeJS.Timeout | null = null;
 
   constructor() {
-    console.log('📱 WhatsApp démarrage en arrière-plan...');
     this.initializeStorageService();
-    // Initialisation asynchrone en arrière-plan pour ne pas bloquer le serveur
-    this.initializeClient().catch(error => {
-      console.error('❌ Erreur lors de l\'initialisation WhatsApp:', error);
-    });
-    console.log('✅ Serveur prêt (WhatsApp se connectera automatiquement)');
+    
+    // RETARDE l'initialisation WhatsApp de 30 secondes pour laisser le serveur
+    // répondre aux premières requêtes sans être bloqué par la restauration lourde
+    console.log('📱 WhatsApp démarrera dans 30 secondes...');
+    setTimeout(() => {
+      console.log('📱 WhatsApp démarrage en arrière-plan...');
+      this.initializeClient().catch(error => {
+        console.error('❌ Erreur lors de l\'initialisation WhatsApp:', error);
+      });
+    }, 30000); // 30 secondes
+    
+    console.log('✅ Serveur prêt');
   }
 
   private initializeStorageService() {
