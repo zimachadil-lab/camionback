@@ -25,6 +25,7 @@ class WhatsAppService {
           dataPath: '.wwebjs_auth',
         }),
         puppeteer: {
+          executablePath: 'chromium',
           headless: true,
           args: [
             '--no-sandbox',
