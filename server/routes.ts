@@ -3258,7 +3258,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/whatsapp/toggle/:transporterId", async (req, res) => {
     try {
       const { transporterId } = req.params;
-      const { isActive, adminId } = req.body;
+      const { adminId } = req.body;
 
       if (!adminId) {
         return res.status(401).json({ error: "Non authentifié" });
@@ -3270,25 +3270,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Accès refusé - Admin requis" });
       }
 
-      if (typeof isActive !== 'boolean') {
-        return res.status(400).json({ error: "isActive doit être un booléen" });
-      }
-
       // Verify transporter exists
       const transporter = await storage.getUser(transporterId);
       if (!transporter || transporter.role !== "transporter") {
         return res.status(404).json({ error: "Transporteur non trouvé" });
       }
 
-      // Toggle WhatsApp active status
-      const updatedTransporter = await storage.toggleTransporterWhatsappActive(transporterId, isActive);
+      // Toggle WhatsApp active status (auto-toggle current state)
+      const currentState = transporter.isWhatsappActive || false;
+      const newState = !currentState;
+      const updatedTransporter = await storage.toggleTransporterWhatsappActive(transporterId, newState);
 
-      console.log(`✅ WhatsApp ${isActive ? 'activé' : 'désactivé'} pour transporteur ${transporter.name} (${transporter.phoneNumber})`);
+      console.log(`✅ WhatsApp ${newState ? 'activé' : 'désactivé'} pour transporteur ${transporter.name} (${transporter.phoneNumber})`);
 
       res.json({ 
         success: true, 
+        enabled: newState,
         transporter: updatedTransporter,
-        message: `WhatsApp ${isActive ? 'activé' : 'désactivé'} avec succès`
+        message: `WhatsApp ${newState ? 'activé' : 'désactivé'} avec succès`
       });
     } catch (error) {
       console.error("Erreur toggle WhatsApp:", error);
