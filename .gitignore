@@ -4,7 +4,3 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
-
-# WhatsApp session data - NEVER commit these files
-.wwebjs_auth
-.wwebjs_cache

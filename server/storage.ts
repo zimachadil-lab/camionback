@@ -15,15 +15,14 @@ import {
   type ClientTransporterContact, type InsertClientTransporterContact,
   type Story, type InsertStory,
   type CoordinatorLog, type InsertCoordinatorLog,
-  type TransporterReference, type InsertTransporterReference,
-  type WhatsappNotification, type InsertWhatsappNotification
+  type TransporterReference, type InsertTransporterReference
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from './db.js';
 import { 
   users, otpCodes, transportRequests, offers, chatMessages,
   adminSettings, notifications, ratings, emptyReturns, contracts, reports, cities, smsHistory,
-  clientTransporterContacts, stories, coordinatorLogs, transporterReferences, whatsappNotifications
+  clientTransporterContacts, stories, coordinatorLogs, transporterReferences
 } from '@shared/schema';
 import { eq, and, or, desc, asc, lte, gte, sql, inArray } from 'drizzle-orm';
 
@@ -162,14 +161,6 @@ export interface IStorage {
   validateReference(id: string, adminId: string): Promise<TransporterReference | undefined>;
   rejectReference(id: string, adminId: string, reason: string): Promise<TransporterReference | undefined>;
   updateTransporterReference(id: string, updates: Partial<TransporterReference>): Promise<TransporterReference | undefined>;
-  
-  // WhatsApp operations
-  createWhatsappNotification(notification: InsertWhatsappNotification): Promise<WhatsappNotification>;
-  getAllWhatsappNotifications(): Promise<WhatsappNotification[]>;
-  getWhatsappNotificationsByTransporter(transporterId: string): Promise<WhatsappNotification[]>;
-  getWhatsappNotificationsByRequest(requestId: string): Promise<WhatsappNotification[]>;
-  getWhatsappActiveTransporters(): Promise<User[]>;
-  toggleTransporterWhatsappActive(transporterId: string, isActive: boolean): Promise<User | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -1170,26 +1161,6 @@ export class MemStorage implements IStorage {
   async updateTransporterReference(id: string, updates: Partial<TransporterReference>): Promise<TransporterReference | undefined> {
     return undefined;
   }
-
-  // WhatsApp operations (stubs - MemStorage not used in production)
-  async createWhatsappNotification(notification: InsertWhatsappNotification): Promise<WhatsappNotification> {
-    throw new Error("MemStorage not implemented for WhatsApp notifications");
-  }
-  async getAllWhatsappNotifications(): Promise<WhatsappNotification[]> {
-    return [];
-  }
-  async getWhatsappNotificationsByTransporter(transporterId: string): Promise<WhatsappNotification[]> {
-    return [];
-  }
-  async getWhatsappNotificationsByRequest(requestId: string): Promise<WhatsappNotification[]> {
-    return [];
-  }
-  async getWhatsappActiveTransporters(): Promise<User[]> {
-    return [];
-  }
-  async toggleTransporterWhatsappActive(transporterId: string, isActive: boolean): Promise<User | undefined> {
-    return undefined;
-  }
 }
 
 export class DbStorage implements IStorage {
@@ -1233,13 +1204,7 @@ export class DbStorage implements IStorage {
   }
 
   async getAllUsers(): Promise<User[]> {
-    // Get all users but exclude heavy truckPhotos field
-    const allUsers = await db.select().from(users);
-    // Map to exclude truckPhotos to reduce response size
-    return allUsers.map(user => ({
-      ...user,
-      truckPhotos: null, // Explicitly set to null to exclude large data
-    })) as User[];
+    return await db.select().from(users);
   }
 
   async getPendingDrivers(): Promise<User[]> {
@@ -1428,13 +1393,7 @@ export class DbStorage implements IStorage {
   }
 
   async getAllTransportRequests(): Promise<TransportRequest[]> {
-    // Get all requests but exclude heavy paymentReceipt field
-    const allRequests = await db.select().from(transportRequests);
-    // Map to exclude paymentReceipt to reduce response size
-    return allRequests.map(req => ({
-      ...req,
-      paymentReceipt: null, // Explicitly set to null to exclude large data
-    })) as TransportRequest[];
+    return await db.select().from(transportRequests);
   }
 
   async getRequestsByClient(clientId: string): Promise<TransportRequest[]> {
@@ -2198,172 +2157,178 @@ export class DbStorage implements IStorage {
 
   // Coordinator operations
   async getCoordinatorAvailableRequests(): Promise<any[]> {
-    // Get all open requests with client data in one query using JOIN
-    const requestsWithClients = await db
-      .select({
-        id: transportRequests.id,
-        referenceId: transportRequests.referenceId,
-        clientId: transportRequests.clientId,
-        fromCity: transportRequests.fromCity,
-        toCity: transportRequests.toCity,
-        description: transportRequests.description,
-        goodsType: transportRequests.goodsType,
-        dateTime: transportRequests.dateTime,
-        budget: transportRequests.budget,
-        photos: transportRequests.photos,
-        status: transportRequests.status,
-        isHidden: transportRequests.isHidden,
-        paymentStatus: transportRequests.paymentStatus,
-        createdAt: transportRequests.createdAt,
-        client: users,
+    // Get all open requests with client, transporter (if accepted), and offers
+    const requests = await db.select({
+      id: transportRequests.id,
+      referenceId: transportRequests.referenceId,
+      clientId: transportRequests.clientId,
+      fromCity: transportRequests.fromCity,
+      toCity: transportRequests.toCity,
+      description: transportRequests.description,
+      goodsType: transportRequests.goodsType,
+      dateTime: transportRequests.dateTime,
+      budget: transportRequests.budget,
+      photos: transportRequests.photos,
+      status: transportRequests.status,
+      isHidden: transportRequests.isHidden,
+      paymentStatus: transportRequests.paymentStatus,
+      createdAt: transportRequests.createdAt,
+    })
+    .from(transportRequests)
+    .where(eq(transportRequests.status, 'open'))
+    .orderBy(desc(transportRequests.createdAt));
+
+    // Enrich each request with client, offers, and transporter data
+    const enrichedRequests = await Promise.all(
+      requests.map(async (request) => {
+        // Get client data
+        const clientData = await db.select().from(users)
+          .where(eq(users.id, request.clientId))
+          .limit(1);
+        
+        // Get offers for this request
+        const requestOffers = await db.select().from(offers)
+          .where(eq(offers.requestId, request.id));
+
+        return {
+          ...request,
+          client: clientData[0] || null,
+          offers: requestOffers,
+        };
       })
-      .from(transportRequests)
-      .innerJoin(users, eq(transportRequests.clientId, users.id))
-      .where(eq(transportRequests.status, 'open'))
-      .orderBy(desc(transportRequests.createdAt));
+    );
 
-    // Get all offers for open requests in one query
-    const requestIds = requestsWithClients.map(r => r.id);
-    const allOffers = requestIds.length > 0 
-      ? await db.select().from(offers).where(inArray(offers.requestId, requestIds))
-      : [];
-
-    // Group offers by request ID
-    const offersByRequest = new Map<string, any[]>();
-    allOffers.forEach(offer => {
-      if (!offersByRequest.has(offer.requestId)) {
-        offersByRequest.set(offer.requestId, []);
-      }
-      offersByRequest.get(offer.requestId)!.push(offer);
-    });
-
-    // Combine requests with their offers
-    return requestsWithClients.map(request => ({
-      ...request,
-      offers: offersByRequest.get(request.id) || [],
-    }));
+    return enrichedRequests;
   }
 
   async getCoordinatorActiveRequests(): Promise<any[]> {
-    // Get all accepted requests with client using JOIN
-    const requestsWithClients = await db
-      .select({
-        id: transportRequests.id,
-        referenceId: transportRequests.referenceId,
-        fromCity: transportRequests.fromCity,
-        toCity: transportRequests.toCity,
-        description: transportRequests.description,
-        goodsType: transportRequests.goodsType,
-        dateTime: transportRequests.dateTime,
-        budget: transportRequests.budget,
-        photos: transportRequests.photos,
-        status: transportRequests.status,
-        isHidden: transportRequests.isHidden,
-        paymentStatus: transportRequests.paymentStatus,
-        acceptedOfferId: transportRequests.acceptedOfferId,
-        createdAt: transportRequests.createdAt,
-        client: users,
+    // Get all accepted requests
+    const requests = await db.select({
+      id: transportRequests.id,
+      referenceId: transportRequests.referenceId,
+      fromCity: transportRequests.fromCity,
+      toCity: transportRequests.toCity,
+      description: transportRequests.description,
+      goodsType: transportRequests.goodsType,
+      dateTime: transportRequests.dateTime,
+      budget: transportRequests.budget,
+      photos: transportRequests.photos,
+      status: transportRequests.status,
+      isHidden: transportRequests.isHidden,
+      paymentStatus: transportRequests.paymentStatus,
+      acceptedOfferId: transportRequests.acceptedOfferId,
+      createdAt: transportRequests.createdAt,
+    })
+    .from(transportRequests)
+    .where(eq(transportRequests.status, 'accepted'))
+    .orderBy(desc(transportRequests.createdAt));
+
+    // Enrich with client, transporter, and accepted offer
+    const enrichedRequests = await Promise.all(
+      requests.map(async (request) => {
+        // Get client data  
+        const clientResult = await db.select().from(users)
+          .innerJoin(transportRequests, eq(transportRequests.clientId, users.id))
+          .where(eq(transportRequests.id, request.id))
+          .limit(1);
+        const client = clientResult[0]?.users || null;
+
+        // Get accepted offer and transporter
+        let acceptedOffer = null;
+        let transporter = null;
+        if (request.acceptedOfferId) {
+          const offerResult = await db.select().from(offers)
+            .where(eq(offers.id, request.acceptedOfferId))
+            .limit(1);
+          acceptedOffer = offerResult[0] || null;
+
+          if (acceptedOffer) {
+            const transporterResult = await db.select().from(users)
+              .where(eq(users.id, acceptedOffer.transporterId))
+              .limit(1);
+            transporter = transporterResult[0] || null;
+          }
+        }
+
+        return {
+          ...request,
+          client,
+          transporter,
+          acceptedOffer,
+        };
       })
-      .from(transportRequests)
-      .innerJoin(users, eq(transportRequests.clientId, users.id))
-      .where(eq(transportRequests.status, 'accepted'))
-      .orderBy(desc(transportRequests.createdAt));
+    );
 
-    // Get accepted offers in batch
-    const offerIds = requestsWithClients
-      .map(r => r.acceptedOfferId)
-      .filter(id => id !== null) as string[];
-    
-    const acceptedOffers = offerIds.length > 0
-      ? await db.select().from(offers).where(inArray(offers.id, offerIds))
-      : [];
-    
-    // Get transporters in batch
-    const transporterIds = acceptedOffers.map(o => o.transporterId);
-    const transporters = transporterIds.length > 0
-      ? await db.select().from(users).where(inArray(users.id, transporterIds))
-      : [];
-
-    // Create lookup maps
-    const offersMap = new Map(acceptedOffers.map(o => [o.id, o]));
-    const transportersMap = new Map(transporters.map(t => [t.id, t]));
-
-    // Combine data
-    return requestsWithClients.map(request => {
-      const acceptedOffer = request.acceptedOfferId ? offersMap.get(request.acceptedOfferId) || null : null;
-      const transporter = acceptedOffer ? transportersMap.get(acceptedOffer.transporterId) || null : null;
-      
-      return {
-        ...request,
-        acceptedOffer,
-        transporter,
-      };
-    });
+    return enrichedRequests;
   }
 
   async getCoordinatorPaymentRequests(): Promise<any[]> {
-    // Get requests with payment pending statuses with client using JOIN
-    const requestsWithClients = await db
-      .select({
-        id: transportRequests.id,
-        referenceId: transportRequests.referenceId,
-        fromCity: transportRequests.fromCity,
-        toCity: transportRequests.toCity,
-        description: transportRequests.description,
-        goodsType: transportRequests.goodsType,
-        dateTime: transportRequests.dateTime,
-        budget: transportRequests.budget,
-        photos: transportRequests.photos,
-        status: transportRequests.status,
-        paymentStatus: transportRequests.paymentStatus,
-        acceptedOfferId: transportRequests.acceptedOfferId,
-        createdAt: transportRequests.createdAt,
-        client: users,
-      })
-      .from(transportRequests)
-      .innerJoin(users, eq(transportRequests.clientId, users.id))
-      .where(
-        and(
-          eq(transportRequests.status, 'accepted'),
-          or(
-            eq(transportRequests.paymentStatus, 'pending'),
-            eq(transportRequests.paymentStatus, 'awaiting_payment'),
-            eq(transportRequests.paymentStatus, 'pending_admin_validation')
-          )
+    // Get requests with payment pending statuses
+    const requests = await db.select({
+      id: transportRequests.id,
+      referenceId: transportRequests.referenceId,
+      fromCity: transportRequests.fromCity,
+      toCity: transportRequests.toCity,
+      description: transportRequests.description,
+      goodsType: transportRequests.goodsType,
+      dateTime: transportRequests.dateTime,
+      budget: transportRequests.budget,
+      photos: transportRequests.photos,
+      status: transportRequests.status,
+      paymentStatus: transportRequests.paymentStatus,
+      acceptedOfferId: transportRequests.acceptedOfferId,
+      createdAt: transportRequests.createdAt,
+    })
+    .from(transportRequests)
+    .where(
+      and(
+        eq(transportRequests.status, 'accepted'),
+        or(
+          eq(transportRequests.paymentStatus, 'pending'),
+          eq(transportRequests.paymentStatus, 'awaiting_payment'),
+          eq(transportRequests.paymentStatus, 'pending_admin_validation')
         )
       )
-      .orderBy(desc(transportRequests.createdAt));
+    )
+    .orderBy(desc(transportRequests.createdAt));
 
-    // Get accepted offers in batch
-    const offerIds = requestsWithClients
-      .map(r => r.acceptedOfferId)
-      .filter(id => id !== null) as string[];
-    
-    const acceptedOffers = offerIds.length > 0
-      ? await db.select().from(offers).where(inArray(offers.id, offerIds))
-      : [];
-    
-    // Get transporters in batch
-    const transporterIds = acceptedOffers.map(o => o.transporterId);
-    const transporters = transporterIds.length > 0
-      ? await db.select().from(users).where(inArray(users.id, transporterIds))
-      : [];
+    // Enrich with client, transporter, and accepted offer
+    const enrichedRequests = await Promise.all(
+      requests.map(async (request) => {
+        // Get client data
+        const clientResult = await db.select().from(users)
+          .innerJoin(transportRequests, eq(transportRequests.clientId, users.id))
+          .where(eq(transportRequests.id, request.id))
+          .limit(1);
+        const client = clientResult[0]?.users || null;
 
-    // Create lookup maps
-    const offersMap = new Map(acceptedOffers.map(o => [o.id, o]));
-    const transportersMap = new Map(transporters.map(t => [t.id, t]));
+        // Get accepted offer and transporter
+        let acceptedOffer = null;
+        let transporter = null;
+        if (request.acceptedOfferId) {
+          const offerResult = await db.select().from(offers)
+            .where(eq(offers.id, request.acceptedOfferId))
+            .limit(1);
+          acceptedOffer = offerResult[0] || null;
 
-    // Combine data
-    return requestsWithClients.map(request => {
-      const acceptedOffer = request.acceptedOfferId ? offersMap.get(request.acceptedOfferId) || null : null;
-      const transporter = acceptedOffer ? transportersMap.get(acceptedOffer.transporterId) || null : null;
-      
-      return {
-        ...request,
-        acceptedOffer,
-        transporter,
-      };
-    });
+          if (acceptedOffer) {
+            const transporterResult = await db.select().from(users)
+              .where(eq(users.id, acceptedOffer.transporterId))
+              .limit(1);
+            transporter = transporterResult[0] || null;
+          }
+        }
+
+        return {
+          ...request,
+          client,
+          transporter,
+          acceptedOffer,
+        };
+      })
+    );
+
+    return enrichedRequests;
   }
 
   async updateRequestVisibility(requestId: string, isHidden: boolean): Promise<TransportRequest | undefined> {
@@ -2545,55 +2510,6 @@ export class DbStorage implements IStorage {
     const result = await db.update(transporterReferences)
       .set(updates)
       .where(eq(transporterReferences.id, id))
-      .returning();
-    return result[0];
-  }
-
-  // WhatsApp operations
-  async createWhatsappNotification(notification: InsertWhatsappNotification): Promise<WhatsappNotification> {
-    const result = await db.insert(whatsappNotifications)
-      .values(notification)
-      .returning();
-    return result[0];
-  }
-
-  async getAllWhatsappNotifications(): Promise<WhatsappNotification[]> {
-    return db.select()
-      .from(whatsappNotifications)
-      .orderBy(desc(whatsappNotifications.sentAt));
-  }
-
-  async getWhatsappNotificationsByTransporter(transporterId: string): Promise<WhatsappNotification[]> {
-    return db.select()
-      .from(whatsappNotifications)
-      .where(eq(whatsappNotifications.transporterId, transporterId))
-      .orderBy(desc(whatsappNotifications.sentAt));
-  }
-
-  async getWhatsappNotificationsByRequest(requestId: string): Promise<WhatsappNotification[]> {
-    return db.select()
-      .from(whatsappNotifications)
-      .where(eq(whatsappNotifications.requestId, requestId))
-      .orderBy(desc(whatsappNotifications.sentAt));
-  }
-
-  async getWhatsappActiveTransporters(): Promise<User[]> {
-    return db.select()
-      .from(users)
-      .where(
-        and(
-          eq(users.role, 'transporter'),
-          eq(users.isWhatsappActive, true),
-          eq(users.accountStatus, 'active'),
-          eq(users.status, 'validated')
-        )
-      );
-  }
-
-  async toggleTransporterWhatsappActive(transporterId: string, isActive: boolean): Promise<User | undefined> {
-    const result = await db.update(users)
-      .set({ isWhatsappActive: isActive })
-      .where(eq(users.id, transporterId))
       .returning();
     return result[0];
   }

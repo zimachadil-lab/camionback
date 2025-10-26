@@ -6,7 +6,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, MessageCircle, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck } from "lucide-react";
 import { Header } from "@/components/layout/header";
-import { ShareCommandButton } from "@/components/share-command-button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ChatWindow } from "@/components/chat/chat-window";
@@ -528,7 +527,6 @@ export default function CoordinatorDashboard() {
         </div>
 
         <div className="flex flex-wrap gap-2 pt-2">
-          <ShareCommandButton commandId={request.id} size="sm" variant="outline" />
           <Button
             size="sm"
             variant="outline"
@@ -786,7 +784,6 @@ export default function CoordinatorDashboard() {
                     </div>
 
                     <div className="flex flex-wrap gap-2 pt-2">
-                      <ShareCommandButton commandId={request.id} size="sm" variant="outline" />
                       <Select
                         value={request.paymentStatus}
                         onValueChange={(value) => updatePaymentStatusMutation.mutate({ 

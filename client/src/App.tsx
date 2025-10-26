@@ -23,7 +23,6 @@ import HowItWorksClient from "@/pages/how-it-works-client";
 import HowItWorksTransporter from "@/pages/how-it-works-transporter";
 import PushDiagnostic from "@/pages/push-diagnostic";
 import ForceSWUpdate from "@/pages/force-sw-update";
-import CommandDetail from "@/pages/command-detail";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -44,7 +43,6 @@ function Router() {
       <Route path="/transporter/ratings" component={TransporterRatings} />
       <Route path="/transporter/profile" component={TransporterProfile} />
       <Route path="/transporter/rib" component={MyRib} />
-      <Route path="/commande/:id" component={CommandDetail} />
       <Route path="/how-it-works-client" component={HowItWorksClient} />
       <Route path="/how-it-works-transporter" component={HowItWorksTransporter} />
       <Route path="/push-diagnostic" component={PushDiagnostic} />

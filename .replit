@@ -4,7 +4,7 @@ hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
 [nix]
 channel = "stable-24_05"
-packages = ["imagemagick", "chromium"]
+packages = ["imagemagick"]
 
 [deployment]
 deploymentTarget = "autoscale"
@@ -98,6 +98,3 @@ author = "agent"
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
-
-[objectStorage]
-defaultBucketID = "replit-objstore-a4c870b1-9232-45b4-b081-acfe3a4a9ca6"

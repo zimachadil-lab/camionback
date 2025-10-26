@@ -307,16 +307,6 @@ export default function AdminDashboard() {
     },
   });
 
-  // Fetch WhatsApp notification history
-  const { data: whatsappHistory = [], isLoading: whatsappLoading } = useQuery({
-    queryKey: ["/api/admin/whatsapp/history"],
-    queryFn: async () => {
-      const response = await fetch("/api/admin/whatsapp/history");
-      if (!response.ok) return [];
-      return response.json();
-    },
-  });
-
   // Fetch all cities
   const { data: cities = [], isLoading: citiesLoading } = useQuery({
     queryKey: ["/api/cities"],
@@ -829,33 +819,6 @@ export default function AdminDashboard() {
     });
   };
 
-  // Toggle WhatsApp notification mutation
-  const toggleWhatsappMutation = useMutation({
-    mutationFn: async (transporterId: string) => {
-      const res = await apiRequest("POST", `/api/admin/whatsapp/toggle/${transporterId}`, {
-        adminId: user.id,
-      });
-      return await res.json();
-    },
-    onSuccess: (data: any) => {
-      toast({
-        title: data.enabled ? "WhatsApp activé" : "WhatsApp désactivé",
-        description: data.enabled 
-          ? "✅ Ce transporteur recevra maintenant les notifications WhatsApp"
-          : "⚠️ Ce transporteur ne recevra plus les notifications WhatsApp",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/transporters"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
-    },
-    onError: () => {
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Impossible de modifier le statut WhatsApp",
-      });
-    },
-  });
-
   // Format trend text
   const formatTrend = (trend: number) => {
     if (trend === 0) return "Aucun changement";
@@ -1013,16 +976,12 @@ export default function AdminDashboard() {
             {/* Barre de navigation secondaire - Gestion */}
             <div className="bg-muted/30 p-2 rounded-lg">
               <p className="text-xs text-muted-foreground mb-2 px-2 font-medium">Gestion & Configuration</p>
-              <TabsList className="flex lg:grid w-full lg:grid-cols-11 overflow-x-auto text-xs sm:text-sm">
+              <TabsList className="flex lg:grid w-full lg:grid-cols-10 overflow-x-auto text-xs sm:text-sm">
                 <TabsTrigger value="drivers" data-testid="tab-drivers" className="flex-shrink-0">Transporteurs</TabsTrigger>
                 <TabsTrigger value="clients" data-testid="tab-clients" className="flex-shrink-0">Clients</TabsTrigger>
                 <TabsTrigger value="coordinators" data-testid="tab-coordinators" className="flex-shrink-0">
                   <Compass className="w-4 h-4 mr-1" />
                   Coordinateurs
-                </TabsTrigger>
-                <TabsTrigger value="whatsapp" data-testid="tab-whatsapp" className="flex-shrink-0">
-                  <MessageSquare className="w-4 h-4 mr-1" />
-                  WhatsApp
                 </TabsTrigger>
                 <TabsTrigger value="reports" data-testid="tab-reports" className="flex-shrink-0">
                   <Flag className="w-4 h-4 mr-1" />
@@ -2044,7 +2003,6 @@ export default function AdminDashboard() {
                               <TableHead>Commissions</TableHead>
                               <TableHead>Dernière activité</TableHead>
                               <TableHead>Statut</TableHead>
-                              <TableHead>WhatsApp</TableHead>
                               <TableHead>RIB</TableHead>
                               <TableHead>Action</TableHead>
                             </TableRow>
@@ -2110,39 +2068,6 @@ export default function AdminDashboard() {
                                   >
                                     {transporter.accountStatus === "active" ? "Actif" : "Bloqué"}
                                   </Badge>
-                                </TableCell>
-                                <TableCell>
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Button
-                                          size="icon"
-                                          variant="outline"
-                                          onClick={() => toggleWhatsappMutation.mutate(transporter.id)}
-                                          disabled={toggleWhatsappMutation.isPending}
-                                          data-testid={`button-whatsapp-${transporter.id}`}
-                                          className={`hover-elevate ${
-                                            transporter.isWhatsappActive 
-                                              ? 'bg-green-500/10 border-green-500 hover:bg-green-500/20' 
-                                              : 'bg-red-500/10 border-red-500 hover:bg-red-500/20'
-                                          }`}
-                                        >
-                                          <MessageSquare className={`w-4 h-4 ${
-                                            transporter.isWhatsappActive 
-                                              ? 'text-green-600 dark:text-green-400' 
-                                              : 'text-red-600 dark:text-red-400'
-                                          }`} />
-                                        </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p>
-                                          {transporter.isWhatsappActive 
-                                            ? "✅ WhatsApp activé - Cliquer pour désactiver" 
-                                            : "⚠️ WhatsApp désactivé - Cliquer pour activer"}
-                                        </p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
                                 </TableCell>
                                 <TableCell>
                                   <Button
@@ -2385,124 +2310,6 @@ export default function AdminDashboard() {
 
           <TabsContent value="coordinators" className="mt-6">
             <CoordinatorManagement />
-          </TabsContent>
-
-          <TabsContent value="whatsapp" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5" />
-                  Historique des notifications WhatsApp
-                  <Badge className="ml-2" data-testid="badge-total-whatsapp">
-                    Total: {whatsappHistory.length}
-                  </Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {whatsappLoading ? (
-                  <div className="text-center py-8">
-                    <LoadingTruck message="Chargement de l'historique WhatsApp..." size="md" />
-                  </div>
-                ) : whatsappHistory.length === 0 ? (
-                  <div className="text-center py-8">
-                    <MessageSquare className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">Aucune notification WhatsApp envoyée pour le moment</p>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Transporteur</TableHead>
-                          <TableHead>Téléphone</TableHead>
-                          <TableHead>Commande</TableHead>
-                          <TableHead className="max-w-xs">Message</TableHead>
-                          <TableHead>Statut</TableHead>
-                          <TableHead>Erreur</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {whatsappHistory.map((notification: any) => {
-                          const transporter = transportersWithStats.find((t: any) => t.id === notification.transporterId);
-                          const request = allRequests.find((r: any) => r.id === notification.requestId);
-                          
-                          return (
-                            <TableRow key={notification.id}>
-                              <TableCell className="text-sm">
-                                {new Date(notification.sentAt).toLocaleString("fr-FR", {
-                                  day: "2-digit",
-                                  month: "2-digit",
-                                  year: "numeric",
-                                  hour: "2-digit",
-                                  minute: "2-digit"
-                                })}
-                              </TableCell>
-                              <TableCell className="font-medium">
-                                {transporter?.name || "Transporteur inconnu"}
-                              </TableCell>
-                              <TableCell>
-                                <a 
-                                  href={`tel:${notification.phoneNumber}`}
-                                  className="text-primary hover:underline"
-                                >
-                                  {notification.phoneNumber}
-                                </a>
-                              </TableCell>
-                              <TableCell>
-                                {request ? (
-                                  <span className="text-xs font-mono bg-muted px-2 py-1 rounded">
-                                    #{request.orderNumber}
-                                  </span>
-                                ) : (
-                                  <span className="text-muted-foreground text-xs">N/A</span>
-                                )}
-                              </TableCell>
-                              <TableCell className="max-w-xs">
-                                <p className="text-xs truncate" title={notification.message}>
-                                  {notification.message}
-                                </p>
-                              </TableCell>
-                              <TableCell>
-                                {notification.success ? (
-                                  <Badge variant="default" data-testid={`badge-whatsapp-success-${notification.id}`}>
-                                    <CheckCircle className="w-3 h-3 mr-1" />
-                                    Envoyé
-                                  </Badge>
-                                ) : (
-                                  <Badge variant="destructive" data-testid={`badge-whatsapp-failed-${notification.id}`}>
-                                    <XCircle className="w-3 h-3 mr-1" />
-                                    Échec
-                                  </Badge>
-                                )}
-                              </TableCell>
-                              <TableCell className="text-xs text-muted-foreground max-w-xs">
-                                {notification.errorMessage ? (
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <span className="truncate cursor-help">
-                                          {notification.errorMessage}
-                                        </span>
-                                      </TooltipTrigger>
-                                      <TooltipContent className="max-w-xs">
-                                        <p>{notification.errorMessage}</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                ) : (
-                                  <span className="text-muted-foreground">-</span>
-                                )}
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </TabsContent>
 
           <TabsContent value="reports" className="mt-6">

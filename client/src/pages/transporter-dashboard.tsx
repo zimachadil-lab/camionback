@@ -9,7 +9,6 @@ import { Header } from "@/components/layout/header";
 import { RequestCard } from "@/components/transporter/request-card";
 import { OfferForm } from "@/components/transporter/offer-form";
 import { InteractiveCalendar } from "@/components/transporter/interactive-calendar";
-import { ShareCommandButton } from "@/components/share-command-button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { ChatWindow } from "@/components/chat/chat-window";
@@ -872,7 +871,7 @@ export default function TransporterDashboard() {
                     <Card key={request.id} className="hover-elevate">
                       <CardContent className="p-6 space-y-4">
                         <div className="flex items-center justify-between flex-wrap gap-3">
-                          <div className="flex-1">
+                          <div>
                             <div className="flex items-center gap-2 mb-1">
                               <h3 className="text-lg font-semibold">{request.referenceId}</h3>
                               {isMarkedForBilling && (
@@ -886,7 +885,6 @@ export default function TransporterDashboard() {
                             </p>
                           </div>
                           <div className="flex items-center gap-2 flex-wrap">
-                            <ShareCommandButton commandId={request.id} />
                             <Button
                               variant="outline"
                               size="sm"

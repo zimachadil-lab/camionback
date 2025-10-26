@@ -15,14 +15,6 @@ export default function Home() {
       const userData = JSON.parse(storedUser);
       setUser(userData);
       
-      // Check for redirect after login first
-      const redirectPath = localStorage.getItem("redirectAfterLogin");
-      if (redirectPath) {
-        localStorage.removeItem("redirectAfterLogin");
-        setLocation(redirectPath);
-        return;
-      }
-      
       // Redirect to role selection if user has no role
       if (!userData.role) {
         setLocation("/select-role");
@@ -33,13 +25,6 @@ export default function Home() {
   const handleAuthSuccess = (userData: any) => {
     localStorage.setItem("camionback_user", JSON.stringify(userData));
     setUser(userData);
-    
-    // Check for redirect after login
-    const redirectPath = localStorage.getItem("redirectAfterLogin");
-    if (redirectPath) {
-      localStorage.removeItem("redirectAfterLogin");
-      setLocation(redirectPath);
-    }
   };
 
   const handleLogout = () => {
