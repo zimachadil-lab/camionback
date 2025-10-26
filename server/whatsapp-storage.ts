@@ -1,7 +1,9 @@
-import { Storage } from "@google-cloud/storage";
 import * as fs from "fs";
 import * as path from "path";
 import { promisify } from "util";
+import { db } from "./db";
+import { whatsappSessionFiles } from "../shared/schema";
+import { eq } from "drizzle-orm";
 
 const readFile = promisify(fs.readFile);
 const writeFile = promisify(fs.writeFile);
@@ -9,57 +11,17 @@ const mkdir = promisify(fs.mkdir);
 const readdir = promisify(fs.readdir);
 const stat = promisify(fs.stat);
 
-const REPLIT_SIDECAR_ENDPOINT = "http://127.0.0.1:1106";
-
 /**
- * Service pour sauvegarder et restaurer les sessions WhatsApp dans Object Storage
+ * Service pour sauvegarder et restaurer les sessions WhatsApp dans PostgreSQL
  * Ceci permet aux sessions de persister même après republication de l'app
  */
 export class WhatsAppStorageService {
-  private storage: Storage;
-  private bucketName: string;
-  private sessionPath: string = "whatsapp-sessions";
-
   constructor() {
-    // Configure le client Object Storage pour Replit
-    this.storage = new Storage({
-      credentials: {
-        audience: "replit",
-        subject_token_type: "access_token",
-        token_url: `${REPLIT_SIDECAR_ENDPOINT}/token`,
-        type: "external_account",
-        credential_source: {
-          url: `${REPLIT_SIDECAR_ENDPOINT}/credential`,
-          format: {
-            type: "json",
-            subject_token_field_name: "access_token",
-          },
-        },
-        universe_domain: "googleapis.com",
-      },
-      projectId: "",
-    });
-
-    // Récupère le bucket name depuis les variables d'environnement
-    let whatsappBucket = process.env.WHATSAPP_SESSION_BUCKET;
-    if (!whatsappBucket) {
-      throw new Error(
-        "WHATSAPP_SESSION_BUCKET environment variable not set. " +
-        "Create a bucket in Object Storage tool and set this variable."
-      );
-    }
-    
-    // Retire le "/" au début si présent (format: /whatsapp-sessions → whatsapp-sessions)
-    if (whatsappBucket.startsWith('/')) {
-      whatsappBucket = whatsappBucket.substring(1);
-    }
-    
-    this.bucketName = whatsappBucket;
-    console.log(`📦 Bucket WhatsApp configuré: ${this.bucketName}`);
+    console.log('📦 Service de stockage WhatsApp PostgreSQL initialisé');
   }
 
   /**
-   * Sauvegarde tous les fichiers de session WhatsApp dans Object Storage
+   * Sauvegarde tous les fichiers de session WhatsApp dans PostgreSQL
    * @param localAuthDir Chemin local du dossier .wwebjs_auth
    */
   async backupSession(localAuthDir: string): Promise<void> {
@@ -70,13 +32,12 @@ export class WhatsAppStorageService {
         return;
       }
 
-      console.log("📤 Début de la sauvegarde des sessions WhatsApp...");
-      const bucket = this.storage.bucket(this.bucketName);
+      console.log("📤 Début de la sauvegarde des sessions WhatsApp dans PostgreSQL...");
       
       // Parcourt récursivement tous les fichiers du dossier de session
-      await this.uploadDirectory(localAuthDir, bucket, this.sessionPath);
+      await this.uploadDirectory(localAuthDir, "");
       
-      console.log("✅ Sessions WhatsApp sauvegardées dans Object Storage");
+      console.log("✅ Sessions WhatsApp sauvegardées dans PostgreSQL");
     } catch (error) {
       console.error("❌ Erreur lors de la sauvegarde des sessions WhatsApp:", error);
       throw error;
@@ -84,19 +45,18 @@ export class WhatsAppStorageService {
   }
 
   /**
-   * Restaure les sessions WhatsApp depuis Object Storage vers le dossier local
+   * Restaure les sessions WhatsApp depuis PostgreSQL vers le dossier local
    * @param localAuthDir Chemin local du dossier .wwebjs_auth
    */
   async restoreSession(localAuthDir: string): Promise<boolean> {
     try {
-      console.log("📥 Tentative de restauration des sessions WhatsApp depuis Object Storage...");
-      const bucket = this.storage.bucket(this.bucketName);
+      console.log("📥 Tentative de restauration des sessions WhatsApp depuis PostgreSQL...");
 
-      // Liste tous les fichiers dans le bucket avec le préfixe de session
-      const [files] = await bucket.getFiles({ prefix: this.sessionPath });
+      // Récupère tous les fichiers depuis la base de données
+      const files = await db.select().from(whatsappSessionFiles);
       
       if (files.length === 0) {
-        console.log("ℹ️ Aucune session WhatsApp trouvée dans Object Storage");
+        console.log("ℹ️ Aucune session WhatsApp trouvée dans PostgreSQL");
         return false;
       }
 
@@ -105,13 +65,9 @@ export class WhatsAppStorageService {
         await mkdir(localAuthDir, { recursive: true });
       }
 
-      // Télécharge chaque fichier
+      // Restaure chaque fichier
       for (const file of files) {
-        // Extrait le chemin relatif du fichier
-        const relativePath = file.name.replace(`${this.sessionPath}/`, "");
-        if (!relativePath) continue; // Skip le dossier racine
-        
-        const localPath = path.join(localAuthDir, relativePath);
+        const localPath = path.join(localAuthDir, file.filepath);
         
         // Crée les sous-dossiers si nécessaire
         const dir = path.dirname(localPath);
@@ -119,12 +75,13 @@ export class WhatsAppStorageService {
           await mkdir(dir, { recursive: true });
         }
 
-        // Télécharge le fichier
-        await file.download({ destination: localPath });
-        console.log(`  ✓ Restauré: ${relativePath}`);
+        // Décode le contenu base64 et écrit le fichier
+        const content = Buffer.from(file.content, 'base64');
+        await writeFile(localPath, content);
+        console.log(`  ✓ Restauré: ${file.filepath}`);
       }
 
-      console.log("✅ Sessions WhatsApp restaurées depuis Object Storage");
+      console.log("✅ Sessions WhatsApp restaurées depuis PostgreSQL");
       return true;
     } catch (error) {
       console.error("❌ Erreur lors de la restauration des sessions WhatsApp:", error);
@@ -133,46 +90,59 @@ export class WhatsAppStorageService {
   }
 
   /**
-   * Upload récursif d'un dossier vers un bucket
+   * Upload récursif d'un dossier vers PostgreSQL
    */
-  private async uploadDirectory(
-    localDir: string,
-    bucket: any,
-    remotePrefix: string
-  ): Promise<void> {
+  private async uploadDirectory(localDir: string, relativePath: string): Promise<void> {
     const entries = await readdir(localDir);
 
     for (const entry of entries) {
       const localPath = path.join(localDir, entry);
-      const remotePath = `${remotePrefix}/${entry}`;
+      const relativeFilePath = relativePath ? path.join(relativePath, entry) : entry;
       const stats = await stat(localPath);
 
       if (stats.isDirectory()) {
         // Récursif pour les sous-dossiers
-        await this.uploadDirectory(localPath, bucket, remotePath);
+        await this.uploadDirectory(localPath, relativeFilePath);
       } else {
-        // Upload du fichier
-        await bucket.upload(localPath, {
-          destination: remotePath,
-          metadata: {
-            cacheControl: "private, max-age=0",
-          },
-        });
-        console.log(`  ✓ Sauvegardé: ${entry}`);
+        // Lit le fichier et le convertit en base64
+        const content = await readFile(localPath);
+        const base64Content = content.toString('base64');
+
+        // Sauvegarde ou met à jour dans la base de données
+        const existing = await db.select()
+          .from(whatsappSessionFiles)
+          .where(eq(whatsappSessionFiles.filepath, relativeFilePath))
+          .limit(1);
+
+        if (existing.length > 0) {
+          // Met à jour le fichier existant
+          await db.update(whatsappSessionFiles)
+            .set({ 
+              content: base64Content,
+              updatedAt: new Date()
+            })
+            .where(eq(whatsappSessionFiles.filepath, relativeFilePath));
+        } else {
+          // Insère un nouveau fichier
+          await db.insert(whatsappSessionFiles).values({
+            filepath: relativeFilePath,
+            content: base64Content,
+          });
+        }
+        
+        console.log(`  ✓ Sauvegardé: ${relativeFilePath}`);
       }
     }
   }
 
   /**
-   * Vérifie si des sessions existent dans Object Storage
+   * Vérifie si des sessions existent dans PostgreSQL
    */
   async hasStoredSession(): Promise<boolean> {
     try {
-      const bucket = this.storage.bucket(this.bucketName);
-      const [files] = await bucket.getFiles({ 
-        prefix: this.sessionPath,
-        maxResults: 1 
-      });
+      const files = await db.select()
+        .from(whatsappSessionFiles)
+        .limit(1);
       return files.length > 0;
     } catch (error) {
       console.error("❌ Erreur lors de la vérification des sessions:", error);

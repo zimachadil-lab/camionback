@@ -20,13 +20,8 @@ class WhatsAppService {
 
   private initializeStorageService() {
     try {
-      // Initialise le service de stockage seulement si la variable d'environnement est définie
-      if (process.env.WHATSAPP_SESSION_BUCKET) {
-        this.storageService = new WhatsAppStorageService();
-        console.log('✅ Service de stockage WhatsApp initialisé');
-      } else {
-        console.log('ℹ️ WHATSAPP_SESSION_BUCKET non défini - stockage local uniquement');
-      }
+      // Initialise le service de stockage PostgreSQL
+      this.storageService = new WhatsAppStorageService();
     } catch (error) {
       console.error('⚠️ Impossible d\'initialiser le stockage WhatsApp:', error);
       this.storageService = null;

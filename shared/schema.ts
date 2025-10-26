@@ -306,6 +306,16 @@ export const resetCoordinatorPinSchema = z.object({
   newPin: z.string().length(6, "Le PIN doit contenir exactement 6 chiffres").regex(/^\d{6}$/, "Le PIN doit contenir uniquement des chiffres"),
 });
 
+// WhatsApp session files - stored in PostgreSQL for persistence across deployments
+export const whatsappSessionFiles = pgTable("whatsapp_session_files", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  filepath: text("filepath").notNull().unique(), // Relative path of the file (e.g., "session/Default/Cache/data.txt")
+  content: text("content").notNull(), // File content in base64
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertWhatsappSessionFileSchema = createInsertSchema(whatsappSessionFiles);
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -345,3 +355,5 @@ export type InsertCoordinatorLog = z.infer<typeof insertCoordinatorLogSchema>;
 export type CoordinatorLog = typeof coordinatorLogs.$inferSelect;
 export type CreateCoordinator = z.infer<typeof createCoordinatorSchema>;
 export type ResetCoordinatorPin = z.infer<typeof resetCoordinatorPinSchema>;
+export type InsertWhatsappSessionFile = z.infer<typeof insertWhatsappSessionFileSchema>;
+export type WhatsappSessionFile = typeof whatsappSessionFiles.$inferSelect;
