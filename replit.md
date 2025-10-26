@@ -17,7 +17,7 @@ The backend is built with Express.js and TypeScript, providing RESTful JSON APIs
 **Key Features:**
 - **Request and Offer Workflow:** Multi-status client request progression, transporter offer submission, and client/admin acceptance.
 - **User Management:** Transporter rating, contract management, account blocking/deletion, and automated client ID generation.
-- **Messaging & Notifications:** Centralized admin messaging, voice messaging, SMS notifications (Infobip), email notifications (Nodemailer), and PWA with native push notifications (Web Push API).
+- **Messaging & Notifications:** Centralized admin messaging, voice messaging, SMS notifications (Infobip), email notifications (Nodemailer), WhatsApp Business notifications with persistent session storage (Object Storage), and PWA with native push notifications (Web Push API).
 - **Admin & Coordinator Tools:** Dynamic admin dashboard statistics, request management (hide/delete/expire), reporting and dispute system, comprehensive filtering/search, and full CRUD for cities.
 - **Coordinator Role:** Elevated operational oversight with dedicated dashboards, notification and messaging systems, and offer management capabilities (including client assistance for offer acceptance).
 - **File Management:** Base64 for client photos, Multer for transporter truck photos, and multimedia messaging.
@@ -47,6 +47,8 @@ The backend is built with Express.js and TypeScript, providing RESTful JSON APIs
 - **Neon Database**: Serverless PostgreSQL hosting.
 - **Nodemailer**: Automated email notifications.
 - **Web Push**: Browser push notifications.
+- **WhatsApp Business API**: Automated WhatsApp notifications via whatsapp-web.js with persistent session storage in Replit Object Storage.
+- **Replit Object Storage**: Persistent storage for WhatsApp sessions across deployments.
 
 ### Data Management
 - **Drizzle ORM**: Type-safe SQL query builder.
