@@ -1,0 +1,4 @@
+2025/10/26-15:29:37.427 400 Reusing MANIFEST /home/runner/workspace/.wwebjs_auth/session/Default/Local Storage/leveldb/MANIFEST-000001
+2025/10/26-15:29:37.485 400 Recovering log #7
+2025/10/26-15:29:37.486 400 Reusing old log /home/runner/workspace/.wwebjs_auth/session/Default/Local Storage/leveldb/000007.log 
+2025/10/26-15:29:37.486 400 Delete type=0 #4

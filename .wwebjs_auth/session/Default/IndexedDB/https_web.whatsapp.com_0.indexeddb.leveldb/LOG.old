@@ -1,0 +1,75 @@
+2025/10/26-15:24:41.069 d6 Reusing MANIFEST /home/runner/workspace/.wwebjs_auth/session/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2025/10/26-15:24:41.070 d6 Recovering log #360
+2025/10/26-15:24:41.105 d6 Reusing old log /home/runner/workspace/.wwebjs_auth/session/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/000360.log 
+2025/10/26-15:24:41.106 d6 Delete type=0 #352
+2025/10/26-15:24:41.106 d6 Delete type=2 #354
+2025/10/26-15:24:41.106 d6 Delete type=2 #355
+2025/10/26-15:24:41.106 d6 Delete type=2 #356
+2025/10/26-15:24:41.106 d6 Delete type=2 #357
+2025/10/26-15:24:41.106 d6 Delete type=2 #358
+2025/10/26-15:24:41.106 d6 Delete type=2 #292
+2025/10/26-15:24:41.106 d6 Delete type=0 #320
+2025/10/26-15:24:41.106 d6 Delete type=2 #322
+2025/10/26-15:24:41.106 d6 Delete type=2 #323
+2025/10/26-15:24:41.106 d6 Delete type=2 #324
+2025/10/26-15:24:41.106 d6 Delete type=2 #325
+2025/10/26-15:24:41.106 d6 Delete type=2 #326
+2025/10/26-15:24:41.107 d6 Delete type=0 #344
+2025/10/26-15:24:41.107 d6 Delete type=2 #346
+2025/10/26-15:24:41.107 d6 Delete type=2 #347
+2025/10/26-15:24:41.107 d6 Delete type=2 #348
+2025/10/26-15:24:41.107 d6 Delete type=2 #349
+2025/10/26-15:24:41.107 d6 Delete type=2 #350
+2025/10/26-15:24:41.107 d6 Delete type=0 #286
+2025/10/26-15:24:41.107 d6 Delete type=2 #288
+2025/10/26-15:24:41.107 d6 Delete type=2 #289
+2025/10/26-15:24:41.107 d6 Delete type=2 #290
+2025/10/26-15:24:41.107 d6 Delete type=2 #291
+2025/10/26-15:24:41.107 d6 Delete type=0 #328
+2025/10/26-15:24:41.107 d6 Delete type=2 #330
+2025/10/26-15:24:41.107 d6 Delete type=2 #331
+2025/10/26-15:24:41.107 d6 Delete type=2 #332
+2025/10/26-15:24:41.107 d6 Delete type=2 #333
+2025/10/26-15:24:41.107 d6 Delete type=2 #334
+2025/10/26-15:24:41.108 d6 Delete type=0 #336
+2025/10/26-15:24:41.108 d6 Delete type=2 #338
+2025/10/26-15:24:41.108 d6 Delete type=2 #339
+2025/10/26-15:24:41.108 d6 Delete type=2 #340
+2025/10/26-15:24:41.108 d6 Delete type=2 #341
+2025/10/26-15:24:41.108 d6 Delete type=2 #342
+2025/10/26-15:24:41.108 d6 Delete type=0 #295
+2025/10/26-15:24:41.108 d6 Delete type=2 #298
+2025/10/26-15:24:41.108 d6 Delete type=2 #299
+2025/10/26-15:24:41.108 d6 Delete type=2 #300
+2025/10/26-15:24:41.108 d6 Delete type=2 #301
+2025/10/26-15:24:41.108 d6 Delete type=2 #302
+2025/10/26-15:24:41.108 d6 Delete type=0 #304
+2025/10/26-15:24:41.108 d6 Delete type=2 #306
+2025/10/26-15:24:41.108 d6 Delete type=2 #307
+2025/10/26-15:24:41.108 d6 Delete type=2 #308
+2025/10/26-15:24:41.108 d6 Delete type=2 #309
+2025/10/26-15:24:41.108 d6 Delete type=2 #310
+2025/10/26-15:24:41.108 d6 Delete type=0 #312
+2025/10/26-15:24:41.108 d6 Delete type=2 #314
+2025/10/26-15:24:41.108 d6 Delete type=2 #315
+2025/10/26-15:24:41.108 d6 Delete type=2 #316
+2025/10/26-15:24:41.109 d6 Delete type=2 #317
+2025/10/26-15:24:41.109 d6 Delete type=2 #318
+2025/10/26-15:24:43.063 d6 Level-0 table #369: started
+2025/10/26-15:24:43.119 d6 Level-0 table #369: 470283 bytes OK
+2025/10/26-15:24:43.138 d6 Delete type=0 #360
+2025/10/26-15:24:43.138 d6 Manual compaction at level-0 from '\x009\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00:\x00\x00\x00' @ 0 : 0; will stop at (end)
+2025/10/26-15:24:45.748 d8 Compacting 1@1 + 5@2 files
+2025/10/26-15:24:46.152 d8 Generated table #370@1: 92336 keys, 2245358 bytes
+2025/10/26-15:24:46.338 d8 Generated table #371@1: 31125 keys, 2197434 bytes
+2025/10/26-15:24:46.460 d8 Generated table #372@1: 48413 keys, 2210294 bytes
+2025/10/26-15:24:46.598 d8 Generated table #373@1: 6105 keys, 2161456 bytes
+2025/10/26-15:24:46.721 d8 Generated table #374@1: 54955 keys, 2137493 bytes
+2025/10/26-15:24:46.721 d8 Compacted 1@1 + 5@2 files => 10952035 bytes
+2025/10/26-15:24:46.736 d8 compacted to: files[ 0 0 5 0 0 0 0 ]
+2025/10/26-15:24:46.737 d8 Delete type=2 #362
+2025/10/26-15:24:46.737 d8 Delete type=2 #363
+2025/10/26-15:24:46.737 d8 Delete type=2 #364
+2025/10/26-15:24:46.737 d8 Delete type=2 #365
+2025/10/26-15:24:46.737 d8 Delete type=2 #366
+2025/10/26-15:24:46.737 d8 Delete type=2 #369

@@ -1,0 +1,81 @@
+2025/10/26-15:29:38.086 3fb Reusing MANIFEST /home/runner/workspace/.wwebjs_auth/session/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2025/10/26-15:29:38.087 3fb Recovering log #368
+2025/10/26-15:29:38.109 3fb Reusing old log /home/runner/workspace/.wwebjs_auth/session/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/000368.log 
+2025/10/26-15:29:38.110 3fb Delete type=0 #352
+2025/10/26-15:29:38.110 3fb Delete type=2 #354
+2025/10/26-15:29:38.110 3fb Delete type=2 #355
+2025/10/26-15:29:38.110 3fb Delete type=2 #356
+2025/10/26-15:29:38.110 3fb Delete type=2 #357
+2025/10/26-15:29:38.110 3fb Delete type=2 #358
+2025/10/26-15:29:38.110 3fb Delete type=2 #292
+2025/10/26-15:29:38.110 3fb Delete type=0 #320
+2025/10/26-15:29:38.110 3fb Delete type=2 #322
+2025/10/26-15:29:38.110 3fb Delete type=2 #323
+2025/10/26-15:29:38.111 3fb Delete type=2 #324
+2025/10/26-15:29:38.111 3fb Delete type=2 #325
+2025/10/26-15:29:38.111 3fb Delete type=2 #326
+2025/10/26-15:29:38.111 3fb Delete type=0 #344
+2025/10/26-15:29:38.111 3fb Delete type=2 #346
+2025/10/26-15:29:38.111 3fb Delete type=2 #347
+2025/10/26-15:29:38.111 3fb Delete type=2 #348
+2025/10/26-15:29:38.111 3fb Delete type=2 #349
+2025/10/26-15:29:38.111 3fb Delete type=2 #350
+2025/10/26-15:29:38.111 3fb Delete type=0 #360
+2025/10/26-15:29:38.111 3fb Delete type=2 #362
+2025/10/26-15:29:38.111 3fb Delete type=2 #363
+2025/10/26-15:29:38.111 3fb Delete type=2 #364
+2025/10/26-15:29:38.111 3fb Delete type=2 #365
+2025/10/26-15:29:38.111 3fb Delete type=2 #366
+2025/10/26-15:29:38.111 3fb Delete type=0 #286
+2025/10/26-15:29:38.111 3fb Delete type=2 #288
+2025/10/26-15:29:38.111 3fb Delete type=2 #289
+2025/10/26-15:29:38.111 3fb Delete type=2 #290
+2025/10/26-15:29:38.111 3fb Delete type=2 #291
+2025/10/26-15:29:38.111 3fb Delete type=0 #328
+2025/10/26-15:29:38.111 3fb Delete type=2 #330
+2025/10/26-15:29:38.111 3fb Delete type=2 #331
+2025/10/26-15:29:38.111 3fb Delete type=2 #332
+2025/10/26-15:29:38.112 3fb Delete type=2 #333
+2025/10/26-15:29:38.112 3fb Delete type=2 #334
+2025/10/26-15:29:38.112 3fb Delete type=0 #336
+2025/10/26-15:29:38.112 3fb Delete type=2 #338
+2025/10/26-15:29:38.112 3fb Delete type=2 #339
+2025/10/26-15:29:38.112 3fb Delete type=2 #340
+2025/10/26-15:29:38.112 3fb Delete type=2 #341
+2025/10/26-15:29:38.112 3fb Delete type=2 #342
+2025/10/26-15:29:38.112 3fb Delete type=0 #295
+2025/10/26-15:29:38.112 3fb Delete type=2 #298
+2025/10/26-15:29:38.112 3fb Delete type=2 #299
+2025/10/26-15:29:38.112 3fb Delete type=2 #300
+2025/10/26-15:29:38.112 3fb Delete type=2 #301
+2025/10/26-15:29:38.112 3fb Delete type=2 #302
+2025/10/26-15:29:38.112 3fb Delete type=0 #304
+2025/10/26-15:29:38.112 3fb Delete type=2 #306
+2025/10/26-15:29:38.112 3fb Delete type=2 #307
+2025/10/26-15:29:38.112 3fb Delete type=2 #308
+2025/10/26-15:29:38.112 3fb Delete type=2 #309
+2025/10/26-15:29:38.112 3fb Delete type=2 #310
+2025/10/26-15:29:38.112 3fb Delete type=0 #312
+2025/10/26-15:29:38.112 3fb Delete type=2 #314
+2025/10/26-15:29:38.112 3fb Delete type=2 #315
+2025/10/26-15:29:38.112 3fb Delete type=2 #316
+2025/10/26-15:29:38.113 3fb Delete type=2 #317
+2025/10/26-15:29:38.113 3fb Delete type=2 #318
+2025/10/26-15:29:40.403 401 Level-0 table #377: started
+2025/10/26-15:29:40.456 401 Level-0 table #377: 474342 bytes OK
+2025/10/26-15:29:40.478 401 Delete type=0 #368
+2025/10/26-15:29:40.479 3fb Manual compaction at level-0 from '\x00:\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00;\x00\x00\x00' @ 0 : 0; will stop at (end)
+2025/10/26-15:29:43.541 400 Compacting 1@1 + 5@2 files
+2025/10/26-15:29:43.714 400 Generated table #378@1: 92200 keys, 2244843 bytes
+2025/10/26-15:29:43.833 400 Generated table #379@1: 33229 keys, 2199775 bytes
+2025/10/26-15:29:43.979 400 Generated table #380@1: 49100 keys, 2212446 bytes
+2025/10/26-15:29:44.071 400 Generated table #381@1: 5379 keys, 2157736 bytes
+2025/10/26-15:29:44.170 400 Generated table #382@1: 55715 keys, 2202427 bytes
+2025/10/26-15:29:44.170 400 Compacted 1@1 + 5@2 files => 11017227 bytes
+2025/10/26-15:29:44.188 400 compacted to: files[ 0 0 5 0 0 0 0 ]
+2025/10/26-15:29:44.189 400 Delete type=2 #370
+2025/10/26-15:29:44.189 400 Delete type=2 #371
+2025/10/26-15:29:44.189 400 Delete type=2 #372
+2025/10/26-15:29:44.189 400 Delete type=2 #373
+2025/10/26-15:29:44.189 400 Delete type=2 #374
+2025/10/26-15:29:44.189 400 Delete type=2 #377
