@@ -15,18 +15,7 @@ class WhatsAppService {
 
   constructor() {
     this.initializeStorageService();
-    
-    // RETARDE l'initialisation WhatsApp de 30 secondes pour laisser le serveur
-    // répondre aux premières requêtes sans être bloqué par la restauration lourde
-    console.log('📱 WhatsApp démarrera dans 30 secondes...');
-    setTimeout(() => {
-      console.log('📱 WhatsApp démarrage en arrière-plan...');
-      this.initializeClient().catch(error => {
-        console.error('❌ Erreur lors de l\'initialisation WhatsApp:', error);
-      });
-    }, 30000); // 30 secondes
-    
-    console.log('✅ Serveur prêt');
+    this.initializeClient();
   }
 
   private initializeStorageService() {
@@ -46,25 +35,15 @@ class WhatsAppService {
 
     this.isInitializing = true;
 
-    // Lance la restauration en arrière-plan puis initialise le client
+    // Tente de restaurer la session depuis Object Storage
     if (this.storageService) {
-      this.storageService.restoreSession(AUTH_DIR)
-        .then(() => {
-          console.log('✅ Sessions WhatsApp restaurées depuis PostgreSQL');
-          return this.createWhatsAppClient();
-        })
-        .catch(error => {
-          console.error('⚠️ Erreur lors de la restauration de la session:', error);
-          return this.createWhatsAppClient();
-        });
-      return; // Sortie immédiate - pas de blocage
+      try {
+        await this.storageService.restoreSession(AUTH_DIR);
+      } catch (error) {
+        console.error('⚠️ Erreur lors de la restauration de la session:', error);
+      }
     }
 
-    // Si pas de storage service, crée directement le client
-    await this.createWhatsAppClient();
-  }
-
-  private async createWhatsAppClient() {
     try {
       this.client = new Client({
         authStrategy: new LocalAuth({
