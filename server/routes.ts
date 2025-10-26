@@ -2589,6 +2589,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           accountStatus: transporter.accountStatus || "active",
           ribName: transporter.ribName || null,
           ribNumber: transporter.ribNumber || null,
+          isWhatsappActive: transporter.isWhatsappActive || false,
         };
       });
       
