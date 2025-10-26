@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, boolean, decimal } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, boolean, decimal, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -25,7 +25,12 @@ export const users = pgTable("users", {
   isVerified: boolean("is_verified").default(false), // Verified by professional reference (transporters only)
   isWhatsappActive: boolean("is_whatsapp_active").default(false), // WhatsApp notifications enabled (transporters only)
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+  roleIdx: index("users_role_idx").on(table.role),
+  statusIdx: index("users_status_idx").on(table.status),
+  isActiveIdx: index("users_is_active_idx").on(table.isActive),
+  roleStatusActiveIdx: index("users_role_status_active_idx").on(table.role, table.status, table.isActive),
+}));
 
 // OTP verification codes
 export const otpCodes = pgTable("otp_codes", {
@@ -61,7 +66,11 @@ export const transportRequests = pgTable("transport_requests", {
   smsSent: boolean("sms_sent").default(false), // Track if first offer SMS was sent to client
   isHidden: boolean("is_hidden").default(false), // Admin can hide requests from transporters
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+  statusIdx: index("transport_requests_status_idx").on(table.status),
+  paymentStatusIdx: index("transport_requests_payment_status_idx").on(table.paymentStatus),
+  clientIdIdx: index("transport_requests_client_id_idx").on(table.clientId),
+}));
 
 // Offers from transporters
 export const offers = pgTable("offers", {
@@ -75,7 +84,11 @@ export const offers = pgTable("offers", {
   paymentProofUrl: text("payment_proof_url"), // Transporter uploads payment proof
   paymentValidated: boolean("payment_validated").default(false), // Admin validates
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+  statusIdx: index("offers_status_idx").on(table.status),
+  requestIdIdx: index("offers_request_id_idx").on(table.requestId),
+  transporterIdIdx: index("offers_transporter_id_idx").on(table.transporterId),
+}));
 
 // Chat messages
 export const chatMessages = pgTable("chat_messages", {

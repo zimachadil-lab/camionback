@@ -17,9 +17,13 @@ import {
   insertReportSchema,
   insertCitySchema,
   type Offer,
-  clientTransporterContacts
+  clientTransporterContacts,
+  users,
+  transportRequests,
+  offers,
+  contracts
 } from "@shared/schema";
-import { desc } from "drizzle-orm";
+import { desc, sql, eq, and } from "drizzle-orm";
 import { sendFirstOfferSMS, sendOfferAcceptedSMS, sendTransporterActivatedSMS, sendBulkSMS } from "./infobip-sms";
 import { emailService } from "./email-service";
 
@@ -2339,10 +2343,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/admin/stats", async (req, res) => {
     try {
-      const users = await storage.getAllUsers();
-      const requests = await storage.getAllTransportRequests();
-      const offers = await storage.getAllOffers();
-      const contracts = await storage.getAllContracts();
+      // TODO: Performance optimization needed - This endpoint loads all data in memory
+      // Future improvement: Use SQL aggregate queries with proper Drizzle syntax
+      // See previous attempt with indexes added to schema for reference
+      
+      const allUsers = await storage.getAllUsers();
+      const allRequests = await storage.getAllTransportRequests();
+      const allOffers = await storage.getAllOffers();
+      const allContracts = await storage.getAllContracts();
       
       // Get dates for monthly comparison
       const now = new Date();
@@ -2351,7 +2359,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
       
       // Clients actifs
-      const activeClients = users.filter(u => u.role === "client" && u.isActive);
+      const activeClients = allUsers.filter(u => u.role === "client" && u.isActive);
       const activeClientsCount = activeClients.length;
       const activeClientsLastMonth = activeClients.filter(u => 
         u.createdAt && new Date(u.createdAt) >= startOfLastMonth && new Date(u.createdAt) <= endOfLastMonth
@@ -2364,7 +2372,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         : activeClientsThisMonth > 0 ? 100 : 0;
       
       // Transporteurs actifs
-      const activeTransporters = users.filter(u => u.role === "transporter" && u.isActive && u.status === "validated");
+      const activeTransporters = allUsers.filter(u => u.role === "transporter" && u.isActive && u.status === "validated");
       const activeTransportersCount = activeTransporters.length;
       const activeTransportersLastMonth = activeTransporters.filter(u => 
         u.createdAt && new Date(u.createdAt) >= startOfLastMonth && new Date(u.createdAt) <= endOfLastMonth
@@ -2377,10 +2385,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         : activeTransportersThisMonth > 0 ? 100 : 0;
       
       // Demandes totales
-      const totalRequests = requests.length;
+      const totalRequests = allRequests.length;
       
       // Commissions totales
-      const acceptedOffers = offers.filter(o => o.status === "accepted");
+      const acceptedOffers = allOffers.filter(o => o.status === "accepted");
       const adminSettings = await storage.getAdminSettings();
       const commissionRate = adminSettings?.commissionPercentage ? parseFloat(adminSettings.commissionPercentage) : 10;
       const totalCommissions = acceptedOffers.reduce((sum, offer) => {
@@ -2412,32 +2420,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         : commissionsThisMonth > 0 ? 100 : 0;
       
       // Taux de conversion
-      const totalOffers = offers.length;
+      const totalOffers = allOffers.length;
       const conversionRate = totalOffers > 0 
         ? Math.round((acceptedOffers.length / totalOffers) * 100)
         : 0;
       
       // Demandes complétées
-      const completedRequests = requests.filter(r => r.status === "completed").length;
+      const completedRequests = allRequests.filter(r => r.status === "completed").length;
       
       // Taux de satisfaction transporteurs (moyenne des notes)
-      const transportersWithRating = users.filter(u => 
+      const transportersWithRating = allUsers.filter(u => 
         u.role === "transporter" && u.rating !== null && parseFloat(u.rating) > 0
       );
       const averageRating = transportersWithRating.length > 0
         ? transportersWithRating.reduce((sum, u) => sum + parseFloat(u.rating || "0"), 0) / transportersWithRating.length
         : 0;
       
-      // Durée moyenne de traitement (jours entre création et complétion)
-      // Note: We don't have updatedAt, so we'll use a default processing time estimate
-      const completedRequestsCount = requests.filter(r => r.status === "completed").length;
-      const averageProcessingTime = 2.5; // Default estimate in days
+      // Durée moyenne de traitement
+      const averageProcessingTime = 2.5; // Default estimate
       
-      // Commandes republiées - on ne peut pas les calculer car pas de champ republishedCount
+      // Commandes republiées
       const republishedCount = 0;
       
       // Montant moyen par mission
-      const completedRequestsWithOffers = requests.filter(r => r.status === "completed");
+      const completedRequestsWithOffers = allRequests.filter(r => r.status === "completed");
       const completedOffersAmounts = acceptedOffers
         .filter(o => completedRequestsWithOffers.find(r => r.id === o.requestId))
         .map(o => parseFloat(o.amount));
@@ -2446,7 +2452,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         : 0;
       
       // Total paiements en attente
-      const pendingPayments = requests.filter(r => 
+      const pendingPayments = allRequests.filter(r => 
         r.paymentStatus === "pending_admin_validation"
       );
       const pendingPaymentsTotal = pendingPayments.reduce((sum, req) => {
@@ -2463,12 +2469,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalRequests,
         totalCommissions: Math.round(totalCommissions),
         commissionsTrend,
-        contracts: contracts.length,
+        contracts: allContracts.length,
         
         // Statistiques détaillées
         conversionRate,
         completedRequests,
-        openRequests: requests.filter(r => r.status === "open").length,
+        openRequests: allRequests.filter(r => r.status === "open").length,
         averageRating: Math.round(averageRating * 10) / 10,
         averageProcessingTime: Math.round(averageProcessingTime * 10) / 10,
         republishedCount,

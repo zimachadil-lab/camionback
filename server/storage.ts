@@ -1233,7 +1233,13 @@ export class DbStorage implements IStorage {
   }
 
   async getAllUsers(): Promise<User[]> {
-    return await db.select().from(users);
+    // Get all users but exclude heavy truckPhotos field
+    const allUsers = await db.select().from(users);
+    // Map to exclude truckPhotos to reduce response size
+    return allUsers.map(user => ({
+      ...user,
+      truckPhotos: null, // Explicitly set to null to exclude large data
+    })) as User[];
   }
 
   async getPendingDrivers(): Promise<User[]> {
@@ -1422,7 +1428,13 @@ export class DbStorage implements IStorage {
   }
 
   async getAllTransportRequests(): Promise<TransportRequest[]> {
-    return await db.select().from(transportRequests);
+    // Get all requests but exclude heavy paymentReceipt field
+    const allRequests = await db.select().from(transportRequests);
+    // Map to exclude paymentReceipt to reduce response size
+    return allRequests.map(req => ({
+      ...req,
+      paymentReceipt: null, // Explicitly set to null to exclude large data
+    })) as TransportRequest[];
   }
 
   async getRequestsByClient(clientId: string): Promise<TransportRequest[]> {
@@ -2186,178 +2198,172 @@ export class DbStorage implements IStorage {
 
   // Coordinator operations
   async getCoordinatorAvailableRequests(): Promise<any[]> {
-    // Get all open requests with client, transporter (if accepted), and offers
-    const requests = await db.select({
-      id: transportRequests.id,
-      referenceId: transportRequests.referenceId,
-      clientId: transportRequests.clientId,
-      fromCity: transportRequests.fromCity,
-      toCity: transportRequests.toCity,
-      description: transportRequests.description,
-      goodsType: transportRequests.goodsType,
-      dateTime: transportRequests.dateTime,
-      budget: transportRequests.budget,
-      photos: transportRequests.photos,
-      status: transportRequests.status,
-      isHidden: transportRequests.isHidden,
-      paymentStatus: transportRequests.paymentStatus,
-      createdAt: transportRequests.createdAt,
-    })
-    .from(transportRequests)
-    .where(eq(transportRequests.status, 'open'))
-    .orderBy(desc(transportRequests.createdAt));
-
-    // Enrich each request with client, offers, and transporter data
-    const enrichedRequests = await Promise.all(
-      requests.map(async (request) => {
-        // Get client data
-        const clientData = await db.select().from(users)
-          .where(eq(users.id, request.clientId))
-          .limit(1);
-        
-        // Get offers for this request
-        const requestOffers = await db.select().from(offers)
-          .where(eq(offers.requestId, request.id));
-
-        return {
-          ...request,
-          client: clientData[0] || null,
-          offers: requestOffers,
-        };
+    // Get all open requests with client data in one query using JOIN
+    const requestsWithClients = await db
+      .select({
+        id: transportRequests.id,
+        referenceId: transportRequests.referenceId,
+        clientId: transportRequests.clientId,
+        fromCity: transportRequests.fromCity,
+        toCity: transportRequests.toCity,
+        description: transportRequests.description,
+        goodsType: transportRequests.goodsType,
+        dateTime: transportRequests.dateTime,
+        budget: transportRequests.budget,
+        photos: transportRequests.photos,
+        status: transportRequests.status,
+        isHidden: transportRequests.isHidden,
+        paymentStatus: transportRequests.paymentStatus,
+        createdAt: transportRequests.createdAt,
+        client: users,
       })
-    );
+      .from(transportRequests)
+      .innerJoin(users, eq(transportRequests.clientId, users.id))
+      .where(eq(transportRequests.status, 'open'))
+      .orderBy(desc(transportRequests.createdAt));
 
-    return enrichedRequests;
+    // Get all offers for open requests in one query
+    const requestIds = requestsWithClients.map(r => r.id);
+    const allOffers = requestIds.length > 0 
+      ? await db.select().from(offers).where(inArray(offers.requestId, requestIds))
+      : [];
+
+    // Group offers by request ID
+    const offersByRequest = new Map<string, any[]>();
+    allOffers.forEach(offer => {
+      if (!offersByRequest.has(offer.requestId)) {
+        offersByRequest.set(offer.requestId, []);
+      }
+      offersByRequest.get(offer.requestId)!.push(offer);
+    });
+
+    // Combine requests with their offers
+    return requestsWithClients.map(request => ({
+      ...request,
+      offers: offersByRequest.get(request.id) || [],
+    }));
   }
 
   async getCoordinatorActiveRequests(): Promise<any[]> {
-    // Get all accepted requests
-    const requests = await db.select({
-      id: transportRequests.id,
-      referenceId: transportRequests.referenceId,
-      fromCity: transportRequests.fromCity,
-      toCity: transportRequests.toCity,
-      description: transportRequests.description,
-      goodsType: transportRequests.goodsType,
-      dateTime: transportRequests.dateTime,
-      budget: transportRequests.budget,
-      photos: transportRequests.photos,
-      status: transportRequests.status,
-      isHidden: transportRequests.isHidden,
-      paymentStatus: transportRequests.paymentStatus,
-      acceptedOfferId: transportRequests.acceptedOfferId,
-      createdAt: transportRequests.createdAt,
-    })
-    .from(transportRequests)
-    .where(eq(transportRequests.status, 'accepted'))
-    .orderBy(desc(transportRequests.createdAt));
-
-    // Enrich with client, transporter, and accepted offer
-    const enrichedRequests = await Promise.all(
-      requests.map(async (request) => {
-        // Get client data  
-        const clientResult = await db.select().from(users)
-          .innerJoin(transportRequests, eq(transportRequests.clientId, users.id))
-          .where(eq(transportRequests.id, request.id))
-          .limit(1);
-        const client = clientResult[0]?.users || null;
-
-        // Get accepted offer and transporter
-        let acceptedOffer = null;
-        let transporter = null;
-        if (request.acceptedOfferId) {
-          const offerResult = await db.select().from(offers)
-            .where(eq(offers.id, request.acceptedOfferId))
-            .limit(1);
-          acceptedOffer = offerResult[0] || null;
-
-          if (acceptedOffer) {
-            const transporterResult = await db.select().from(users)
-              .where(eq(users.id, acceptedOffer.transporterId))
-              .limit(1);
-            transporter = transporterResult[0] || null;
-          }
-        }
-
-        return {
-          ...request,
-          client,
-          transporter,
-          acceptedOffer,
-        };
+    // Get all accepted requests with client using JOIN
+    const requestsWithClients = await db
+      .select({
+        id: transportRequests.id,
+        referenceId: transportRequests.referenceId,
+        fromCity: transportRequests.fromCity,
+        toCity: transportRequests.toCity,
+        description: transportRequests.description,
+        goodsType: transportRequests.goodsType,
+        dateTime: transportRequests.dateTime,
+        budget: transportRequests.budget,
+        photos: transportRequests.photos,
+        status: transportRequests.status,
+        isHidden: transportRequests.isHidden,
+        paymentStatus: transportRequests.paymentStatus,
+        acceptedOfferId: transportRequests.acceptedOfferId,
+        createdAt: transportRequests.createdAt,
+        client: users,
       })
-    );
+      .from(transportRequests)
+      .innerJoin(users, eq(transportRequests.clientId, users.id))
+      .where(eq(transportRequests.status, 'accepted'))
+      .orderBy(desc(transportRequests.createdAt));
 
-    return enrichedRequests;
+    // Get accepted offers in batch
+    const offerIds = requestsWithClients
+      .map(r => r.acceptedOfferId)
+      .filter(id => id !== null) as string[];
+    
+    const acceptedOffers = offerIds.length > 0
+      ? await db.select().from(offers).where(inArray(offers.id, offerIds))
+      : [];
+    
+    // Get transporters in batch
+    const transporterIds = acceptedOffers.map(o => o.transporterId);
+    const transporters = transporterIds.length > 0
+      ? await db.select().from(users).where(inArray(users.id, transporterIds))
+      : [];
+
+    // Create lookup maps
+    const offersMap = new Map(acceptedOffers.map(o => [o.id, o]));
+    const transportersMap = new Map(transporters.map(t => [t.id, t]));
+
+    // Combine data
+    return requestsWithClients.map(request => {
+      const acceptedOffer = request.acceptedOfferId ? offersMap.get(request.acceptedOfferId) || null : null;
+      const transporter = acceptedOffer ? transportersMap.get(acceptedOffer.transporterId) || null : null;
+      
+      return {
+        ...request,
+        acceptedOffer,
+        transporter,
+      };
+    });
   }
 
   async getCoordinatorPaymentRequests(): Promise<any[]> {
-    // Get requests with payment pending statuses
-    const requests = await db.select({
-      id: transportRequests.id,
-      referenceId: transportRequests.referenceId,
-      fromCity: transportRequests.fromCity,
-      toCity: transportRequests.toCity,
-      description: transportRequests.description,
-      goodsType: transportRequests.goodsType,
-      dateTime: transportRequests.dateTime,
-      budget: transportRequests.budget,
-      photos: transportRequests.photos,
-      status: transportRequests.status,
-      paymentStatus: transportRequests.paymentStatus,
-      acceptedOfferId: transportRequests.acceptedOfferId,
-      createdAt: transportRequests.createdAt,
-    })
-    .from(transportRequests)
-    .where(
-      and(
-        eq(transportRequests.status, 'accepted'),
-        or(
-          eq(transportRequests.paymentStatus, 'pending'),
-          eq(transportRequests.paymentStatus, 'awaiting_payment'),
-          eq(transportRequests.paymentStatus, 'pending_admin_validation')
+    // Get requests with payment pending statuses with client using JOIN
+    const requestsWithClients = await db
+      .select({
+        id: transportRequests.id,
+        referenceId: transportRequests.referenceId,
+        fromCity: transportRequests.fromCity,
+        toCity: transportRequests.toCity,
+        description: transportRequests.description,
+        goodsType: transportRequests.goodsType,
+        dateTime: transportRequests.dateTime,
+        budget: transportRequests.budget,
+        photos: transportRequests.photos,
+        status: transportRequests.status,
+        paymentStatus: transportRequests.paymentStatus,
+        acceptedOfferId: transportRequests.acceptedOfferId,
+        createdAt: transportRequests.createdAt,
+        client: users,
+      })
+      .from(transportRequests)
+      .innerJoin(users, eq(transportRequests.clientId, users.id))
+      .where(
+        and(
+          eq(transportRequests.status, 'accepted'),
+          or(
+            eq(transportRequests.paymentStatus, 'pending'),
+            eq(transportRequests.paymentStatus, 'awaiting_payment'),
+            eq(transportRequests.paymentStatus, 'pending_admin_validation')
+          )
         )
       )
-    )
-    .orderBy(desc(transportRequests.createdAt));
+      .orderBy(desc(transportRequests.createdAt));
 
-    // Enrich with client, transporter, and accepted offer
-    const enrichedRequests = await Promise.all(
-      requests.map(async (request) => {
-        // Get client data
-        const clientResult = await db.select().from(users)
-          .innerJoin(transportRequests, eq(transportRequests.clientId, users.id))
-          .where(eq(transportRequests.id, request.id))
-          .limit(1);
-        const client = clientResult[0]?.users || null;
+    // Get accepted offers in batch
+    const offerIds = requestsWithClients
+      .map(r => r.acceptedOfferId)
+      .filter(id => id !== null) as string[];
+    
+    const acceptedOffers = offerIds.length > 0
+      ? await db.select().from(offers).where(inArray(offers.id, offerIds))
+      : [];
+    
+    // Get transporters in batch
+    const transporterIds = acceptedOffers.map(o => o.transporterId);
+    const transporters = transporterIds.length > 0
+      ? await db.select().from(users).where(inArray(users.id, transporterIds))
+      : [];
 
-        // Get accepted offer and transporter
-        let acceptedOffer = null;
-        let transporter = null;
-        if (request.acceptedOfferId) {
-          const offerResult = await db.select().from(offers)
-            .where(eq(offers.id, request.acceptedOfferId))
-            .limit(1);
-          acceptedOffer = offerResult[0] || null;
+    // Create lookup maps
+    const offersMap = new Map(acceptedOffers.map(o => [o.id, o]));
+    const transportersMap = new Map(transporters.map(t => [t.id, t]));
 
-          if (acceptedOffer) {
-            const transporterResult = await db.select().from(users)
-              .where(eq(users.id, acceptedOffer.transporterId))
-              .limit(1);
-            transporter = transporterResult[0] || null;
-          }
-        }
-
-        return {
-          ...request,
-          client,
-          transporter,
-          acceptedOffer,
-        };
-      })
-    );
-
-    return enrichedRequests;
+    // Combine data
+    return requestsWithClients.map(request => {
+      const acceptedOffer = request.acceptedOfferId ? offersMap.get(request.acceptedOfferId) || null : null;
+      const transporter = acceptedOffer ? transportersMap.get(acceptedOffer.transporterId) || null : null;
+      
+      return {
+        ...request,
+        acceptedOffer,
+        transporter,
+      };
+    });
   }
 
   async updateRequestVisibility(requestId: string, isHidden: boolean): Promise<TransportRequest | undefined> {
