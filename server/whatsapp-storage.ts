@@ -41,14 +41,21 @@ export class WhatsAppStorageService {
     });
 
     // Récupère le bucket name depuis les variables d'environnement
-    const whatsappBucket = process.env.WHATSAPP_SESSION_BUCKET;
+    let whatsappBucket = process.env.WHATSAPP_SESSION_BUCKET;
     if (!whatsappBucket) {
       throw new Error(
         "WHATSAPP_SESSION_BUCKET environment variable not set. " +
         "Create a bucket in Object Storage tool and set this variable."
       );
     }
+    
+    // Retire le "/" au début si présent (format: /whatsapp-sessions → whatsapp-sessions)
+    if (whatsappBucket.startsWith('/')) {
+      whatsappBucket = whatsappBucket.substring(1);
+    }
+    
     this.bucketName = whatsappBucket;
+    console.log(`📦 Bucket WhatsApp configuré: ${this.bucketName}`);
   }
 
   /**
