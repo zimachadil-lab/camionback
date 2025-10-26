@@ -23,6 +23,7 @@ export const users = pgTable("users", {
   deviceToken: text("device_token"), // Push notification subscription token (JSON)
   isActive: boolean("is_active").default(true),
   isVerified: boolean("is_verified").default(false), // Verified by professional reference (transporters only)
+  isWhatsappActive: boolean("is_whatsapp_active").default(false), // WhatsApp notifications enabled (transporters only)
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -217,6 +218,18 @@ export const transporterReferences = pgTable("transporter_references", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// WhatsApp Notifications - Track WhatsApp messages sent to transporters
+export const whatsappNotifications = pgTable("whatsapp_notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  transporterId: varchar("transporter_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  requestId: varchar("request_id").references(() => transportRequests.id, { onDelete: 'cascade' }),
+  phoneNumber: text("phone_number").notNull(), // Transporter's phone number
+  message: text("message").notNull(), // Full message content sent
+  success: boolean("success").notNull(), // Whether the message was sent successfully
+  errorMessage: text("error_message"), // Error details if failed
+  sentAt: timestamp("sent_at").defaultNow().notNull(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertOtpCodeSchema = createInsertSchema(otpCodes).omit({ id: true, createdAt: true, verified: true });
@@ -267,6 +280,7 @@ export const insertStorySchema = createInsertSchema(stories).omit({ id: true, cr
 export const insertTransporterReferenceSchema = createInsertSchema(transporterReferences).omit({ id: true, createdAt: true, status: true, validatedBy: true, validatedAt: true, rejectionReason: true }).extend({
   referenceRelation: z.enum(["Client", "Transporteur", "Autre"]),
 });
+export const insertWhatsappNotificationSchema = createInsertSchema(whatsappNotifications).omit({ id: true, sentAt: true });
 
 // Coordinator Activity Logs
 export const coordinatorLogs = pgTable("coordinator_logs", {
@@ -325,6 +339,8 @@ export type InsertStory = z.infer<typeof insertStorySchema>;
 export type Story = typeof stories.$inferSelect;
 export type InsertTransporterReference = z.infer<typeof insertTransporterReferenceSchema>;
 export type TransporterReference = typeof transporterReferences.$inferSelect;
+export type InsertWhatsappNotification = z.infer<typeof insertWhatsappNotificationSchema>;
+export type WhatsappNotification = typeof whatsappNotifications.$inferSelect;
 export type InsertCoordinatorLog = z.infer<typeof insertCoordinatorLogSchema>;
 export type CoordinatorLog = typeof coordinatorLogs.$inferSelect;
 export type CreateCoordinator = z.infer<typeof createCoordinatorSchema>;

@@ -15,14 +15,15 @@ import {
   type ClientTransporterContact, type InsertClientTransporterContact,
   type Story, type InsertStory,
   type CoordinatorLog, type InsertCoordinatorLog,
-  type TransporterReference, type InsertTransporterReference
+  type TransporterReference, type InsertTransporterReference,
+  type WhatsappNotification, type InsertWhatsappNotification
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from './db.js';
 import { 
   users, otpCodes, transportRequests, offers, chatMessages,
   adminSettings, notifications, ratings, emptyReturns, contracts, reports, cities, smsHistory,
-  clientTransporterContacts, stories, coordinatorLogs, transporterReferences
+  clientTransporterContacts, stories, coordinatorLogs, transporterReferences, whatsappNotifications
 } from '@shared/schema';
 import { eq, and, or, desc, asc, lte, gte, sql, inArray } from 'drizzle-orm';
 
@@ -161,6 +162,14 @@ export interface IStorage {
   validateReference(id: string, adminId: string): Promise<TransporterReference | undefined>;
   rejectReference(id: string, adminId: string, reason: string): Promise<TransporterReference | undefined>;
   updateTransporterReference(id: string, updates: Partial<TransporterReference>): Promise<TransporterReference | undefined>;
+  
+  // WhatsApp operations
+  createWhatsappNotification(notification: InsertWhatsappNotification): Promise<WhatsappNotification>;
+  getAllWhatsappNotifications(): Promise<WhatsappNotification[]>;
+  getWhatsappNotificationsByTransporter(transporterId: string): Promise<WhatsappNotification[]>;
+  getWhatsappNotificationsByRequest(requestId: string): Promise<WhatsappNotification[]>;
+  getWhatsappActiveTransporters(): Promise<User[]>;
+  toggleTransporterWhatsappActive(transporterId: string, isActive: boolean): Promise<User | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -1159,6 +1168,26 @@ export class MemStorage implements IStorage {
     return undefined;
   }
   async updateTransporterReference(id: string, updates: Partial<TransporterReference>): Promise<TransporterReference | undefined> {
+    return undefined;
+  }
+
+  // WhatsApp operations (stubs - MemStorage not used in production)
+  async createWhatsappNotification(notification: InsertWhatsappNotification): Promise<WhatsappNotification> {
+    throw new Error("MemStorage not implemented for WhatsApp notifications");
+  }
+  async getAllWhatsappNotifications(): Promise<WhatsappNotification[]> {
+    return [];
+  }
+  async getWhatsappNotificationsByTransporter(transporterId: string): Promise<WhatsappNotification[]> {
+    return [];
+  }
+  async getWhatsappNotificationsByRequest(requestId: string): Promise<WhatsappNotification[]> {
+    return [];
+  }
+  async getWhatsappActiveTransporters(): Promise<User[]> {
+    return [];
+  }
+  async toggleTransporterWhatsappActive(transporterId: string, isActive: boolean): Promise<User | undefined> {
     return undefined;
   }
 }
@@ -2510,6 +2539,55 @@ export class DbStorage implements IStorage {
     const result = await db.update(transporterReferences)
       .set(updates)
       .where(eq(transporterReferences.id, id))
+      .returning();
+    return result[0];
+  }
+
+  // WhatsApp operations
+  async createWhatsappNotification(notification: InsertWhatsappNotification): Promise<WhatsappNotification> {
+    const result = await db.insert(whatsappNotifications)
+      .values(notification)
+      .returning();
+    return result[0];
+  }
+
+  async getAllWhatsappNotifications(): Promise<WhatsappNotification[]> {
+    return db.select()
+      .from(whatsappNotifications)
+      .orderBy(desc(whatsappNotifications.sentAt));
+  }
+
+  async getWhatsappNotificationsByTransporter(transporterId: string): Promise<WhatsappNotification[]> {
+    return db.select()
+      .from(whatsappNotifications)
+      .where(eq(whatsappNotifications.transporterId, transporterId))
+      .orderBy(desc(whatsappNotifications.sentAt));
+  }
+
+  async getWhatsappNotificationsByRequest(requestId: string): Promise<WhatsappNotification[]> {
+    return db.select()
+      .from(whatsappNotifications)
+      .where(eq(whatsappNotifications.requestId, requestId))
+      .orderBy(desc(whatsappNotifications.sentAt));
+  }
+
+  async getWhatsappActiveTransporters(): Promise<User[]> {
+    return db.select()
+      .from(users)
+      .where(
+        and(
+          eq(users.role, 'transporter'),
+          eq(users.isWhatsappActive, true),
+          eq(users.accountStatus, 'active'),
+          eq(users.status, 'validated')
+        )
+      );
+  }
+
+  async toggleTransporterWhatsappActive(transporterId: string, isActive: boolean): Promise<User | undefined> {
+    const result = await db.update(users)
+      .set({ isWhatsappActive: isActive })
+      .where(eq(users.id, transporterId))
       .returning();
     return result[0];
   }

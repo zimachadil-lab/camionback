@@ -22,6 +22,7 @@ import {
 import { desc } from "drizzle-orm";
 import { sendFirstOfferSMS, sendOfferAcceptedSMS, sendTransporterActivatedSMS, sendBulkSMS } from "./infobip-sms";
 import { emailService } from "./email-service";
+import { whatsappService } from "./whatsapp-service";
 
 const upload = multer({ 
   storage: multer.memoryStorage(),
@@ -787,6 +788,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }).catch(err => {
         console.error("Failed to get client for email:", err);
+      });
+
+      // Send WhatsApp notifications to active transporters (non-blocking)
+      storage.getWhatsappActiveTransporters().then(async (activeTransporters) => {
+        if (activeTransporters.length === 0) {
+          console.log("📱 Aucun transporteur WhatsApp actif trouvé");
+          return;
+        }
+
+        console.log(`📱 Envoi de notifications WhatsApp à ${activeTransporters.length} transporteurs actifs`);
+
+        const transportersData = activeTransporters.map(t => ({
+          id: t.id,
+          phoneNumber: t.phoneNumber,
+          name: t.name
+        }));
+
+        const commandData = {
+          referenceId: request.referenceId,
+          fromCity: request.fromCity,
+          toCity: request.toCity,
+          dateTime: request.dateTime,
+          budget: request.budget,
+          goodsType: request.goodsType,
+          commandId: request.id
+        };
+
+        const results = await whatsappService.sendNewCommandNotifications(transportersData, commandData);
+
+        // Save WhatsApp notification logs to database
+        for (const result of results) {
+          await storage.createWhatsappNotification({
+            transporterId: result.transporterId,
+            requestId: request.id,
+            phoneNumber: result.phoneNumber,
+            message: whatsappService['buildCommandMessage'](commandData),
+            success: result.success,
+            errorMessage: result.errorMessage || null
+          }).catch(err => {
+            console.error("Failed to log WhatsApp notification:", err);
+          });
+        }
+
+        console.log(`✅ Notifications WhatsApp envoyées : ${results.filter(r => r.success).length}/${results.length} réussies`);
+      }).catch(err => {
+        console.error("Failed to send WhatsApp notifications:", err);
       });
       
       console.log("New request created:", request.referenceId);
@@ -3200,6 +3247,125 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Erreur suppression historique SMS:", error);
       res.status(500).json({ error: "Erreur lors de la suppression" });
+    }
+  });
+
+  // ================================
+  // WHATSAPP ROUTES
+  // ================================
+
+  // Toggle WhatsApp notification for a transporter
+  app.post("/api/admin/whatsapp/toggle/:transporterId", async (req, res) => {
+    try {
+      const { transporterId } = req.params;
+      const { isActive, adminId } = req.body;
+
+      if (!adminId) {
+        return res.status(401).json({ error: "Non authentifié" });
+      }
+
+      // Verify admin role
+      const admin = await storage.getUser(adminId);
+      if (!admin || admin.role !== "admin") {
+        return res.status(403).json({ error: "Accès refusé - Admin requis" });
+      }
+
+      if (typeof isActive !== 'boolean') {
+        return res.status(400).json({ error: "isActive doit être un booléen" });
+      }
+
+      // Verify transporter exists
+      const transporter = await storage.getUser(transporterId);
+      if (!transporter || transporter.role !== "transporter") {
+        return res.status(404).json({ error: "Transporteur non trouvé" });
+      }
+
+      // Toggle WhatsApp active status
+      const updatedTransporter = await storage.toggleTransporterWhatsappActive(transporterId, isActive);
+
+      console.log(`✅ WhatsApp ${isActive ? 'activé' : 'désactivé'} pour transporteur ${transporter.name} (${transporter.phoneNumber})`);
+
+      res.json({ 
+        success: true, 
+        transporter: updatedTransporter,
+        message: `WhatsApp ${isActive ? 'activé' : 'désactivé'} avec succès`
+      });
+    } catch (error) {
+      console.error("Erreur toggle WhatsApp:", error);
+      res.status(500).json({ error: "Erreur lors de la modification du statut WhatsApp" });
+    }
+  });
+
+  // Get WhatsApp notification history
+  app.get("/api/admin/whatsapp/history", async (req, res) => {
+    try {
+      const adminId = req.query.adminId as string;
+
+      if (!adminId) {
+        return res.status(401).json({ error: "Non authentifié" });
+      }
+
+      // Verify admin role
+      const admin = await storage.getUser(adminId);
+      if (!admin || admin.role !== "admin") {
+        return res.status(403).json({ error: "Accès refusé - Admin requis" });
+      }
+
+      const notifications = await storage.getAllWhatsappNotifications();
+      
+      // Enrich with transporter and request details
+      const enrichedNotifications = await Promise.all(
+        notifications.map(async (notif) => {
+          const transporter = await storage.getUser(notif.transporterId);
+          const request = notif.requestId ? await storage.getTransportRequest(notif.requestId) : null;
+          
+          return {
+            ...notif,
+            transporterName: transporter?.name || "Inconnu",
+            transporterPhone: transporter?.phoneNumber || "N/A",
+            requestReference: request?.referenceId || "N/A",
+            fromCity: request?.fromCity || "N/A",
+            toCity: request?.toCity || "N/A"
+          };
+        })
+      );
+      
+      res.json(enrichedNotifications);
+    } catch (error) {
+      console.error("Erreur récupération historique WhatsApp:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération de l'historique" });
+    }
+  });
+
+  // Get WhatsApp active transporters (for admin dashboard stats)
+  app.get("/api/admin/whatsapp/active-transporters", async (req, res) => {
+    try {
+      const adminId = req.query.adminId as string;
+
+      if (!adminId) {
+        return res.status(401).json({ error: "Non authentifié" });
+      }
+
+      // Verify admin role
+      const admin = await storage.getUser(adminId);
+      if (!admin || admin.role !== "admin") {
+        return res.status(403).json({ error: "Accès refusé - Admin requis" });
+      }
+
+      const activeTransporters = await storage.getWhatsappActiveTransporters();
+      
+      res.json({
+        count: activeTransporters.length,
+        transporters: activeTransporters.map(t => ({
+          id: t.id,
+          name: t.name,
+          phoneNumber: t.phoneNumber,
+          city: t.city
+        }))
+      });
+    } catch (error) {
+      console.error("Erreur récupération transporteurs WhatsApp actifs:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération" });
     }
   });
 
