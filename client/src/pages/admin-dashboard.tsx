@@ -2117,17 +2117,29 @@ export default function AdminDashboard() {
                                       <TooltipTrigger asChild>
                                         <Button
                                           size="icon"
-                                          variant={transporter.isWhatsappActive ? "default" : "outline"}
+                                          variant="outline"
                                           onClick={() => toggleWhatsappMutation.mutate(transporter.id)}
                                           disabled={toggleWhatsappMutation.isPending}
                                           data-testid={`button-whatsapp-${transporter.id}`}
-                                          className="hover-elevate"
+                                          className={`hover-elevate ${
+                                            transporter.isWhatsappActive 
+                                              ? 'bg-green-500/10 border-green-500 hover:bg-green-500/20' 
+                                              : 'bg-red-500/10 border-red-500 hover:bg-red-500/20'
+                                          }`}
                                         >
-                                          <MessageSquare className={`w-4 h-4 ${transporter.isWhatsappActive ? 'text-background' : 'text-muted-foreground'}`} />
+                                          <MessageSquare className={`w-4 h-4 ${
+                                            transporter.isWhatsappActive 
+                                              ? 'text-green-600 dark:text-green-400' 
+                                              : 'text-red-600 dark:text-red-400'
+                                          }`} />
                                         </Button>
                                       </TooltipTrigger>
                                       <TooltipContent>
-                                        <p>{transporter.isWhatsappActive ? "Désactiver WhatsApp" : "Activer WhatsApp"}</p>
+                                        <p>
+                                          {transporter.isWhatsappActive 
+                                            ? "✅ WhatsApp activé - Cliquer pour désactiver" 
+                                            : "⚠️ WhatsApp désactivé - Cliquer pour activer"}
+                                        </p>
                                       </TooltipContent>
                                     </Tooltip>
                                   </TooltipProvider>
