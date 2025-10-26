@@ -40,15 +40,25 @@ class WhatsAppService {
 
     this.isInitializing = true;
 
-    // Tente de restaurer la session depuis Object Storage
+    // Lance la restauration en arrière-plan puis initialise le client
     if (this.storageService) {
-      try {
-        await this.storageService.restoreSession(AUTH_DIR);
-      } catch (error) {
-        console.error('⚠️ Erreur lors de la restauration de la session:', error);
-      }
+      this.storageService.restoreSession(AUTH_DIR)
+        .then(() => {
+          console.log('✅ Sessions WhatsApp restaurées depuis PostgreSQL');
+          return this.createWhatsAppClient();
+        })
+        .catch(error => {
+          console.error('⚠️ Erreur lors de la restauration de la session:', error);
+          return this.createWhatsAppClient();
+        });
+      return; // Sortie immédiate - pas de blocage
     }
 
+    // Si pas de storage service, crée directement le client
+    await this.createWhatsAppClient();
+  }
+
+  private async createWhatsAppClient() {
     try {
       this.client = new Client({
         authStrategy: new LocalAuth({
