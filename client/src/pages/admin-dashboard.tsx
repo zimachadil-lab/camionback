@@ -147,6 +147,8 @@ export default function AdminDashboard() {
       const response = await fetch("/api/admin/pending-drivers");
       return response.json();
     },
+    refetchOnMount: "always",
+    staleTime: 0,
   });
 
   // Fetch pending references
@@ -162,6 +164,8 @@ export default function AdminDashboard() {
       return response.json();
     },
     enabled: !!user?.id,
+    refetchOnMount: "always",
+    staleTime: 0,
   });
 
   // Fetch all requests for payment validation
