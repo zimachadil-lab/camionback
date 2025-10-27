@@ -327,32 +327,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin routes for driver validation
   app.get("/api/admin/pending-drivers", async (req, res) => {
     try {
-      console.log("🔍 [DIAGNOSTIC] Récupération des transporteurs en attente...");
       const drivers = await storage.getPendingDrivers();
-      console.log(`📊 [DIAGNOSTIC] Nombre de transporteurs en attente trouvés: ${drivers.length}`);
-      
-      if (drivers.length > 0) {
-        console.log(`✅ [DIAGNOSTIC] Premiers transporteurs:`, drivers.slice(0, 3).map(d => ({
-          id: d.id,
-          name: d.name,
-          phone: d.phoneNumber,
-          status: d.status,
-          role: d.role
-        })));
-      } else {
-        // Check if there are any transporters at all
-        const allUsers = await storage.getAllUsers();
-        const allTransporters = allUsers.filter(u => u.role === 'transporter');
-        console.log(`⚠️ [DIAGNOSTIC] Total transporteurs (tous statuts): ${allTransporters.length}`);
-        
-        const byStatus: any = {};
-        allTransporters.forEach(t => {
-          const status = t.status || 'NULL';
-          byStatus[status] = (byStatus[status] || 0) + 1;
-        });
-        console.log(`📋 [DIAGNOSTIC] Répartition par statut:`, byStatus);
-      }
-      
       res.json(drivers);
     } catch (error) {
       console.error("Get pending drivers error:", error);
