@@ -327,36 +327,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin routes for driver validation
   app.get("/api/admin/pending-drivers", async (req, res) => {
     try {
+      console.log('🔍 [PENDING-DRIVERS] Starting fetch...');
+      console.log('🔍 [PENDING-DRIVERS] Storage instance:', typeof storage);
+      console.log('🔍 [PENDING-DRIVERS] getPendingDrivers function:', typeof storage.getPendingDrivers);
+      
       const drivers = await storage.getPendingDrivers();
       
-      // Diagnostic logging for production debugging
-      console.log(`🔍 [VALIDATION] Nombre de transporteurs en attente: ${drivers.length}`);
-      if (drivers.length > 0) {
-        console.log(`📋 [VALIDATION] Premiers 3 transporteurs:`, drivers.slice(0, 3).map(d => ({
-          id: d.id,
-          name: d.name,
-          phone: d.phoneNumber,
-          status: d.status,
-          role: d.role
-        })));
-      } else {
-        // If no pending drivers, check what statuses exist
-        const allUsers = await storage.getAllUsers();
-        const transporters = allUsers.filter(u => u.role === 'transporter');
-        console.log(`⚠️ [VALIDATION] Total transporteurs: ${transporters.length}`);
-        
-        const statusCounts: Record<string, number> = {};
-        transporters.forEach(t => {
-          const status = t.status || 'NULL';
-          statusCounts[status] = (statusCounts[status] || 0) + 1;
-        });
-        console.log(`📊 [VALIDATION] Répartition par statut:`, statusCounts);
-      }
+      console.log(`✅ [PENDING-DRIVERS] Successfully fetched ${drivers.length} drivers`);
+      console.log(`📊 [PENDING-DRIVERS] Sample:`, drivers.slice(0, 2).map(d => ({
+        id: d.id,
+        name: d.name,
+        phone: d.phoneNumber,
+        status: d.status
+      })));
       
       res.json(drivers);
-    } catch (error) {
-      console.error("❌ [VALIDATION] Get pending drivers error:", error);
-      res.status(500).json({ error: "Échec de récupération des transporteurs" });
+    } catch (error: any) {
+      console.error("❌ [PENDING-DRIVERS] CRITICAL ERROR:");
+      console.error("  - Message:", error?.message);
+      console.error("  - Stack:", error?.stack);
+      console.error("  - Full error:", error);
+      res.status(500).json({ 
+        error: "Échec de récupération des transporteurs",
+        details: error?.message || 'Unknown error'
+      });
     }
   });
 
