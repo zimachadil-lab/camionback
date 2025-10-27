@@ -177,18 +177,6 @@ export default function AdminDashboard() {
     },
   });
 
-  // Fetch all users for client/transporter details
-  const { data: users = [], isLoading: usersLoading } = useQuery({
-    queryKey: ["/api/users"],
-    queryFn: async () => {
-      const response = await fetch("/api/users");
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return response.json();
-    },
-  });
-
   // Fetch admin settings for commission calculation
   const { data: adminSettings } = useQuery({
     queryKey: ["/api/admin/settings"],
@@ -297,10 +285,10 @@ export default function AdminDashboard() {
     },
   });
 
-  // Combine clients, transporters and other users for unified lookup
+  // Combine clients and transporters for unified lookup
   const allUsers = useMemo(() => {
-    return [...clientsWithStats, ...transportersWithStats, ...users];
-  }, [clientsWithStats, transportersWithStats, users]);
+    return [...clientsWithStats, ...transportersWithStats];
+  }, [clientsWithStats, transportersWithStats]);
 
   // Fetch all reports
   const { data: allReports = [], isLoading: reportsLoading } = useQuery({
@@ -748,8 +736,8 @@ export default function AdminDashboard() {
       });
       // Invalidate all user-related queries
       queryClient.invalidateQueries({ queryKey: ["/api/admin/pending-drivers"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/client-statistics"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/clients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/transporters"] });
     },
     onError: () => {
       toast({
@@ -784,7 +772,7 @@ export default function AdminDashboard() {
       setEditTransporterPhone("");
       setEditTransporterNewPassword("");
       setEditTransporterPhoto(null);
-      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/transporters"] });
     },
     onError: () => {
       toast({
@@ -1153,10 +1141,10 @@ export default function AdminDashboard() {
                               <TableCell>
                                 <div className="flex flex-col">
                                   <span className="font-medium">
-                                    {usersLoading ? "Chargement..." : (client?.phoneNumber || "Non défini")}
+                                    {client?.phoneNumber || "Non défini"}
                                   </span>
                                   <span className="text-xs text-muted-foreground">
-                                    {usersLoading ? "..." : (client?.clientId || "N/A")}
+                                    {client?.clientId || "N/A"}
                                   </span>
                                 </div>
                               </TableCell>
@@ -1300,20 +1288,20 @@ export default function AdminDashboard() {
                               <TableCell data-testid={`text-client-${offer.id}`}>
                                 <div className="flex flex-col">
                                   <span className="font-medium">
-                                    {usersLoading ? "Chargement..." : (client?.clientId || "Non défini")}
+                                    {client?.clientId || "Non défini"}
                                   </span>
                                   <span className="text-xs text-muted-foreground">
-                                    {usersLoading ? "..." : (client?.phoneNumber || "")}
+                                    {client?.phoneNumber || ""}
                                   </span>
                                 </div>
                               </TableCell>
                               <TableCell data-testid={`text-transporter-${offer.id}`}>
                                 <div className="flex flex-col">
                                   <span className="font-medium">
-                                    {usersLoading ? "Chargement..." : (transporter?.name || "N/A")}
+                                    {transporter?.name || "N/A"}
                                   </span>
                                   <span className="text-xs text-muted-foreground">
-                                    {usersLoading ? "..." : (transporter?.phoneNumber || "")}
+                                    {transporter?.phoneNumber || ""}
                                   </span>
                                 </div>
                               </TableCell>
@@ -1445,13 +1433,13 @@ export default function AdminDashboard() {
                                 {contract.referenceId || "N/A"}
                               </TableCell>
                               <TableCell data-testid={`text-contract-client-${contract.id}`}>
-                                Client {usersLoading ? "Chargement..." : (client?.clientId || "Non défini")}
+                                Client {client?.clientId || "Non défini"}
                               </TableCell>
                               <TableCell data-testid={`text-contract-transporter-${contract.id}`}>
                                 <div className="flex flex-col">
-                                  <span>{usersLoading ? "Chargement..." : (transporter?.name || "N/A")}</span>
+                                  <span>{transporter?.name || "N/A"}</span>
                                   <span className="text-xs text-muted-foreground">
-                                    {usersLoading ? "..." : (transporter?.phoneNumber || "")}
+                                    {transporter?.phoneNumber || ""}
                                   </span>
                                 </div>
                               </TableCell>
@@ -1840,17 +1828,17 @@ export default function AdminDashboard() {
                           <TableRow key={request.id}>
                             <TableCell className="font-medium">{request.referenceId}</TableCell>
                             <TableCell>
-                              Client {usersLoading ? "Chargement..." : (client?.clientId || "Non défini")}
+                              Client {client?.clientId || "Non défini"}
                             </TableCell>
                             <TableCell>
                               <div>
                                 <p className="font-medium">
-                                  {usersLoading ? "Chargement..." : (transporter?.name || "Transporteur")}
+                                  {transporter?.name || "Transporteur"}
                                 </p>
                                 <div className="flex items-center gap-1 text-sm text-muted-foreground">
                                   <Phone className="w-3 h-3" />
                                   <a href={`tel:${transporter?.phoneNumber}`} className="hover:underline">
-                                    {usersLoading ? "..." : (transporter?.phoneNumber || "N/A")}
+                                    {transporter?.phoneNumber || "N/A"}
                                   </a>
                                 </div>
                               </div>
