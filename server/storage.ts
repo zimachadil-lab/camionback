@@ -1209,7 +1209,15 @@ export class DbStorage implements IStorage {
 
   async getPendingDrivers(): Promise<User[]> {
     return await db.select().from(users)
-      .where(and(eq(users.role, 'transporter'), eq(users.status, 'pending')));
+      .where(
+        and(
+          eq(users.role, 'transporter'),
+          or(
+            eq(users.status, 'pending'),
+            sql`${users.status} IS NULL`
+          )
+        )
+      );
   }
 
   async getNextClientId(): Promise<string> {
