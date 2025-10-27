@@ -24,7 +24,7 @@ import {
   adminSettings, notifications, ratings, emptyReturns, contracts, reports, cities, smsHistory,
   clientTransporterContacts, stories, coordinatorLogs, transporterReferences
 } from '@shared/schema';
-import { eq, and, or, desc, asc, lte, gte, sql, inArray } from 'drizzle-orm';
+import { eq, and, or, desc, asc, lte, gte, sql, inArray, isNull } from 'drizzle-orm';
 
 export interface IStorage {
   // User operations
@@ -1213,8 +1213,8 @@ export class DbStorage implements IStorage {
         and(
           eq(users.role, 'transporter'),
           or(
-            eq(users.status, 'pending'),
-            sql`${users.status} IS NULL`
+            isNull(users.status),
+            eq(users.status, 'pending')
           )
         )
       );
