@@ -24,7 +24,7 @@ import {
   adminSettings, notifications, ratings, emptyReturns, contracts, reports, cities, smsHistory,
   clientTransporterContacts, stories, coordinatorLogs, transporterReferences
 } from '@shared/schema';
-import { eq, and, or, desc, asc, lte, gte, sql, inArray, isNull } from 'drizzle-orm';
+import { eq, and, or, desc, asc, lte, gte, sql, inArray, isNull, isNotNull } from 'drizzle-orm';
 
 export interface IStorage {
   // User operations
@@ -1223,7 +1223,7 @@ export class DbStorage implements IStorage {
   async getNextClientId(): Promise<string> {
     const clients = await db.select({ clientId: users.clientId })
       .from(users)
-      .where(and(eq(users.role, 'client'), sql`${users.clientId} IS NOT NULL`));
+      .where(and(eq(users.role, 'client'), isNotNull(users.clientId)));
     
     if (clients.length === 0) {
       return "C-0001";
