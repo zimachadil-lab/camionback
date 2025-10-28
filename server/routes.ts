@@ -364,29 +364,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin routes for driver validation
   app.get("/api/admin/pending-drivers", async (req, res) => {
     try {
-      console.log('🔍 [PENDING-DRIVERS] Starting fetch...');
-      console.log('🔍 [PENDING-DRIVERS] Storage instance:', typeof storage);
-      console.log('🔍 [PENDING-DRIVERS] getPendingDrivers function:', typeof storage.getPendingDrivers);
-      
       const drivers = await storage.getPendingDrivers();
-      
-      console.log(`✅ [PENDING-DRIVERS] Successfully fetched ${drivers.length} drivers`);
-      console.log(`📊 [PENDING-DRIVERS] Sample:`, drivers.slice(0, 2).map(d => ({
-        id: d.id,
-        name: d.name,
-        phone: d.phoneNumber,
-        status: d.status
-      })));
-      
       res.json(drivers);
     } catch (error: any) {
-      console.error("❌ [PENDING-DRIVERS] CRITICAL ERROR:");
-      console.error("  - Message:", error?.message);
-      console.error("  - Stack:", error?.stack);
-      console.error("  - Full error:", error);
+      console.error("Error fetching pending drivers:", error?.message);
       res.status(500).json({ 
-        error: "Échec de récupération des transporteurs",
-        details: error?.message || 'Unknown error'
+        error: "Échec de récupération des transporteurs"
       });
     }
   });

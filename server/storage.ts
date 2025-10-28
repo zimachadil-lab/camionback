@@ -1208,31 +1208,16 @@ export class DbStorage implements IStorage {
   }
 
   async getPendingDrivers(): Promise<User[]> {
-    try {
-      console.log('🔍 [STORAGE] getPendingDrivers called');
-      console.log('🔍 [STORAGE] db instance:', typeof db);
-      console.log('🔍 [STORAGE] users table:', typeof users);
-      
-      const result = await db.select().from(users)
-        .where(
-          and(
-            eq(users.role, 'transporter'),
-            or(
-              isNull(users.status),
-              eq(users.status, 'pending')
-            )
+    return await db.select().from(users)
+      .where(
+        and(
+          eq(users.role, 'transporter'),
+          or(
+            isNull(users.status),
+            eq(users.status, 'pending')
           )
-        );
-      
-      console.log(`✅ [STORAGE] getPendingDrivers returned ${result.length} drivers`);
-      return result;
-    } catch (error: any) {
-      console.error('❌ [STORAGE] getPendingDrivers ERROR:');
-      console.error('  - Message:', error?.message);
-      console.error('  - Code:', error?.code);
-      console.error('  - Stack:', error?.stack);
-      throw error; // Re-throw to be caught by route handler
-    }
+        )
+      );
   }
 
   async getNextClientId(): Promise<string> {
