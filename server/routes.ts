@@ -324,6 +324,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Diagnostic endpoint - publicly accessible
+  app.get("/api/diagnostic/database-stats", async (req, res) => {
+    try {
+      const allUsers = await storage.getAllUsers();
+      const transporters = allUsers.filter(u => u.role === 'transporter');
+      
+      const stats = {
+        environment: process.env.NODE_ENV || 'unknown',
+        totalUsers: allUsers.length,
+        totalTransporters: transporters.length,
+        transportersByStatus: {
+          pending: transporters.filter(t => t.status === 'pending' || t.status === null).length,
+          validated: transporters.filter(t => t.status === 'validated').length,
+          rejected: transporters.filter(t => t.status === 'rejected').length,
+          other: transporters.filter(t => t.status && !['pending', 'validated', 'rejected'].includes(t.status)).length
+        },
+        samplePendingTransporters: transporters
+          .filter(t => t.status === 'pending' || t.status === null)
+          .slice(0, 3)
+          .map(t => ({
+            id: t.id,
+            phone: t.phoneNumber,
+            name: t.name,
+            city: t.city,
+            status: t.status,
+            createdAt: t.createdAt
+          }))
+      };
+      
+      console.log('📊 [DIAGNOSTIC] Database stats:', stats);
+      res.json(stats);
+    } catch (error: any) {
+      console.error('❌ [DIAGNOSTIC] Error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Admin routes for driver validation
   app.get("/api/admin/pending-drivers", async (req, res) => {
     try {
