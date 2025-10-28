@@ -17,6 +17,7 @@ import {
   insertReportSchema,
   insertCitySchema,
   type Offer,
+  type TransportRequest,
   clientTransporterContacts
 } from "@shared/schema";
 import { desc } from "drizzle-orm";
@@ -3674,6 +3675,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Erreur modification statut paiement:", error);
       res.status(500).json({ error: "Erreur lors de la modification du statut" });
+    }
+  });
+
+  // Update request details (coordinator complete edit)
+  app.patch("/api/coordinator/requests/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { coordinatorId, fromCity, toCity, description, dateTime, photos } = req.body;
+
+      // Get current request to compare changes
+      const currentRequest = await storage.getTransportRequest(id);
+      if (!currentRequest) {
+        return res.status(404).json({ error: "Commande non trouvée" });
+      }
+
+      // Prepare updates object
+      const updates: Partial<TransportRequest> = {};
+      const changes: any = {};
+
+      if (fromCity !== undefined && fromCity !== currentRequest.fromCity) {
+        updates.fromCity = fromCity;
+        changes.fromCity = { before: currentRequest.fromCity, after: fromCity };
+      }
+      if (toCity !== undefined && toCity !== currentRequest.toCity) {
+        updates.toCity = toCity;
+        changes.toCity = { before: currentRequest.toCity, after: toCity };
+      }
+      if (description !== undefined && description !== currentRequest.description) {
+        updates.description = description;
+        changes.description = { before: currentRequest.description, after: description };
+      }
+      if (dateTime !== undefined) {
+        const newDate = new Date(dateTime);
+        if (newDate.getTime() !== new Date(currentRequest.dateTime).getTime()) {
+          updates.dateTime = newDate;
+          changes.dateTime = { before: currentRequest.dateTime, after: newDate };
+        }
+      }
+      if (photos !== undefined) {
+        updates.photos = photos;
+        changes.photos = { before: currentRequest.photos?.length || 0, after: photos.length };
+      }
+
+      // Update the request if there are changes
+      let updated = currentRequest;
+      if (Object.keys(updates).length > 0) {
+        const result = await storage.updateTransportRequest(id, updates);
+        if (!result) {
+          return res.status(500).json({ error: "Échec de la mise à jour de la commande" });
+        }
+        updated = result;
+      }
+
+      // Log the coordination edit
+      if (coordinatorId && Object.keys(changes).length > 0) {
+        await storage.createCoordinatorLog({
+          coordinatorId,
+          action: "coordination_edit",
+          targetType: "request",
+          targetId: id,
+          details: JSON.stringify({
+            changes,
+            referenceId: currentRequest.referenceId,
+            timestamp: new Date().toISOString(),
+          }),
+        });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Erreur modification commande:", error);
+      res.status(500).json({ error: "Erreur lors de la modification de la commande" });
     }
   });
 

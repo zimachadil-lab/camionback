@@ -229,6 +229,12 @@ export default function CoordinatorDashboard() {
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [offersDialogOpen, setOffersDialogOpen] = useState(false);
   const [selectedRequestForOffers, setSelectedRequestForOffers] = useState<any>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState<any>(null);
+  const [loadedTruckPhotos, setLoadedTruckPhotos] = useState<Record<string, string[] | null>>({});
+  const [loadingTruckPhotos, setLoadingTruckPhotos] = useState<Record<string, boolean>>({});
+  const [truckPhotoDialogOpen, setTruckPhotoDialogOpen] = useState(false);
+  const [selectedTruckPhoto, setSelectedTruckPhoto] = useState<string | null>(null);
   const { toast} = useToast();
 
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
@@ -293,6 +299,15 @@ export default function CoordinatorDashboard() {
     queryKey: ["/api/cities"],
     queryFn: async () => {
       const response = await fetch("/api/cities");
+      return response.json();
+    },
+  });
+
+  // Fetch empty returns for coordinator
+  const { data: emptyReturns = [], isLoading: emptyReturnsLoading } = useQuery({
+    queryKey: ["/api/empty-returns"],
+    queryFn: async () => {
+      const response = await fetch("/api/empty-returns");
       return response.json();
     },
   });
@@ -363,9 +378,137 @@ export default function CoordinatorDashboard() {
     },
   });
 
+  // Update request details mutation (coordinator complete edit)
+  const updateRequestMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const { requestId, ...updates } = data;
+      return apiRequest("PATCH", `/api/coordinator/requests/${requestId}`, {
+        ...updates,
+        coordinatorId: user.id,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/available-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/active-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/payment-requests"] });
+      toast({
+        title: "Commande modifiée",
+        description: "La commande a été mise à jour avec succès",
+      });
+      setEditDialogOpen(false);
+      setDetailsDialogOpen(false);
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Échec de la modification de la commande",
+      });
+    },
+  });
+
   const handleViewDetails = (request: any) => {
     setSelectedRequest(request);
     setDetailsDialogOpen(true);
+  };
+
+  const handleOpenEdit = (request: any) => {
+    setEditFormData({
+      requestId: request.id,
+      fromCity: request.fromCity,
+      toCity: request.toCity,
+      description: request.description,
+      dateTime: request.dateTime,
+      photos: request.photos || [],
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleEditSubmit = () => {
+    if (!editFormData) return;
+    updateRequestMutation.mutate(editFormData);
+  };
+
+  const handleAddPhoto = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.multiple = true;
+    input.onchange = (e: any) => {
+      const files = Array.from(e.target.files);
+      files.forEach((file: any) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          if (event.target && event.target.result) {
+            setEditFormData((prev: any) => ({
+              ...prev,
+              photos: [...(prev.photos || []), event.target!.result as string],
+            }));
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    };
+    input.click();
+  };
+
+  const handleRemovePhoto = (index: number) => {
+    setEditFormData((prev: any) => ({
+      ...prev,
+      photos: prev.photos.filter((_: any, i: number) => i !== index),
+    }));
+  };
+
+  const handleLoadTruckPhotos = async (transporterId: string) => {
+    // Check if photos are already cached
+    if (loadedTruckPhotos[transporterId] !== undefined) {
+      // Photos already loaded, just show them
+      if (loadedTruckPhotos[transporterId] && loadedTruckPhotos[transporterId]!.length > 0) {
+        setSelectedTruckPhoto(loadedTruckPhotos[transporterId]![0]);
+        setTruckPhotoDialogOpen(true);
+      } else {
+        toast({
+          title: "Aucune photo",
+          description: "Ce transporteur n'a pas encore ajouté de photo de camion",
+        });
+      }
+      return;
+    }
+
+    // Start loading
+    setLoadingTruckPhotos(prev => ({ ...prev, [transporterId]: true }));
+
+    try {
+      const response = await fetch(`/api/admin/transporter-photos/${transporterId}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const photos = data.truckPhotos || [];
+      
+      // Cache the photos (even if empty array)
+      setLoadedTruckPhotos(prev => ({ ...prev, [transporterId]: photos }));
+      setLoadingTruckPhotos(prev => ({ ...prev, [transporterId]: false }));
+
+      if (photos.length > 0) {
+        setSelectedTruckPhoto(photos[0]);
+        setTruckPhotoDialogOpen(true);
+      } else {
+        toast({
+          title: "Aucune photo",
+          description: "Ce transporteur n'a pas encore ajouté de photo de camion",
+        });
+      }
+    } catch (error: any) {
+      setLoadingTruckPhotos(prev => ({ ...prev, [transporterId]: false }));
+      toast({
+        variant: "destructive",
+        title: "Erreur de chargement",
+        description: error.message || "Impossible de charger les photos. Réessayez.",
+      });
+    }
   };
 
   const handleOpenChat = (client: any, transporter: any, requestId: string) => {
@@ -667,7 +810,7 @@ export default function CoordinatorDashboard() {
         </div>
 
         <Tabs defaultValue="available" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
             <TabsTrigger value="available" data-testid="tab-available" className="gap-1 px-2">
               <span className="text-xs sm:text-sm">Dispo</span>
               <Badge className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-1.5 py-0">
@@ -684,6 +827,12 @@ export default function CoordinatorDashboard() {
               <span className="text-xs sm:text-sm">À payer</span>
               <Badge className="bg-green-500 hover:bg-green-600 text-white text-xs px-1.5 py-0">
                 {filterRequests(paymentRequests, false).length}
+              </Badge>
+            </TabsTrigger>
+            <TabsTrigger value="returns" data-testid="tab-returns" className="gap-1 px-2">
+              <span className="text-xs sm:text-sm">Retours</span>
+              <Badge className="bg-teal-500 hover:bg-teal-600 text-white text-xs px-1.5 py-0">
+                {emptyReturns.length}
               </Badge>
             </TabsTrigger>
           </TabsList>
@@ -826,6 +975,85 @@ export default function CoordinatorDashboard() {
                   </CardContent>
                 </Card>
               ))
+            )}
+          </TabsContent>
+
+          <TabsContent value="returns" className="space-y-4">
+            {emptyReturnsLoading ? (
+              <div className="flex justify-center py-12">
+                <LoadingTruck />
+              </div>
+            ) : emptyReturns.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  <Truck className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>Aucun retour à vide annoncé</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4">
+                {emptyReturns.map((emptyReturn: any) => (
+                  <Card key={emptyReturn.id} className="hover-elevate" data-testid={`card-return-${emptyReturn.id}`}>
+                    <CardContent className="p-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {/* Itineraire */}
+                        <div className="space-y-2">
+                          <p className="text-sm text-muted-foreground">Itinéraire</p>
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-[#5BC0EB]" />
+                            <span className="font-medium">{emptyReturn.fromCity}</span>
+                            <span className="text-muted-foreground">→</span>
+                            <span className="font-medium">{emptyReturn.toCity}</span>
+                          </div>
+                        </div>
+
+                        {/* Date */}
+                        <div className="space-y-2">
+                          <p className="text-sm text-muted-foreground">Date de retour</p>
+                          <p className="font-medium">
+                            {format(new Date(emptyReturn.returnDate), "dd MMMM yyyy", { locale: fr })}
+                          </p>
+                        </div>
+
+                        {/* Transporteur */}
+                        <div className="space-y-2">
+                          <p className="text-sm text-muted-foreground">Transporteur</p>
+                          <div className="space-y-1">
+                            <p className="font-medium">{emptyReturn.transporter?.name || "Non défini"}</p>
+                            {emptyReturn.transporter?.phoneNumber && (
+                              <a 
+                                href={`tel:${emptyReturn.transporter.phoneNumber}`}
+                                className="text-[#5BC0EB] hover:underline text-sm flex items-center gap-1"
+                                data-testid={`link-call-transporter-${emptyReturn.id}`}
+                              >
+                                <Phone className="h-3 w-3" />
+                                {emptyReturn.transporter.phoneNumber}
+                              </a>
+                            )}
+                            {emptyReturn.transporter && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="mt-2 gap-2 w-full"
+                                onClick={() => handleLoadTruckPhotos(emptyReturn.transporterId)}
+                                disabled={loadingTruckPhotos[emptyReturn.transporterId]}
+                                data-testid={`button-view-truck-photo-${emptyReturn.id}`}
+                              >
+                                {loadingTruckPhotos[emptyReturn.transporterId] ? (
+                                  <span className="animate-spin">⏳</span>
+                                ) : (
+                                  <Truck className="h-4 w-4" />
+                                )}
+                                Photo du camion
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             )}
           </TabsContent>
         </Tabs>
@@ -972,6 +1200,17 @@ export default function CoordinatorDashboard() {
             </div>
 
             <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  handleOpenEdit(selectedRequest);
+                  setDetailsDialogOpen(false);
+                }}
+                data-testid="button-edit-request"
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                Modifier
+              </Button>
               <Button variant="outline" onClick={() => setDetailsDialogOpen(false)}>
                 Fermer
               </Button>
@@ -979,6 +1218,167 @@ export default function CoordinatorDashboard() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Edit Request Dialog */}
+      {editFormData && (
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Modifier la commande</DialogTitle>
+              <DialogDescription>
+                Modification complète des informations de la commande
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              {/* Villes */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Ville de départ</label>
+                  <Select
+                    value={editFormData.fromCity}
+                    onValueChange={(value) => setEditFormData({ ...editFormData, fromCity: value })}
+                  >
+                    <SelectTrigger data-testid="select-edit-from-city">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cities.map((city: any) => (
+                        <SelectItem key={city.id} value={city.name}>
+                          {city.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Ville d'arrivée</label>
+                  <Select
+                    value={editFormData.toCity}
+                    onValueChange={(value) => setEditFormData({ ...editFormData, toCity: value })}
+                  >
+                    <SelectTrigger data-testid="select-edit-to-city">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cities.map((city: any) => (
+                        <SelectItem key={city.id} value={city.name}>
+                          {city.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="text-sm font-medium mb-1 block">Description détaillée</label>
+                <Input
+                  value={editFormData.description}
+                  onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                  placeholder="Description de la marchandise"
+                  data-testid="input-edit-description"
+                />
+              </div>
+
+              {/* Date */}
+              <div>
+                <label className="text-sm font-medium mb-1 block">Date souhaitée</label>
+                <Input
+                  type="datetime-local"
+                  value={new Date(editFormData.dateTime).toISOString().slice(0, 16)}
+                  onChange={(e) => setEditFormData({ ...editFormData, dateTime: new Date(e.target.value).toISOString() })}
+                  data-testid="input-edit-datetime"
+                />
+              </div>
+
+              {/* Photos */}
+              <div>
+                <label className="text-sm font-medium mb-1 block">Photos ({editFormData.photos.length})</label>
+                <div className="flex gap-2 mb-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddPhoto}
+                    data-testid="button-add-photo"
+                  >
+                    Ajouter des photos
+                  </Button>
+                </div>
+
+                {/* Photo Grid */}
+                {editFormData.photos.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    {editFormData.photos.map((photo: string, index: number) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={photo}
+                          alt={`Photo ${index + 1}`}
+                          className="w-full h-24 object-cover rounded"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => handleRemovePhoto(index)}
+                          data-testid={`button-remove-photo-${index}`}
+                        >
+                          ✕
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => setEditDialogOpen(false)}
+                disabled={updateRequestMutation.isPending}
+              >
+                Annuler
+              </Button>
+              <Button 
+                onClick={handleEditSubmit}
+                disabled={updateRequestMutation.isPending}
+                data-testid="button-save-edit"
+              >
+                {updateRequestMutation.isPending ? "Enregistrement..." : "Enregistrer"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Truck Photo Dialog */}
+      <Dialog open={truckPhotoDialogOpen} onOpenChange={setTruckPhotoDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Photo du camion</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedTruckPhoto ? (
+              <img
+                src={selectedTruckPhoto}
+                alt="Photo du camion"
+                className="w-full h-auto rounded-lg"
+                data-testid="img-truck-photo"
+              />
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">
+                <Truck className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p>Aucune photo disponible pour ce camion</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
