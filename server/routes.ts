@@ -374,6 +374,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get truck photos for a specific transporter (lazy loading)
+  app.get("/api/admin/transporter-photos/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const photos = await storage.getTransporterPhotos(id);
+      
+      if (!photos) {
+        return res.status(404).json({ error: "Transporteur non trouvé" });
+      }
+      
+      res.json(photos);
+    } catch (error: any) {
+      console.error("Error fetching transporter photos:", error?.message);
+      res.status(500).json({ 
+        error: "Échec de récupération des photos"
+      });
+    }
+  });
+
   app.post("/api/admin/validate-driver/:id", async (req, res) => {
     try {
       const { id } = req.params;

@@ -1235,6 +1235,17 @@ export class DbStorage implements IStorage {
     return result as any as User[];
   }
 
+  async getTransporterPhotos(id: string): Promise<{ truckPhotos: string[] | null } | null> {
+    // Load ONLY the truck photos for a specific transporter (lazy loading)
+    const result = await db.select({
+      truckPhotos: users.truckPhotos,
+    }).from(users)
+      .where(eq(users.id, id))
+      .limit(1);
+    
+    return result.length > 0 ? result[0] : null;
+  }
+
   async getNextClientId(): Promise<string> {
     const clients = await db.select({ clientId: users.clientId })
       .from(users)
