@@ -95,6 +95,8 @@ export default function AdminDashboard() {
   const [rejectReferenceDialogOpen, setRejectReferenceDialogOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [selectedReference, setSelectedReference] = useState<any>(null);
+  const [loadingPhotos, setLoadingPhotos] = useState<Record<string, boolean>>({});
+  const [loadedPhotos, setLoadedPhotos] = useState<Record<string, string[]>>({});
   const { toast} = useToast();
 
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
@@ -390,6 +392,54 @@ export default function AdminDashboard() {
         variant: "destructive",
         title: "Erreur",
         description: "Échec de la validation",
+      });
+    }
+  };
+
+  const handleLoadTruckPhotos = async (transporterId: string) => {
+    if (loadedPhotos[transporterId]) {
+      // Photos already loaded, just show them
+      if (loadedPhotos[transporterId].length > 0) {
+        setEnlargedTruckPhoto(loadedPhotos[transporterId][0]);
+        setShowTruckPhotoDialog(true);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Aucune photo",
+          description: "Ce transporteur n'a pas encore ajouté de photo de camion",
+        });
+      }
+      return;
+    }
+
+    setLoadingPhotos({ ...loadingPhotos, [transporterId]: true });
+
+    try {
+      const response = await fetch(`/api/admin/transporter-photos/${transporterId}`);
+      if (!response.ok) throw new Error();
+
+      const data = await response.json();
+      const photos = data.truckPhotos || [];
+      
+      setLoadedPhotos({ ...loadedPhotos, [transporterId]: photos });
+      setLoadingPhotos({ ...loadingPhotos, [transporterId]: false });
+
+      if (photos.length > 0) {
+        setEnlargedTruckPhoto(photos[0]);
+        setShowTruckPhotoDialog(true);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Aucune photo",
+          description: "Ce transporteur n'a pas encore ajouté de photo de camion",
+        });
+      }
+    } catch (error) {
+      setLoadingPhotos({ ...loadingPhotos, [transporterId]: false });
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de charger les photos",
       });
     }
   };
@@ -1627,20 +1677,20 @@ export default function AdminDashboard() {
                           <TableCell>{driver.phoneNumber}</TableCell>
                           <TableCell>{driver.city}</TableCell>
                           <TableCell>
-                            {driver.truckPhotos && driver.truckPhotos.length > 0 ? (
-                              <img 
-                                src={driver.truckPhotos[0]} 
-                                alt="Camion" 
-                                className="w-16 h-16 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
-                                onClick={() => {
-                                  setEnlargedTruckPhoto(driver.truckPhotos[0]);
-                                  setShowTruckPhotoDialog(true);
-                                }}
-                                data-testid={`img-truck-${driver.id}`}
-                              />
-                            ) : (
-                              <span className="text-muted-foreground text-sm">Aucune photo</span>
-                            )}
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleLoadTruckPhotos(driver.id)}
+                              disabled={loadingPhotos[driver.id]}
+                              data-testid={`button-view-photo-${driver.id}`}
+                              className="hover-elevate"
+                            >
+                              {loadingPhotos[driver.id] ? (
+                                <RefreshCw className="w-5 h-5 animate-spin text-[#3498db]" />
+                              ) : (
+                                <Camera className="w-5 h-5 text-[#3498db]" />
+                              )}
+                            </Button>
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex gap-2 justify-end">
