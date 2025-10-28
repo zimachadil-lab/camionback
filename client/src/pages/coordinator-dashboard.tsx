@@ -679,6 +679,16 @@ export default function CoordinatorDashboard() {
             👁️ Détails
           </Button>
 
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleOpenEdit(request)}
+            data-testid={`button-edit-request-${request.id}`}
+          >
+            <Edit className="h-4 w-4 mr-1" />
+            Modifier
+          </Button>
+
           {request.photos && request.photos.length > 0 && (
             <Button
               size="sm"
