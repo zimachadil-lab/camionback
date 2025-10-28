@@ -235,6 +235,8 @@ export default function CoordinatorDashboard() {
   const [loadingTruckPhotos, setLoadingTruckPhotos] = useState<Record<string, boolean>>({});
   const [truckPhotoDialogOpen, setTruckPhotoDialogOpen] = useState(false);
   const [selectedTruckPhoto, setSelectedTruckPhoto] = useState<string | null>(null);
+  const [assignOrderDialogOpen, setAssignOrderDialogOpen] = useState(false);
+  const [selectedEmptyReturn, setSelectedEmptyReturn] = useState<any>(null);
   const { toast} = useToast();
 
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
@@ -403,6 +405,33 @@ export default function CoordinatorDashboard() {
         variant: "destructive",
         title: "Erreur",
         description: "Échec de la modification de la commande",
+      });
+    },
+  });
+
+  // Assign order to empty return mutation
+  const assignOrderMutation = useMutation({
+    mutationFn: async ({ emptyReturnId, requestId }: { emptyReturnId: string; requestId: string }) => {
+      return await apiRequest("POST", `/api/empty-returns/${emptyReturnId}/assign`, {
+        requestId,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Commande affectée",
+        description: "La commande a été affectée au transporteur avec succès",
+      });
+      setAssignOrderDialogOpen(false);
+      setSelectedEmptyReturn(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/empty-returns"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/available-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/active-requests"] });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Échec de l'affectation de la commande",
       });
     },
   });
@@ -1040,25 +1069,43 @@ export default function CoordinatorDashboard() {
                                 {emptyReturn.transporter.phoneNumber}
                               </a>
                             )}
-                            {emptyReturn.transporter && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="mt-2 gap-2 w-full"
-                                onClick={() => handleLoadTruckPhotos(emptyReturn.transporterId)}
-                                disabled={loadingTruckPhotos[emptyReturn.transporterId]}
-                                data-testid={`button-view-truck-photo-${emptyReturn.id}`}
-                              >
-                                {loadingTruckPhotos[emptyReturn.transporterId] ? (
-                                  <span className="animate-spin">⏳</span>
-                                ) : (
-                                  <Truck className="h-4 w-4" />
-                                )}
-                                Photo du camion
-                              </Button>
-                            )}
                           </div>
                         </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t">
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="bg-[#5BC0EB] hover:bg-[#4AA8D8] gap-2"
+                          onClick={() => {
+                            setSelectedEmptyReturn(emptyReturn);
+                            setAssignOrderDialogOpen(true);
+                          }}
+                          data-testid={`button-assign-order-${emptyReturn.id}`}
+                        >
+                          <CheckCircle className="h-4 w-4" />
+                          Affecter une commande
+                        </Button>
+
+                        {emptyReturn.transporter && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-2"
+                            onClick={() => handleLoadTruckPhotos(emptyReturn.transporterId)}
+                            disabled={loadingTruckPhotos[emptyReturn.transporterId]}
+                            data-testid={`button-view-truck-photo-${emptyReturn.id}`}
+                          >
+                            {loadingTruckPhotos[emptyReturn.transporterId] ? (
+                              <span className="animate-spin">⏳</span>
+                            ) : (
+                              <Truck className="h-4 w-4" />
+                            )}
+                            Photo du camion
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -1365,6 +1412,98 @@ export default function CoordinatorDashboard() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Assign Order Dialog */}
+      <Dialog open={assignOrderDialogOpen} onOpenChange={setAssignOrderDialogOpen}>
+        <DialogContent className="max-w-[90vw] sm:max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Affecter une commande</DialogTitle>
+            <DialogDescription>
+              Sélectionnez une commande ouverte à affecter au transporteur
+              {selectedEmptyReturn && (
+                <span className="block mt-2 text-sm">
+                  Retour: <strong>{selectedEmptyReturn.fromCity} → {selectedEmptyReturn.toCity}</strong>
+                  {" "}le{" "}
+                  <strong>{new Date(selectedEmptyReturn.returnDate).toLocaleDateString("fr-FR")}</strong>
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {(() => {
+              const openRequests = availableRequests.filter((req: any) => 
+                req.status === "open" && !req.isHidden
+              );
+
+              if (availableLoading) {
+                return (
+                  <div className="flex justify-center py-8">
+                    <LoadingTruck />
+                  </div>
+                );
+              }
+
+              if (openRequests.length === 0) {
+                return (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>Aucune commande disponible à affecter</p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-3">
+                  {openRequests.map((request: any) => {
+                    const client = request.client;
+                    return (
+                      <Card 
+                        key={request.id}
+                        className="hover-elevate cursor-pointer"
+                        onClick={() => {
+                          if (selectedEmptyReturn) {
+                            assignOrderMutation.mutate({
+                              emptyReturnId: selectedEmptyReturn.id,
+                              requestId: request.id,
+                            });
+                          }
+                        }}
+                        data-testid={`card-assign-request-${request.id}`}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-start gap-4">
+                            <div className="flex-1 space-y-2">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline">Réf: {request.referenceId}</Badge>
+                                <span className="text-sm text-muted-foreground">
+                                  Client {client?.clientId || "Non défini"}
+                                </span>
+                              </div>
+                              <p className="font-medium">
+                                {request.fromCity} → {request.toCity}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {format(new Date(request.dateTime), "dd MMMM yyyy 'à' HH:mm", { locale: fr })}
+                              </p>
+                            </div>
+                            <Button
+                              size="sm"
+                              className="bg-[#5BC0EB] hover:bg-[#4AA8D8]"
+                              disabled={assignOrderMutation.isPending}
+                            >
+                              {assignOrderMutation.isPending ? "Affectation..." : "Affecter"}
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Truck Photo Dialog */}
       <Dialog open={truckPhotoDialogOpen} onOpenChange={setTruckPhotoDialogOpen}>
