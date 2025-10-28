@@ -1208,14 +1208,31 @@ export class DbStorage implements IStorage {
   }
 
   async getPendingDrivers(): Promise<User[]> {
-    return await db.select().from(users)
+    // Select only essential fields, excluding heavy base64 truck_photos to avoid Neon DB memory limits
+    const result = await db.select({
+      id: users.id,
+      phoneNumber: users.phoneNumber,
+      role: users.role,
+      name: users.name,
+      city: users.city,
+      status: users.status,
+      accountStatus: users.accountStatus,
+      isVerified: users.isVerified,
+      createdAt: users.createdAt,
+      ribName: users.ribName,
+      ribNumber: users.ribNumber,
+    }).from(users)
       .where(
         and(
           eq(users.role, 'transporter'),
           eq(users.status, 'pending')
         )
       )
-      .limit(200);
+      .orderBy(desc(users.createdAt))
+      .limit(100);
+    
+    // Cast to User[] - frontend only needs these fields for validation list
+    return result as any as User[];
   }
 
   async getNextClientId(): Promise<string> {
