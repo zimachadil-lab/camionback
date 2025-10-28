@@ -1212,12 +1212,10 @@ export class DbStorage implements IStorage {
       .where(
         and(
           eq(users.role, 'transporter'),
-          or(
-            isNull(users.status),
-            eq(users.status, 'pending')
-          )
+          eq(users.status, 'pending')
         )
-      );
+      )
+      .limit(200);
   }
 
   async getNextClientId(): Promise<string> {
