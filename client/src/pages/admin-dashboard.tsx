@@ -397,14 +397,14 @@ export default function AdminDashboard() {
   };
 
   const handleLoadTruckPhotos = async (transporterId: string) => {
-    if (loadedPhotos[transporterId]) {
+    // Check if photos are already cached
+    if (loadedPhotos[transporterId] !== undefined) {
       // Photos already loaded, just show them
-      if (loadedPhotos[transporterId].length > 0) {
+      if (loadedPhotos[transporterId] && loadedPhotos[transporterId].length > 0) {
         setEnlargedTruckPhoto(loadedPhotos[transporterId][0]);
         setShowTruckPhotoDialog(true);
       } else {
         toast({
-          variant: "destructive",
           title: "Aucune photo",
           description: "Ce transporteur n'a pas encore ajouté de photo de camion",
         });
@@ -412,34 +412,38 @@ export default function AdminDashboard() {
       return;
     }
 
-    setLoadingPhotos({ ...loadingPhotos, [transporterId]: true });
+    // Start loading
+    setLoadingPhotos(prev => ({ ...prev, [transporterId]: true }));
 
     try {
       const response = await fetch(`/api/admin/transporter-photos/${transporterId}`);
-      if (!response.ok) throw new Error();
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
 
       const data = await response.json();
       const photos = data.truckPhotos || [];
       
-      setLoadedPhotos({ ...loadedPhotos, [transporterId]: photos });
-      setLoadingPhotos({ ...loadingPhotos, [transporterId]: false });
+      // Cache the photos (even if empty array)
+      setLoadedPhotos(prev => ({ ...prev, [transporterId]: photos }));
+      setLoadingPhotos(prev => ({ ...prev, [transporterId]: false }));
 
       if (photos.length > 0) {
         setEnlargedTruckPhoto(photos[0]);
         setShowTruckPhotoDialog(true);
       } else {
         toast({
-          variant: "destructive",
           title: "Aucune photo",
           description: "Ce transporteur n'a pas encore ajouté de photo de camion",
         });
       }
-    } catch (error) {
-      setLoadingPhotos({ ...loadingPhotos, [transporterId]: false });
+    } catch (error: any) {
+      setLoadingPhotos(prev => ({ ...prev, [transporterId]: false }));
       toast({
         variant: "destructive",
-        title: "Erreur",
-        description: "Impossible de charger les photos",
+        title: "Erreur de chargement",
+        description: error.message || "Impossible de charger les photos. Réessayez.",
       });
     }
   };
