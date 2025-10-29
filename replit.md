@@ -6,6 +6,9 @@ CamionBack is a full-stack logistics marketplace web application for the Morocca
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+- **2025-10-29**: Fixed transporter name display in coordinator returns tab by adding LEFT JOIN with users table in getActiveEmptyReturns(). Created ActiveEmptyReturnWithTransporter type for proper typing. Fixed client delete button with success/error toast notifications, removed 100-item limit on admin validation page, resolved admin messaging system with dual-recipient delivery (client + transporter), enhanced getAdminConversations() with 4-level fallback logic for transporter identification.
+
 ## System Architecture
 
 ### UI/UX Decisions
