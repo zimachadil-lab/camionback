@@ -3678,6 +3678,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== Coordinator Coordination Views Routes =====
+  
+  // Get "Nouveau" requests (newly created requests without coordination)
+  app.get("/api/coordinator/coordination/nouveau", async (req, res) => {
+    try {
+      const requests = await storage.getCoordinationNouveauRequests();
+      res.json(requests);
+    } catch (error) {
+      console.error("Erreur récupération commandes nouveau:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération des commandes" });
+    }
+  });
+
+  // Get "En Action" requests (actively being worked on)
+  app.get("/api/coordinator/coordination/en-action", async (req, res) => {
+    try {
+      const requests = await storage.getCoordinationEnActionRequests();
+      res.json(requests);
+    } catch (error) {
+      console.error("Erreur récupération commandes en action:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération des commandes" });
+    }
+  });
+
+  // Get "Prioritaires" requests (high priority)
+  app.get("/api/coordinator/coordination/prioritaires", async (req, res) => {
+    try {
+      const requests = await storage.getCoordinationPrioritairesRequests();
+      res.json(requests);
+    } catch (error) {
+      console.error("Erreur récupération commandes prioritaires:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération des commandes" });
+    }
+  });
+
+  // Get "Archives" requests (archived)
+  app.get("/api/coordinator/coordination/archives", async (req, res) => {
+    try {
+      const requests = await storage.getCoordinationArchivesRequests();
+      res.json(requests);
+    } catch (error) {
+      console.error("Erreur récupération archives:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération des archives" });
+    }
+  });
+
+  // Update coordination status for a request
+  app.patch("/api/coordinator/requests/:id/coordination-status", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { coordinationStatus, coordinationReason, coordinationReminderDate, coordinatorId } = req.body;
+
+      if (!coordinatorId) {
+        return res.status(400).json({ error: "coordinatorId est requis" });
+      }
+
+      const reminderDate = coordinationReminderDate ? new Date(coordinationReminderDate) : null;
+
+      const updated = await storage.updateCoordinationStatus(
+        id,
+        coordinationStatus,
+        coordinationReason || null,
+        reminderDate,
+        coordinatorId
+      );
+
+      // Create coordinator log for this action
+      await storage.createCoordinatorLog({
+        coordinatorId,
+        action: `update_coordination_status`,
+        details: JSON.stringify({
+          requestId: id,
+          newStatus: coordinationStatus,
+          reason: coordinationReason,
+          reminderDate: coordinationReminderDate,
+        }),
+        requestId: id,
+      });
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Erreur modification statut coordination:", error);
+      res.status(500).json({ error: "Erreur lors de la modification du statut de coordination" });
+    }
+  });
+
   // Update request details (coordinator complete edit)
   app.patch("/api/coordinator/requests/:id", async (req, res) => {
     try {
