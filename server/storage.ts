@@ -1877,12 +1877,41 @@ export class DbStorage implements IStorage {
       
       // If no accepted offer, try to find transporter from message participants
       if (!transporterId) {
+        // Try finding by senderType first
         const transporterMessage = messages.find(m => m.senderType === 'transporter');
         if (transporterMessage) {
           const transporter = await this.getUser(transporterMessage.senderId);
           if (transporter && transporter.role === 'transporter') {
             transporterId = transporter.id;
             transporterName = transporter.name || transporter.phoneNumber || "Transporteur inconnu";
+          }
+        }
+        
+        // If still not found, look through all message senders to find transporter by role
+        if (!transporterId) {
+          for (const msg of messages) {
+            if (msg.senderId !== request.clientId) {
+              const sender = await this.getUser(msg.senderId);
+              if (sender && sender.role === 'transporter') {
+                transporterId = sender.id;
+                transporterName = sender.name || sender.phoneNumber || "Transporteur inconnu";
+                break;
+              }
+            }
+          }
+        }
+        
+        // Last resort: check all offers for this request
+        if (!transporterId) {
+          const allOffers = await this.getOffersByRequest(request.id);
+          if (allOffers.length > 0) {
+            // Get the first offer's transporter
+            const firstOffer = allOffers[0];
+            const transporter = await this.getUser(firstOffer.transporterId);
+            if (transporter) {
+              transporterId = transporter.id;
+              transporterName = transporter.name || transporter.phoneNumber || "Transporteur inconnu";
+            }
           }
         }
       }

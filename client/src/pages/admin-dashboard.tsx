@@ -4011,14 +4011,40 @@ export default function AdminDashboard() {
               if (!adminMessage.trim()) return;
               
               try {
+                // Collect all unique recipients (client + transporter)
+                const recipients = new Set<string>();
+                if (selectedConversation.clientId) recipients.add(selectedConversation.clientId);
+                if (selectedConversation.transporterId) recipients.add(selectedConversation.transporterId);
+                
+                if (recipients.size === 0) {
+                  throw new Error("Aucun destinataire trouvé");
+                }
+                
+                // For admin messages, we only store ONE message but need to send notifications to both
+                // So we send ONE message with client as receiver (convention), then notify transporter separately
+                const primaryReceiver = selectedConversation.clientId || selectedConversation.transporterId;
+                
                 await apiRequest("POST", "/api/chat/messages", {
                   requestId: selectedConversation.requestId,
                   senderId: user.id,
-                  receiverId: selectedConversation.clientId,
+                  receiverId: primaryReceiver,
                   message: adminMessage,
                   messageType: "text",
                   senderType: "admin",
                 });
+                
+                // If there's a transporter and it's different from primary receiver, send a notification
+                if (selectedConversation.transporterId && selectedConversation.transporterId !== primaryReceiver) {
+                  // Send duplicate message to ensure transporter sees it in their conversations
+                  await apiRequest("POST", "/api/chat/messages", {
+                    requestId: selectedConversation.requestId,
+                    senderId: user.id,
+                    receiverId: selectedConversation.transporterId,
+                    message: adminMessage,
+                    messageType: "text",
+                    senderType: "admin",
+                  });
+                }
                 
                 toast({
                   title: "Message envoyé",
@@ -4028,6 +4054,7 @@ export default function AdminDashboard() {
                 setAdminMessage("");
                 queryClient.invalidateQueries({ queryKey: ["/api/chat/messages", selectedConversation.requestId] });
               } catch (error) {
+                console.error('Admin message error:', error);
                 toast({
                   variant: "destructive",
                   title: "Erreur",
@@ -4056,15 +4083,37 @@ export default function AdminDashboard() {
 
                 const { fileUrl } = await response.json();
 
-                // Send voice message
+                // Send voice message - send to both client and transporter
+                const recipients = new Set<string>();
+                if (selectedConversation.clientId) recipients.add(selectedConversation.clientId);
+                if (selectedConversation.transporterId) recipients.add(selectedConversation.transporterId);
+                
+                if (recipients.size === 0) {
+                  throw new Error("Aucun destinataire trouvé");
+                }
+                
+                const primaryReceiver = selectedConversation.clientId || selectedConversation.transporterId;
+                
                 await apiRequest("POST", "/api/chat/messages", {
                   requestId: selectedConversation.requestId,
                   senderId: user.id,
-                  receiverId: selectedConversation.clientId,
+                  receiverId: primaryReceiver,
                   messageType: 'voice',
                   fileUrl,
                   senderType: "admin",
                 });
+                
+                // Send duplicate to transporter if different from primary
+                if (selectedConversation.transporterId && selectedConversation.transporterId !== primaryReceiver) {
+                  await apiRequest("POST", "/api/chat/messages", {
+                    requestId: selectedConversation.requestId,
+                    senderId: user.id,
+                    receiverId: selectedConversation.transporterId,
+                    messageType: 'voice',
+                    fileUrl,
+                    senderType: "admin",
+                  });
+                }
 
                 toast({
                   title: "Message vocal envoyé",
@@ -4095,10 +4144,19 @@ export default function AdminDashboard() {
             const getSenderLabel = (message: any) => {
               if (message.senderType === "admin") {
                 return "Admin CamionBack";
-              } else if (message.senderId === selectedConversation.clientId) {
+              } else if (message.senderType === "client") {
                 return `Client ${selectedConversation.clientId || 'Non défini'}`;
+              } else if (message.senderType === "transporter") {
+                return selectedConversation.transporterName || "Transporteur";
               } else {
-                return selectedConversation.transporterName;
+                // Fallback: determine by sender ID
+                if (message.senderId === selectedConversation.clientId) {
+                  return `Client ${selectedConversation.clientId || 'Non défini'}`;
+                } else if (message.senderId === selectedConversation.transporterId) {
+                  return selectedConversation.transporterName || "Transporteur";
+                } else {
+                  return "Expéditeur inconnu";
+                }
               }
             };
 
