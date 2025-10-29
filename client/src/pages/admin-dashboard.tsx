@@ -40,6 +40,8 @@ import { VoiceRecorder } from "@/components/chat/voice-recorder";
 import { VoiceMessagePlayer } from "@/components/chat/voice-message-player";
 import AdminCommunications from "@/pages/admin-communications";
 import { CoordinatorManagement } from "@/components/admin/coordinator-management";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
@@ -1670,6 +1672,7 @@ export default function AdminDashboard() {
                         <TableHead>Nom</TableHead>
                         <TableHead>Téléphone</TableHead>
                         <TableHead>Ville</TableHead>
+                        <TableHead>Date de demande</TableHead>
                         <TableHead>Photo camion</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
@@ -1680,6 +1683,20 @@ export default function AdminDashboard() {
                           <TableCell className="font-medium">{driver.name}</TableCell>
                           <TableCell>{driver.phoneNumber}</TableCell>
                           <TableCell>{driver.city}</TableCell>
+                          <TableCell>
+                            {driver.createdAt ? (
+                              <div className="text-sm">
+                                <div className="font-medium">
+                                  {format(new Date(driver.createdAt), "dd/MM/yyyy", { locale: fr })}
+                                </div>
+                                <div className="text-muted-foreground">
+                                  {format(new Date(driver.createdAt), "HH:mm", { locale: fr })}
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
                           <TableCell>
                             <Button
                               size="icon"
