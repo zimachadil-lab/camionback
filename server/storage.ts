@@ -1252,7 +1252,9 @@ export class DbStorage implements IStorage {
       .where(
         and(
           eq(users.role, 'transporter'),
-          eq(users.status, 'pending')
+          eq(users.status, 'pending'),
+          isNotNull(users.truckPhotos),
+          sql`array_length(${users.truckPhotos}, 1) > 0`
         )
       )
       .orderBy(desc(users.createdAt)); // Most recent first
