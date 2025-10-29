@@ -3748,13 +3748,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createCoordinatorLog({
         coordinatorId,
         action: `update_coordination_status`,
+        targetType: 'request',
+        targetId: id,
         details: JSON.stringify({
-          requestId: id,
           newStatus: coordinationStatus,
           reason: coordinationReason,
           reminderDate: coordinationReminderDate,
         }),
-        requestId: id,
       });
 
       res.json(updated);

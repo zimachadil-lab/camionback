@@ -237,6 +237,11 @@ export default function CoordinatorDashboard() {
   const [selectedTruckPhoto, setSelectedTruckPhoto] = useState<string | null>(null);
   const [assignOrderDialogOpen, setAssignOrderDialogOpen] = useState(false);
   const [selectedEmptyReturn, setSelectedEmptyReturn] = useState<any>(null);
+  const [coordinationDialogOpen, setCoordinationDialogOpen] = useState(false);
+  const [selectedRequestForCoordination, setSelectedRequestForCoordination] = useState<any>(null);
+  const [selectedCoordinationStatus, setSelectedCoordinationStatus] = useState("");
+  const [coordinationReason, setCoordinationReason] = useState("");
+  const [coordinationReminderDate, setCoordinationReminderDate] = useState("");
   const { toast} = useToast();
 
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
@@ -310,6 +315,39 @@ export default function CoordinatorDashboard() {
     queryKey: ["/api/empty-returns"],
     queryFn: async () => {
       const response = await fetch("/api/empty-returns");
+      return response.json();
+    },
+  });
+
+  // Fetch coordination views
+  const { data: nouveauRequests = [], isLoading: nouveauLoading } = useQuery({
+    queryKey: ["/api/coordinator/coordination/nouveau"],
+    queryFn: async () => {
+      const response = await fetch("/api/coordinator/coordination/nouveau");
+      return response.json();
+    },
+  });
+
+  const { data: enActionRequests = [], isLoading: enActionLoading } = useQuery({
+    queryKey: ["/api/coordinator/coordination/en-action"],
+    queryFn: async () => {
+      const response = await fetch("/api/coordinator/coordination/en-action");
+      return response.json();
+    },
+  });
+
+  const { data: prioritairesRequests = [], isLoading: prioritairesLoading } = useQuery({
+    queryKey: ["/api/coordinator/coordination/prioritaires"],
+    queryFn: async () => {
+      const response = await fetch("/api/coordinator/coordination/prioritaires");
+      return response.json();
+    },
+  });
+
+  const { data: archivesRequests = [], isLoading: archivesLoading } = useQuery({
+    queryKey: ["/api/coordinator/coordination/archives"],
+    queryFn: async () => {
+      const response = await fetch("/api/coordinator/coordination/archives");
       return response.json();
     },
   });
@@ -432,6 +470,45 @@ export default function CoordinatorDashboard() {
         variant: "destructive",
         title: "Erreur",
         description: "Échec de l'affectation de la commande",
+      });
+    },
+  });
+
+  // Update coordination status mutation
+  const updateCoordinationStatusMutation = useMutation({
+    mutationFn: async ({
+      requestId,
+      coordinationStatus,
+      coordinationReason,
+      coordinationReminderDate,
+    }: {
+      requestId: string;
+      coordinationStatus: string;
+      coordinationReason?: string | null;
+      coordinationReminderDate?: Date | null;
+    }) => {
+      return apiRequest("PATCH", `/api/coordinator/requests/${requestId}/coordination-status`, {
+        coordinationStatus,
+        coordinationReason,
+        coordinationReminderDate,
+        coordinatorId: user.id,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Statut mis à jour",
+        description: "Le statut de coordination a été mis à jour",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/nouveau"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/en-action"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/prioritaires"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/archives"] });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Échec de la mise à jour du statut",
       });
     },
   });
@@ -608,7 +685,29 @@ export default function CoordinatorDashboard() {
     });
   };
 
-  const renderRequestCard = (request: any, showVisibilityToggle = false, showPaymentControls = false) => (
+  const handleOpenCoordinationDialog = (request: any) => {
+    setSelectedRequestForCoordination(request);
+    setSelectedCoordinationStatus(request.coordinationStatus || "nouveau");
+    setCoordinationReason(request.coordinationReason || "");
+    setCoordinationReminderDate(request.coordinationReminderDate ? format(new Date(request.coordinationReminderDate), "yyyy-MM-dd") : "");
+    setCoordinationDialogOpen(true);
+  };
+
+  const handleUpdateCoordinationStatus = () => {
+    if (!selectedRequestForCoordination) return;
+
+    updateCoordinationStatusMutation.mutate({
+      requestId: selectedRequestForCoordination.id,
+      coordinationStatus: selectedCoordinationStatus,
+      coordinationReason: coordinationReason || null,
+      coordinationReminderDate: coordinationReminderDate ? new Date(coordinationReminderDate) : null,
+    });
+
+    setCoordinationDialogOpen(false);
+    setSelectedRequestForCoordination(null);
+  };
+
+  const renderRequestCard = (request: any, showVisibilityToggle = false, showPaymentControls = false, isCoordination = false) => (
     <Card key={request.id} className="hover-elevate" data-testid={`card-request-${request.id}`}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
@@ -780,6 +879,18 @@ export default function CoordinatorDashboard() {
               {request.isHidden ? "Réafficher" : "Masquer"}
             </Button>
           )}
+
+          {isCoordination && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="bg-purple-500/10 hover:bg-purple-500/20 border-purple-500/30"
+              onClick={() => handleOpenCoordinationDialog(request)}
+              data-testid={`button-coordination-status-${request.id}`}
+            >
+              📋 Statut de coordination
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -849,11 +960,17 @@ export default function CoordinatorDashboard() {
         </div>
 
         <Tabs defaultValue="available" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
+          <TabsList className="grid w-full grid-cols-5 mb-6">
             <TabsTrigger value="available" data-testid="tab-available" className="gap-1 px-2">
               <span className="text-xs sm:text-sm">Dispo</span>
               <Badge className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-1.5 py-0">
                 {filterRequests(availableRequests).length}
+              </Badge>
+            </TabsTrigger>
+            <TabsTrigger value="coordination" data-testid="tab-coordination" className="gap-1 px-2">
+              <span className="text-xs sm:text-sm">Coordination</span>
+              <Badge className="bg-purple-500 hover:bg-purple-600 text-white text-xs px-1.5 py-0">
+                {nouveauRequests.length + enActionRequests.length + prioritairesRequests.length}
               </Badge>
             </TabsTrigger>
             <TabsTrigger value="active" data-testid="tab-active" className="gap-1 px-2">
@@ -1112,6 +1229,105 @@ export default function CoordinatorDashboard() {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="coordination" className="space-y-4">
+            <Tabs defaultValue="nouveau" className="w-full">
+              <TabsList className="grid w-full grid-cols-4 mb-4">
+                <TabsTrigger value="nouveau" data-testid="tab-coord-nouveau" className="gap-1 px-2">
+                  <span className="text-xs sm:text-sm">Nouveau</span>
+                  <Badge className="bg-blue-400 hover:bg-blue-500 text-white text-xs px-1.5 py-0">
+                    {nouveauRequests.length}
+                  </Badge>
+                </TabsTrigger>
+                <TabsTrigger value="en-action" data-testid="tab-coord-en-action" className="gap-1 px-2">
+                  <span className="text-xs sm:text-sm">En Action</span>
+                  <Badge className="bg-amber-500 hover:bg-amber-600 text-white text-xs px-1.5 py-0">
+                    {enActionRequests.length}
+                  </Badge>
+                </TabsTrigger>
+                <TabsTrigger value="prioritaires" data-testid="tab-coord-prioritaires" className="gap-1 px-2">
+                  <span className="text-xs sm:text-sm">Prioritaires</span>
+                  <Badge className="bg-red-500 hover:bg-red-600 text-white text-xs px-1.5 py-0">
+                    {prioritairesRequests.length}
+                  </Badge>
+                </TabsTrigger>
+                <TabsTrigger value="archives" data-testid="tab-coord-archives" className="gap-1 px-2">
+                  <span className="text-xs sm:text-sm">Archives</span>
+                  <Badge className="bg-gray-500 hover:bg-gray-600 text-white text-xs px-1.5 py-0">
+                    {archivesRequests.length}
+                  </Badge>
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="nouveau" className="space-y-4">
+                {nouveauLoading ? (
+                  <div className="flex justify-center py-12">
+                    <LoadingTruck />
+                  </div>
+                ) : nouveauRequests.length === 0 ? (
+                  <Card>
+                    <CardContent className="py-12 text-center text-muted-foreground">
+                      <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p>Aucune nouvelle commande</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  nouveauRequests.map((request: any) => renderRequestCard(request, true, true))
+                )}
+              </TabsContent>
+
+              <TabsContent value="en-action" className="space-y-4">
+                {enActionLoading ? (
+                  <div className="flex justify-center py-12">
+                    <LoadingTruck />
+                  </div>
+                ) : enActionRequests.length === 0 ? (
+                  <Card>
+                    <CardContent className="py-12 text-center text-muted-foreground">
+                      <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p>Aucune commande en action</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  enActionRequests.map((request: any) => renderRequestCard(request, true, true))
+                )}
+              </TabsContent>
+
+              <TabsContent value="prioritaires" className="space-y-4">
+                {prioritairesLoading ? (
+                  <div className="flex justify-center py-12">
+                    <LoadingTruck />
+                  </div>
+                ) : prioritairesRequests.length === 0 ? (
+                  <Card>
+                    <CardContent className="py-12 text-center text-muted-foreground">
+                      <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p>Aucune commande prioritaire</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  prioritairesRequests.map((request: any) => renderRequestCard(request, true, true))
+                )}
+              </TabsContent>
+
+              <TabsContent value="archives" className="space-y-4">
+                {archivesLoading ? (
+                  <div className="flex justify-center py-12">
+                    <LoadingTruck />
+                  </div>
+                ) : archivesRequests.length === 0 ? (
+                  <Card>
+                    <CardContent className="py-12 text-center text-muted-foreground">
+                      <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p>Aucune commande archivée</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  archivesRequests.map((request: any) => renderRequestCard(request, true, true))
+                )}
+              </TabsContent>
+            </Tabs>
           </TabsContent>
         </Tabs>
       </main>
@@ -1504,6 +1720,84 @@ export default function CoordinatorDashboard() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Coordination Status Dialog */}
+      {selectedRequestForCoordination && (
+        <Dialog open={coordinationDialogOpen} onOpenChange={setCoordinationDialogOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Statut de coordination</DialogTitle>
+              <DialogDescription>
+                Modifier le statut de coordination pour {selectedRequestForCoordination.referenceId}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Statut</label>
+                <Select value={selectedCoordinationStatus} onValueChange={setSelectedCoordinationStatus}>
+                  <SelectTrigger data-testid="select-coordination-status">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="nouveau">Nouveau</SelectItem>
+                    <SelectItem value="client_injoignable">Client injoignable</SelectItem>
+                    <SelectItem value="infos_manquantes">Infos manquantes</SelectItem>
+                    <SelectItem value="photos_a_recuperer">Photos à récupérer</SelectItem>
+                    <SelectItem value="rappel_prevu">Rappel prévu</SelectItem>
+                    <SelectItem value="attente_concurrence">Attente concurrence</SelectItem>
+                    <SelectItem value="refus_tarif">Refus tarif</SelectItem>
+                    <SelectItem value="livraison_urgente">Livraison urgente</SelectItem>
+                    <SelectItem value="client_interesse">Client intéressé</SelectItem>
+                    <SelectItem value="transporteur_interesse">Transporteur intéressé</SelectItem>
+                    <SelectItem value="menace_annulation">Menace annulation</SelectItem>
+                    <SelectItem value="archive">Archive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Raison (optionnel)</label>
+                <Input
+                  value={coordinationReason}
+                  onChange={(e) => setCoordinationReason(e.target.value)}
+                  placeholder="Notes ou raison du changement..."
+                  data-testid="input-coordination-reason"
+                />
+              </div>
+
+              {selectedCoordinationStatus === "rappel_prevu" && (
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Date de rappel</label>
+                  <Input
+                    type="date"
+                    value={coordinationReminderDate}
+                    onChange={(e) => setCoordinationReminderDate(e.target.value)}
+                    data-testid="input-coordination-reminder-date"
+                  />
+                </div>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => setCoordinationDialogOpen(false)}
+                disabled={updateCoordinationStatusMutation.isPending}
+              >
+                Annuler
+              </Button>
+              <Button 
+                onClick={handleUpdateCoordinationStatus}
+                disabled={updateCoordinationStatusMutation.isPending}
+                data-testid="button-save-coordination"
+              >
+                {updateCoordinationStatusMutation.isPending ? "Enregistrement..." : "Enregistrer"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Truck Photo Dialog */}
       <Dialog open={truckPhotoDialogOpen} onOpenChange={setTruckPhotoDialogOpen}>
