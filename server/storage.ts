@@ -142,6 +142,13 @@ export interface IStorage {
   updateRequestVisibility(requestId: string, isHidden: boolean): Promise<TransportRequest | undefined>;
   updateRequestPaymentStatus(requestId: string, paymentStatus: string): Promise<TransportRequest | undefined>;
   
+  // Coordinator coordination views (for requests without accepted offers)
+  getCoordinationNouveauRequests(): Promise<any[]>;
+  getCoordinationEnActionRequests(): Promise<any[]>;
+  getCoordinationPrioritairesRequests(): Promise<any[]>;
+  getCoordinationArchivesRequests(): Promise<any[]>;
+  updateCoordinationStatus(requestId: string, coordinationStatus: string, coordinationReason: string | null, coordinationReminderDate: Date | null, coordinatorId: string): Promise<TransportRequest | undefined>;
+  
   // Coordinator management (Admin)
   getAllCoordinators(): Promise<User[]>;
   getCoordinatorById(id: string): Promise<User | undefined>;
@@ -2451,6 +2458,230 @@ export class DbStorage implements IStorage {
   async updateRequestPaymentStatus(requestId: string, paymentStatus: string): Promise<TransportRequest | undefined> {
     const result = await db.update(transportRequests)
       .set({ paymentStatus })
+      .where(eq(transportRequests.id, requestId))
+      .returning();
+    return result[0];
+  }
+
+  // Coordinator coordination views (for requests without accepted offers)
+  async getCoordinationNouveauRequests(): Promise<any[]> {
+    // Get requests with status "open" and coordinationStatus "nouveau"
+    const requests = await db.select({
+      id: transportRequests.id,
+      referenceId: transportRequests.referenceId,
+      clientId: transportRequests.clientId,
+      fromCity: transportRequests.fromCity,
+      toCity: transportRequests.toCity,
+      description: transportRequests.description,
+      goodsType: transportRequests.goodsType,
+      dateTime: transportRequests.dateTime,
+      budget: transportRequests.budget,
+      photos: transportRequests.photos,
+      status: transportRequests.status,
+      coordinationStatus: transportRequests.coordinationStatus,
+      coordinationReminderDate: transportRequests.coordinationReminderDate,
+      coordinationUpdatedAt: transportRequests.coordinationUpdatedAt,
+      createdAt: transportRequests.createdAt,
+    })
+    .from(transportRequests)
+    .where(
+      and(
+        eq(transportRequests.status, 'open'),
+        eq(transportRequests.coordinationStatus, 'nouveau')
+      )
+    )
+    .orderBy(desc(transportRequests.createdAt));
+
+    // Enrich with client and offers data
+    const enrichedRequests = await Promise.all(
+      requests.map(async (request) => {
+        const clientData = await db.select().from(users)
+          .where(eq(users.id, request.clientId))
+          .limit(1);
+        
+        const requestOffers = await db.select().from(offers)
+          .where(eq(offers.requestId, request.id));
+
+        return {
+          ...request,
+          client: clientData[0] || null,
+          offers: requestOffers,
+          offersCount: requestOffers.length,
+        };
+      })
+    );
+
+    return enrichedRequests;
+  }
+
+  async getCoordinationEnActionRequests(): Promise<any[]> {
+    // Get requests with status "open" and coordinationStatus in "En Action" category
+    const enActionStatuses = ['client_injoignable', 'infos_manquantes', 'photos_a_recuperer', 'rappel_prevu', 'attente_concurrence', 'refus_tarif'];
+    
+    const requests = await db.select({
+      id: transportRequests.id,
+      referenceId: transportRequests.referenceId,
+      clientId: transportRequests.clientId,
+      fromCity: transportRequests.fromCity,
+      toCity: transportRequests.toCity,
+      description: transportRequests.description,
+      goodsType: transportRequests.goodsType,
+      dateTime: transportRequests.dateTime,
+      budget: transportRequests.budget,
+      photos: transportRequests.photos,
+      status: transportRequests.status,
+      coordinationStatus: transportRequests.coordinationStatus,
+      coordinationReminderDate: transportRequests.coordinationReminderDate,
+      coordinationUpdatedAt: transportRequests.coordinationUpdatedAt,
+      createdAt: transportRequests.createdAt,
+    })
+    .from(transportRequests)
+    .where(
+      and(
+        eq(transportRequests.status, 'open'),
+        sql`${transportRequests.coordinationStatus} = ANY(ARRAY[${sql.raw(enActionStatuses.map(s => `'${s}'`).join(','))}])`
+      )
+    )
+    .orderBy(
+      // Priority: rappel_prevu with date first (oldest first), then by creation date
+      sql`CASE WHEN ${transportRequests.coordinationStatus} = 'rappel_prevu' THEN ${transportRequests.coordinationReminderDate} ELSE NULL END ASC NULLS LAST`,
+      desc(transportRequests.createdAt)
+    );
+
+    // Enrich with client and offers data
+    const enrichedRequests = await Promise.all(
+      requests.map(async (request) => {
+        const clientData = await db.select().from(users)
+          .where(eq(users.id, request.clientId))
+          .limit(1);
+        
+        const requestOffers = await db.select().from(offers)
+          .where(eq(offers.requestId, request.id));
+
+        return {
+          ...request,
+          client: clientData[0] || null,
+          offers: requestOffers,
+          offersCount: requestOffers.length,
+        };
+      })
+    );
+
+    return enrichedRequests;
+  }
+
+  async getCoordinationPrioritairesRequests(): Promise<any[]> {
+    // Get requests with status "open" and coordinationStatus in "Prioritaires" category
+    const prioritairesStatuses = ['livraison_urgente', 'client_interesse', 'transporteur_interesse', 'menace_annulation'];
+    
+    const requests = await db.select({
+      id: transportRequests.id,
+      referenceId: transportRequests.referenceId,
+      clientId: transportRequests.clientId,
+      fromCity: transportRequests.fromCity,
+      toCity: transportRequests.toCity,
+      description: transportRequests.description,
+      goodsType: transportRequests.goodsType,
+      dateTime: transportRequests.dateTime,
+      budget: transportRequests.budget,
+      photos: transportRequests.photos,
+      status: transportRequests.status,
+      coordinationStatus: transportRequests.coordinationStatus,
+      coordinationReminderDate: transportRequests.coordinationReminderDate,
+      coordinationUpdatedAt: transportRequests.coordinationUpdatedAt,
+      createdAt: transportRequests.createdAt,
+    })
+    .from(transportRequests)
+    .where(
+      and(
+        eq(transportRequests.status, 'open'),
+        sql`${transportRequests.coordinationStatus} = ANY(ARRAY[${sql.raw(prioritairesStatuses.map(s => `'${s}'`).join(','))}])`
+      )
+    )
+    .orderBy(desc(transportRequests.createdAt));
+
+    // Enrich with client and offers data
+    const enrichedRequests = await Promise.all(
+      requests.map(async (request) => {
+        const clientData = await db.select().from(users)
+          .where(eq(users.id, request.clientId))
+          .limit(1);
+        
+        const requestOffers = await db.select().from(offers)
+          .where(eq(offers.requestId, request.id));
+
+        return {
+          ...request,
+          client: clientData[0] || null,
+          offers: requestOffers,
+          offersCount: requestOffers.length,
+        };
+      })
+    );
+
+    return enrichedRequests;
+  }
+
+  async getCoordinationArchivesRequests(): Promise<any[]> {
+    // Get requests with status "open" and coordinationStatus "archive"
+    const requests = await db.select({
+      id: transportRequests.id,
+      referenceId: transportRequests.referenceId,
+      clientId: transportRequests.clientId,
+      fromCity: transportRequests.fromCity,
+      toCity: transportRequests.toCity,
+      description: transportRequests.description,
+      goodsType: transportRequests.goodsType,
+      dateTime: transportRequests.dateTime,
+      budget: transportRequests.budget,
+      photos: transportRequests.photos,
+      status: transportRequests.status,
+      coordinationStatus: transportRequests.coordinationStatus,
+      coordinationReason: transportRequests.coordinationReason,
+      coordinationUpdatedAt: transportRequests.coordinationUpdatedAt,
+      createdAt: transportRequests.createdAt,
+    })
+    .from(transportRequests)
+    .where(
+      and(
+        eq(transportRequests.status, 'open'),
+        eq(transportRequests.coordinationStatus, 'archive')
+      )
+    )
+    .orderBy(desc(transportRequests.coordinationUpdatedAt));
+
+    // Enrich with client data
+    const enrichedRequests = await Promise.all(
+      requests.map(async (request) => {
+        const clientData = await db.select().from(users)
+          .where(eq(users.id, request.clientId))
+          .limit(1);
+
+        return {
+          ...request,
+          client: clientData[0] || null,
+        };
+      })
+    );
+
+    return enrichedRequests;
+  }
+
+  async updateCoordinationStatus(
+    requestId: string,
+    coordinationStatus: string,
+    coordinationReason: string | null,
+    coordinationReminderDate: Date | null,
+    coordinatorId: string
+  ): Promise<TransportRequest | undefined> {
+    const result = await db.update(transportRequests)
+      .set({
+        coordinationStatus,
+        coordinationReason,
+        coordinationReminderDate,
+        coordinationUpdatedAt: new Date(),
+        coordinationUpdatedBy: coordinatorId,
+      })
       .where(eq(transportRequests.id, requestId))
       .returning();
     return result[0];
