@@ -1228,8 +1228,7 @@ export class DbStorage implements IStorage {
           eq(users.status, 'pending')
         )
       )
-      .orderBy(desc(users.createdAt))
-      .limit(100);
+      .orderBy(desc(users.createdAt));
     
     // Cast to User[] - frontend only needs these fields for validation list
     return result as any as User[];
