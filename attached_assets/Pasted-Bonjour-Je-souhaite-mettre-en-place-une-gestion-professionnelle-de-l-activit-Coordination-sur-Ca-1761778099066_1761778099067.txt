@@ -1,0 +1,123 @@
+Bonjour 👋
+Je souhaite mettre en place une gestion professionnelle de l’activité Coordination sur CamionBack.
+Objectif : clarifier le suivi des commandes sans offre validée et éviter toute perte ou oubli.
+
+📌 IMPORTANT :
+👉 Toutes ces vues concernent uniquement les commandes sans offre validée
+👉 Dès qu’une offre est validée par le client, la commande sort automatiquement de la coordination et passe dans le workflow normal : Vue Transporteur → « À Traiter »
+
+✅ NOUVELLES VUES pour Coordinateurs (menu dédié)
+1️⃣ Vue : 🆕 Nouveau
+
+Affiche :
+
+Commandes avec statut « Nouveau » (statut par défaut dès création)
+
+Badge jaune visible dans la carte tant que pas ouvert ou modifié
+
+🎯 But : Première prise de connaissance obligatoire
+
+2️⃣ Vue : 🔄 En Action
+
+Commandes ouvertes mais nécessitant une action ou un suivi :
+
+📍 Statuts possibles :
+
+📞 Client injoignable — à suivre
+
+📄 Informations manquantes
+
+📸 Photos à récupérer
+
+🕘 Rappel prévu (avec date/heure)
+
+📍 Client a reçu une offre — Attente concurrence
+
+📍 Refus de tarif — Renégociation
+✅ Le coordinateur doit mettre à jour le statut après chaque interaction
+
+📌 Classement automatique : du plus urgent au moins urgent (si rappel, trier par date)
+
+3️⃣ Vue : 🔥 Prioritaires
+
+Commandes à risque ou urgentes
+
+Statuts possibles :
+
+⚠️ Livraison urgente — traiter en priorité
+
+✅ Client très intéressé — finaliser vite
+
+🎯 Transporteur intéressé — valider l’offre rapidement
+
+🔔 Menace d’annulation — risque de perte
+
+⏱ Notifications automatiques toutes les X heures si pas d’action (à voir avec vous)
+
+4️⃣ Vue : 🗄️ Archives
+
+Commandes hors flux sélectionnées manuellement par le coordinateur
+
+Liste déroulante obligatoire pour la raison 📍 :
+
+❌ Client a annulé
+
+🚫 Traité ailleurs
+
+🚫 Aucune offre reçue
+
+🚫 Prix refusé par client
+
+📵 Injoignable long terme
+
+❄️ À reprendre plus tard
+
+⏳ Offre expirée
+
+🎯 Objectif : nettoyer les vues actives ✅
+📌 Les commandes archivées restent visibles ici + Admin → “Toutes”
+
+✅ RÈGLES AUTOMATIQUES À AJOUTER
+Évènement	Action automatique
+Nouvelle commande reçue	Statut = 🟡 Nouveau → vue « Nouveau »
+Statut mis à jour	Commande bouge automatiquement vers la bonne vue
+Offre validée par le client ✅	Sort des vues coordination + va dans workflow normal « À Traiter »
+Transporteur envoie une offre	Si statut « Nouveau » → passer en « En Action »
+✅ Modifications UI & Fonctionnalités
+
+✅ Ajouter un sélecteur de statut visible sur chaque carte commande
+
+Style clair et rapide (badge + menu déroulant)
+
+Historique des statuts gardé en DB (updatedBy, date)
+
+✅ Ajouter une icône dédiée pour chaque statut (comme dans la liste ci-dessus)
+
+✅ Ajouter filtres rapides dans chaque vue :
+
+Par ville départ / destination
+
+Par date de création
+
+Par urgence
+
+Par statut
+
+✅ Indiquer clairement si des offres existent mais non validées
+Ex : 🔔 « Offre reçue — Client pas encore décidé »
+
+✅ Afficher un visuel sur la carte :
+
+Nom client
+
+Téléphone
+
+Photos disponibles ?
+
+Nombre d’offres reçues
+
+✅ Accès & Sécurité
+
+Fonctionnalités réservées uniquement au rôle Coordinateur
+
+Admin voit toutes les vues + peut modifier tout

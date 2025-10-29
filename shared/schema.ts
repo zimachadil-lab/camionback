@@ -59,6 +59,12 @@ export const transportRequests = pgTable("transport_requests", {
   declinedBy: text("declined_by").array().default(sql`ARRAY[]::text[]`), // IDs of transporters who declined
   smsSent: boolean("sms_sent").default(false), // Track if first offer SMS was sent to client
   isHidden: boolean("is_hidden").default(false), // Admin can hide requests from transporters
+  // Coordination fields - for coordinator request management
+  coordinationStatus: text("coordination_status").default("nouveau"), // Status for coordination workflow
+  coordinationReason: text("coordination_reason"), // Archive reason if archived
+  coordinationReminderDate: timestamp("coordination_reminder_date"), // Reminder date/time
+  coordinationUpdatedAt: timestamp("coordination_updated_at"), // Last coordination status update
+  coordinationUpdatedBy: varchar("coordination_updated_by").references(() => users.id), // Coordinator who updated
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -220,7 +226,7 @@ export const transporterReferences = pgTable("transporter_references", {
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertOtpCodeSchema = createInsertSchema(otpCodes).omit({ id: true, createdAt: true, verified: true });
-export const insertTransportRequestSchema = createInsertSchema(transportRequests).omit({ id: true, createdAt: true, referenceId: true, status: true, acceptedOfferId: true, paymentStatus: true, paymentReceipt: true, paymentDate: true, viewCount: true, declinedBy: true }).extend({
+export const insertTransportRequestSchema = createInsertSchema(transportRequests).omit({ id: true, createdAt: true, referenceId: true, status: true, acceptedOfferId: true, paymentStatus: true, paymentReceipt: true, paymentDate: true, viewCount: true, declinedBy: true, coordinationStatus: true, coordinationReason: true, coordinationReminderDate: true, coordinationUpdatedAt: true, coordinationUpdatedBy: true }).extend({
   dateTime: z.coerce.date(), // Accept ISO string and coerce to Date
 });
 export const insertOfferSchema = createInsertSchema(offers).omit({ id: true, createdAt: true, status: true, paymentProofUrl: true, paymentValidated: true }).extend({
@@ -337,3 +343,67 @@ export type InsertCoordinatorLog = z.infer<typeof insertCoordinatorLogSchema>;
 export type CoordinatorLog = typeof coordinatorLogs.$inferSelect;
 export type CreateCoordinator = z.infer<typeof createCoordinatorSchema>;
 export type ResetCoordinatorPin = z.infer<typeof resetCoordinatorPinSchema>;
+
+// Coordination Status Constants and Types
+export const COORDINATION_STATUS = {
+  // Vue: Nouveau
+  NOUVEAU: "nouveau",
+  
+  // Vue: En Action
+  CLIENT_INJOIGNABLE: "client_injoignable",
+  INFOS_MANQUANTES: "infos_manquantes",
+  PHOTOS_A_RECUPERER: "photos_a_recuperer",
+  RAPPEL_PREVU: "rappel_prevu",
+  ATTENTE_CONCURRENCE: "attente_concurrence",
+  REFUS_TARIF: "refus_tarif",
+  
+  // Vue: Prioritaires
+  LIVRAISON_URGENTE: "livraison_urgente",
+  CLIENT_INTERESSE: "client_interesse",
+  TRANSPORTEUR_INTERESSE: "transporteur_interesse",
+  MENACE_ANNULATION: "menace_annulation",
+  
+  // Vue: Archives
+  ARCHIVE: "archive",
+} as const;
+
+export const COORDINATION_ARCHIVE_REASONS = {
+  CLIENT_ANNULE: "client_annule",
+  TRAITE_AILLEURS: "traite_ailleurs",
+  AUCUNE_OFFRE: "aucune_offre",
+  PRIX_REFUSE: "prix_refuse",
+  INJOIGNABLE_LONG_TERME: "injoignable_long_terme",
+  A_REPRENDRE_PLUS_TARD: "a_reprendre_plus_tard",
+  OFFRE_EXPIREE: "offre_expiree",
+} as const;
+
+// Schema for updating coordination status
+export const updateCoordinationStatusSchema = z.object({
+  coordinationStatus: z.enum([
+    COORDINATION_STATUS.NOUVEAU,
+    COORDINATION_STATUS.CLIENT_INJOIGNABLE,
+    COORDINATION_STATUS.INFOS_MANQUANTES,
+    COORDINATION_STATUS.PHOTOS_A_RECUPERER,
+    COORDINATION_STATUS.RAPPEL_PREVU,
+    COORDINATION_STATUS.ATTENTE_CONCURRENCE,
+    COORDINATION_STATUS.REFUS_TARIF,
+    COORDINATION_STATUS.LIVRAISON_URGENTE,
+    COORDINATION_STATUS.CLIENT_INTERESSE,
+    COORDINATION_STATUS.TRANSPORTEUR_INTERESSE,
+    COORDINATION_STATUS.MENACE_ANNULATION,
+    COORDINATION_STATUS.ARCHIVE,
+  ]),
+  coordinationReason: z.enum([
+    COORDINATION_ARCHIVE_REASONS.CLIENT_ANNULE,
+    COORDINATION_ARCHIVE_REASONS.TRAITE_AILLEURS,
+    COORDINATION_ARCHIVE_REASONS.AUCUNE_OFFRE,
+    COORDINATION_ARCHIVE_REASONS.PRIX_REFUSE,
+    COORDINATION_ARCHIVE_REASONS.INJOIGNABLE_LONG_TERME,
+    COORDINATION_ARCHIVE_REASONS.A_REPRENDRE_PLUS_TARD,
+    COORDINATION_ARCHIVE_REASONS.OFFRE_EXPIREE,
+  ]).optional(),
+  coordinationReminderDate: z.coerce.date().optional(),
+  coordinationUpdatedBy: z.string(),
+});
+
+export type UpdateCoordinationStatus = z.infer<typeof updateCoordinationStatusSchema>;
