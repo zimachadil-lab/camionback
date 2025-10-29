@@ -94,7 +94,7 @@ export interface IStorage {
   
   // Empty Return operations
   createEmptyReturn(emptyReturn: InsertEmptyReturn): Promise<EmptyReturn>;
-  getActiveEmptyReturns(): Promise<EmptyReturn[]>;
+  getActiveEmptyReturns(): Promise<any[]>;
   getEmptyReturnsByTransporter(transporterId: string): Promise<EmptyReturn[]>;
   updateEmptyReturn(id: string, updates: Partial<EmptyReturn>): Promise<EmptyReturn | undefined>;
   expireOldReturns(): Promise<void>;
@@ -998,14 +998,27 @@ export class MemStorage implements IStorage {
     return emptyReturn;
   }
 
-  async getActiveEmptyReturns(): Promise<EmptyReturn[]> {
-    return Array.from(this.emptyReturns.values())
+  async getActiveEmptyReturns(): Promise<any[]> {
+    const activeReturns = Array.from(this.emptyReturns.values())
       .filter(emptyReturn => emptyReturn.status === "active")
       .sort((a, b) => {
         const aTime = a.returnDate?.getTime() || 0;
         const bTime = b.returnDate?.getTime() || 0;
         return aTime - bTime; // Soonest first
       });
+    
+    // Populate transporter info
+    return activeReturns.map(emptyReturn => {
+      const transporter = this.users.get(emptyReturn.transporterId);
+      return {
+        ...emptyReturn,
+        transporter: transporter ? {
+          id: transporter.id,
+          name: transporter.name,
+          phoneNumber: transporter.phoneNumber,
+        } : null,
+      };
+    });
   }
 
   async getEmptyReturnsByTransporter(transporterId: string): Promise<EmptyReturn[]> {
@@ -2022,10 +2035,28 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
-  async getActiveEmptyReturns(): Promise<EmptyReturn[]> {
-    return await db.select().from(emptyReturns)
+  async getActiveEmptyReturns(): Promise<any[]> {
+    const results = await db
+      .select({
+        id: emptyReturns.id,
+        transporterId: emptyReturns.transporterId,
+        fromCity: emptyReturns.fromCity,
+        toCity: emptyReturns.toCity,
+        returnDate: emptyReturns.returnDate,
+        status: emptyReturns.status,
+        createdAt: emptyReturns.createdAt,
+        transporter: {
+          id: users.id,
+          name: users.name,
+          phoneNumber: users.phoneNumber,
+        },
+      })
+      .from(emptyReturns)
+      .leftJoin(users, eq(emptyReturns.transporterId, users.id))
       .where(eq(emptyReturns.status, 'active'))
       .orderBy(asc(emptyReturns.returnDate));
+    
+    return results;
   }
 
   async getEmptyReturnsByTransporter(transporterId: string): Promise<EmptyReturn[]> {
