@@ -251,9 +251,14 @@ export class MemStorage implements IStorage {
   }
 
   async getPendingDrivers(): Promise<User[]> {
-    return Array.from(this.users.values()).filter(
-      (user) => user.role === "transporter" && user.status === "pending"
-    );
+    return Array.from(this.users.values())
+      .filter((user) => user.role === "transporter" && user.status === "pending")
+      .sort((a, b) => {
+        // Sort by createdAt desc (most recent first)
+        const aTime = a.createdAt?.getTime() || 0;
+        const bTime = b.createdAt?.getTime() || 0;
+        return bTime - aTime;
+      });
   }
 
   async getNextClientId(): Promise<string> {
@@ -1234,6 +1239,10 @@ export class DbStorage implements IStorage {
       createdAt: users.createdAt,
       ribName: users.ribName,
       ribNumber: users.ribNumber,
+      clientId: users.clientId,
+      totalTrips: users.totalTrips,
+      deviceToken: users.deviceToken,
+      isActive: users.isActive,
     }).from(users)
       .where(
         and(
@@ -1241,7 +1250,7 @@ export class DbStorage implements IStorage {
           eq(users.status, 'pending')
         )
       )
-      .orderBy(desc(users.createdAt));
+      .orderBy(desc(users.createdAt)); // Most recent first
     
     // Cast to User[] - frontend only needs these fields for validation list
     return result as any as User[];
