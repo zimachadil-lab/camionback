@@ -1048,6 +1048,17 @@ export default function ClientDashboard() {
       queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
       queryClient.invalidateQueries({ queryKey: ["/api/offers"] });
       queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+      toast({
+        title: "Commande supprimée",
+        description: "Votre commande a été supprimée avec succès.",
+      });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de supprimer la commande. Veuillez réessayer.",
+      });
     },
   });
 
