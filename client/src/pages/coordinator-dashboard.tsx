@@ -671,6 +671,9 @@ export default function CoordinatorDashboard() {
   };
 
   const filterRequests = (requests: any[], applyStatusFilter = true) => {
+    if (!requests || !Array.isArray(requests)) {
+      return [];
+    }
     return requests.filter((request) => {
       const matchesCity = selectedCity === "Toutes les villes" || 
         request.fromCity === selectedCity || 
