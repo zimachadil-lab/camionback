@@ -252,7 +252,12 @@ export class MemStorage implements IStorage {
 
   async getPendingDrivers(): Promise<User[]> {
     return Array.from(this.users.values())
-      .filter((user) => user.role === "transporter" && user.status === "pending")
+      .filter((user) => 
+        user.role === "transporter" && 
+        user.status === "pending" &&
+        user.truckPhotos && 
+        user.truckPhotos.length > 0
+      )
       .sort((a, b) => {
         // Sort by createdAt desc (most recent first)
         const aTime = a.createdAt?.getTime() || 0;
