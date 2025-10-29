@@ -1276,7 +1276,7 @@ export default function CoordinatorDashboard() {
                     </CardContent>
                   </Card>
                 ) : (
-                  nouveauRequests.map((request: any) => renderRequestCard(request, true, true))
+                  nouveauRequests.map((request: any) => renderRequestCard(request, true, true, true))
                 )}
               </TabsContent>
 
@@ -1293,7 +1293,7 @@ export default function CoordinatorDashboard() {
                     </CardContent>
                   </Card>
                 ) : (
-                  enActionRequests.map((request: any) => renderRequestCard(request, true, true))
+                  enActionRequests.map((request: any) => renderRequestCard(request, true, true, true))
                 )}
               </TabsContent>
 
@@ -1310,7 +1310,7 @@ export default function CoordinatorDashboard() {
                     </CardContent>
                   </Card>
                 ) : (
-                  prioritairesRequests.map((request: any) => renderRequestCard(request, true, true))
+                  prioritairesRequests.map((request: any) => renderRequestCard(request, true, true, true))
                 )}
               </TabsContent>
 
@@ -1327,7 +1327,7 @@ export default function CoordinatorDashboard() {
                     </CardContent>
                   </Card>
                 ) : (
-                  archivesRequests.map((request: any) => renderRequestCard(request, true, true))
+                  archivesRequests.map((request: any) => renderRequestCard(request, true, true, true))
                 )}
               </TabsContent>
             </Tabs>
