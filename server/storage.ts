@@ -7,7 +7,7 @@ import {
   type AdminSettings, type InsertAdminSettings,
   type Notification, type InsertNotification,
   type Rating, type InsertRating,
-  type EmptyReturn, type InsertEmptyReturn,
+  type EmptyReturn, type InsertEmptyReturn, type ActiveEmptyReturnWithTransporter,
   type Contract, type InsertContract,
   type Report, type InsertReport,
   type City, type InsertCity,
@@ -94,7 +94,7 @@ export interface IStorage {
   
   // Empty Return operations
   createEmptyReturn(emptyReturn: InsertEmptyReturn): Promise<EmptyReturn>;
-  getActiveEmptyReturns(): Promise<any[]>;
+  getActiveEmptyReturns(): Promise<ActiveEmptyReturnWithTransporter[]>;
   getEmptyReturnsByTransporter(transporterId: string): Promise<EmptyReturn[]>;
   updateEmptyReturn(id: string, updates: Partial<EmptyReturn>): Promise<EmptyReturn | undefined>;
   expireOldReturns(): Promise<void>;
@@ -998,7 +998,7 @@ export class MemStorage implements IStorage {
     return emptyReturn;
   }
 
-  async getActiveEmptyReturns(): Promise<any[]> {
+  async getActiveEmptyReturns(): Promise<ActiveEmptyReturnWithTransporter[]> {
     const activeReturns = Array.from(this.emptyReturns.values())
       .filter(emptyReturn => emptyReturn.status === "active")
       .sort((a, b) => {
@@ -2035,7 +2035,7 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
-  async getActiveEmptyReturns(): Promise<any[]> {
+  async getActiveEmptyReturns(): Promise<ActiveEmptyReturnWithTransporter[]> {
     const results = await db
       .select({
         id: emptyReturns.id,

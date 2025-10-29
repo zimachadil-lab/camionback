@@ -311,6 +311,14 @@ export type InsertRating = z.infer<typeof insertRatingSchema>;
 export type Rating = typeof ratings.$inferSelect;
 export type InsertEmptyReturn = z.infer<typeof insertEmptyReturnSchema>;
 export type EmptyReturn = typeof emptyReturns.$inferSelect;
+// Type for empty returns with populated transporter info
+export type ActiveEmptyReturnWithTransporter = EmptyReturn & {
+  transporter: {
+    id: string;
+    name: string | null;
+    phoneNumber: string;
+  } | null;
+};
 export type InsertContract = z.infer<typeof insertContractSchema>;
 export type Contract = typeof contracts.$inferSelect;
 export type InsertReport = z.infer<typeof insertReportSchema>;
