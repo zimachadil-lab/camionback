@@ -1074,7 +1074,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/requests/:id", async (req, res) => {
     try {
       console.log("[PATCH /api/requests/:id] Request body:", JSON.stringify(req.body, null, 2));
-      const request = await storage.updateTransportRequest(req.params.id, req.body);
+      
+      // Convert dateTime string to Date object if present
+      const updates = { ...req.body };
+      if (updates.dateTime && typeof updates.dateTime === 'string') {
+        updates.dateTime = new Date(updates.dateTime);
+      }
+      
+      const request = await storage.updateTransportRequest(req.params.id, updates);
       if (!request) {
         return res.status(404).json({ error: "Request not found" });
       }
