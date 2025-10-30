@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star, CreditCard, Upload, Eye, Edit, MessageSquare, Calendar, Flag, Truck, Users, Zap, X, ChevronLeft, ChevronRight, Target, ArrowDown } from "lucide-react";
+import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star, CreditCard, Upload, Eye, Edit, MessageSquare, Calendar, Flag, Truck, Users, Zap, X, ChevronLeft, ChevronRight, Target, ArrowDown, Camera } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { NewRequestForm } from "@/components/client/new-request-form";
 import { OfferCard } from "@/components/client/offer-card";
@@ -893,6 +893,64 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                     </FormItem>
                   )}
                 />
+              </div>
+
+              {/* Section Photos */}
+              <div className="space-y-3">
+                <label className="text-sm font-medium">Photos</label>
+                
+                {/* Photos existantes */}
+                {request.photos && request.photos.length > 0 && keepExistingPhotos && editPhotos.length === 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">Photos actuelles ({request.photos.length})</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {request.photos.map((photo: string, index: number) => (
+                        <div key={index} className="relative aspect-square rounded-md overflow-hidden bg-muted">
+                          <img 
+                            src={photo} 
+                            alt={`Photo ${index + 1}`} 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setKeepExistingPhotos(false);
+                        setEditPhotos([]);
+                      }}
+                      data-testid="button-remove-existing-photos"
+                    >
+                      Supprimer les photos
+                    </Button>
+                  </div>
+                )}
+
+                {/* Zone de téléchargement de nouvelles photos */}
+                {(!keepExistingPhotos || !request.photos || request.photos.length === 0) && (
+                  <div className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleEditPhotoUpload}
+                      className="hidden"
+                      id="edit-photo-upload"
+                      data-testid="input-edit-photos"
+                    />
+                    <label htmlFor="edit-photo-upload" className="cursor-pointer">
+                      <Camera className="mx-auto h-10 w-10 text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">
+                        {editPhotos.length > 0 
+                          ? `${editPhotos.length} nouvelle(s) photo(s) sélectionnée(s)` 
+                          : "Cliquez pour ajouter de nouvelles photos"}
+                      </p>
+                    </label>
+                  </div>
+                )}
               </div>
 
               <DialogFooter className="gap-2">
