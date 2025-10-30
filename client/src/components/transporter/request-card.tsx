@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { MapPin, Package, Calendar, DollarSign, Image as ImageIcon, AlertCircle, Eye, FileText, X } from "lucide-react";
+import { MapPin, Package, Calendar, DollarSign, Image as ImageIcon, AlertCircle, Eye, FileText, X, ChevronDown, ChevronUp } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { PhotoGalleryDialog } from "./photo-gallery-dialog";
@@ -46,6 +46,7 @@ export function RequestCard({
 }: RequestCardProps) {
   const [photoGalleryOpen, setPhotoGalleryOpen] = useState(false);
   const [showValidationWarning, setShowValidationWarning] = useState(false);
+  const [showFullDescription, setShowFullDescription] = useState(false);
   const hasTrackedView = useRef(false);
   
   const dateTime = typeof request.dateTime === 'string' 
@@ -101,9 +102,30 @@ export function RequestCard({
           <span className="font-medium truncate">{request.toCity}</span>
         </div>
 
-        <p className="text-sm text-muted-foreground line-clamp-2">
-          {request.description}
-        </p>
+        <div>
+          <p className={`text-sm text-muted-foreground ${showFullDescription ? '' : 'line-clamp-2'}`}>
+            {request.description}
+          </p>
+          {request.description && request.description.length > 100 && (
+            <button
+              onClick={() => setShowFullDescription(!showFullDescription)}
+              className="text-xs text-primary hover:underline mt-1 flex items-center gap-1"
+              data-testid={`button-toggle-description-${request.id}`}
+            >
+              {showFullDescription ? (
+                <>
+                  <ChevronUp className="w-3 h-3" />
+                  Voir moins
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="w-3 h-3" />
+                  Voir plus
+                </>
+              )}
+            </button>
+          )}
+        </div>
 
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div className="flex items-center gap-2">
