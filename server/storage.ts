@@ -144,10 +144,10 @@ export interface IStorage {
   updateRequestPaymentStatus(requestId: string, paymentStatus: string): Promise<TransportRequest | undefined>;
   
   // Coordinator coordination views (for requests without accepted offers)
-  getCoordinationNouveauRequests(): Promise<any[]>;
-  getCoordinationEnActionRequests(): Promise<any[]>;
-  getCoordinationPrioritairesRequests(): Promise<any[]>;
-  getCoordinationArchivesRequests(): Promise<any[]>;
+  getCoordinationNouveauRequests(filters?: { assignedToId?: string; searchQuery?: string }): Promise<any[]>;
+  getCoordinationEnActionRequests(filters?: { assignedToId?: string; searchQuery?: string }): Promise<any[]>;
+  getCoordinationPrioritairesRequests(filters?: { assignedToId?: string; searchQuery?: string }): Promise<any[]>;
+  getCoordinationArchivesRequests(filters?: { assignedToId?: string; searchQuery?: string }): Promise<any[]>;
   updateCoordinationStatus(requestId: string, coordinationStatus: string, coordinationReason: string | null, coordinationReminderDate: Date | null, coordinatorId: string): Promise<TransportRequest | undefined>;
   
   // Coordinator management (Admin)
@@ -2495,9 +2495,20 @@ export class DbStorage implements IStorage {
   }
 
   // Coordinator coordination views (for requests without accepted offers)
-  async getCoordinationNouveauRequests(): Promise<any[]> {
+  async getCoordinationNouveauRequests(filters?: { assignedToId?: string; searchQuery?: string }): Promise<any[]> {
+    // Build where conditions
+    const whereConditions = [
+      eq(transportRequests.status, 'open'),
+      eq(transportRequests.coordinationStatus, 'nouveau')
+    ];
+
+    // Add filter for assignedToId (can be null to show unassigned)
+    if (filters?.assignedToId) {
+      whereConditions.push(eq(transportRequests.assignedToId, filters.assignedToId));
+    }
+
     // Get requests with status "open" and coordinationStatus "nouveau"
-    const requests = await db.select({
+    let requests = await db.select({
       id: transportRequests.id,
       referenceId: transportRequests.referenceId,
       clientId: transportRequests.clientId,
@@ -2512,23 +2523,23 @@ export class DbStorage implements IStorage {
       coordinationStatus: transportRequests.coordinationStatus,
       coordinationReminderDate: transportRequests.coordinationReminderDate,
       coordinationUpdatedAt: transportRequests.coordinationUpdatedAt,
+      assignedToId: transportRequests.assignedToId,
       createdAt: transportRequests.createdAt,
     })
     .from(transportRequests)
-    .where(
-      and(
-        eq(transportRequests.status, 'open'),
-        eq(transportRequests.coordinationStatus, 'nouveau')
-      )
-    )
+    .where(and(...whereConditions))
     .orderBy(desc(transportRequests.createdAt));
 
-    // Enrich with client and offers data
+    // Enrich with client, coordinator, and offers data
     const enrichedRequests = await Promise.all(
       requests.map(async (request) => {
         const clientData = await db.select().from(users)
           .where(eq(users.id, request.clientId))
           .limit(1);
+        
+        const coordinatorData = request.assignedToId ? await db.select().from(users)
+          .where(eq(users.id, request.assignedToId))
+          .limit(1) : [];
         
         const requestOffers = await db.select().from(offers)
           .where(eq(offers.requestId, request.id));
@@ -2536,16 +2547,32 @@ export class DbStorage implements IStorage {
         return {
           ...request,
           client: clientData[0] || null,
+          assignedTo: coordinatorData[0] || null,
           offers: requestOffers,
           offersCount: requestOffers.length,
         };
       })
     );
 
+    // Apply search filter if provided
+    if (filters?.searchQuery) {
+      const query = filters.searchQuery.toLowerCase();
+      return enrichedRequests.filter(req => 
+        req.referenceId?.toLowerCase().includes(query) ||
+        req.fromCity?.toLowerCase().includes(query) ||
+        req.toCity?.toLowerCase().includes(query) ||
+        req.description?.toLowerCase().includes(query) ||
+        req.goodsType?.toLowerCase().includes(query) ||
+        req.client?.name?.toLowerCase().includes(query) ||
+        req.client?.phoneNumber?.includes(query) ||
+        req.assignedTo?.name?.toLowerCase().includes(query)
+      );
+    }
+
     return enrichedRequests;
   }
 
-  async getCoordinationEnActionRequests(): Promise<any[]> {
+  async getCoordinationEnActionRequests(filters?: { assignedToId?: string; searchQuery?: string }): Promise<any[]> {
     // Get active coordination statuses from "en_action" category
     const enActionStatusConfigs = await db.select()
       .from(coordinationStatuses)
@@ -2562,75 +2589,16 @@ export class DbStorage implements IStorage {
     if (enActionStatusValues.length === 0) {
       return [];
     }
-    
-    const requests = await db.select({
-      id: transportRequests.id,
-      referenceId: transportRequests.referenceId,
-      clientId: transportRequests.clientId,
-      fromCity: transportRequests.fromCity,
-      toCity: transportRequests.toCity,
-      description: transportRequests.description,
-      goodsType: transportRequests.goodsType,
-      dateTime: transportRequests.dateTime,
-      budget: transportRequests.budget,
-      photos: transportRequests.photos,
-      status: transportRequests.status,
-      coordinationStatus: transportRequests.coordinationStatus,
-      coordinationReminderDate: transportRequests.coordinationReminderDate,
-      coordinationUpdatedAt: transportRequests.coordinationUpdatedAt,
-      createdAt: transportRequests.createdAt,
-    })
-    .from(transportRequests)
-    .where(
-      and(
-        eq(transportRequests.status, 'open'),
-        sql`${transportRequests.coordinationStatus} = ANY(ARRAY[${sql.raw(enActionStatusValues.map(s => `'${s}'`).join(','))}])`
-      )
-    )
-    .orderBy(
-      // Priority: rappel_prevu with date first (oldest first), then by creation date
-      sql`CASE WHEN ${transportRequests.coordinationStatus} = 'rappel_prevu' THEN ${transportRequests.coordinationReminderDate} ELSE NULL END ASC NULLS LAST`,
-      desc(transportRequests.createdAt)
-    );
 
-    // Enrich with client and offers data
-    const enrichedRequests = await Promise.all(
-      requests.map(async (request) => {
-        const clientData = await db.select().from(users)
-          .where(eq(users.id, request.clientId))
-          .limit(1);
-        
-        const requestOffers = await db.select().from(offers)
-          .where(eq(offers.requestId, request.id));
+    // Build where conditions
+    const whereConditions = [
+      eq(transportRequests.status, 'open'),
+      sql`${transportRequests.coordinationStatus} = ANY(ARRAY[${sql.raw(enActionStatusValues.map(s => `'${s}'`).join(','))}])`
+    ];
 
-        return {
-          ...request,
-          client: clientData[0] || null,
-          offers: requestOffers,
-          offersCount: requestOffers.length,
-        };
-      })
-    );
-
-    return enrichedRequests;
-  }
-
-  async getCoordinationPrioritairesRequests(): Promise<any[]> {
-    // Get active coordination statuses from "prioritaires" category
-    const prioritairesStatusConfigs = await db.select()
-      .from(coordinationStatuses)
-      .where(
-        and(
-          eq(coordinationStatuses.category, 'prioritaires'),
-          eq(coordinationStatuses.isActive, true)
-        )
-      );
-    
-    const prioritairesStatusValues = prioritairesStatusConfigs.map(s => s.value);
-    
-    // If no statuses configured, return empty array
-    if (prioritairesStatusValues.length === 0) {
-      return [];
+    // Add filter for assignedToId
+    if (filters?.assignedToId) {
+      whereConditions.push(eq(transportRequests.assignedToId, filters.assignedToId));
     }
     
     const requests = await db.select({
@@ -2648,23 +2616,27 @@ export class DbStorage implements IStorage {
       coordinationStatus: transportRequests.coordinationStatus,
       coordinationReminderDate: transportRequests.coordinationReminderDate,
       coordinationUpdatedAt: transportRequests.coordinationUpdatedAt,
+      assignedToId: transportRequests.assignedToId,
       createdAt: transportRequests.createdAt,
     })
     .from(transportRequests)
-    .where(
-      and(
-        eq(transportRequests.status, 'open'),
-        sql`${transportRequests.coordinationStatus} = ANY(ARRAY[${sql.raw(prioritairesStatusValues.map(s => `'${s}'`).join(','))}])`
-      )
-    )
-    .orderBy(desc(transportRequests.createdAt));
+    .where(and(...whereConditions))
+    .orderBy(
+      // Priority: rappel_prevu with date first (oldest first), then by creation date
+      sql`CASE WHEN ${transportRequests.coordinationStatus} = 'rappel_prevu' THEN ${transportRequests.coordinationReminderDate} ELSE NULL END ASC NULLS LAST`,
+      desc(transportRequests.createdAt)
+    );
 
-    // Enrich with client and offers data
+    // Enrich with client, coordinator, and offers data
     const enrichedRequests = await Promise.all(
       requests.map(async (request) => {
         const clientData = await db.select().from(users)
           .where(eq(users.id, request.clientId))
           .limit(1);
+        
+        const coordinatorData = request.assignedToId ? await db.select().from(users)
+          .where(eq(users.id, request.assignedToId))
+          .limit(1) : [];
         
         const requestOffers = await db.select().from(offers)
           .where(eq(offers.requestId, request.id));
@@ -2672,16 +2644,125 @@ export class DbStorage implements IStorage {
         return {
           ...request,
           client: clientData[0] || null,
+          assignedTo: coordinatorData[0] || null,
           offers: requestOffers,
           offersCount: requestOffers.length,
         };
       })
     );
 
+    // Apply search filter if provided
+    if (filters?.searchQuery) {
+      const query = filters.searchQuery.toLowerCase();
+      return enrichedRequests.filter(req => 
+        req.referenceId?.toLowerCase().includes(query) ||
+        req.fromCity?.toLowerCase().includes(query) ||
+        req.toCity?.toLowerCase().includes(query) ||
+        req.description?.toLowerCase().includes(query) ||
+        req.goodsType?.toLowerCase().includes(query) ||
+        req.client?.name?.toLowerCase().includes(query) ||
+        req.client?.phoneNumber?.includes(query) ||
+        req.assignedTo?.name?.toLowerCase().includes(query)
+      );
+    }
+
     return enrichedRequests;
   }
 
-  async getCoordinationArchivesRequests(): Promise<any[]> {
+  async getCoordinationPrioritairesRequests(filters?: { assignedToId?: string; searchQuery?: string }): Promise<any[]> {
+    // Get active coordination statuses from "prioritaires" category
+    const prioritairesStatusConfigs = await db.select()
+      .from(coordinationStatuses)
+      .where(
+        and(
+          eq(coordinationStatuses.category, 'prioritaires'),
+          eq(coordinationStatuses.isActive, true)
+        )
+      );
+    
+    const prioritairesStatusValues = prioritairesStatusConfigs.map(s => s.value);
+    
+    // If no statuses configured, return empty array
+    if (prioritairesStatusValues.length === 0) {
+      return [];
+    }
+
+    // Build where conditions
+    const whereConditions = [
+      eq(transportRequests.status, 'open'),
+      sql`${transportRequests.coordinationStatus} = ANY(ARRAY[${sql.raw(prioritairesStatusValues.map(s => `'${s}'`).join(','))}])`
+    ];
+
+    // Add filter for assignedToId
+    if (filters?.assignedToId) {
+      whereConditions.push(eq(transportRequests.assignedToId, filters.assignedToId));
+    }
+    
+    const requests = await db.select({
+      id: transportRequests.id,
+      referenceId: transportRequests.referenceId,
+      clientId: transportRequests.clientId,
+      fromCity: transportRequests.fromCity,
+      toCity: transportRequests.toCity,
+      description: transportRequests.description,
+      goodsType: transportRequests.goodsType,
+      dateTime: transportRequests.dateTime,
+      budget: transportRequests.budget,
+      photos: transportRequests.photos,
+      status: transportRequests.status,
+      coordinationStatus: transportRequests.coordinationStatus,
+      coordinationReminderDate: transportRequests.coordinationReminderDate,
+      coordinationUpdatedAt: transportRequests.coordinationUpdatedAt,
+      assignedToId: transportRequests.assignedToId,
+      createdAt: transportRequests.createdAt,
+    })
+    .from(transportRequests)
+    .where(and(...whereConditions))
+    .orderBy(desc(transportRequests.createdAt));
+
+    // Enrich with client, coordinator, and offers data
+    const enrichedRequests = await Promise.all(
+      requests.map(async (request) => {
+        const clientData = await db.select().from(users)
+          .where(eq(users.id, request.clientId))
+          .limit(1);
+        
+        const coordinatorData = request.assignedToId ? await db.select().from(users)
+          .where(eq(users.id, request.assignedToId))
+          .limit(1) : [];
+        
+        const requestOffers = await db.select().from(offers)
+          .where(eq(offers.requestId, request.id));
+
+        return {
+          ...request,
+          client: clientData[0] || null,
+          assignedTo: coordinatorData[0] || null,
+          offers: requestOffers,
+          offersCount: requestOffers.length,
+        };
+      })
+    );
+
+    // Apply search filter if provided
+    if (filters?.searchQuery) {
+      const query = filters.searchQuery.toLowerCase();
+      return enrichedRequests.filter(req => 
+        req.referenceId?.toLowerCase().includes(query) ||
+        req.fromCity?.toLowerCase().includes(query) ||
+        req.toCity?.toLowerCase().includes(query) ||
+        req.description?.toLowerCase().includes(query) ||
+        req.goodsType?.toLowerCase().includes(query) ||
+        req.client?.name?.toLowerCase().includes(query) ||
+        req.client?.phoneNumber?.includes(query) ||
+        req.assignedTo?.name?.toLowerCase().includes(query)
+      );
+    }
+
+    return enrichedRequests;
+  }
+
+  async getCoordinationArchivesRequests(filters?: { assignedToId?: string; searchQuery?: string }): Promise<any[]> {
     // Get active coordination statuses from "archives" category
     const archivesStatusConfigs = await db.select()
       .from(coordinationStatuses)
@@ -2698,6 +2779,20 @@ export class DbStorage implements IStorage {
     const allArchiveValues = archivesStatusValues.length > 0 
       ? archivesStatusValues 
       : ['archive'];
+
+    // Build where conditions
+    const whereConditions = [
+      or(
+        eq(transportRequests.status, 'open'),
+        eq(transportRequests.status, 'expired')
+      ),
+      sql`${transportRequests.coordinationStatus} = ANY(ARRAY[${sql.raw(allArchiveValues.map(s => `'${s}'`).join(','))}])`
+    ];
+
+    // Add filter for assignedToId
+    if (filters?.assignedToId) {
+      whereConditions.push(eq(transportRequests.assignedToId, filters.assignedToId));
+    }
     
     const requests = await db.select({
       id: transportRequests.id,
@@ -2714,33 +2809,47 @@ export class DbStorage implements IStorage {
       coordinationStatus: transportRequests.coordinationStatus,
       coordinationReason: transportRequests.coordinationReason,
       coordinationUpdatedAt: transportRequests.coordinationUpdatedAt,
+      assignedToId: transportRequests.assignedToId,
       createdAt: transportRequests.createdAt,
     })
     .from(transportRequests)
-    .where(
-      and(
-        or(
-          eq(transportRequests.status, 'open'),
-          eq(transportRequests.status, 'expired')
-        ),
-        sql`${transportRequests.coordinationStatus} = ANY(ARRAY[${sql.raw(allArchiveValues.map(s => `'${s}'`).join(','))}])`
-      )
-    )
+    .where(and(...whereConditions))
     .orderBy(desc(transportRequests.coordinationUpdatedAt));
 
-    // Enrich with client data
+    // Enrich with client and coordinator data
     const enrichedRequests = await Promise.all(
       requests.map(async (request) => {
         const clientData = await db.select().from(users)
           .where(eq(users.id, request.clientId))
           .limit(1);
 
+        const coordinatorData = request.assignedToId ? await db.select().from(users)
+          .where(eq(users.id, request.assignedToId))
+          .limit(1) : [];
+
         return {
           ...request,
           client: clientData[0] || null,
+          assignedTo: coordinatorData[0] || null,
         };
       })
     );
+
+    // Apply search filter if provided
+    if (filters?.searchQuery) {
+      const query = filters.searchQuery.toLowerCase();
+      return enrichedRequests.filter(req => 
+        req.referenceId?.toLowerCase().includes(query) ||
+        req.fromCity?.toLowerCase().includes(query) ||
+        req.toCity?.toLowerCase().includes(query) ||
+        req.description?.toLowerCase().includes(query) ||
+        req.goodsType?.toLowerCase().includes(query) ||
+        req.client?.name?.toLowerCase().includes(query) ||
+        req.client?.phoneNumber?.includes(query) ||
+        req.assignedTo?.name?.toLowerCase().includes(query) ||
+        req.coordinationReason?.toLowerCase().includes(query)
+      );
+    }
 
     return enrichedRequests;
   }
@@ -2782,6 +2891,13 @@ export class DbStorage implements IStorage {
       coordinationUpdatedAt: new Date(),
       coordinationUpdatedBy: coordinatorId,
     };
+
+    // Auto-assign coordinator when changing status from "nouveau" for the first time
+    if (currentRequest[0]?.coordinationStatus === 'nouveau' && 
+        !currentRequest[0]?.assignedToId &&
+        coordinationStatus !== 'nouveau') {
+      updateData.assignedToId = coordinatorId;
+    }
 
     if (isArchiveStatus) {
       updateData.status = 'expired';

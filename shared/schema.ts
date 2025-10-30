@@ -65,6 +65,7 @@ export const transportRequests = pgTable("transport_requests", {
   coordinationReminderDate: timestamp("coordination_reminder_date"), // Reminder date/time
   coordinationUpdatedAt: timestamp("coordination_updated_at"), // Last coordination status update
   coordinationUpdatedBy: varchar("coordination_updated_by").references(() => users.id), // Coordinator who updated
+  assignedToId: varchar("assigned_to_id").references(() => users.id), // Coordinator assigned to this request
   createdAt: timestamp("created_at").defaultNow(),
 });
 
