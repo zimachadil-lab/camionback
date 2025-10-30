@@ -11,8 +11,12 @@ export default function Home() {
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    if (!loading && user && !user.role) {
-      setLocation("/select-role");
+    if (!loading && user) {
+      if (!user.role) {
+        setLocation("/select-role");
+      } else if (user.role === "coordinateur") {
+        setLocation("/coordinator-dashboard");
+      }
     }
   }, [user, loading, setLocation]);
 
@@ -34,8 +38,11 @@ export default function Home() {
   }
 
   if (user.role === "coordinateur") {
-    setLocation("/coordinator-dashboard");
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#0A2540] to-[#163049]">
+        <div className="text-white text-xl">Redirection...</div>
+      </div>
+    );
   }
 
   if (user.role === "transporter") {
@@ -46,7 +53,10 @@ export default function Home() {
     return <ClientDashboard />;
   }
 
-  // If somehow user has no role, redirect to role selection
-  setLocation("/select-role");
-  return null;
+  // If somehow user has no role, show loading while useEffect redirects
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#0A2540] to-[#163049]">
+      <div className="text-white text-xl">Redirection...</div>
+    </div>
+  );
 }
