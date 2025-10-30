@@ -1005,14 +1005,13 @@ export default function CoordinatorDashboard() {
           )}
 
           <Button
-            size="sm"
-            variant="outline"
-            className="bg-red-100 hover:bg-red-200 border-red-300 text-red-700"
+            variant="ghost"
+            size="icon"
             onClick={() => setDeleteRequestId(request.id)}
             data-testid={`button-delete-request-${request.id}`}
+            className="h-8 w-8 text-[#e74c3c] hover:text-[#e74c3c] hover:bg-[#e74c3c]/10"
           >
-            <Trash2 className="h-4 w-4 mr-1" />
-            Supprimer
+            <Trash2 className="h-4 w-4" />
           </Button>
         </div>
       </CardContent>
