@@ -367,19 +367,15 @@ export default function CoordinatorDashboard() {
       return apiRequest("PATCH", `/api/coordinator/requests/${requestId}/toggle-visibility`, { isHidden });
     },
     onMutate: async ({ requestId, isHidden }) => {
-      // Annuler les requêtes en cours pour éviter les conflits
-      await queryClient.cancelQueries({ queryKey: ["/api/coordinator/requests/nouveau"] });
-      await queryClient.cancelQueries({ queryKey: ["/api/coordinator/requests/en-action"] });
-      await queryClient.cancelQueries({ queryKey: ["/api/coordinator/requests/prioritaires"] });
-      await queryClient.cancelQueries({ queryKey: ["/api/coordinator/requests/archives"] });
+      // Annuler toutes les requêtes de coordination en cours
+      await queryClient.cancelQueries({ predicate: (query) => 
+        query.queryKey[0] === "/api/coordinator/coordination/nouveau" ||
+        query.queryKey[0] === "/api/coordinator/coordination/en-action" ||
+        query.queryKey[0] === "/api/coordinator/coordination/prioritaires" ||
+        query.queryKey[0] === "/api/coordinator/coordination/archives"
+      });
       
-      // Sauvegarder les données actuelles pour rollback si erreur
-      const previousNouveau = queryClient.getQueryData(["/api/coordinator/requests/nouveau"]);
-      const previousEnAction = queryClient.getQueryData(["/api/coordinator/requests/en-action"]);
-      const previousPrioritaires = queryClient.getQueryData(["/api/coordinator/requests/prioritaires"]);
-      const previousArchives = queryClient.getQueryData(["/api/coordinator/requests/archives"]);
-      
-      // Mettre à jour optimistiquement tous les caches
+      // Fonction de mise à jour optimiste
       const updateCache = (oldData: any) => {
         if (!oldData) return oldData;
         return oldData.map((req: any) => 
@@ -387,12 +383,23 @@ export default function CoordinatorDashboard() {
         );
       };
       
-      queryClient.setQueryData(["/api/coordinator/requests/nouveau"], updateCache);
-      queryClient.setQueryData(["/api/coordinator/requests/en-action"], updateCache);
-      queryClient.setQueryData(["/api/coordinator/requests/prioritaires"], updateCache);
-      queryClient.setQueryData(["/api/coordinator/requests/archives"], updateCache);
-      
-      return { previousNouveau, previousEnAction, previousPrioritaires, previousArchives };
+      // Mettre à jour toutes les requêtes qui correspondent aux patterns
+      queryClient.setQueriesData(
+        { predicate: (query) => query.queryKey[0] === "/api/coordinator/coordination/nouveau" },
+        updateCache
+      );
+      queryClient.setQueriesData(
+        { predicate: (query) => query.queryKey[0] === "/api/coordinator/coordination/en-action" },
+        updateCache
+      );
+      queryClient.setQueriesData(
+        { predicate: (query) => query.queryKey[0] === "/api/coordinator/coordination/prioritaires" },
+        updateCache
+      );
+      queryClient.setQueriesData(
+        { predicate: (query) => query.queryKey[0] === "/api/coordinator/coordination/archives" },
+        updateCache
+      );
     },
     onSuccess: () => {
       toast({
@@ -400,20 +407,14 @@ export default function CoordinatorDashboard() {
         description: "Visibilité de la commande modifiée",
       });
     },
-    onError: (error, variables, context) => {
-      // Restaurer les données précédentes en cas d'erreur
-      if (context?.previousNouveau) {
-        queryClient.setQueryData(["/api/coordinator/requests/nouveau"], context.previousNouveau);
-      }
-      if (context?.previousEnAction) {
-        queryClient.setQueryData(["/api/coordinator/requests/en-action"], context.previousEnAction);
-      }
-      if (context?.previousPrioritaires) {
-        queryClient.setQueryData(["/api/coordinator/requests/prioritaires"], context.previousPrioritaires);
-      }
-      if (context?.previousArchives) {
-        queryClient.setQueryData(["/api/coordinator/requests/archives"], context.previousArchives);
-      }
+    onError: () => {
+      // Invalider toutes les queries pour recharger les données en cas d'erreur
+      queryClient.invalidateQueries({ predicate: (query) => 
+        query.queryKey[0] === "/api/coordinator/coordination/nouveau" ||
+        query.queryKey[0] === "/api/coordinator/coordination/en-action" ||
+        query.queryKey[0] === "/api/coordinator/coordination/prioritaires" ||
+        query.queryKey[0] === "/api/coordinator/coordination/archives"
+      });
       
       toast({
         variant: "destructive",
@@ -422,11 +423,13 @@ export default function CoordinatorDashboard() {
       });
     },
     onSettled: () => {
-      // Refetch pour s'assurer que les données sont synchronisées
-      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/requests/nouveau"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/requests/en-action"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/requests/prioritaires"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/requests/archives"] });
+      // Refetch pour synchroniser avec le serveur
+      queryClient.invalidateQueries({ predicate: (query) => 
+        query.queryKey[0] === "/api/coordinator/coordination/nouveau" ||
+        query.queryKey[0] === "/api/coordinator/coordination/en-action" ||
+        query.queryKey[0] === "/api/coordinator/coordination/prioritaires" ||
+        query.queryKey[0] === "/api/coordinator/coordination/archives"
+      });
     },
   });
 
