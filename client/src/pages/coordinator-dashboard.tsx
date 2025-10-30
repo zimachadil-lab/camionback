@@ -14,6 +14,7 @@ import { LoadingTruck } from "@/components/ui/loading-truck";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth-context";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -216,6 +217,7 @@ function CoordinatorOffersView({ requestId, onAcceptOffer, isPending }: {
 
 export default function CoordinatorDashboard() {
   const [, setLocation] = useLocation();
+  const { logout } = useAuth();
   const [selectedCity, setSelectedCity] = useState("Toutes les villes");
   const [selectedStatus, setSelectedStatus] = useState("Tous les statuts");
   const [searchQuery, setSearchQuery] = useState("");
@@ -270,8 +272,7 @@ export default function CoordinatorDashboard() {
   }, [user.id]);
 
   const handleLogout = () => {
-    localStorage.removeItem("camionback_user");
-    window.location.href = "/";
+    logout();
   };
 
   // Fetch all available requests (open status)

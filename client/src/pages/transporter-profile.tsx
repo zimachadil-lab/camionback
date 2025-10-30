@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useAuth } from "@/lib/auth-context";
 import { User, Phone, MapPin, Camera, KeyRound, Truck } from "lucide-react";
 import {
   Dialog,
@@ -31,6 +32,7 @@ type UserProfile = {
 export default function TransporterProfile() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { logout } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [showPinDialog, setShowPinDialog] = useState(false);
   const [truckPhotoFile, setTruckPhotoFile] = useState<File | null>(null);
@@ -119,8 +121,7 @@ export default function TransporterProfile() {
   });
 
   const handleLogout = () => {
-    localStorage.removeItem("camionback_user");
-    setLocation("/");
+    logout();
   };
 
   const handleTruckPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -9,16 +9,15 @@ import { type Notification } from "@shared/schema";
 import { Header } from "@/components/layout/header";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useAuth } from "@/lib/auth-context";
 
 export default function NotificationsPage() {
   const [, navigate] = useLocation();
+  const { logout } = useAuth();
   const user = JSON.parse(localStorage.getItem("camionback_user") || "{}");
 
   const handleLogout = () => {
-    // Clear user session
-    localStorage.removeItem("camionback_user");
-    // Force page reload to clear all state
-    window.location.href = "/";
+    logout();
   };
 
   const { data: notifications, isLoading } = useQuery<Notification[]>({

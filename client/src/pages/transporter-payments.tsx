@@ -9,9 +9,11 @@ import { LoadingTruck } from "@/components/ui/loading-truck";
 import { Clock, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useAuth } from "@/lib/auth-context";
 
 export default function TransporterPayments() {
   const [, setLocation] = useLocation();
+  const { logout } = useAuth();
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
 
   // Redirect non-transporters
@@ -47,10 +49,7 @@ export default function TransporterPayments() {
   }, [user.id]);
 
   const handleLogout = () => {
-    // Clear user session
-    localStorage.removeItem("camionback_user");
-    // Force page reload to clear all state
-    window.location.href = "/";
+    logout();
   };
 
   const { data: paymentRequests = [], isLoading } = useQuery({

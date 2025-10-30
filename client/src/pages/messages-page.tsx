@@ -8,9 +8,11 @@ import { MessageSquare, ArrowRight, ArrowLeft } from "lucide-react";
 import { ChatWindow } from "@/components/chat/chat-window";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Header } from "@/components/layout/header";
+import { useAuth } from "@/lib/auth-context";
 
 export default function MessagesPage() {
   const [, navigate] = useLocation();
+  const { logout } = useAuth();
   const [selectedConversation, setSelectedConversation] = useState<any | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
 
@@ -18,8 +20,7 @@ export default function MessagesPage() {
   const user = userStr ? JSON.parse(userStr) : null;
 
   const handleLogout = () => {
-    localStorage.removeItem("camionback_user");
-    window.location.href = "/";
+    logout();
   };
 
   // Fetch conversations

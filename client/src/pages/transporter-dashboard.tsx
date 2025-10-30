@@ -18,6 +18,7 @@ import { LoadingTruck } from "@/components/ui/loading-truck";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth-context";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -50,6 +51,7 @@ const referenceSchema = z.object({
 
 export default function TransporterDashboard() {
   const [, setLocation] = useLocation();
+  const { logout } = useAuth();
   const [selectedCity, setSelectedCity] = useState("Toutes les villes");
   const [searchQuery, setSearchQuery] = useState("");
   const [offerDialogOpen, setOfferDialogOpen] = useState(false);
@@ -112,10 +114,7 @@ export default function TransporterDashboard() {
   }, [selectedOffer, editOfferDialogOpen]);
 
   const handleLogout = () => {
-    // Clear user session
-    localStorage.removeItem("camionback_user");
-    // Force page reload to clear all state
-    window.location.href = "/";
+    logout();
   };
 
   const handleAnnounceReturn = () => {

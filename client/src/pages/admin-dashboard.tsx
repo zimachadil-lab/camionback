@@ -29,6 +29,7 @@ import { TransporterRibDialog } from "@/components/admin/transporter-rib-dialog"
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth-context";
 import {
   Dialog,
   DialogContent,
@@ -46,6 +47,7 @@ import { fr } from "date-fns/locale";
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
+  const { logout } = useAuth();
   const [addTransporterOpen, setAddTransporterOpen] = useState(false);
   const [addClientOpen, setAddClientOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -146,10 +148,7 @@ export default function AdminDashboard() {
   }, [user.id]);
 
   const handleLogout = () => {
-    // Clear user session
-    localStorage.removeItem("camionback_user");
-    // Force page reload to clear all state
-    window.location.href = "/";
+    logout();
   };
 
   // Fetch pending drivers

@@ -10,6 +10,7 @@ import { ChatWindow } from "@/components/chat/chat-window";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth-context";
 import { LoadingTruck } from "@/components/ui/loading-truck";
 import { StoriesBar } from "@/components/ui/stories-bar";
 import {
@@ -909,6 +910,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
 
 export default function ClientDashboard() {
   const [, setLocation] = useLocation();
+  const { logout } = useAuth();
   const [showNewRequest, setShowNewRequest] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [selectedTransporter, setSelectedTransporter] = useState<any>(null);
@@ -955,10 +957,7 @@ export default function ClientDashboard() {
   }, [user.id]);
 
   const handleLogout = () => {
-    // Clear user session
-    localStorage.removeItem("camionback_user");
-    // Force page reload to clear all state
-    window.location.href = "/";
+    logout();
   };
 
   const { data: requests = [], isLoading } = useQuery({

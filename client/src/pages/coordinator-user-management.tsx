@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { LoadingTruck } from "@/components/ui/loading-truck";
 import { Search, UserPlus, Users, Truck, Edit, Camera } from "lucide-react";
 import { useLocation } from "wouter";
+import { useAuth } from "@/lib/auth-context";
 
 // Add Client Form Component
 function AddClientForm({ onSuccess, cities }: { onSuccess: () => void; cities: any[] }) {
@@ -226,6 +227,7 @@ function AddTransporterForm({ onSuccess, cities }: { onSuccess: () => void; citi
 export default function CoordinatorUserManagement() {
   const [location, navigate] = useLocation();
   const { toast } = useToast();
+  const { logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [addType, setAddType] = useState<"client" | "transporter">("client");
@@ -246,8 +248,7 @@ export default function CoordinatorUserManagement() {
 
   // Logout function
   const handleLogout = () => {
-    localStorage.removeItem("camionback_user");
-    navigate("/login");
+    logout();
   };
 
   // Fetch clients
