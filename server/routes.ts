@@ -22,7 +22,7 @@ import {
   clientTransporterContacts
 } from "@shared/schema";
 import { desc } from "drizzle-orm";
-import { sendFirstOfferSMS, sendOfferAcceptedSMS, sendTransporterActivatedSMS, sendBulkSMS } from "./infobip-sms";
+import { sendNewOfferSMS, sendOfferAcceptedSMS, sendTransporterActivatedSMS, sendBulkSMS } from "./infobip-sms";
 import { emailService } from "./email-service";
 
 const upload = multer({ 
@@ -1708,17 +1708,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error("Failed to get client for email:", err);
         });
 
-        // Send SMS to client if this is the first offer
-        const allOffers = await storage.getOffersByRequest(offer.requestId);
-        if (allOffers.length === 1 && !request.smsSent) {
-          const client = await storage.getUser(request.clientId);
-          if (client?.phoneNumber) {
-            const smsSent = await sendFirstOfferSMS(client.phoneNumber);
-            if (smsSent) {
-              // Mark SMS as sent to avoid sending again
-              await storage.updateTransportRequest(request.id, { smsSent: true });
-            }
-          }
+        // Send SMS to client for every new offer received
+        const client = await storage.getUser(request.clientId);
+        if (client?.phoneNumber) {
+          await sendNewOfferSMS(client.phoneNumber);
         }
         
         // Notify coordinators about new offer
