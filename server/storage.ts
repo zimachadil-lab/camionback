@@ -2719,7 +2719,10 @@ export class DbStorage implements IStorage {
     .from(transportRequests)
     .where(
       and(
-        eq(transportRequests.status, 'open'),
+        or(
+          eq(transportRequests.status, 'open'),
+          eq(transportRequests.status, 'expired')
+        ),
         sql`${transportRequests.coordinationStatus} = ANY(ARRAY[${sql.raw(allArchiveValues.map(s => `'${s}'`).join(','))}])`
       )
     )
