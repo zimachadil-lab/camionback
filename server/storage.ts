@@ -501,6 +501,7 @@ export class MemStorage implements IStorage {
   }
 
   async getOpenRequests(transporterId?: string): Promise<TransportRequest[]> {
+    // Filter for open requests only (expired ones are excluded because status changed to "expired")
     const openRequests = Array.from(this.transportRequests.values()).filter(
       (req) => req.status === "open"
     );
@@ -1500,6 +1501,7 @@ export class DbStorage implements IStorage {
   }
 
   async getOpenRequests(transporterId?: string): Promise<TransportRequest[]> {
+    // Get open requests only (expired ones automatically excluded since status changes to "expired" when archived)
     const openRequests = await db.select().from(transportRequests)
       .where(eq(transportRequests.status, 'open'));
     
@@ -2747,16 +2749,49 @@ export class DbStorage implements IStorage {
     coordinationReminderDate: Date | null,
     coordinatorId: string
   ): Promise<TransportRequest | undefined> {
+    // Check if this coordination status belongs to "archives" category
+    const statusConfig = await db.select()
+      .from(coordinationStatuses)
+      .where(
+        and(
+          eq(coordinationStatuses.value, coordinationStatus),
+          eq(coordinationStatuses.category, 'archives'),
+          eq(coordinationStatuses.isActive, true)
+        )
+      )
+      .limit(1);
+
+    // Also check for hardcoded "archive" value for backwards compatibility
+    const isArchiveStatus = statusConfig.length > 0 || coordinationStatus === 'archive';
+
+    // Get current request to check its status
+    const currentRequest = await db.select()
+      .from(transportRequests)
+      .where(eq(transportRequests.id, requestId))
+      .limit(1);
+
+    // If archiving, set status to "expired"
+    // If un-archiving (moving from expired back to active), restore to "open"
+    const updateData: any = {
+      coordinationStatus,
+      coordinationReason,
+      coordinationReminderDate,
+      coordinationUpdatedAt: new Date(),
+      coordinationUpdatedBy: coordinatorId,
+    };
+
+    if (isArchiveStatus) {
+      updateData.status = 'expired';
+    } else if (currentRequest[0]?.status === 'expired') {
+      // Restore to "open" if moving away from archive status
+      updateData.status = 'open';
+    }
+
     const result = await db.update(transportRequests)
-      .set({
-        coordinationStatus,
-        coordinationReason,
-        coordinationReminderDate,
-        coordinationUpdatedAt: new Date(),
-        coordinationUpdatedBy: coordinatorId,
-      })
+      .set(updateData)
       .where(eq(transportRequests.id, requestId))
       .returning();
+    
     return result[0];
   }
 

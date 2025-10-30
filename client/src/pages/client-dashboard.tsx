@@ -1324,7 +1324,9 @@ export default function ClientDashboard() {
   const activeRequests = requests.filter((r: any) => 
     (r.status === "open" || r.status === "accepted") && r.paymentStatus !== "paid"
   );
-  const completedRequests = requests.filter((r: any) => r.status === "completed" || r.paymentStatus === "paid");
+  const completedRequests = requests.filter((r: any) => 
+    r.status === "completed" || r.status === "expired" || r.paymentStatus === "paid"
+  );
   const paymentPendingRequests = requests.filter((r: any) => r.paymentStatus === "awaiting_payment");
 
   return (
@@ -1501,13 +1503,27 @@ export default function ClientDashboard() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <p className="font-semibold">{request.referenceId}</p>
-                            <Badge variant="default" className="bg-gray-600">
-                              Terminée
-                            </Badge>
+                            {request.status === "expired" ? (
+                              <Badge variant="destructive" className="bg-orange-600">
+                                Expirée
+                              </Badge>
+                            ) : (
+                              <Badge variant="default" className="bg-gray-600">
+                                Terminée
+                              </Badge>
+                            )}
                           </div>
                           <p className="text-sm text-muted-foreground">
                             {request.fromCity} → {request.toCity}
                           </p>
+                          {request.status === "expired" && (
+                            <div className="mt-2 p-2 rounded bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800">
+                              <p className="text-sm text-orange-800 dark:text-orange-300">
+                                Cette commande a été marquée comme expirée par l'équipe CamionBack
+                                {request.coordinationReason && `: ${request.coordinationReason}`}
+                              </p>
+                            </div>
+                          )}
                         </div>
                         <div className="flex items-center gap-2">
                           {request.acceptedOfferId && (
