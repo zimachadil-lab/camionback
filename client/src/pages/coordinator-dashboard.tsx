@@ -367,7 +367,14 @@ export default function CoordinatorDashboard() {
       return apiRequest("PATCH", `/api/coordinator/requests/${requestId}/toggle-visibility`, { isHidden });
     },
     onSuccess: () => {
+      // Invalider tous les caches de requêtes pour rafraîchir l'affichage
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/available-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/requests/nouveau"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/requests/en-action"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/requests/prioritaires"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/requests/archives"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/active-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/payment-requests"] });
       toast({
         title: "Succès",
         description: "Visibilité de la commande modifiée",
