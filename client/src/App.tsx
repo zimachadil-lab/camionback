@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { PushNotificationProvider } from "@/components/push-notification-provider";
 import { PWAInstallToast } from "@/components/pwa-install-toast";
+import { AuthProvider } from "@/lib/auth-context";
 import Home from "@/pages/home";
 import NotificationsPage from "@/pages/notifications-page";
 import MessagesPage from "@/pages/messages-page";
@@ -58,11 +59,13 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <PushNotificationProvider>
-          <Toaster />
-          <Router />
-          <PWAInstallToast />
-        </PushNotificationProvider>
+        <AuthProvider>
+          <PushNotificationProvider>
+            <Toaster />
+            <Router />
+            <PWAInstallToast />
+          </PushNotificationProvider>
+        </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

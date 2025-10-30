@@ -5,9 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, Eye, EyeOff, Truck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth-context";
 import camionbackLogo from "@assets/logo camion (14)_1760911574566.png";
 
-export function PhoneAuth({ onAuthSuccess }: { onAuthSuccess: (user: any) => void }) {
+export function PhoneAuth() {
+  const { login } = useAuth();
   const [, setLocation] = useLocation();
   const [step, setStep] = useState<"phone" | "pin">("phone");
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -47,6 +49,7 @@ export function PhoneAuth({ onAuthSuccess }: { onAuthSuccess: (user: any) => voi
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phoneNumber: `+212${cleanPhone}` }),
+        credentials: "include",
       });
       
       if (!response.ok) throw new Error();
@@ -96,6 +99,7 @@ export function PhoneAuth({ onAuthSuccess }: { onAuthSuccess: (user: any) => voi
           phoneNumber: `+212${cleanPhone}`,
           pin 
         }),
+        credentials: "include",
       });
       
       if (!response.ok) {
@@ -111,25 +115,16 @@ export function PhoneAuth({ onAuthSuccess }: { onAuthSuccess: (user: any) => voi
       const data = await response.json();
       const user = data.user;
       
-      // Save user to localStorage
-      localStorage.setItem("camionback_user", JSON.stringify(user));
-      onAuthSuccess(user);
+      // Update auth context with session-based user
+      login(user);
       
       // Redirect based on user role and profile completion
       if (!user.role) {
-        // New user needs to select role
         setLocation("/select-role");
-      } else if (user.role === "admin") {
-        // Admin users go directly to admin dashboard
-        setLocation("/admin-dashboard");
-      } else if (user.role === "coordinateur") {
-        // Coordinator users go directly to coordinator dashboard
-        setLocation("/coordinator-dashboard");
       } else if (user.role === "transporter" && (!user.name || !user.city)) {
-        // Transporter needs to complete profile
         setLocation("/complete-profile");
       } else {
-        // User has complete profile, go to home (which will redirect to appropriate dashboard)
+        // All other users go to home which renders appropriate dashboard
         setLocation("/");
       }
     } catch (error) {

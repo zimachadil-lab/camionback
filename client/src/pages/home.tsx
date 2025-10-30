@@ -1,39 +1,31 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useLocation } from "wouter";
+import { useAuth } from "@/lib/auth-context";
 import { PhoneAuth } from "@/components/auth/phone-auth";
 import ClientDashboard from "./client-dashboard";
 import TransporterDashboard from "./transporter-dashboard";
 import AdminDashboard from "./admin-dashboard";
 
 export default function Home() {
-  const [user, setUser] = useState<any>(null);
+  const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("camionback_user");
-    if (storedUser) {
-      const userData = JSON.parse(storedUser);
-      setUser(userData);
-      
-      // Redirect to role selection if user has no role
-      if (!userData.role) {
-        setLocation("/select-role");
-      }
+    if (!loading && user && !user.role) {
+      setLocation("/select-role");
     }
-  }, [setLocation]);
+  }, [user, loading, setLocation]);
 
-  const handleAuthSuccess = (userData: any) => {
-    localStorage.setItem("camionback_user", JSON.stringify(userData));
-    setUser(userData);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem("camionback_user");
-    setUser(null);
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#0A2540] to-[#163049]">
+        <div className="text-white text-xl">Chargement...</div>
+      </div>
+    );
+  }
 
   if (!user) {
-    return <PhoneAuth onAuthSuccess={handleAuthSuccess} />;
+    return <PhoneAuth />;
   }
 
   // Route to appropriate dashboard based on user role
