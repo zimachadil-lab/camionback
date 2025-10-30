@@ -250,22 +250,6 @@ export default function CoordinatorDashboard() {
     logout();
   };
 
-  // Redirect to login if not authenticated or not coordinator
-  useEffect(() => {
-    if (!authLoading && (!user || user.role !== "coordinateur")) {
-      setLocation("/");
-    }
-  }, [user, authLoading, setLocation]);
-
-  // Show loading while checking auth
-  if (authLoading || !user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#0A2540] to-[#163049]">
-        <LoadingTruck message="Chargement..." />
-      </div>
-    );
-  }
-
   // Fetch all available requests (open status)
   const { data: availableRequests = [], isLoading: availableLoading } = useQuery({
     queryKey: ["/api/coordinator/available-requests"],
@@ -514,6 +498,22 @@ export default function CoordinatorDashboard() {
       });
     },
   });
+
+  // Redirect to login if not authenticated or not coordinator (after all hooks)
+  useEffect(() => {
+    if (!authLoading && (!user || user.role !== "coordinateur")) {
+      setLocation("/");
+    }
+  }, [user, authLoading, setLocation]);
+
+  // Show loading while checking auth (after all hooks)
+  if (authLoading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#0A2540] to-[#163049]">
+        <LoadingTruck message="Chargement..." />
+      </div>
+    );
+  }
 
   const handleViewDetails = (request: any) => {
     setSelectedRequest(request);

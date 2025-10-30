@@ -126,13 +126,9 @@ export default function TransporterDashboard() {
     },
   });
 
-  const { data: users = [] } = useQuery({
-    queryKey: ["/api/users"],
-    queryFn: async () => {
-      const response = await fetch("/api/users");
-      return response.json();
-    },
-  });
+  // Disable users query - transporters don't have access to /api/users (403 Forbidden)
+  // Client info should come from the backend with requests
+  const users: any[] = [];
 
   const { data: acceptedRequests = [], isLoading: acceptedLoading } = useQuery({
     queryKey: ["/api/requests/accepted", user.id],
