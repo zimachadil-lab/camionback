@@ -358,7 +358,7 @@ export default function CoordinatorDashboard() {
     queryKey: ["/api/admin/coordination-statuses"],
     enabled: !!user?.id,
     queryFn: async () => {
-      const response = await fetch(`/api/admin/coordination-statuses?userId=${user.id}`);
+      const response = await fetch(`/api/admin/coordination-statuses?userId=${user!.id}`);
       return response.json();
     },
   });
@@ -477,7 +477,7 @@ export default function CoordinatorDashboard() {
       const { requestId, ...updates } = data;
       return apiRequest("PATCH", `/api/coordinator/requests/${requestId}`, {
         ...updates,
-        coordinatorId: user.id,
+        coordinatorId: user!.id,
       });
     },
     onSuccess: () => {
@@ -544,7 +544,7 @@ export default function CoordinatorDashboard() {
         coordinationStatus,
         coordinationReason,
         coordinationReminderDate,
-        coordinatorId: user.id,
+        coordinatorId: user!.id,
       });
     },
     onSuccess: () => {
