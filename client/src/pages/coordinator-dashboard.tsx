@@ -355,6 +355,7 @@ export default function CoordinatorDashboard() {
   // Fetch coordination statuses
   const { data: coordinationStatuses = [], isLoading: statusesLoading } = useQuery({
     queryKey: ["/api/admin/coordination-statuses"],
+    enabled: !!user?.id,
     queryFn: async () => {
       const response = await fetch(`/api/admin/coordination-statuses?userId=${user.id}`);
       return response.json();
