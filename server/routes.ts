@@ -45,10 +45,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ publicKey });
   });
 
-  // PWA - Test endpoint to send a test push notification
-  app.post("/api/pwa/test-push", async (req, res) => {
+  // PWA - Test endpoint to send a test push notification (ADMIN ONLY)
+  app.post("/api/pwa/test-push", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
-      const { userId } = req.body;
+      const currentUser = req.user!;
+      const { userId } = req.body || { userId: currentUser.id };
       
       if (!userId) {
         return res.status(400).json({ error: "userId requis" });
@@ -87,10 +88,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // PWA - Test endpoint (GET) for easy browser testing
-  app.get("/api/pwa/test-push-notification", async (req, res) => {
+  // PWA - Test endpoint (GET) for easy browser testing (ADMIN ONLY)
+  app.get("/api/pwa/test-push-notification", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
-      const userId = req.query.userId as string;
+      const currentUser = req.user!;
+      const userId = (req.query.userId as string) || currentUser.id;
       
       if (!userId) {
         return res.status(400).json({ error: "userId requis dans l'URL: ?userId=XXX" });
@@ -400,8 +402,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Diagnostic endpoint - publicly accessible
-  app.get("/api/diagnostic/database-stats", async (req, res) => {
+  // Diagnostic endpoint - ADMIN ONLY
+  app.get("/api/diagnostic/database-stats", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const allUsers = await storage.getAllUsers();
       const transporters = allUsers.filter(u => u.role === 'transporter');
@@ -419,14 +421,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         samplePendingTransporters: transporters
           .filter(t => t.status === 'pending' || t.status === null)
           .slice(0, 3)
-          .map(t => ({
-            id: t.id,
-            phone: t.phoneNumber,
-            name: t.name,
-            city: t.city,
-            status: t.status,
-            createdAt: t.createdAt
-          }))
+          .map(t => sanitizeUser(t, 'admin')) // Sanitize transporter data
       };
       
       console.log('📊 [DIAGNOSTIC] Database stats:', stats);
@@ -438,10 +433,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin routes for driver validation
-  app.get("/api/admin/pending-drivers", async (req, res) => {
+  app.get("/api/admin/pending-drivers", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const drivers = await storage.getPendingDrivers();
-      res.json(drivers);
+      // Sanitize all user data before sending
+      const sanitizedDrivers = drivers.map(driver => sanitizeUser(driver, 'admin'));
+      res.json(sanitizedDrivers);
     } catch (error: any) {
       console.error("Error fetching pending drivers:", error?.message);
       res.status(500).json({ 
@@ -451,7 +448,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get truck photos for a specific transporter (lazy loading)
-  app.get("/api/admin/transporter-photos/:id", async (req, res) => {
+  app.get("/api/admin/transporter-photos/:id", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const { id } = req.params;
       const photos = await storage.getTransporterPhotos(id);
@@ -469,7 +466,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/admin/validate-driver/:id", async (req, res) => {
+  app.post("/api/admin/validate-driver/:id", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const { id } = req.params;
       const { validated, note } = req.body; // validated: boolean, note: optional string
@@ -519,7 +516,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      res.json({ user });
+      return sendUser(res, user, 'admin');
     } catch (error) {
       console.error("Validate driver error:", error);
       res.status(500).json({ error: "Échec de la validation" });
@@ -527,7 +524,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin routes for blocking/unblocking users
-  app.post("/api/admin/block-user/:id", async (req, res) => {
+  app.post("/api/admin/block-user/:id", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const { id } = req.params;
       const user = await storage.blockUser(id);
@@ -545,14 +542,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         relatedId: null,
       });
 
-      res.json({ user });
+      return sendUser(res, user, 'admin');
     } catch (error) {
       console.error("Block user error:", error);
       res.status(500).json({ error: "Échec du blocage de l'utilisateur" });
     }
   });
 
-  app.post("/api/admin/unblock-user/:id", async (req, res) => {
+  app.post("/api/admin/unblock-user/:id", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const { id } = req.params;
       const user = await storage.unblockUser(id);
@@ -570,7 +567,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         relatedId: null,
       });
 
-      res.json({ user });
+      return sendUser(res, user, 'admin');
     } catch (error) {
       console.error("Unblock user error:", error);
       res.status(500).json({ error: "Échec du déblocage de l'utilisateur" });
@@ -578,7 +575,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete user account permanently (admin)
-  app.delete("/api/admin/users/:id", async (req, res) => {
+  app.delete("/api/admin/users/:id", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const { id } = req.params;
       
@@ -602,7 +599,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update transporter profile (admin)
-  app.patch("/api/admin/transporters/:id", upload.single("truckPhoto"), async (req, res) => {
+  app.patch("/api/admin/transporters/:id", requireAuth, requireRole(['admin']), upload.single("truckPhoto"), async (req, res) => {
     try {
       const { id } = req.params;
       const { name, city, phoneNumber, newPassword } = req.body;
@@ -648,7 +645,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`✅ Transporteur mis à jour - ID: ${id}, Nom: ${updatedUser.name}`);
       // Sanitize user data before sending (remove passwordHash)
-      res.json({ user: sanitizeUser(updatedUser, 'owner') });
+      return sendUser(res, updatedUser, 'admin');
     } catch (error) {
       console.error("Update transporter error:", error);
       res.status(500).json({ error: "Échec de la mise à jour du transporteur" });
@@ -740,32 +737,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User routes
-  app.get("/api/users", async (req, res) => {
+  // 🔒 SÉCURISÉ: Admin seul peut lister tous les users
+  app.get("/api/users", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const users = await storage.getAllUsers();
-      res.json(users);
+      // ✅ Sanitize tous les users (supprime passwordHash)
+      const sanitizedUsers = users.map(u => sanitizeUser(u, 'admin'));
+      res.json(sanitizedUsers);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch users" });
     }
   });
 
-  app.get("/api/users/:id", async (req, res) => {
+  // 🔒 SÉCURISÉ: User peut voir ses données OU admin peut voir n'importe quel user
+  app.get("/api/users/:id", requireAuth, async (req, res) => {
     try {
-      const user = await storage.getUser(req.params.id);
+      const { id } = req.params;
+      const currentUser = req.user!;
+      
+      // ✅ Vérification ownership: seul le user lui-même ou un admin peut accéder
+      const isOwner = currentUser.id === id;
+      const isUserAdmin = isAdmin(currentUser);
+      
+      if (!isOwner && !isUserAdmin) {
+        return res.status(403).json({ 
+          error: "Accès refusé",
+          message: "Vous ne pouvez accéder qu'à vos propres données" 
+        });
+      }
+      
+      const user = await storage.getUser(id);
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
-      res.json(user);
+      
+      // ✅ Sanitize selon le contexte (admin voit tout, owner voit ses données)
+      return sendUser(res, user, isUserAdmin ? 'admin' : 'owner');
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch user" });
     }
   });
 
-  app.post("/api/users", async (req, res) => {
+  // 🔒 SÉCURISÉ: Seul admin peut créer des users via cet endpoint
+  app.post("/api/users", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
       const user = await storage.createUser(userData);
-      res.json(user);
+      // ✅ Sanitize avant envoi (admin context)
+      return sendUser(res, user, 'admin');
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: error.errors });
@@ -774,23 +793,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/users/:id", async (req, res) => {
+  // 🔒 SÉCURISÉ: User peut modifier ses données OU admin peut modifier n'importe quel user
+  app.patch("/api/users/:id", requireAuth, async (req, res) => {
     try {
-      const user = await storage.updateUser(req.params.id, req.body);
+      const { id } = req.params;
+      const currentUser = req.user!;
+      
+      // ✅ Vérification ownership: seul le user lui-même ou un admin peut modifier
+      const isOwner = currentUser.id === id;
+      const isUserAdmin = isAdmin(currentUser);
+      
+      if (!isOwner && !isUserAdmin) {
+        return res.status(403).json({ 
+          error: "Accès refusé",
+          message: "Vous ne pouvez modifier que vos propres données" 
+        });
+      }
+      
+      const user = await storage.updateUser(id, req.body);
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
-      res.json(user);
+      
+      // ✅ Sanitize selon le contexte
+      return sendUser(res, user, isUserAdmin ? 'admin' : 'owner');
     } catch (error) {
       res.status(500).json({ error: "Failed to update user" });
     }
   });
 
   // Update transporter profile (with truck photo)
-  app.patch("/api/users/:id/profile", upload.single("truckPhoto"), async (req, res) => {
+  // 🔒 SÉCURISÉ: User peut modifier son profil OU admin peut modifier n'importe quel profil
+  app.patch("/api/users/:id/profile", requireAuth, upload.single("truckPhoto"), async (req, res) => {
     try {
+      const { id } = req.params;
+      const currentUser = req.user!;
       const { phoneNumber, name } = req.body;
       const truckPhoto = req.file;
+
+      // ✅ Vérification ownership: seul le user lui-même ou un admin peut modifier
+      const isOwner = currentUser.id === id;
+      const isUserAdmin = isAdmin(currentUser);
+      
+      if (!isOwner && !isUserAdmin) {
+        return res.status(403).json({ 
+          error: "Accès refusé",
+          message: "Vous ne pouvez modifier que votre propre profil" 
+        });
+      }
 
       // Validate required fields
       if (!phoneNumber || !name) {
@@ -831,13 +881,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updateData.truckPhotos = [truckPhotoBase64];
       }
 
-      const user = await storage.updateUser(req.params.id, updateData);
+      const user = await storage.updateUser(id, updateData);
       
       if (!user) {
         return res.status(404).json({ error: "Utilisateur non trouvé" });
       }
 
-      res.json(user);
+      // ✅ Sanitize avant envoi (owner context car c'est un profil personnel)
+      return sendUser(res, user, 'owner');
     } catch (error) {
       console.error("Update profile error:", error);
       res.status(500).json({ error: "Échec de la mise à jour du profil" });
@@ -845,9 +896,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update user PIN
-  app.patch("/api/users/:id/pin", async (req, res) => {
+  // 🔒 SÉCURISÉ: Seul le user lui-même peut changer son PIN
+  app.patch("/api/users/:id/pin", requireAuth, async (req, res) => {
     try {
+      const { id } = req.params;
+      const currentUser = req.user!;
       const { pin } = req.body;
+
+      // ✅ Vérification ownership stricte: UNIQUEMENT le user lui-même (pas même admin)
+      if (currentUser.id !== id) {
+        return res.status(403).json({ 
+          error: "Accès refusé",
+          message: "Vous ne pouvez modifier que votre propre code PIN" 
+        });
+      }
 
       if (!pin || pin.length !== 6 || !/^\d{6}$/.test(pin)) {
         return res.status(400).json({ error: "Le PIN doit contenir exactement 6 chiffres" });
@@ -856,7 +918,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Hash the new PIN
       const hashedPin = await bcrypt.hash(pin, 10);
 
-      const user = await storage.updateUser(req.params.id, {
+      const user = await storage.updateUser(id, {
         passwordHash: hashedPin,
       });
 
@@ -864,6 +926,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Utilisateur non trouvé" });
       }
 
+      // ✅ Retourne uniquement success (pas de données sensibles)
       res.json({ success: true });
     } catch (error) {
       console.error("Update PIN error:", error);
@@ -872,9 +935,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update user device token for push notifications
-  app.patch("/api/users/:id/device-token", async (req, res) => {
+  // 🔒 SÉCURISÉ: Seul le user lui-même peut mettre à jour son device token
+  app.patch("/api/users/:id/device-token", requireAuth, async (req, res) => {
     try {
+      const { id } = req.params;
+      const currentUser = req.user!;
       const { deviceToken } = req.body;
+
+      // ✅ Vérification ownership: seul le user lui-même peut modifier son token
+      if (currentUser.id !== id) {
+        return res.status(403).json({ 
+          error: "Accès refusé",
+          message: "Vous ne pouvez modifier que votre propre device token" 
+        });
+      }
 
       if (!deviceToken) {
         return res.status(400).json({ error: "Device token requis" });
@@ -890,7 +964,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Device token invalide" });
       }
 
-      const user = await storage.updateUser(req.params.id, {
+      const user = await storage.updateUser(id, {
         deviceToken: deviceToken,
       });
 
@@ -1656,19 +1730,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin routes for managing transporter RIB
-  app.get("/api/admin/users/:id/rib", async (req, res) => {
+  app.get("/api/admin/users/:id/rib", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
-      const adminId = req.query.adminId as string;
-      
-      if (!adminId) {
-        return res.status(401).json({ error: "Non authentifié" });
-      }
-
-      const admin = await storage.getUser(adminId);
-      if (!admin || admin.role !== "admin") {
-        return res.status(403).json({ error: "Accès refusé" });
-      }
-
       const user = await storage.getUser(req.params.id);
       if (!user) {
         return res.status(404).json({ error: "Utilisateur non trouvé" });
@@ -1684,18 +1747,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/admin/users/:id/rib", async (req, res) => {
+  app.patch("/api/admin/users/:id/rib", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
-      const { adminId, ribName, ribNumber } = req.body;
-      
-      if (!adminId) {
-        return res.status(401).json({ error: "Non authentifié" });
-      }
-
-      const admin = await storage.getUser(adminId);
-      if (!admin || admin.role !== "admin") {
-        return res.status(403).json({ error: "Accès refusé" });
-      }
+      const { ribName, ribNumber } = req.body;
 
       // Validate RIB number (must be exactly 24 digits)
       if (ribNumber && ribNumber !== "" && !/^\d{24}$/.test(ribNumber)) {
@@ -2072,7 +2126,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin offer management routes
-  app.delete("/api/admin/offers/:id", async (req, res) => {
+  app.delete("/api/admin/offers/:id", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const { id } = req.params;
       const offer = await storage.getOffer(id);
@@ -2097,7 +2151,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/admin/offers/:id", async (req, res) => {
+  app.patch("/api/admin/offers/:id", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const { id } = req.params;
       const { amount, pickupDate, loadType } = req.body;
@@ -2393,7 +2447,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin routes
-  app.get("/api/admin/settings", async (req, res) => {
+  app.get("/api/admin/settings", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const settings = await storage.getAdminSettings();
       res.json(settings);
@@ -2402,7 +2456,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/admin/settings", async (req, res) => {
+  app.patch("/api/admin/settings", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const settings = await storage.updateAdminSettings(req.body);
       res.json(settings);
@@ -2465,7 +2519,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/admin/stats", async (req, res) => {
+  app.get("/api/admin/stats", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const users = await storage.getAllUsers();
       const requests = await storage.getAllTransportRequests();
@@ -2613,7 +2667,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all transporters with detailed stats (admin)
-  app.get("/api/admin/transporters", async (req, res) => {
+  app.get("/api/admin/transporters", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const users = await storage.getAllUsers();
       const offers = await storage.getAllOffers();
@@ -2681,7 +2735,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get transporter truck photo by ID (admin)
-  app.get("/api/admin/transporters/:id/photo", async (req, res) => {
+  app.get("/api/admin/transporters/:id/photo", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const { id } = req.params;
       const user = await storage.getUser(id);
@@ -2709,7 +2763,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all clients with stats (admin)
-  app.get("/api/admin/clients", async (req, res) => {
+  app.get("/api/admin/clients", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const clientStats = await storage.getClientStatistics();
       res.json(clientStats);
@@ -2720,7 +2774,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all conversations (admin)
-  app.get("/api/admin/conversations", async (req, res) => {
+  app.get("/api/admin/conversations", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const conversations = await storage.getAdminConversations();
       res.json(conversations);
@@ -3042,7 +3096,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all client-transporter contacts (Admin only)
-  app.get("/api/admin/client-transporter-contacts", async (req, res) => {
+  app.get("/api/admin/client-transporter-contacts", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const contacts = await db
         .select()
@@ -3105,19 +3159,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // SMS Communication Routes (Admin only)
   
   // Quick notify all validated transporters
-  app.post("/api/admin/sms/notify-transporters", async (req, res) => {
+  app.post("/api/admin/sms/notify-transporters", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
-      const { adminId } = req.body;
-
-      if (!adminId) {
-        return res.status(401).json({ error: "Non authentifié" });
-      }
-
-      // Verify admin role
-      const admin = await storage.getUser(adminId);
-      if (!admin || admin.role !== "admin") {
-        return res.status(403).json({ error: "Accès refusé - Admin requis" });
-      }
+      const adminId = req.user!.id;
 
       // Get all validated transporters
       const allUsers = await storage.getAllUsers();
@@ -3156,18 +3200,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Send custom SMS to target audience
-  app.post("/api/admin/sms/send", async (req, res) => {
+  app.post("/api/admin/sms/send", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
-      const { adminId, targetAudience, message } = req.body;
+      const adminId = req.user!.id;
+      const { targetAudience, message } = req.body;
 
-      if (!adminId || !targetAudience || !message) {
+      if (!targetAudience || !message) {
         return res.status(400).json({ error: "Tous les champs sont requis" });
-      }
-
-      // Verify admin role
-      const admin = await storage.getUser(adminId);
-      if (!admin || admin.role !== "admin") {
-        return res.status(403).json({ error: "Accès refusé - Admin requis" });
       }
 
       if (message.length > 160) {
@@ -3225,18 +3264,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Send single SMS to specific phone number
-  app.post("/api/admin/sms/send-single", async (req, res) => {
+  app.post("/api/admin/sms/send-single", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
-      const { adminId, phoneNumber, message } = req.body;
+      const adminId = req.user!.id;
+      const { phoneNumber, message } = req.body;
 
-      if (!adminId || !phoneNumber || !message) {
+      if (!phoneNumber || !message) {
         return res.status(400).json({ error: "Tous les champs sont requis" });
-      }
-
-      // Verify admin role
-      const admin = await storage.getUser(adminId);
-      if (!admin || admin.role !== "admin") {
-        return res.status(403).json({ error: "Accès refusé - Admin requis" });
       }
 
       if (message.length > 160) {
@@ -3273,20 +3307,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get SMS history
-  app.get("/api/admin/sms/history", async (req, res) => {
+  app.get("/api/admin/sms/history", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
-      const adminId = req.query.adminId as string;
-
-      if (!adminId) {
-        return res.status(401).json({ error: "Non authentifié" });
-      }
-
-      // Verify admin role
-      const admin = await storage.getUser(adminId);
-      if (!admin || admin.role !== "admin") {
-        return res.status(403).json({ error: "Accès refusé - Admin requis" });
-      }
-
       const history = await storage.getAllSmsHistory();
       
       // Populate admin names
@@ -3308,20 +3330,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete SMS history entry
-  app.delete("/api/admin/sms/history/:id", async (req, res) => {
+  app.delete("/api/admin/sms/history/:id", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const { id } = req.params;
-      const adminId = req.query.adminId as string;
-
-      if (!adminId) {
-        return res.status(401).json({ error: "Non authentifié" });
-      }
-
-      // Verify admin role
-      const admin = await storage.getUser(adminId);
-      if (!admin || admin.role !== "admin") {
-        return res.status(403).json({ error: "Accès refusé - Admin requis" });
-      }
 
       await storage.deleteSmsHistory(id);
       res.json({ success: true });
@@ -3390,20 +3401,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all pending references (Admin/Coordinator)
-  app.get("/api/admin/transporter-references", async (req, res) => {
+  app.get("/api/admin/transporter-references", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
-      const adminId = req.query.adminId as string;
-
-      if (!adminId) {
-        return res.status(401).json({ error: "Non authentifié" });
-      }
-
-      // Verify admin or coordinator role
-      const admin = await storage.getUser(adminId);
-      if (!admin || (admin.role !== "admin" && admin.role !== "coordinateur")) {
-        return res.status(403).json({ error: "Accès refusé - Admin ou Coordinateur requis" });
-      }
-
       const references = await storage.getAllPendingReferences();
       res.json(references);
     } catch (error) {
@@ -3413,23 +3412,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update transporter reference status (Admin/Coordinator) - used by admin dashboard
-  app.patch("/api/admin/transporter-references/:id", async (req, res) => {
+  app.patch("/api/admin/transporter-references/:id", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
       const { id } = req.params;
-      const { status, rejectionReason, adminId } = req.body;
-      
-      if (!adminId) {
-        return res.status(401).json({ error: "Non authentifié - adminId requis" });
-      }
+      const { status, rejectionReason } = req.body;
+      const adminId = req.user!.id;
 
       if (!status) {
         return res.status(400).json({ error: "Status requis" });
-      }
-
-      // Verify admin or coordinator role
-      const admin = await storage.getUser(adminId);
-      if (!admin || (admin.role !== "admin" && admin.role !== "coordinateur")) {
-        return res.status(403).json({ error: "Accès refusé - Admin ou Coordinateur requis" });
       }
 
       if (status === "validated" || status === "approved") {
@@ -3687,8 +3677,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ================================
 
   // Get available requests (open status) for coordinator
-  app.get("/api/coordinator/available-requests", async (req, res) => {
+  app.get("/api/coordinator/available-requests", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
+      const coordinatorId = req.user!.id;
       const requests = await storage.getCoordinatorAvailableRequests();
       res.json(requests);
     } catch (error) {
@@ -3698,8 +3689,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get active requests (accepted status) for coordinator
-  app.get("/api/coordinator/active-requests", async (req, res) => {
+  app.get("/api/coordinator/active-requests", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
+      const coordinatorId = req.user!.id;
       const requests = await storage.getCoordinatorActiveRequests();
       res.json(requests);
     } catch (error) {
@@ -3709,8 +3701,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get payment pending requests for coordinator
-  app.get("/api/coordinator/payment-requests", async (req, res) => {
+  app.get("/api/coordinator/payment-requests", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
+      const coordinatorId = req.user!.id;
       const requests = await storage.getCoordinatorPaymentRequests();
       res.json(requests);
     } catch (error) {
@@ -3720,8 +3713,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Toggle request visibility (hide/show from transporters)
-  app.patch("/api/coordinator/requests/:id/toggle-visibility", async (req, res) => {
+  app.patch("/api/coordinator/requests/:id/toggle-visibility", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
+      const coordinatorId = req.user!.id;
       const { id } = req.params;
       const { isHidden } = req.body;
 
@@ -3734,8 +3728,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update payment status
-  app.patch("/api/coordinator/requests/:id/payment-status", async (req, res) => {
+  app.patch("/api/coordinator/requests/:id/payment-status", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
+      const coordinatorId = req.user!.id;
       const { id } = req.params;
       const { paymentStatus } = req.body;
 
@@ -3750,19 +3745,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ===== Admin - Coordination Status Configuration Routes =====
   
   // Get all coordination status configurations
-  app.get("/api/admin/coordination-statuses", async (req, res) => {
+  app.get("/api/admin/coordination-statuses", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
-      const userId = (req.query.adminId || req.query.userId) as string;
-
-      if (!userId) {
-        return res.status(401).json({ error: "Non authentifié" });
-      }
-
-      const user = await storage.getUser(userId);
-      if (!user || (user.role !== "admin" && user.role !== "coordinateur")) {
-        return res.status(403).json({ error: "Accès refusé - Admin ou Coordinateur requis" });
-      }
-
       const statuses = await storage.getAllCoordinationStatusConfigs();
       res.json(statuses);
     } catch (error) {
@@ -3772,19 +3756,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create a new coordination status configuration
-  app.post("/api/admin/coordination-statuses", async (req, res) => {
+  app.post("/api/admin/coordination-statuses", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
-      const userId = (req.query.adminId || req.query.userId) as string;
-
-      if (!userId) {
-        return res.status(401).json({ error: "Non authentifié" });
-      }
-
-      const user = await storage.getUser(userId);
-      if (!user || user.role !== "admin") {
-        return res.status(403).json({ error: "Accès refusé - Admin requis" });
-      }
-
       const statusData = insertCoordinationStatusSchema.parse(req.body);
       const status = await storage.createCoordinationStatusConfig(statusData);
       res.json(status);
@@ -3798,19 +3771,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update a coordination status configuration
-  app.patch("/api/admin/coordination-statuses/:id", async (req, res) => {
+  app.patch("/api/admin/coordination-statuses/:id", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const { id } = req.params;
-      const userId = (req.query.adminId || req.query.userId) as string;
-
-      if (!userId) {
-        return res.status(401).json({ error: "Non authentifié" });
-      }
-
-      const user = await storage.getUser(userId);
-      if (!user || user.role !== "admin") {
-        return res.status(403).json({ error: "Accès refusé - Admin requis" });
-      }
 
       const status = await storage.updateCoordinationStatusConfig(id, req.body);
       if (!status) {
@@ -3824,19 +3787,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete a coordination status configuration
-  app.delete("/api/admin/coordination-statuses/:id", async (req, res) => {
+  app.delete("/api/admin/coordination-statuses/:id", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const { id } = req.params;
-      const userId = (req.query.adminId || req.query.userId) as string;
-
-      if (!userId) {
-        return res.status(401).json({ error: "Non authentifié" });
-      }
-
-      const user = await storage.getUser(userId);
-      if (!user || user.role !== "admin") {
-        return res.status(403).json({ error: "Accès refusé - Admin requis" });
-      }
 
       await storage.deleteCoordinationStatusConfig(id);
       res.json({ success: true });
@@ -3847,19 +3800,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get coordination status usage statistics
-  app.get("/api/admin/coordination-status-usage", async (req, res) => {
+  app.get("/api/admin/coordination-status-usage", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
-      const userId = (req.query.adminId || req.query.userId) as string;
-
-      if (!userId) {
-        return res.status(401).json({ error: "Non authentifié" });
-      }
-
-      const user = await storage.getUser(userId);
-      if (!user || (user.role !== "admin" && user.role !== "coordinateur")) {
-        return res.status(403).json({ error: "Accès refusé - Admin ou Coordinateur requis" });
-      }
-
       const usage = await storage.getCoordinationStatusUsage();
       res.json(usage);
     } catch (error) {
@@ -3871,8 +3813,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ===== Coordinator Coordination Views Routes =====
   
   // Get "Nouveau" requests (newly created requests without coordination)
-  app.get("/api/coordinator/coordination/nouveau", async (req, res) => {
+  app.get("/api/coordinator/coordination/nouveau", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
+      const coordinatorId = req.user!.id;
       const requests = await storage.getCoordinationNouveauRequests();
       res.json(requests);
     } catch (error) {
@@ -3882,8 +3825,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get "En Action" requests (actively being worked on)
-  app.get("/api/coordinator/coordination/en-action", async (req, res) => {
+  app.get("/api/coordinator/coordination/en-action", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
+      const coordinatorId = req.user!.id;
       const requests = await storage.getCoordinationEnActionRequests();
       res.json(requests);
     } catch (error) {
@@ -3893,8 +3837,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get "Prioritaires" requests (high priority)
-  app.get("/api/coordinator/coordination/prioritaires", async (req, res) => {
+  app.get("/api/coordinator/coordination/prioritaires", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
+      const coordinatorId = req.user!.id;
       const requests = await storage.getCoordinationPrioritairesRequests();
       res.json(requests);
     } catch (error) {
@@ -3904,8 +3849,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get "Archives" requests (archived)
-  app.get("/api/coordinator/coordination/archives", async (req, res) => {
+  app.get("/api/coordinator/coordination/archives", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
+      const coordinatorId = req.user!.id;
       const requests = await storage.getCoordinationArchivesRequests();
       res.json(requests);
     } catch (error) {
@@ -3915,14 +3861,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update coordination status for a request
-  app.patch("/api/coordinator/requests/:id/coordination-status", async (req, res) => {
+  app.patch("/api/coordinator/requests/:id/coordination-status", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
+      const coordinatorId = req.user!.id;
       const { id } = req.params;
-      const { coordinationStatus, coordinationReason, coordinationReminderDate, coordinatorId } = req.body;
-
-      if (!coordinatorId) {
-        return res.status(400).json({ error: "coordinatorId est requis" });
-      }
+      const { coordinationStatus, coordinationReason, coordinationReminderDate } = req.body;
 
       const reminderDate = coordinationReminderDate ? new Date(coordinationReminderDate) : null;
 
@@ -3955,10 +3898,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update request details (coordinator complete edit)
-  app.patch("/api/coordinator/requests/:id", async (req, res) => {
+  app.patch("/api/coordinator/requests/:id", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
+      const coordinatorId = req.user!.id;
       const { id } = req.params;
-      const { coordinatorId, fromCity, toCity, description, dateTime, photos } = req.body;
+      const { fromCity, toCity, description, dateTime, photos } = req.body;
 
       // Get current request to compare changes
       const currentRequest = await storage.getTransportRequest(id);
@@ -4005,7 +3949,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Log the coordination edit
-      if (coordinatorId && Object.keys(changes).length > 0) {
+      if (Object.keys(changes).length > 0) {
         await storage.createCoordinatorLog({
           coordinatorId,
           action: "coordination_edit",
@@ -4027,8 +3971,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get offers for a specific request (with transporter details)
-  app.get("/api/coordinator/requests/:requestId/offers", async (req, res) => {
+  app.get("/api/coordinator/requests/:requestId/offers", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
+      const coordinatorId = req.user!.id;
       const { requestId } = req.params;
       
       // Get all offers for this request
@@ -4053,14 +3998,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         return {
           ...offer,
-          transporter: transporter ? {
-            id: transporter.id,
-            name: transporter.name,
-            phoneNumber: transporter.phoneNumber,
-            city: transporter.city,
-            rating: transporter.rating,
-            truckPhotos: transporter.truckPhotos,
-          } : null,
+          transporter: transporter ? sanitizeUser(transporter, 'admin') : null,
           clientAmount: totalWithCommission.toFixed(2),
           commissionAmount: commissionAmount.toFixed(2),
         };
@@ -4074,8 +4012,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Accept an offer on behalf of the client
-  app.post("/api/coordinator/offers/:offerId/accept", async (req, res) => {
+  app.post("/api/coordinator/offers/:offerId/accept", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
+      const coordinatorId = req.user!.id;
       const { offerId } = req.params;
       const offer = await storage.getOffer(offerId);
       
@@ -4151,7 +4090,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ 
         success: true, 
         offer,
-        transporter,
+        transporter: sanitizeUser(transporter, 'admin'),
         totalWithCommission: totalWithCommission.toFixed(2) 
       });
     } catch (error) {
@@ -4163,16 +4102,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ===== Coordinator Notifications & Messaging Routes =====
   
   // Get all notifications for coordinator (grouped by request)
-  app.get("/api/coordinator/notifications", async (req, res) => {
+  app.get("/api/coordinator/notifications", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
-      const { userId } = req.query;
-      
-      if (!userId) {
-        return res.status(400).json({ error: "userId requis" });
-      }
+      const coordinatorId = req.user!.id;
 
       // Get all notifications for the coordinator
-      const notifications = await storage.getNotificationsByUser(userId as string);
+      const notifications = await storage.getNotificationsByUser(coordinatorId);
       
       // Collect all offer IDs and request IDs to batch fetch
       const offerIds = new Set<string>();
@@ -4245,8 +4180,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Mark coordinator notification as read
-  app.patch("/api/coordinator/notifications/:id/read", async (req, res) => {
+  app.patch("/api/coordinator/notifications/:id/read", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
+      const coordinatorId = req.user!.id;
       const notification = await storage.markAsRead(req.params.id);
       
       if (!notification) {
@@ -4261,16 +4197,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Mark all coordinator notifications as read
-  app.post("/api/coordinator/notifications/mark-all-read", async (req, res) => {
+  app.post("/api/coordinator/notifications/mark-all-read", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
-      const { userId } = req.body;
-      
-      if (!userId) {
-        return res.status(400).json({ error: "userId requis" });
-      }
+      const coordinatorId = req.user!.id;
       
       // Get all notifications and mark them as read
-      const notifications = await storage.getNotificationsByUser(userId);
+      const notifications = await storage.getNotificationsByUser(coordinatorId);
       for (const notification of notifications) {
         if (!notification.read) {
           await storage.markAsRead(notification.id);
@@ -4285,13 +4217,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all conversations grouped by request for coordinator
-  app.get("/api/coordinator/conversations", async (req, res) => {
+  app.get("/api/coordinator/conversations", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
-      const { userId } = req.query;
-      
-      if (!userId) {
-        return res.status(400).json({ error: "userId requis" });
-      }
+      const coordinatorId = req.user!.id;
 
       // Get all transport requests
       const allRequests = await storage.getAllTransportRequests();
@@ -4329,16 +4257,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             fromCity: request.fromCity,
             toCity: request.toCity,
             status: request.status,
-            client: client ? {
-              id: client.id,
-              name: client.name,
-              phoneNumber: client.phoneNumber
-            } : null,
-            transporter: transporter ? {
-              id: transporter.id,
-              name: transporter.name,
-              phoneNumber: transporter.phoneNumber
-            } : null,
+            client: client ? sanitizeUser(client, 'admin') : null,
+            transporter: transporter ? sanitizeUser(transporter, 'admin') : null,
             lastMessage: lastMessage ? {
               content: lastMessage.messageType === 'text' ? lastMessage.message : 
                        lastMessage.messageType === 'voice' ? '🎤 Message vocal' :
@@ -4369,8 +4289,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get messages for a specific request (conversation)
-  app.get("/api/coordinator/conversations/:requestId/messages", async (req, res) => {
+  app.get("/api/coordinator/conversations/:requestId/messages", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
+      const coordinatorId = req.user!.id;
       const { requestId } = req.params;
       const messages = await storage.getMessagesByRequest(requestId);
       res.json(messages);
@@ -4381,18 +4302,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Send a message as coordinator to a conversation
-  app.post("/api/coordinator/conversations/:requestId/messages", async (req, res) => {
+  app.post("/api/coordinator/conversations/:requestId/messages", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
+      const coordinatorId = req.user!.id;
       const { requestId } = req.params;
-      const { senderId, receiverId, message, messageType } = req.body;
+      const { receiverId, message, messageType } = req.body;
       
-      if (!senderId || !receiverId || !message) {
+      if (!receiverId || !message) {
         return res.status(400).json({ error: "Données manquantes" });
       }
       
       const newMessage = await storage.createChatMessage({
         requestId,
-        senderId,
+        senderId: coordinatorId,
         receiverId,
         message,
         messageType: messageType || 'text',
@@ -4431,8 +4353,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Mark all messages in a conversation as read (for coordinator)
-  app.patch("/api/coordinator/conversations/:requestId/mark-read", async (req, res) => {
+  app.patch("/api/coordinator/conversations/:requestId/mark-read", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
+      const coordinatorId = req.user!.id;
       const { requestId } = req.params;
       
       // Mark all messages in this conversation as read
@@ -4455,10 +4378,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ===== Admin - Coordinator Management Routes =====
   
   // Get all coordinators (Admin only)
-  app.get("/api/admin/coordinators", async (req, res) => {
+  app.get("/api/admin/coordinators", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const coordinators = await storage.getAllCoordinators();
-      res.json(coordinators);
+      const sanitizedCoordinators = coordinators.map(c => sanitizeUser(c, 'admin'));
+      res.json(sanitizedCoordinators);
     } catch (error) {
       console.error("Erreur récupération coordinateurs:", error);
       res.status(500).json({ error: "Erreur lors de la récupération des coordinateurs" });
@@ -4466,7 +4390,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create a new coordinator (Admin only)
-  app.post("/api/admin/coordinators", async (req, res) => {
+  app.post("/api/admin/coordinators", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const { phoneNumber, name, pin } = req.body;
 
@@ -4499,7 +4423,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isActive: true
       });
 
-      res.json(coordinator);
+      return sendUser(res, coordinator, 'admin');
     } catch (error) {
       console.error("Erreur création coordinateur:", error);
       res.status(500).json({ error: "Erreur lors de la création du coordinateur" });
@@ -4507,7 +4431,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Toggle coordinator status (block/unblock)
-  app.patch("/api/admin/coordinators/:id/toggle-status", async (req, res) => {
+  app.patch("/api/admin/coordinators/:id/toggle-status", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const { id } = req.params;
       
@@ -4519,7 +4443,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const newStatus = coordinator.accountStatus === 'active' ? 'blocked' : 'active';
       const updated = await storage.updateCoordinatorStatus(id, newStatus);
       
-      res.json(updated);
+      return sendUser(res, updated, 'admin');
     } catch (error) {
       console.error("Erreur modification statut coordinateur:", error);
       res.status(500).json({ error: "Erreur lors de la modification du statut" });
@@ -4527,7 +4451,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Reset coordinator PIN
-  app.patch("/api/admin/coordinators/:id/reset-pin", async (req, res) => {
+  app.patch("/api/admin/coordinators/:id/reset-pin", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const { id } = req.params;
       const { newPin } = req.body;
@@ -4550,7 +4474,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete coordinator
-  app.delete("/api/admin/coordinators/:id", async (req, res) => {
+  app.delete("/api/admin/coordinators/:id", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const { id } = req.params;
       
@@ -4568,7 +4492,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get coordinator activity logs
-  app.get("/api/admin/coordinator-logs", async (req, res) => {
+  app.get("/api/admin/coordinator-logs", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const { coordinatorId } = req.query;
       const logs = await storage.getCoordinatorLogs(coordinatorId as string | undefined);
@@ -4580,7 +4504,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get recent coordinator activity (with coordinator details)
-  app.get("/api/admin/coordinator-activity", async (req, res) => {
+  app.get("/api/admin/coordinator-activity", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const activity = await storage.getRecentCoordinatorActivity();
       res.json(activity);
