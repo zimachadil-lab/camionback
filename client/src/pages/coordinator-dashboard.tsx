@@ -290,10 +290,10 @@ export default function CoordinatorDashboard() {
 
   // Fetch coordinators for filtering
   const { data: coordinators = [] } = useQuery({
-    queryKey: ["/api/admin/coordinators"],
+    queryKey: ["/api/coordinators"],
     enabled: !!user?.id,
     queryFn: async () => {
-      const response = await fetch(`/api/admin/coordinators?adminId=${user.id}`);
+      const response = await fetch(`/api/coordinators`);
       return response.json();
     },
   });

@@ -4431,6 +4431,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all coordinators (Admin and Coordinator access for filtering)
+  app.get("/api/coordinators", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
+    try {
+      const coordinators = await storage.getAllCoordinators();
+      const sanitizedCoordinators = coordinators.map(c => sanitizeUser(c, 'admin'));
+      res.json(sanitizedCoordinators);
+    } catch (error) {
+      console.error("Erreur récupération coordinateurs:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération des coordinateurs" });
+    }
+  });
+
   // Create a new coordinator (Admin only)
   app.post("/api/admin/coordinators", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
