@@ -16,6 +16,7 @@ import {
   insertEmptyReturnSchema,
   insertReportSchema,
   insertCitySchema,
+  insertCoordinationStatusSchema,
   type Offer,
   type TransportRequest,
   clientTransporterContacts
@@ -3675,6 +3676,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Erreur modification statut paiement:", error);
       res.status(500).json({ error: "Erreur lors de la modification du statut" });
+    }
+  });
+
+  // ===== Admin - Coordination Status Configuration Routes =====
+  
+  // Get all coordination status configurations
+  app.get("/api/admin/coordination-statuses", async (req, res) => {
+    try {
+      const adminId = req.query.adminId as string;
+
+      if (!adminId) {
+        return res.status(401).json({ error: "Non authentifié" });
+      }
+
+      const admin = await storage.getUser(adminId);
+      if (!admin || admin.role !== "admin") {
+        return res.status(403).json({ error: "Accès refusé - Admin requis" });
+      }
+
+      const statuses = await storage.getAllCoordinationStatusConfigs();
+      res.json(statuses);
+    } catch (error) {
+      console.error("Erreur récupération statuts coordination:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération des statuts" });
+    }
+  });
+
+  // Create a new coordination status configuration
+  app.post("/api/admin/coordination-statuses", async (req, res) => {
+    try {
+      const adminId = req.query.adminId as string;
+
+      if (!adminId) {
+        return res.status(401).json({ error: "Non authentifié" });
+      }
+
+      const admin = await storage.getUser(adminId);
+      if (!admin || admin.role !== "admin") {
+        return res.status(403).json({ error: "Accès refusé - Admin requis" });
+      }
+
+      const statusData = insertCoordinationStatusSchema.parse(req.body);
+      const status = await storage.createCoordinationStatusConfig(statusData);
+      res.json(status);
+    } catch (error) {
+      console.error("Erreur création statut coordination:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(500).json({ error: "Erreur lors de la création du statut" });
+    }
+  });
+
+  // Update a coordination status configuration
+  app.patch("/api/admin/coordination-statuses/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const adminId = req.query.adminId as string;
+
+      if (!adminId) {
+        return res.status(401).json({ error: "Non authentifié" });
+      }
+
+      const admin = await storage.getUser(adminId);
+      if (!admin || admin.role !== "admin") {
+        return res.status(403).json({ error: "Accès refusé - Admin requis" });
+      }
+
+      const status = await storage.updateCoordinationStatusConfig(id, req.body);
+      if (!status) {
+        return res.status(404).json({ error: "Statut non trouvé" });
+      }
+      res.json(status);
+    } catch (error) {
+      console.error("Erreur modification statut coordination:", error);
+      res.status(500).json({ error: "Erreur lors de la modification du statut" });
+    }
+  });
+
+  // Delete a coordination status configuration
+  app.delete("/api/admin/coordination-statuses/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const adminId = req.query.adminId as string;
+
+      if (!adminId) {
+        return res.status(401).json({ error: "Non authentifié" });
+      }
+
+      const admin = await storage.getUser(adminId);
+      if (!admin || admin.role !== "admin") {
+        return res.status(403).json({ error: "Accès refusé - Admin requis" });
+      }
+
+      await storage.deleteCoordinationStatusConfig(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Erreur suppression statut coordination:", error);
+      res.status(500).json({ error: "Erreur lors de la suppression du statut" });
     }
   });
 
