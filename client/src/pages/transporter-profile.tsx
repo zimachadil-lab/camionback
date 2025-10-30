@@ -32,7 +32,7 @@ type UserProfile = {
 export default function TransporterProfile() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { logout } = useAuth();
+  const { user: currentUser, loading: authLoading, logout, refreshUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [showPinDialog, setShowPinDialog] = useState(false);
   const [truckPhotoFile, setTruckPhotoFile] = useState<File | null>(null);
@@ -43,10 +43,6 @@ export default function TransporterProfile() {
   const [name, setName] = useState("");
   const [newPin, setNewPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
-
-  // Get current user from localStorage
-  const userStr = localStorage.getItem("camionback_user");
-  const currentUser = userStr ? JSON.parse(userStr) : null;
 
   // Fetch user profile
   const { data: profile, isLoading } = useQuery<UserProfile>({
@@ -75,13 +71,12 @@ export default function TransporterProfile() {
       }
       return response.json();
     },
-    onSuccess: (updatedUser) => {
+    onSuccess: () => {
       toast({
         title: "✅ Profil mis à jour avec succès",
         description: "Vos informations ont été enregistrées",
       });
-      // Update localStorage
-      localStorage.setItem("camionback_user", JSON.stringify(updatedUser));
+      refreshUser();
       queryClient.invalidateQueries({ queryKey: [`/api/users/${currentUser?.id}`] });
       setIsEditing(false);
       setTruckPhotoFile(null);

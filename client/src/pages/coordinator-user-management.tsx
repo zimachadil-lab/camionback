@@ -227,7 +227,7 @@ function AddTransporterForm({ onSuccess, cities }: { onSuccess: () => void; citi
 export default function CoordinatorUserManagement() {
   const [location, navigate] = useLocation();
   const { toast } = useToast();
-  const { logout } = useAuth();
+  const { user, loading: authLoading, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [addType, setAddType] = useState<"client" | "transporter">("client");
@@ -241,10 +241,6 @@ export default function CoordinatorUserManagement() {
     queryKey: [`/api/admin/transporters/${selectedTransporterId}/photo`],
     enabled: photoDialogOpen && !!selectedTransporterId,
   });
-
-  // Fetch user from localStorage
-  const userStr = localStorage.getItem("camionback_user");
-  const user = userStr ? JSON.parse(userStr) : null;
 
   // Logout function
   const handleLogout = () => {

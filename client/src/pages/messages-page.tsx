@@ -12,12 +12,9 @@ import { useAuth } from "@/lib/auth-context";
 
 export default function MessagesPage() {
   const [, navigate] = useLocation();
-  const { logout } = useAuth();
+  const { user, loading: authLoading, logout } = useAuth();
   const [selectedConversation, setSelectedConversation] = useState<any | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
-
-  const userStr = localStorage.getItem("camionback_user");
-  const user = userStr ? JSON.parse(userStr) : null;
 
   const handleLogout = () => {
     logout();

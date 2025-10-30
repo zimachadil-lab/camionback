@@ -13,40 +13,14 @@ import { useAuth } from "@/lib/auth-context";
 
 export default function TransporterPayments() {
   const [, setLocation] = useLocation();
-  const { logout } = useAuth();
-  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
+  const { user, loading: authLoading, logout } = useAuth();
 
   // Redirect non-transporters
   useEffect(() => {
-    if (user.role && user.role !== "transporter") {
+    if (!authLoading && user && user.role !== "transporter") {
       setLocation("/");
     }
-  }, [user.role, setLocation]);
-
-  // Refresh user data from database on mount to get latest status
-  useEffect(() => {
-    const refreshUserData = async () => {
-      try {
-        const response = await fetch(`/api/auth/me/${user.id}`);
-        if (response.ok) {
-          const { user: updatedUser } = await response.json();
-          // Update localStorage with fresh data
-          localStorage.setItem("camionback_user", JSON.stringify(updatedUser));
-          setUser(updatedUser);
-        } else if (response.status === 404) {
-          // User not found - clear localStorage and redirect to login
-          localStorage.removeItem("camionback_user");
-          window.location.href = "/";
-        }
-      } catch (error) {
-        console.error("Failed to refresh user data:", error);
-      }
-    };
-
-    if (user.id) {
-      refreshUserData();
-    }
-  }, [user.id]);
+  }, [user, authLoading, setLocation]);
 
   const handleLogout = () => {
     logout();

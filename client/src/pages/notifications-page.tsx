@@ -13,8 +13,7 @@ import { useAuth } from "@/lib/auth-context";
 
 export default function NotificationsPage() {
   const [, navigate] = useLocation();
-  const { logout } = useAuth();
-  const user = JSON.parse(localStorage.getItem("camionback_user") || "{}");
+  const { user, loading: authLoading, logout } = useAuth();
 
   const handleLogout = () => {
     logout();

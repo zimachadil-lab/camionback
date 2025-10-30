@@ -47,7 +47,7 @@ import { fr } from "date-fns/locale";
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
-  const { logout } = useAuth();
+  const { user, loading: authLoading, logout } = useAuth();
   const [addTransporterOpen, setAddTransporterOpen] = useState(false);
   const [addClientOpen, setAddClientOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -104,14 +104,12 @@ export default function AdminDashboard() {
   const [loadedPhotos, setLoadedPhotos] = useState<Record<string, string[]>>({});
   const { toast} = useToast();
 
-  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
-
   // Redirect to login if not authenticated
   useEffect(() => {
-    if (!user?.id || user?.role !== "admin") {
+    if (!authLoading && (!user || user.role !== "admin")) {
       setLocation("/");
     }
-  }, [user, setLocation]);
+  }, [user, authLoading, setLocation]);
 
   // Fetch conversation messages (enabled only when conversation dialog is open)
   const { data: conversationMessages = [] } = useQuery({
@@ -123,29 +121,6 @@ export default function AdminDashboard() {
     },
     enabled: conversationDialogOpen && !!selectedConversation?.requestId,
   });
-
-  useEffect(() => {
-    const refreshUserData = async () => {
-      try {
-        const response = await fetch(`/api/auth/me/${user.id}`);
-        if (response.ok) {
-          const { user: updatedUser } = await response.json();
-          localStorage.setItem("camionback_user", JSON.stringify(updatedUser));
-          setUser(updatedUser);
-        } else if (response.status === 404) {
-          // User not found - clear localStorage and redirect to login
-          localStorage.removeItem("camionback_user");
-          window.location.href = "/";
-        }
-      } catch (error) {
-        console.error("Failed to refresh user data:", error);
-      }
-    };
-
-    if (user.id) {
-      refreshUserData();
-    }
-  }, [user.id]);
 
   const handleLogout = () => {
     logout();

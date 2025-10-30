@@ -217,7 +217,7 @@ function CoordinatorOffersView({ requestId, onAcceptOffer, isPending }: {
 
 export default function CoordinatorDashboard() {
   const [, setLocation] = useLocation();
-  const { logout } = useAuth();
+  const { user, loading: authLoading, logout } = useAuth();
   const [selectedCity, setSelectedCity] = useState("Toutes les villes");
   const [selectedStatus, setSelectedStatus] = useState("Tous les statuts");
   const [searchQuery, setSearchQuery] = useState("");
@@ -245,31 +245,6 @@ export default function CoordinatorDashboard() {
   const [coordinationReason, setCoordinationReason] = useState("");
   const [coordinationReminderDate, setCoordinationReminderDate] = useState("");
   const { toast} = useToast();
-
-  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
-
-  // Refresh user data from database on mount
-  useEffect(() => {
-    const refreshUserData = async () => {
-      try {
-        const response = await fetch(`/api/auth/me/${user.id}`);
-        if (response.ok) {
-          const { user: updatedUser } = await response.json();
-          localStorage.setItem("camionback_user", JSON.stringify(updatedUser));
-          setUser(updatedUser);
-        } else if (response.status === 404) {
-          localStorage.removeItem("camionback_user");
-          window.location.href = "/";
-        }
-      } catch (error) {
-        console.error("Failed to refresh user data:", error);
-      }
-    };
-
-    if (user.id) {
-      refreshUserData();
-    }
-  }, [user.id]);
 
   const handleLogout = () => {
     logout();

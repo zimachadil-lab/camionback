@@ -8,15 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreditCard, ArrowLeft, Save } from "lucide-react";
 import { Link } from "wouter";
+import { useAuth } from "@/lib/auth-context";
 
 export default function MyRib() {
   const { toast } = useToast();
+  const { user, loading: authLoading } = useAuth();
   const [ribName, setRibName] = useState("");
   const [ribNumber, setRibNumber] = useState("");
-
-  // Get current user from localStorage
-  const storedUser = localStorage.getItem("camionback_user");
-  const user = storedUser ? JSON.parse(storedUser) : null;
 
   const { isLoading } = useQuery({
     queryKey: ["/api/user/rib", user?.id],

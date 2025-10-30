@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingTruck } from "@/components/ui/loading-truck";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useAuth } from "@/lib/auth-context";
 
 interface RatingSummary {
   averageRating: string;
@@ -25,7 +26,7 @@ interface RatingsResponse {
 }
 
 export default function TransporterRatings() {
-  const user = JSON.parse(localStorage.getItem("camionback_user") || "{}");
+  const { user, loading: authLoading } = useAuth();
 
   const { data, isLoading } = useQuery<RatingsResponse>({
     queryKey: ["/api/transporters", user?.id, "ratings"],
@@ -50,7 +51,7 @@ export default function TransporterRatings() {
     );
   };
 
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="min-h-screen bg-[#0a2540] flex items-center justify-center">
         <LoadingTruck message="Chargement de vos avis..." size="lg" />

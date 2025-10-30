@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useAuth } from "@/lib/auth-context";
 
 interface SmsHistoryRecord {
   id: string;
@@ -32,6 +33,7 @@ interface SmsHistoryRecord {
 
 export default function AdminCommunications() {
   const { toast } = useToast();
+  const { user: currentUser, loading: authLoading } = useAuth();
   const [customMessage, setCustomMessage] = useState("");
   const [targetAudience, setTargetAudience] = useState<string>("transporters");
   const [viewRecord, setViewRecord] = useState<SmsHistoryRecord | null>(null);
@@ -39,10 +41,6 @@ export default function AdminCommunications() {
   // Single SMS states
   const [singlePhoneNumber, setSinglePhoneNumber] = useState("");
   const [singleMessage, setSingleMessage] = useState("");
-
-  // Get current user from localStorage
-  const userStr = localStorage.getItem("camionback_user");
-  const currentUser = userStr ? JSON.parse(userStr) : null;
 
   // Fetch SMS history
   const { data: smsHistory = [], isLoading: historyLoading } = useQuery<SmsHistoryRecord[]>({

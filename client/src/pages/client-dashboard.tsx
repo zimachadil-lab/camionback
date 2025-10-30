@@ -910,7 +910,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
 
 export default function ClientDashboard() {
   const [, setLocation] = useLocation();
-  const { logout } = useAuth();
+  const { user, loading: authLoading, logout } = useAuth();
   const [showNewRequest, setShowNewRequest] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [selectedTransporter, setSelectedTransporter] = useState<any>(null);
@@ -928,33 +928,6 @@ export default function ClientDashboard() {
   const [paymentReceipt, setPaymentReceipt] = useState<string>("");
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [reportRequestId, setReportRequestId] = useState<string>("");
-
-  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
-
-  // Refresh user data from database on mount to get latest status
-  useEffect(() => {
-    const refreshUserData = async () => {
-      try {
-        const response = await fetch(`/api/auth/me/${user.id}`);
-        if (response.ok) {
-          const { user: updatedUser } = await response.json();
-          // Update localStorage with fresh data
-          localStorage.setItem("camionback_user", JSON.stringify(updatedUser));
-          setUser(updatedUser);
-        } else if (response.status === 404) {
-          // User not found - clear localStorage and redirect to login
-          localStorage.removeItem("camionback_user");
-          window.location.href = "/";
-        }
-      } catch (error) {
-        console.error("Failed to refresh user data:", error);
-      }
-    };
-
-    if (user.id) {
-      refreshUserData();
-    }
-  }, [user.id]);
 
   const handleLogout = () => {
     logout();

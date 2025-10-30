@@ -51,7 +51,7 @@ const referenceSchema = z.object({
 
 export default function TransporterDashboard() {
   const [, setLocation] = useLocation();
-  const { logout } = useAuth();
+  const { user, loading: authLoading, logout } = useAuth();
   const [selectedCity, setSelectedCity] = useState("Toutes les villes");
   const [searchQuery, setSearchQuery] = useState("");
   const [offerDialogOpen, setOfferDialogOpen] = useState(false);
@@ -74,33 +74,6 @@ export default function TransporterDashboard() {
   const [selectedOffer, setSelectedOffer] = useState<any>(null);
   const [notValidatedDialogOpen, setNotValidatedDialogOpen] = useState(false);
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | null>(null);
-
-  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
-
-  // Refresh user data from database on mount to get latest status
-  useEffect(() => {
-    const refreshUserData = async () => {
-      try {
-        const response = await fetch(`/api/auth/me/${user.id}`);
-        if (response.ok) {
-          const { user: updatedUser } = await response.json();
-          // Update localStorage with fresh data
-          localStorage.setItem("camionback_user", JSON.stringify(updatedUser));
-          setUser(updatedUser);
-        } else if (response.status === 404) {
-          // User not found - clear localStorage and redirect to login
-          localStorage.removeItem("camionback_user");
-          window.location.href = "/";
-        }
-      } catch (error) {
-        console.error("Failed to refresh user data:", error);
-      }
-    };
-
-    if (user.id) {
-      refreshUserData();
-    }
-  }, [user.id]);
 
   // Initialize edit offer form when offer is selected
   useEffect(() => {
