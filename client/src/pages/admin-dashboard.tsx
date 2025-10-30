@@ -40,6 +40,7 @@ import { VoiceRecorder } from "@/components/chat/voice-recorder";
 import { VoiceMessagePlayer } from "@/components/chat/voice-message-player";
 import AdminCommunications from "@/pages/admin-communications";
 import { CoordinatorManagement } from "@/components/admin/coordinator-management";
+import { CoordinationStatusManagement } from "@/components/admin/coordination-status-management";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -1024,12 +1025,16 @@ export default function AdminDashboard() {
             {/* Barre de navigation secondaire - Gestion */}
             <div className="bg-muted/30 p-2 rounded-lg">
               <p className="text-xs text-muted-foreground mb-2 px-2 font-medium">Gestion & Configuration</p>
-              <TabsList className="flex lg:grid w-full lg:grid-cols-10 overflow-x-auto text-xs sm:text-sm">
+              <TabsList className="flex lg:grid w-full lg:grid-cols-11 overflow-x-auto text-xs sm:text-sm">
                 <TabsTrigger value="drivers" data-testid="tab-drivers" className="flex-shrink-0">Transporteurs</TabsTrigger>
                 <TabsTrigger value="clients" data-testid="tab-clients" className="flex-shrink-0">Clients</TabsTrigger>
                 <TabsTrigger value="coordinators" data-testid="tab-coordinators" className="flex-shrink-0">
                   <Compass className="w-4 h-4 mr-1" />
                   Coordinateurs
+                </TabsTrigger>
+                <TabsTrigger value="coordination-statuses" data-testid="tab-coordination-statuses" className="flex-shrink-0">
+                  <Settings className="w-4 h-4 mr-1" />
+                  Statuts Coordination
                 </TabsTrigger>
                 <TabsTrigger value="reports" data-testid="tab-reports" className="flex-shrink-0">
                   <Flag className="w-4 h-4 mr-1" />
@@ -2373,6 +2378,10 @@ export default function AdminDashboard() {
 
           <TabsContent value="coordinators" className="mt-6">
             <CoordinatorManagement />
+          </TabsContent>
+
+          <TabsContent value="coordination-statuses" className="mt-6">
+            <CoordinationStatusManagement />
           </TabsContent>
 
           <TabsContent value="reports" className="mt-6">
