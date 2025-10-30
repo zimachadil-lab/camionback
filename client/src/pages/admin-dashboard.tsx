@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCircle, UserCheck, CreditCard, Phone, Eye, EyeOff, TruckIcon, MapPin, Calendar, FileText, MessageSquare, Trash2, Send, Flag, Pencil, Camera, RefreshCw, Circle, Edit, Compass } from "lucide-react";
+import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCircle, UserCheck, CreditCard, Phone, Eye, EyeOff, TruckIcon, MapPin, Calendar, FileText, MessageSquare, Trash2, Send, Flag, Pencil, Camera, RefreshCw, Circle, Edit, Compass, Settings } from "lucide-react";
 import { LoadingTruck } from "@/components/ui/loading-truck";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -103,14 +103,11 @@ export default function AdminDashboard() {
   const { toast} = useToast();
 
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
-  const [isAuthReady, setIsAuthReady] = useState(false);
 
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!user?.id || user?.role !== "admin") {
       setLocation("/");
-    } else {
-      setIsAuthReady(true);
     }
   }, [user, setLocation]);
 
@@ -887,23 +884,23 @@ export default function AdminDashboard() {
     return `${sign}${trend}% ce mois`;
   };
 
-  // Show loading while checking authentication (after all hooks)
-  if (!isAuthReady) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <LoadingTruck />
-      </div>
-    );
-  }
+  // Render loading state while checking auth (without early return to respect Hooks rules)
+  const isAuthenticated = user?.id && user?.role === "admin";
 
   return (
     <div className="min-h-screen bg-background">
-      <Header
-        user={user}
-        onLogout={handleLogout}
-      />
-      
-      <div className="container mx-auto p-4 md:p-6 max-w-7xl space-y-6">
+      {!isAuthenticated ? (
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <LoadingTruck />
+        </div>
+      ) : (
+        <>
+          <Header
+            user={user}
+            onLogout={handleLogout}
+          />
+          
+          <div className="container mx-auto p-4 md:p-6 max-w-7xl space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Administration</h1>
@@ -4835,6 +4832,8 @@ export default function AdminDashboard() {
           </div>
         </DialogContent>
       </Dialog>
+        </>
+      )}
     </div>
   );
 }
