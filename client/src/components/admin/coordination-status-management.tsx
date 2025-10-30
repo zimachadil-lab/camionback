@@ -20,7 +20,7 @@ import { z } from "zod";
 const statusFormSchema = z.object({
   label: z.string().min(1, "Le label est requis"),
   value: z.string().min(1, "La valeur est requise").regex(/^[a-z_]+$/, "Lettres minuscules et underscores uniquement"),
-  category: z.enum(["en_action", "prioritaires"], {
+  category: z.enum(["en_action", "prioritaires", "archives"], {
     required_error: "La catégorie est requise"
   }),
   color: z.string().optional(),
@@ -54,18 +54,36 @@ export function CoordinationStatusManagement() {
   const { data: statuses = [], isLoading } = useQuery({
     queryKey: ["/api/admin/coordination-statuses"],
     queryFn: async () => {
-      const response = await fetch(`/api/admin/coordination-statuses?adminId=${user.id}`);
+      const response = await fetch(`/api/admin/coordination-statuses?userId=${user.id}`);
       if (!response.ok) throw new Error("Erreur de chargement");
       return response.json();
     },
+    enabled: !!user?.id,
+  });
+
+  // Fetch status usage counts
+  const { data: statusUsage = {} } = useQuery({
+    queryKey: ["/api/admin/coordination-status-usage"],
+    queryFn: async () => {
+      const response = await fetch(`/api/admin/coordination-status-usage?userId=${user.id}`);
+      if (!response.ok) return {};
+      const data = await response.json();
+      const usageMap: Record<string, number> = {};
+      data.forEach((item: any) => {
+        usageMap[item.coordination_status] = item.usage_count;
+      });
+      return usageMap;
+    },
+    enabled: !!user?.id,
   });
 
   const createMutation = useMutation({
     mutationFn: async (data: StatusFormData) => {
-      return await apiRequest(`/api/admin/coordination-statuses?adminId=${user.id}`, "POST", data);
+      return await apiRequest("POST", `/api/admin/coordination-statuses?userId=${user.id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/coordination-statuses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/coordination-status-usage"] });
       toast({
         title: "Statut créé",
         description: "Le nouveau statut a été créé avec succès.",
@@ -84,10 +102,11 @@ export function CoordinationStatusManagement() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<StatusFormData> }) => {
-      return await apiRequest(`/api/admin/coordination-statuses/${id}?adminId=${user.id}`, "PATCH", data);
+      return await apiRequest("PATCH", `/api/admin/coordination-statuses/${id}?userId=${user.id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/coordination-statuses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/coordination-status-usage"] });
       toast({
         title: "Statut modifié",
         description: "Le statut a été mis à jour avec succès.",
@@ -106,10 +125,11 @@ export function CoordinationStatusManagement() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest(`/api/admin/coordination-statuses/${id}?adminId=${user.id}`, "DELETE");
+      return await apiRequest("DELETE", `/api/admin/coordination-statuses/${id}?userId=${user.id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/coordination-statuses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/coordination-status-usage"] });
       toast({
         title: "Statut supprimé",
         description: "Le statut a été supprimé avec succès.",
@@ -148,6 +168,7 @@ export function CoordinationStatusManagement() {
 
   const enActionStatuses = statuses.filter((s: any) => s.category === "en_action");
   const prioritairesStatuses = statuses.filter((s: any) => s.category === "prioritaires");
+  const archivesStatuses = statuses.filter((s: any) => s.category === "archives");
 
   return (
     <Card>
@@ -179,6 +200,7 @@ export function CoordinationStatusManagement() {
                     <TableHead>Label</TableHead>
                     <TableHead>Valeur</TableHead>
                     <TableHead>Couleur</TableHead>
+                    <TableHead>Utilisations</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -192,6 +214,11 @@ export function CoordinationStatusManagement() {
                         {status.color && (
                           <Badge variant="outline">{status.color}</Badge>
                         )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">
+                          {statusUsage[status.value] || 0}
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-right space-x-2">
                         <Button
@@ -215,7 +242,7 @@ export function CoordinationStatusManagement() {
                   ))}
                   {enActionStatuses.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                         Aucun statut "En Action"
                       </TableCell>
                     </TableRow>
@@ -233,6 +260,7 @@ export function CoordinationStatusManagement() {
                     <TableHead>Label</TableHead>
                     <TableHead>Valeur</TableHead>
                     <TableHead>Couleur</TableHead>
+                    <TableHead>Utilisations</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -246,6 +274,11 @@ export function CoordinationStatusManagement() {
                         {status.color && (
                           <Badge variant="outline">{status.color}</Badge>
                         )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">
+                          {statusUsage[status.value] || 0}
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-right space-x-2">
                         <Button
@@ -269,8 +302,68 @@ export function CoordinationStatusManagement() {
                   ))}
                   {prioritairesStatuses.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                         Aucun statut "Prioritaires"
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Archives ({archivesStatuses.length} statuts)</h3>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Ordre</TableHead>
+                    <TableHead>Label</TableHead>
+                    <TableHead>Valeur</TableHead>
+                    <TableHead>Couleur</TableHead>
+                    <TableHead>Utilisations</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {archivesStatuses.map((status: any) => (
+                    <TableRow key={status.id}>
+                      <TableCell>{status.displayOrder}</TableCell>
+                      <TableCell className="font-medium">{status.label}</TableCell>
+                      <TableCell><code className="text-xs bg-muted px-2 py-1 rounded">{status.value}</code></TableCell>
+                      <TableCell>
+                        {status.color && (
+                          <Badge variant="outline">{status.color}</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">
+                          {statusUsage[status.value] || 0}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(status)}
+                          data-testid={`button-edit-status-${status.id}`}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeleteDialogId(status.id)}
+                          data-testid={`button-delete-status-${status.id}`}
+                        >
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {archivesStatuses.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                        Aucun statut "Archives"
                       </TableCell>
                     </TableRow>
                   )}
@@ -332,6 +425,7 @@ export function CoordinationStatusManagement() {
                         <SelectContent>
                           <SelectItem value="en_action">En Action</SelectItem>
                           <SelectItem value="prioritaires">Prioritaires</SelectItem>
+                          <SelectItem value="archives">Archives</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -429,6 +523,7 @@ export function CoordinationStatusManagement() {
                         <SelectContent>
                           <SelectItem value="en_action">En Action</SelectItem>
                           <SelectItem value="prioritaires">Prioritaires</SelectItem>
+                          <SelectItem value="archives">Archives</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />

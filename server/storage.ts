@@ -176,6 +176,7 @@ export interface IStorage {
   getCoordinationStatusConfigsByCategory(category: string): Promise<CoordinationStatus[]>;
   updateCoordinationStatusConfig(id: string, updates: Partial<CoordinationStatus>): Promise<CoordinationStatus | undefined>;
   deleteCoordinationStatusConfig(id: string): Promise<void>;
+  getCoordinationStatusUsage(): Promise<{ coordination_status: string; usage_count: number }[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -1215,6 +1216,9 @@ export class MemStorage implements IStorage {
   }
   async deleteCoordinationStatusConfig(id: string): Promise<void> {
     return;
+  }
+  async getCoordinationStatusUsage(): Promise<{ coordination_status: string; usage_count: number }[]> {
+    return [];
   }
 }
 
@@ -2914,6 +2918,21 @@ export class DbStorage implements IStorage {
 
   async deleteCoordinationStatusConfig(id: string): Promise<void> {
     await db.delete(coordinationStatuses).where(eq(coordinationStatuses.id, id));
+  }
+
+  async getCoordinationStatusUsage(): Promise<{ coordination_status: string; usage_count: number }[]> {
+    const result = await db.select({
+      coordination_status: transportRequests.coordinationStatus,
+      usage_count: sql<number>`count(*)::int`,
+    })
+      .from(transportRequests)
+      .where(isNotNull(transportRequests.coordinationStatus))
+      .groupBy(transportRequests.coordinationStatus);
+    
+    return result.map((row: any) => ({
+      coordination_status: row.coordination_status,
+      usage_count: row.usage_count,
+    }));
   }
 }
 

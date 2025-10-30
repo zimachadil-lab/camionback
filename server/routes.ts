@@ -3706,14 +3706,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a new coordination status configuration
   app.post("/api/admin/coordination-statuses", async (req, res) => {
     try {
-      const adminId = req.query.adminId as string;
+      const userId = (req.query.adminId || req.query.userId) as string;
 
-      if (!adminId) {
+      if (!userId) {
         return res.status(401).json({ error: "Non authentifié" });
       }
 
-      const admin = await storage.getUser(adminId);
-      if (!admin || admin.role !== "admin") {
+      const user = await storage.getUser(userId);
+      if (!user || user.role !== "admin") {
         return res.status(403).json({ error: "Accès refusé - Admin requis" });
       }
 
@@ -3733,14 +3733,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/admin/coordination-statuses/:id", async (req, res) => {
     try {
       const { id } = req.params;
-      const adminId = req.query.adminId as string;
+      const userId = (req.query.adminId || req.query.userId) as string;
 
-      if (!adminId) {
+      if (!userId) {
         return res.status(401).json({ error: "Non authentifié" });
       }
 
-      const admin = await storage.getUser(adminId);
-      if (!admin || admin.role !== "admin") {
+      const user = await storage.getUser(userId);
+      if (!user || user.role !== "admin") {
         return res.status(403).json({ error: "Accès refusé - Admin requis" });
       }
 
@@ -3759,14 +3759,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/admin/coordination-statuses/:id", async (req, res) => {
     try {
       const { id } = req.params;
-      const adminId = req.query.adminId as string;
+      const userId = (req.query.adminId || req.query.userId) as string;
 
-      if (!adminId) {
+      if (!userId) {
         return res.status(401).json({ error: "Non authentifié" });
       }
 
-      const admin = await storage.getUser(adminId);
-      if (!admin || admin.role !== "admin") {
+      const user = await storage.getUser(userId);
+      if (!user || user.role !== "admin") {
         return res.status(403).json({ error: "Accès refusé - Admin requis" });
       }
 
@@ -3775,6 +3775,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Erreur suppression statut coordination:", error);
       res.status(500).json({ error: "Erreur lors de la suppression du statut" });
+    }
+  });
+
+  // Get coordination status usage statistics
+  app.get("/api/admin/coordination-status-usage", async (req, res) => {
+    try {
+      const userId = (req.query.adminId || req.query.userId) as string;
+
+      if (!userId) {
+        return res.status(401).json({ error: "Non authentifié" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user || (user.role !== "admin" && user.role !== "coordinateur")) {
+        return res.status(403).json({ error: "Accès refusé - Admin ou Coordinateur requis" });
+      }
+
+      const usage = await storage.getCoordinationStatusUsage();
+      res.json(usage);
+    } catch (error) {
+      console.error("Erreur récupération statistiques statuts:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération des statistiques" });
     }
   });
 
