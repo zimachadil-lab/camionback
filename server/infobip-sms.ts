@@ -116,14 +116,14 @@ async function sendSMS(to: string, message: string): Promise<boolean> {
 }
 
 /**
- * Send SMS to client when they receive their first offer
+ * Send SMS to client when they receive a new offer
  */
-export async function sendFirstOfferSMS(clientPhone: string): Promise<boolean> {
-  const message = `🚛 Vous avez reçu une nouvelle offre de transport sur CamionBack. Connectez-vous pour la consulter et réserver votre camion.`;
+export async function sendNewOfferSMS(clientPhone: string): Promise<boolean> {
+  const message = `Vous avez recu une nouvelle proposition tarifaire sur CamionBack. Connectez-vous pour la consulter et choisir votre transporteur.`;
   
   // Fire and forget - don't block the main process
   sendSMS(clientPhone, message).catch(err => {
-    console.error('Erreur SMS première offre:', err);
+    console.error('[Infobip] Erreur SMS nouvelle offre:', err);
   });
   
   return true;
@@ -133,11 +133,11 @@ export async function sendFirstOfferSMS(clientPhone: string): Promise<boolean> {
  * Send SMS to transporter when their offer is accepted
  */
 export async function sendOfferAcceptedSMS(transporterPhone: string): Promise<boolean> {
-  const message = `✅ Votre offre de transport sur CamionBack a été acceptée ! Contactez votre client depuis votre tableau de bord.`;
+  const message = `Votre offre de transport sur CamionBack a ete acceptee ! Contactez votre client depuis votre tableau de bord.`;
   
   // Fire and forget - don't block the main process
   sendSMS(transporterPhone, message).catch(err => {
-    console.error('Erreur SMS offre acceptée:', err);
+    console.error('[Infobip] Erreur SMS offre acceptee:', err);
   });
   
   return true;
@@ -147,11 +147,11 @@ export async function sendOfferAcceptedSMS(transporterPhone: string): Promise<bo
  * Send SMS to transporter when their account is activated by admin
  */
 export async function sendTransporterActivatedSMS(transporterPhone: string): Promise<boolean> {
-  const message = `🚛 Bonjour ! Votre compte CamionBack est maintenant activé. Vous pouvez dès à présent consulter les commandes disponibles et proposer vos offres. – L'équipe CamionBack`;
+  const message = `Bonjour ! Votre compte CamionBack est maintenant active. Vous pouvez des a present consulter les commandes disponibles et proposer vos offres. - L'equipe CamionBack`;
   
   // Fire and forget - don't block the main process
   sendSMS(transporterPhone, message).catch(err => {
-    console.error('Erreur SMS activation transporteur:', err);
+    console.error('[Infobip] Erreur SMS activation transporteur:', err);
   });
   
   return true;
