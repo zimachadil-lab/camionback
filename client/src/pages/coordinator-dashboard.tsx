@@ -422,15 +422,6 @@ export default function CoordinatorDashboard() {
         description: "Échec de modification de la visibilité",
       });
     },
-    onSettled: () => {
-      // Refetch pour synchroniser avec le serveur
-      queryClient.invalidateQueries({ predicate: (query) => 
-        query.queryKey[0] === "/api/coordinator/coordination/nouveau" ||
-        query.queryKey[0] === "/api/coordinator/coordination/en-action" ||
-        query.queryKey[0] === "/api/coordinator/coordination/prioritaires" ||
-        query.queryKey[0] === "/api/coordinator/coordination/archives"
-      });
-    },
   });
 
   // Update payment status mutation
