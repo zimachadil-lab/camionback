@@ -107,7 +107,7 @@ export default function AdminDashboard() {
   const [adminCoordinationStatus, setAdminCoordinationStatus] = useState("");
   const [adminCoordinationReason, setAdminCoordinationReason] = useState("");
   const [adminCoordinationReminderDate, setAdminCoordinationReminderDate] = useState("");
-  const [adminCoordinationAssignedTo, setAdminCoordinationAssignedTo] = useState("");
+  const [adminCoordinationAssignedTo, setAdminCoordinationAssignedTo] = useState("none");
   const { toast} = useToast();
 
   // Redirect to login if not authenticated
@@ -1302,7 +1302,7 @@ export default function AdminDashboard() {
                                       setAdminCoordinationStatus(request.coordinationStatus || "nouveau");
                                       setAdminCoordinationReason(request.coordinationReason || "");
                                       setAdminCoordinationReminderDate(request.coordinationReminderDate || "");
-                                      setAdminCoordinationAssignedTo(request.assignedToId || "");
+                                      setAdminCoordinationAssignedTo(request.assignedToId || "none");
                                       setCoordinationDialogOpen(true);
                                     }}
                                     data-testid={`button-coordination-${request.id}`}
@@ -4854,7 +4854,13 @@ export default function AdminDashboard() {
               <div className="bg-muted p-3 rounded-md text-sm">
                 <div className="font-medium mb-1">Dernière mise à jour</div>
                 <div className="text-muted-foreground">
-                  {format(new Date(selectedRequestForCoordination.coordinationUpdatedAt), "dd MMMM yyyy 'à' HH:mm", { locale: fr })}
+                  {(() => {
+                    try {
+                      return format(new Date(selectedRequestForCoordination.coordinationUpdatedAt), "dd MMMM yyyy 'à' HH:mm", { locale: fr });
+                    } catch {
+                      return "Date invalide";
+                    }
+                  })()}
                 </div>
               </div>
             )}
@@ -4863,7 +4869,7 @@ export default function AdminDashboard() {
             <div className="space-y-2">
               <label className="text-sm font-medium">Statut de coordination</label>
               <Select
-                value={adminCoordinationStatus}
+                value={adminCoordinationStatus || "nouveau"}
                 onValueChange={setAdminCoordinationStatus}
               >
                 <SelectTrigger data-testid="select-admin-coordination-status">
@@ -4871,7 +4877,7 @@ export default function AdminDashboard() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="nouveau">Nouveau</SelectItem>
-                  {coordinationStatuses
+                  {Array.isArray(coordinationStatuses) && coordinationStatuses
                     .filter((s: any) => s.isActive)
                     .map((status: any) => (
                       <SelectItem key={status.id} value={status.value}>
@@ -4886,17 +4892,17 @@ export default function AdminDashboard() {
             <div className="space-y-2">
               <label className="text-sm font-medium">Assigné à</label>
               <Select
-                value={adminCoordinationAssignedTo}
+                value={adminCoordinationAssignedTo || "none"}
                 onValueChange={setAdminCoordinationAssignedTo}
               >
                 <SelectTrigger data-testid="select-admin-assigned-to">
                   <SelectValue placeholder="Sélectionner un coordinateur" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Non assigné</SelectItem>
-                  {coordinators.map((coordinator: any) => (
+                  <SelectItem value="none">Non assigné</SelectItem>
+                  {Array.isArray(coordinators) && coordinators.map((coordinator: any) => (
                     <SelectItem key={coordinator.id} value={coordinator.id}>
-                      {coordinator.name}
+                      {coordinator?.name || `Coordinateur ${coordinator.id.slice(0, 8)}`}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -4949,7 +4955,7 @@ export default function AdminDashboard() {
                   coordinationStatus: adminCoordinationStatus,
                   coordinationReason: adminCoordinationReason || null,
                   coordinationReminderDate: adminCoordinationReminderDate || null,
-                  assignedToId: adminCoordinationAssignedTo || null,
+                  assignedToId: adminCoordinationAssignedTo === "none" ? null : adminCoordinationAssignedTo,
                 });
               }}
               disabled={updateCoordinationMutation.isPending}
