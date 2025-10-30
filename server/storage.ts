@@ -15,14 +15,15 @@ import {
   type ClientTransporterContact, type InsertClientTransporterContact,
   type Story, type InsertStory,
   type CoordinatorLog, type InsertCoordinatorLog,
-  type TransporterReference, type InsertTransporterReference
+  type TransporterReference, type InsertTransporterReference,
+  type CoordinationStatus, type InsertCoordinationStatus
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from './db.js';
 import { 
   users, otpCodes, transportRequests, offers, chatMessages,
   adminSettings, notifications, ratings, emptyReturns, contracts, reports, cities, smsHistory,
-  clientTransporterContacts, stories, coordinatorLogs, transporterReferences
+  clientTransporterContacts, stories, coordinatorLogs, transporterReferences, coordinationStatuses
 } from '@shared/schema';
 import { eq, and, or, desc, asc, lte, gte, sql, inArray, isNull, isNotNull } from 'drizzle-orm';
 
@@ -168,6 +169,13 @@ export interface IStorage {
   validateReference(id: string, adminId: string): Promise<TransporterReference | undefined>;
   rejectReference(id: string, adminId: string, reason: string): Promise<TransporterReference | undefined>;
   updateTransporterReference(id: string, updates: Partial<TransporterReference>): Promise<TransporterReference | undefined>;
+  
+  // Coordination Status Config operations (admin-configurable statuses)
+  createCoordinationStatusConfig(status: InsertCoordinationStatus): Promise<CoordinationStatus>;
+  getAllCoordinationStatusConfigs(): Promise<CoordinationStatus[]>;
+  getCoordinationStatusConfigsByCategory(category: string): Promise<CoordinationStatus[]>;
+  updateCoordinationStatusConfig(id: string, updates: Partial<CoordinationStatus>): Promise<CoordinationStatus | undefined>;
+  deleteCoordinationStatusConfig(id: string): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -1190,6 +1198,23 @@ export class MemStorage implements IStorage {
   }
   async updateTransporterReference(id: string, updates: Partial<TransporterReference>): Promise<TransporterReference | undefined> {
     return undefined;
+  }
+  
+  // Coordination Status Config operations (stubs - MemStorage not used in production)
+  async createCoordinationStatusConfig(status: InsertCoordinationStatus): Promise<CoordinationStatus> {
+    throw new Error("MemStorage not implemented for coordination status configs");
+  }
+  async getAllCoordinationStatusConfigs(): Promise<CoordinationStatus[]> {
+    return [];
+  }
+  async getCoordinationStatusConfigsByCategory(category: string): Promise<CoordinationStatus[]> {
+    return [];
+  }
+  async updateCoordinationStatusConfig(id: string, updates: Partial<CoordinationStatus>): Promise<CoordinationStatus | undefined> {
+    return undefined;
+  }
+  async deleteCoordinationStatusConfig(id: string): Promise<void> {
+    return;
   }
 }
 
@@ -2852,6 +2877,43 @@ export class DbStorage implements IStorage {
       .where(eq(transporterReferences.id, id))
       .returning();
     return result[0];
+  }
+  
+  // Coordination Status Config operations
+  async createCoordinationStatusConfig(status: InsertCoordinationStatus): Promise<CoordinationStatus> {
+    const result = await db.insert(coordinationStatuses).values(status).returning();
+    return result[0];
+  }
+
+  async getAllCoordinationStatusConfigs(): Promise<CoordinationStatus[]> {
+    const result = await db.select()
+      .from(coordinationStatuses)
+      .where(eq(coordinationStatuses.isActive, true))
+      .orderBy(asc(coordinationStatuses.category), asc(coordinationStatuses.displayOrder));
+    return result;
+  }
+
+  async getCoordinationStatusConfigsByCategory(category: string): Promise<CoordinationStatus[]> {
+    const result = await db.select()
+      .from(coordinationStatuses)
+      .where(and(
+        eq(coordinationStatuses.category, category),
+        eq(coordinationStatuses.isActive, true)
+      ))
+      .orderBy(asc(coordinationStatuses.displayOrder));
+    return result;
+  }
+
+  async updateCoordinationStatusConfig(id: string, updates: Partial<CoordinationStatus>): Promise<CoordinationStatus | undefined> {
+    const result = await db.update(coordinationStatuses)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(coordinationStatuses.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteCoordinationStatusConfig(id: string): Promise<void> {
+    await db.delete(coordinationStatuses).where(eq(coordinationStatuses.id, id));
   }
 }
 
