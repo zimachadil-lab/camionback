@@ -79,7 +79,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
   const [showCamioMatchDialog, setShowCamioMatchDialog] = useState(false);
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [editPhotos, setEditPhotos] = useState<File[]>([]);
-  const [keepExistingPhotos, setKeepExistingPhotos] = useState(true);
+  const [editedExistingPhotos, setEditedExistingPhotos] = useState<string[]>([]);
   const isAccepted = request.status === "accepted";
   const { toast } = useToast();
 
@@ -147,9 +147,9 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
         invoiceRequired: request.invoiceRequired || false,
         budget: request.budget || "",
       });
-      // Reset photos state
+      // Reset photos state - keep existing photos by default
       setEditPhotos([]);
-      setKeepExistingPhotos(true);
+      setEditedExistingPhotos(request.photos || []);
     }
   }, [showEditDialog, request, editForm]);
 
@@ -184,12 +184,16 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
     });
   };
 
-  // Handle photo upload
+  // Handle photo upload - adds to existing photos
   const handleEditPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setEditPhotos(Array.from(e.target.files));
-      setKeepExistingPhotos(false); // Si on ajoute de nouvelles photos, on remplace les anciennes
     }
+  };
+
+  // Remove a single existing photo
+  const removeExistingPhoto = (index: number) => {
+    setEditedExistingPhotos(prev => prev.filter((_, i) => i !== index));
   };
 
   const onSubmitEdit = async (data: any) => {
@@ -210,19 +214,22 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
       payload.budget = data.budget;
     }
     
-    // Handle photos
+    // Handle photos - merge existing photos with new uploads
+    const finalPhotos: string[] = [];
+    
+    // Add retained existing photos
+    if (editedExistingPhotos.length > 0) {
+      finalPhotos.push(...editedExistingPhotos);
+    }
+    
+    // Add new photos (convert to base64)
     if (editPhotos.length > 0) {
-      // Convert new photos to base64
       const photoBase64Promises = editPhotos.map(photo => convertToBase64(photo));
       const photoBase64Array = await Promise.all(photoBase64Promises);
-      payload.photos = photoBase64Array;
-    } else if (keepExistingPhotos && request.photos && request.photos.length > 0) {
-      // Keep existing photos if no new ones uploaded
-      payload.photos = request.photos;
-    } else {
-      // Clear photos
-      payload.photos = [];
+      finalPhotos.push(...photoBase64Array);
     }
+    
+    payload.photos = finalPhotos;
     
     editRequestMutation.mutate(payload);
   };
@@ -899,58 +906,72 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
               <div className="space-y-3">
                 <label className="text-sm font-medium">Photos</label>
                 
-                {/* Photos existantes */}
-                {request.photos && request.photos.length > 0 && keepExistingPhotos && editPhotos.length === 0 && (
+                {/* Photos existantes conservées */}
+                {editedExistingPhotos.length > 0 && (
                   <div className="space-y-2">
-                    <p className="text-xs text-muted-foreground">Photos actuelles ({request.photos.length})</p>
+                    <p className="text-xs text-muted-foreground">Photos existantes ({editedExistingPhotos.length})</p>
                     <div className="grid grid-cols-3 gap-2">
-                      {request.photos.map((photo: string, index: number) => (
-                        <div key={index} className="relative aspect-square rounded-md overflow-hidden bg-muted">
+                      {editedExistingPhotos.map((photo: string, index: number) => (
+                        <div key={index} className="relative aspect-square rounded-md overflow-hidden bg-muted group">
                           <img 
                             src={photo} 
                             alt={`Photo ${index + 1}`} 
                             className="w-full h-full object-cover"
                           />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => removeExistingPhoto(index)}
+                            data-testid={`button-remove-photo-${index}`}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
                         </div>
                       ))}
                     </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setKeepExistingPhotos(false);
-                        setEditPhotos([]);
-                      }}
-                      data-testid="button-remove-existing-photos"
-                    >
-                      Supprimer les photos
-                    </Button>
+                  </div>
+                )}
+
+                {/* Nouvelles photos sélectionnées (aperçu) */}
+                {editPhotos.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">Nouvelles photos à ajouter ({editPhotos.length})</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {editPhotos.map((photo: File, index: number) => (
+                        <div key={index} className="relative aspect-square rounded-md overflow-hidden bg-muted border-2 border-primary">
+                          <img 
+                            src={URL.createObjectURL(photo)} 
+                            alt={`Nouvelle photo ${index + 1}`} 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 
                 {/* Zone de téléchargement de nouvelles photos */}
-                {(!keepExistingPhotos || !request.photos || request.photos.length === 0) && (
-                  <div className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={handleEditPhotoUpload}
-                      className="hidden"
-                      id="edit-photo-upload"
-                      data-testid="input-edit-photos"
-                    />
-                    <label htmlFor="edit-photo-upload" className="cursor-pointer">
-                      <Camera className="mx-auto h-10 w-10 text-muted-foreground mb-2" />
-                      <p className="text-sm text-muted-foreground">
-                        {editPhotos.length > 0 
-                          ? `${editPhotos.length} nouvelle(s) photo(s) sélectionnée(s)` 
-                          : "Cliquez pour ajouter de nouvelles photos"}
-                      </p>
-                    </label>
-                  </div>
-                )}
+                <div className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary/50 transition-colors">
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleEditPhotoUpload}
+                    className="hidden"
+                    id="edit-photo-upload"
+                    data-testid="input-edit-photos"
+                  />
+                  <label htmlFor="edit-photo-upload" className="cursor-pointer">
+                    <Camera className="mx-auto h-10 w-10 text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground">
+                      {editPhotos.length > 0 
+                        ? "Cliquez pour choisir d'autres photos" 
+                        : "Cliquez pour ajouter de nouvelles photos"}
+                    </p>
+                  </label>
+                </div>
               </div>
 
               <DialogFooter className="gap-2">
