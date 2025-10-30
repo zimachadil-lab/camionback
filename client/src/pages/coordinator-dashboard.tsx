@@ -352,6 +352,15 @@ export default function CoordinatorDashboard() {
     },
   });
 
+  // Fetch coordination statuses
+  const { data: coordinationStatuses = [], isLoading: statusesLoading } = useQuery({
+    queryKey: ["/api/admin/coordination-statuses"],
+    queryFn: async () => {
+      const response = await fetch(`/api/admin/coordination-statuses?adminId=${user.id}`);
+      return response.json();
+    },
+  });
+
   // Toggle request visibility mutation
   const toggleVisibilityMutation = useMutation({
     mutationFn: async ({ requestId, isHidden }: { requestId: string; isHidden: boolean }) => {
@@ -1744,16 +1753,22 @@ export default function CoordinatorDashboard() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="nouveau">Nouveau</SelectItem>
-                    <SelectItem value="client_injoignable">Client injoignable</SelectItem>
-                    <SelectItem value="infos_manquantes">Infos manquantes</SelectItem>
-                    <SelectItem value="photos_a_recuperer">Photos à récupérer</SelectItem>
-                    <SelectItem value="rappel_prevu">Rappel prévu</SelectItem>
-                    <SelectItem value="attente_concurrence">Attente concurrence</SelectItem>
-                    <SelectItem value="refus_tarif">Refus tarif</SelectItem>
-                    <SelectItem value="livraison_urgente">Livraison urgente</SelectItem>
-                    <SelectItem value="client_interesse">Client intéressé</SelectItem>
-                    <SelectItem value="transporteur_interesse">Transporteur intéressé</SelectItem>
-                    <SelectItem value="menace_annulation">Menace annulation</SelectItem>
+                    {coordinationStatuses
+                      .filter((s: any) => s.category === "en_action")
+                      .sort((a: any, b: any) => a.displayOrder - b.displayOrder)
+                      .map((status: any) => (
+                        <SelectItem key={status.id} value={status.value}>
+                          {status.label}
+                        </SelectItem>
+                      ))}
+                    {coordinationStatuses
+                      .filter((s: any) => s.category === "prioritaires")
+                      .sort((a: any, b: any) => a.displayOrder - b.displayOrder)
+                      .map((status: any) => (
+                        <SelectItem key={status.id} value={status.value}>
+                          {status.label}
+                        </SelectItem>
+                      ))}
                     <SelectItem value="archive">Archive</SelectItem>
                   </SelectContent>
                 </Select>
