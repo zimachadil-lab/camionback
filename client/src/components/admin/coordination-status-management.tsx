@@ -30,7 +30,7 @@ const statusFormSchema = z.object({
 type StatusFormData = z.infer<typeof statusFormSchema>;
 
 export function CoordinationStatusManagement() {
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const user = JSON.parse(localStorage.getItem("camionback_user") || "{}");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogData, setEditDialogData] = useState<any>(null);
   const [deleteDialogId, setDeleteDialogId] = useState<string | null>(null);
