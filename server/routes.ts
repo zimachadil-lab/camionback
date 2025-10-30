@@ -1106,7 +1106,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/requests/:id", async (req, res) => {
+  app.delete("/api/requests/:id", requireAuth, requireRole(['admin', 'coordinateur', 'client']), async (req, res) => {
     try {
       const success = await storage.deleteTransportRequest(req.params.id);
       if (!success) {

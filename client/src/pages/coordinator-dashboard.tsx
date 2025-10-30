@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, MessageCircle, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck } from "lucide-react";
+import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, MessageCircle, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck, Trash2 } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -16,6 +16,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth-context";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -246,6 +247,7 @@ export default function CoordinatorDashboard() {
   const [coordinationReminderDate, setCoordinationReminderDate] = useState("");
   const [coordinationAssignedFilter, setCoordinationAssignedFilter] = useState("all");
   const [coordinationSearchQuery, setCoordinationSearchQuery] = useState("");
+  const [deleteRequestId, setDeleteRequestId] = useState<string | null>(null);
   const { toast} = useToast();
 
   const handleLogout = () => {
@@ -560,6 +562,35 @@ export default function CoordinatorDashboard() {
         variant: "destructive",
         title: "Erreur",
         description: "Échec de la mise à jour du statut",
+      });
+    },
+  });
+
+  // Delete request mutation
+  const deleteRequestMutation = useMutation({
+    mutationFn: async (requestId: string) => {
+      return apiRequest("DELETE", `/api/requests/${requestId}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Commande supprimée",
+        description: "La commande a été supprimée avec succès",
+      });
+      setDeleteRequestId(null);
+      // Invalidate all coordinator queries
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/nouveau"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/en-action"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/prioritaires"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/archives"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/available-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/active-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/payment-requests"] });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Échec de la suppression de la commande",
       });
     },
   });
@@ -972,6 +1003,17 @@ export default function CoordinatorDashboard() {
               📋 Statut de coordination
             </Button>
           )}
+
+          <Button
+            size="sm"
+            variant="outline"
+            className="bg-red-100 hover:bg-red-200 border-red-300 text-red-700"
+            onClick={() => setDeleteRequestId(request.id)}
+            data-testid={`button-delete-request-${request.id}`}
+          >
+            <Trash2 className="h-4 w-4 mr-1" />
+            Supprimer
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -1949,6 +1991,35 @@ export default function CoordinatorDashboard() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Request Confirmation Dialog */}
+      <AlertDialog open={!!deleteRequestId} onOpenChange={(open) => !open && setDeleteRequestId(null)}>
+        <AlertDialogContent data-testid="dialog-delete-confirmation">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer définitivement cette commande ? 
+              Cette action est irréversible et supprimera toutes les données associées (offres, messages, etc.).
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel 
+              disabled={deleteRequestMutation.isPending}
+              data-testid="button-cancel-delete"
+            >
+              Annuler
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteRequestId && deleteRequestMutation.mutate(deleteRequestId)}
+              disabled={deleteRequestMutation.isPending}
+              className="bg-red-600 hover:bg-red-700"
+              data-testid="button-confirm-delete"
+            >
+              {deleteRequestMutation.isPending ? "Suppression..." : "Supprimer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
