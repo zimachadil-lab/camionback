@@ -2544,8 +2544,22 @@ export class DbStorage implements IStorage {
   }
 
   async getCoordinationEnActionRequests(): Promise<any[]> {
-    // Get requests with status "open" and coordinationStatus in "En Action" category
-    const enActionStatuses = ['client_injoignable', 'infos_manquantes', 'photos_a_recuperer', 'rappel_prevu', 'attente_concurrence', 'refus_tarif'];
+    // Get active coordination statuses from "en_action" category
+    const enActionStatusConfigs = await db.select()
+      .from(coordinationStatuses)
+      .where(
+        and(
+          eq(coordinationStatuses.category, 'en_action'),
+          eq(coordinationStatuses.isActive, true)
+        )
+      );
+    
+    const enActionStatusValues = enActionStatusConfigs.map(s => s.value);
+    
+    // If no statuses configured, return empty array
+    if (enActionStatusValues.length === 0) {
+      return [];
+    }
     
     const requests = await db.select({
       id: transportRequests.id,
@@ -2568,7 +2582,7 @@ export class DbStorage implements IStorage {
     .where(
       and(
         eq(transportRequests.status, 'open'),
-        sql`${transportRequests.coordinationStatus} = ANY(ARRAY[${sql.raw(enActionStatuses.map(s => `'${s}'`).join(','))}])`
+        sql`${transportRequests.coordinationStatus} = ANY(ARRAY[${sql.raw(enActionStatusValues.map(s => `'${s}'`).join(','))}])`
       )
     )
     .orderBy(
@@ -2600,8 +2614,22 @@ export class DbStorage implements IStorage {
   }
 
   async getCoordinationPrioritairesRequests(): Promise<any[]> {
-    // Get requests with status "open" and coordinationStatus in "Prioritaires" category
-    const prioritairesStatuses = ['livraison_urgente', 'client_interesse', 'transporteur_interesse', 'menace_annulation'];
+    // Get active coordination statuses from "prioritaires" category
+    const prioritairesStatusConfigs = await db.select()
+      .from(coordinationStatuses)
+      .where(
+        and(
+          eq(coordinationStatuses.category, 'prioritaires'),
+          eq(coordinationStatuses.isActive, true)
+        )
+      );
+    
+    const prioritairesStatusValues = prioritairesStatusConfigs.map(s => s.value);
+    
+    // If no statuses configured, return empty array
+    if (prioritairesStatusValues.length === 0) {
+      return [];
+    }
     
     const requests = await db.select({
       id: transportRequests.id,
@@ -2624,7 +2652,7 @@ export class DbStorage implements IStorage {
     .where(
       and(
         eq(transportRequests.status, 'open'),
-        sql`${transportRequests.coordinationStatus} = ANY(ARRAY[${sql.raw(prioritairesStatuses.map(s => `'${s}'`).join(','))}])`
+        sql`${transportRequests.coordinationStatus} = ANY(ARRAY[${sql.raw(prioritairesStatusValues.map(s => `'${s}'`).join(','))}])`
       )
     )
     .orderBy(desc(transportRequests.createdAt));
@@ -2652,7 +2680,23 @@ export class DbStorage implements IStorage {
   }
 
   async getCoordinationArchivesRequests(): Promise<any[]> {
-    // Get requests with status "open" and coordinationStatus "archive"
+    // Get active coordination statuses from "archives" category
+    const archivesStatusConfigs = await db.select()
+      .from(coordinationStatuses)
+      .where(
+        and(
+          eq(coordinationStatuses.category, 'archives'),
+          eq(coordinationStatuses.isActive, true)
+        )
+      );
+    
+    const archivesStatusValues = archivesStatusConfigs.map(s => s.value);
+    
+    // If no statuses configured, also include hardcoded 'archive' for backwards compatibility
+    const allArchiveValues = archivesStatusValues.length > 0 
+      ? archivesStatusValues 
+      : ['archive'];
+    
     const requests = await db.select({
       id: transportRequests.id,
       referenceId: transportRequests.referenceId,
@@ -2674,7 +2718,7 @@ export class DbStorage implements IStorage {
     .where(
       and(
         eq(transportRequests.status, 'open'),
-        eq(transportRequests.coordinationStatus, 'archive')
+        sql`${transportRequests.coordinationStatus} = ANY(ARRAY[${sql.raw(allArchiveValues.map(s => `'${s}'`).join(','))}])`
       )
     )
     .orderBy(desc(transportRequests.coordinationUpdatedAt));
