@@ -366,37 +366,67 @@ export default function CoordinatorDashboard() {
     mutationFn: async ({ requestId, isHidden }: { requestId: string; isHidden: boolean }) => {
       return apiRequest("PATCH", `/api/coordinator/requests/${requestId}/toggle-visibility`, { isHidden });
     },
-    onSuccess: async () => {
-      // Invalider et forcer le refetch de tous les caches de requêtes
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["/api/coordinator/available-requests"], refetchType: 'active' }),
-        queryClient.invalidateQueries({ queryKey: ["/api/coordinator/requests/nouveau"], refetchType: 'active' }),
-        queryClient.invalidateQueries({ queryKey: ["/api/coordinator/requests/en-action"], refetchType: 'active' }),
-        queryClient.invalidateQueries({ queryKey: ["/api/coordinator/requests/prioritaires"], refetchType: 'active' }),
-        queryClient.invalidateQueries({ queryKey: ["/api/coordinator/requests/archives"], refetchType: 'active' }),
-        queryClient.invalidateQueries({ queryKey: ["/api/coordinator/active-requests"], refetchType: 'active' }),
-        queryClient.invalidateQueries({ queryKey: ["/api/coordinator/payment-requests"], refetchType: 'active' }),
-      ]);
+    onMutate: async ({ requestId, isHidden }) => {
+      // Annuler les requêtes en cours pour éviter les conflits
+      await queryClient.cancelQueries({ queryKey: ["/api/coordinator/requests/nouveau"] });
+      await queryClient.cancelQueries({ queryKey: ["/api/coordinator/requests/en-action"] });
+      await queryClient.cancelQueries({ queryKey: ["/api/coordinator/requests/prioritaires"] });
+      await queryClient.cancelQueries({ queryKey: ["/api/coordinator/requests/archives"] });
       
-      // Petit délai pour laisser le temps aux requêtes de se terminer
-      setTimeout(() => {
-        queryClient.refetchQueries({ queryKey: ["/api/coordinator/requests/nouveau"] });
-        queryClient.refetchQueries({ queryKey: ["/api/coordinator/requests/en-action"] });
-        queryClient.refetchQueries({ queryKey: ["/api/coordinator/requests/prioritaires"] });
-        queryClient.refetchQueries({ queryKey: ["/api/coordinator/requests/archives"] });
-      }, 300);
+      // Sauvegarder les données actuelles pour rollback si erreur
+      const previousNouveau = queryClient.getQueryData(["/api/coordinator/requests/nouveau"]);
+      const previousEnAction = queryClient.getQueryData(["/api/coordinator/requests/en-action"]);
+      const previousPrioritaires = queryClient.getQueryData(["/api/coordinator/requests/prioritaires"]);
+      const previousArchives = queryClient.getQueryData(["/api/coordinator/requests/archives"]);
       
+      // Mettre à jour optimistiquement tous les caches
+      const updateCache = (oldData: any) => {
+        if (!oldData) return oldData;
+        return oldData.map((req: any) => 
+          req.id === requestId ? { ...req, isHidden } : req
+        );
+      };
+      
+      queryClient.setQueryData(["/api/coordinator/requests/nouveau"], updateCache);
+      queryClient.setQueryData(["/api/coordinator/requests/en-action"], updateCache);
+      queryClient.setQueryData(["/api/coordinator/requests/prioritaires"], updateCache);
+      queryClient.setQueryData(["/api/coordinator/requests/archives"], updateCache);
+      
+      return { previousNouveau, previousEnAction, previousPrioritaires, previousArchives };
+    },
+    onSuccess: () => {
       toast({
         title: "Succès",
         description: "Visibilité de la commande modifiée",
       });
     },
-    onError: () => {
+    onError: (error, variables, context) => {
+      // Restaurer les données précédentes en cas d'erreur
+      if (context?.previousNouveau) {
+        queryClient.setQueryData(["/api/coordinator/requests/nouveau"], context.previousNouveau);
+      }
+      if (context?.previousEnAction) {
+        queryClient.setQueryData(["/api/coordinator/requests/en-action"], context.previousEnAction);
+      }
+      if (context?.previousPrioritaires) {
+        queryClient.setQueryData(["/api/coordinator/requests/prioritaires"], context.previousPrioritaires);
+      }
+      if (context?.previousArchives) {
+        queryClient.setQueryData(["/api/coordinator/requests/archives"], context.previousArchives);
+      }
+      
       toast({
         variant: "destructive",
         title: "Erreur",
         description: "Échec de modification de la visibilité",
       });
+    },
+    onSettled: () => {
+      // Refetch pour s'assurer que les données sont synchronisées
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/requests/nouveau"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/requests/en-action"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/requests/prioritaires"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/requests/archives"] });
     },
   });
 
