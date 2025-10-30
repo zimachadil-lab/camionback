@@ -103,11 +103,14 @@ export default function AdminDashboard() {
   const { toast} = useToast();
 
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
+  const [isAuthReady, setIsAuthReady] = useState(false);
 
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!user?.id || user?.role !== "admin") {
       setLocation("/");
+    } else {
+      setIsAuthReady(true);
     }
   }, [user, setLocation]);
 
@@ -883,6 +886,15 @@ export default function AdminDashboard() {
     const sign = trend > 0 ? "+" : "";
     return `${sign}${trend}% ce mois`;
   };
+
+  // Show loading while checking authentication (after all hooks)
+  if (!isAuthReady) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <LoadingTruck />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
