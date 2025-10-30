@@ -71,8 +71,8 @@ function formatMoroccanPhone(phoneNumber: string): string {
 async function sendSMS(to: string, message: string): Promise<boolean> {
   // Check if Infobip is configured
   if (!isInfobipConfigured()) {
-    console.log(`⚠️ SMS non envoyé à ${to} - Infobip non configuré`);
-    console.log(`   Message : ${message}`);
+    console.log(`[Infobip] SMS non envoye a ${to} - Infobip non configure`);
+    console.log(`[Infobip] Message : ${message}`);
     return false;
   }
   
@@ -101,16 +101,16 @@ async function sendSMS(to: string, message: string): Promise<boolean> {
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`❌ Erreur Infobip (${response.status}):`, errorText);
+      console.error(`[Infobip] Erreur (${response.status}):`, errorText);
       return false;
     }
     
     const result = await response.json();
-    console.log(`✅ SMS envoyé avec succès à ${formattedNumber} via Infobip`);
-    console.log(`   ID Message:`, result.messages?.[0]?.messageId || 'N/A');
+    console.log(`[Infobip] SMS envoye avec succes a ${formattedNumber}`);
+    console.log(`[Infobip] ID Message:`, result.messages?.[0]?.messageId || 'N/A');
     return true;
   } catch (error) {
-    console.error(`❌ Erreur lors de l'envoi SMS à ${to}:`, error);
+    console.error(`[Infobip] Erreur lors de l'envoi SMS a ${to}:`, error);
     return false;
   }
 }
@@ -170,7 +170,7 @@ export async function sendBulkSMS(
 ): Promise<{ success: number; failed: number }> {
   // Check if Infobip is configured
   if (!isInfobipConfigured()) {
-    console.log(`⚠️ SMS en masse non envoyés - Infobip non configuré`);
+    console.log(`[Infobip] SMS en masse non envoyes - Infobip non configure`);
     return { success: 0, failed: phoneNumbers.length };
   }
   
@@ -210,12 +210,12 @@ export async function sendBulkSMS(
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`❌ Erreur Infobip batch ${i / BATCH_SIZE + 1} (${response.status}):`, errorText);
+        console.error(`[Infobip] Erreur batch ${i / BATCH_SIZE + 1} (${response.status}):`, errorText);
         failedCount += batch.length;
       } else {
         const result = await response.json();
         successCount += batch.length;
-        console.log(`✅ Batch ${i / BATCH_SIZE + 1}: ${batch.length} SMS envoyés via Infobip`);
+        console.log(`[Infobip] Batch ${i / BATCH_SIZE + 1}: ${batch.length} SMS envoyes`);
       }
       
       // Small delay between batches to avoid rate limiting
@@ -223,21 +223,21 @@ export async function sendBulkSMS(
         await new Promise(resolve => setTimeout(resolve, 500));
       }
     } catch (error) {
-      console.error(`❌ Erreur lors de l'envoi du batch ${i / BATCH_SIZE + 1}:`, error);
+      console.error(`[Infobip] Erreur lors de l'envoi du batch ${i / BATCH_SIZE + 1}:`, error);
       failedCount += batch.length;
     }
   }
   
-  console.log(`📊 Envoi en masse terminé: ${successCount} réussis, ${failedCount} échecs`);
+  console.log(`[Infobip] Envoi en masse termine: ${successCount} reussis, ${failedCount} echecs`);
   return { success: successCount, failed: failedCount };
 }
 
 // Log configuration status on startup
 if (isInfobipConfigured()) {
-  console.log("✅ Service SMS Infobip configuré avec succès");
-  console.log(`   URL de base: ${VALIDATED_INFOBIP_BASE_URL}`);
-  console.log(`   Expéditeur: ${SENDER_NAME}`);
+  console.log("[Infobip] Service SMS Infobip configure avec succes");
+  console.log(`[Infobip] URL de base: ${VALIDATED_INFOBIP_BASE_URL}`);
+  console.log(`[Infobip] Expediteur: ${SENDER_NAME}`);
 } else {
-  console.log("⚠️ Service SMS Infobip non configuré");
-  console.log("   Configurez INFOBIP_API_KEY et INFOBIP_BASE_URL pour activer les SMS");
+  console.log("[Infobip] Service SMS Infobip non configure");
+  console.log("[Infobip] Configurez INFOBIP_API_KEY et INFOBIP_BASE_URL pour activer les SMS");
 }
