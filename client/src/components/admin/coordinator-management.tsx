@@ -56,7 +56,7 @@ export function CoordinatorManagement() {
   // Create coordinator mutation
   const createCoordinatorMutation = useMutation({
     mutationFn: async (data: CreateCoordinator) => {
-      return await apiRequest("/api/admin/coordinators", "POST", data);
+      return await apiRequest("POST", "/api/admin/coordinators", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/coordinators"] });
