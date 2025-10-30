@@ -285,7 +285,21 @@ export const coordinatorLogs = pgTable("coordinator_logs", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Coordination Statuses - Configurable statuses for coordinator workflow
+export const coordinationStatuses = pgTable("coordination_statuses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  label: text("label").notNull(), // Display text (e.g., "Client injoignable")
+  value: text("value").notNull().unique(), // Technical value (e.g., "client_injoignable")
+  category: text("category").notNull(), // 'en_action' or 'prioritaires'
+  color: text("color"), // Optional color for UI (e.g., "orange", "red")
+  displayOrder: integer("display_order").default(0), // Order for display
+  isActive: boolean("is_active").default(true), // Enable/disable status
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const insertCoordinatorLogSchema = createInsertSchema(coordinatorLogs).omit({ id: true, createdAt: true });
+export const insertCoordinationStatusSchema = createInsertSchema(coordinationStatuses).omit({ id: true, createdAt: true, updatedAt: true });
 
 // Coordinator-specific schemas for admin management
 export const createCoordinatorSchema = z.object({
@@ -341,6 +355,8 @@ export type InsertTransporterReference = z.infer<typeof insertTransporterReferen
 export type TransporterReference = typeof transporterReferences.$inferSelect;
 export type InsertCoordinatorLog = z.infer<typeof insertCoordinatorLogSchema>;
 export type CoordinatorLog = typeof coordinatorLogs.$inferSelect;
+export type InsertCoordinationStatus = z.infer<typeof insertCoordinationStatusSchema>;
+export type CoordinationStatus = typeof coordinationStatuses.$inferSelect;
 export type CreateCoordinator = z.infer<typeof createCoordinatorSchema>;
 export type ResetCoordinatorPin = z.infer<typeof resetCoordinatorPinSchema>;
 
