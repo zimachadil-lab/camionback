@@ -366,15 +366,26 @@ export default function CoordinatorDashboard() {
     mutationFn: async ({ requestId, isHidden }: { requestId: string; isHidden: boolean }) => {
       return apiRequest("PATCH", `/api/coordinator/requests/${requestId}/toggle-visibility`, { isHidden });
     },
-    onSuccess: () => {
-      // Invalider tous les caches de requêtes pour rafraîchir l'affichage
-      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/available-requests"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/requests/nouveau"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/requests/en-action"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/requests/prioritaires"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/requests/archives"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/active-requests"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/payment-requests"] });
+    onSuccess: async () => {
+      // Invalider et forcer le refetch de tous les caches de requêtes
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["/api/coordinator/available-requests"], refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: ["/api/coordinator/requests/nouveau"], refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: ["/api/coordinator/requests/en-action"], refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: ["/api/coordinator/requests/prioritaires"], refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: ["/api/coordinator/requests/archives"], refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: ["/api/coordinator/active-requests"], refetchType: 'active' }),
+        queryClient.invalidateQueries({ queryKey: ["/api/coordinator/payment-requests"], refetchType: 'active' }),
+      ]);
+      
+      // Petit délai pour laisser le temps aux requêtes de se terminer
+      setTimeout(() => {
+        queryClient.refetchQueries({ queryKey: ["/api/coordinator/requests/nouveau"] });
+        queryClient.refetchQueries({ queryKey: ["/api/coordinator/requests/en-action"] });
+        queryClient.refetchQueries({ queryKey: ["/api/coordinator/requests/prioritaires"] });
+        queryClient.refetchQueries({ queryKey: ["/api/coordinator/requests/archives"] });
+      }, 300);
+      
       toast({
         title: "Succès",
         description: "Visibilité de la commande modifiée",
