@@ -905,7 +905,8 @@ export default function CoordinatorDashboard() {
           {showVisibilityToggle && (
             <Button
               size="sm"
-              variant={request.isHidden ? "default" : "secondary"}
+              variant={request.isHidden ? "default" : "outline"}
+              className={request.isHidden ? "bg-green-600 hover:bg-green-700" : "bg-red-100 hover:bg-red-200 border-red-300 text-red-700"}
               onClick={() => toggleVisibilityMutation.mutate({ 
                 requestId: request.id, 
                 isHidden: !request.isHidden 
@@ -997,14 +998,8 @@ export default function CoordinatorDashboard() {
           </Select>
         </div>
 
-        <Tabs defaultValue="available" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-6">
-            <TabsTrigger value="available" data-testid="tab-available" className="gap-1 px-2">
-              <span className="text-xs sm:text-sm">Dispo</span>
-              <Badge className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-1.5 py-0">
-                {filterRequests(availableRequests).length}
-              </Badge>
-            </TabsTrigger>
+        <Tabs defaultValue="coordination" className="w-full">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
             <TabsTrigger value="coordination" data-testid="tab-coordination" className="gap-1 px-2">
               <span className="text-xs sm:text-sm">Coordination</span>
               <Badge className="bg-purple-500 hover:bg-purple-600 text-white text-xs px-1.5 py-0">
