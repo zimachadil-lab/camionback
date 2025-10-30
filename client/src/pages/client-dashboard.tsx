@@ -78,6 +78,8 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showCamioMatchDialog, setShowCamioMatchDialog] = useState(false);
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
+  const [editPhotos, setEditPhotos] = useState<File[]>([]);
+  const [keepExistingPhotos, setKeepExistingPhotos] = useState(true);
   const isAccepted = request.status === "accepted";
   const { toast } = useToast();
 
@@ -145,6 +147,9 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
         invoiceRequired: request.invoiceRequired || false,
         budget: request.budget || "",
       });
+      // Reset photos state
+      setEditPhotos([]);
+      setKeepExistingPhotos(true);
     }
   }, [showEditDialog, request, editForm]);
 
@@ -169,7 +174,25 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
     },
   });
 
-  const onSubmitEdit = (data: any) => {
+  // Convert file to base64
+  const convertToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
+  };
+
+  // Handle photo upload
+  const handleEditPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setEditPhotos(Array.from(e.target.files));
+      setKeepExistingPhotos(false); // Si on ajoute de nouvelles photos, on remplace les anciennes
+    }
+  };
+
+  const onSubmitEdit = async (data: any) => {
     const payload: any = {
       fromCity: data.fromCity,
       toCity: data.toCity,
@@ -185,6 +208,20 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
     
     if (data.budget) {
       payload.budget = data.budget;
+    }
+    
+    // Handle photos
+    if (editPhotos.length > 0) {
+      // Convert new photos to base64
+      const photoBase64Promises = editPhotos.map(photo => convertToBase64(photo));
+      const photoBase64Array = await Promise.all(photoBase64Promises);
+      payload.photos = photoBase64Array;
+    } else if (keepExistingPhotos && request.photos && request.photos.length > 0) {
+      // Keep existing photos if no new ones uploaded
+      payload.photos = request.photos;
+    } else {
+      // Clear photos
+      payload.photos = [];
     }
     
     editRequestMutation.mutate(payload);
