@@ -244,6 +244,8 @@ export default function CoordinatorDashboard() {
   const [selectedCoordinationStatus, setSelectedCoordinationStatus] = useState("");
   const [coordinationReason, setCoordinationReason] = useState("");
   const [coordinationReminderDate, setCoordinationReminderDate] = useState("");
+  const [coordinationAssignedFilter, setCoordinationAssignedFilter] = useState("");
+  const [coordinationSearchQuery, setCoordinationSearchQuery] = useState("");
   const { toast} = useToast();
 
   const handleLogout = () => {
@@ -286,6 +288,16 @@ export default function CoordinatorDashboard() {
     },
   });
 
+  // Fetch coordinators for filtering
+  const { data: coordinators = [] } = useQuery({
+    queryKey: ["/api/admin/coordinators"],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const response = await fetch(`/api/admin/coordinators?adminId=${user.id}`);
+      return response.json();
+    },
+  });
+
   // Fetch empty returns for coordinator
   const { data: emptyReturns = [], isLoading: emptyReturnsLoading } = useQuery({
     queryKey: ["/api/empty-returns"],
@@ -295,35 +307,46 @@ export default function CoordinatorDashboard() {
     },
   });
 
-  // Fetch coordination views
+  // Fetch coordination views with filters
+  const buildQueryString = (assignedTo: string, search: string) => {
+    const params = new URLSearchParams();
+    if (assignedTo) params.append("assignedToId", assignedTo);
+    if (search) params.append("searchQuery", search);
+    return params.toString() ? `?${params.toString()}` : "";
+  };
+
   const { data: nouveauRequests = [], isLoading: nouveauLoading } = useQuery({
-    queryKey: ["/api/coordinator/coordination/nouveau"],
+    queryKey: ["/api/coordinator/coordination/nouveau", coordinationAssignedFilter, coordinationSearchQuery],
     queryFn: async () => {
-      const response = await fetch("/api/coordinator/coordination/nouveau");
+      const queryString = buildQueryString(coordinationAssignedFilter, coordinationSearchQuery);
+      const response = await fetch(`/api/coordinator/coordination/nouveau${queryString}`);
       return response.json();
     },
   });
 
   const { data: enActionRequests = [], isLoading: enActionLoading } = useQuery({
-    queryKey: ["/api/coordinator/coordination/en-action"],
+    queryKey: ["/api/coordinator/coordination/en-action", coordinationAssignedFilter, coordinationSearchQuery],
     queryFn: async () => {
-      const response = await fetch("/api/coordinator/coordination/en-action");
+      const queryString = buildQueryString(coordinationAssignedFilter, coordinationSearchQuery);
+      const response = await fetch(`/api/coordinator/coordination/en-action${queryString}`);
       return response.json();
     },
   });
 
   const { data: prioritairesRequests = [], isLoading: prioritairesLoading } = useQuery({
-    queryKey: ["/api/coordinator/coordination/prioritaires"],
+    queryKey: ["/api/coordinator/coordination/prioritaires", coordinationAssignedFilter, coordinationSearchQuery],
     queryFn: async () => {
-      const response = await fetch("/api/coordinator/coordination/prioritaires");
+      const queryString = buildQueryString(coordinationAssignedFilter, coordinationSearchQuery);
+      const response = await fetch(`/api/coordinator/coordination/prioritaires${queryString}`);
       return response.json();
     },
   });
 
   const { data: archivesRequests = [], isLoading: archivesLoading } = useQuery({
-    queryKey: ["/api/coordinator/coordination/archives"],
+    queryKey: ["/api/coordinator/coordination/archives", coordinationAssignedFilter, coordinationSearchQuery],
     queryFn: async () => {
-      const response = await fetch("/api/coordinator/coordination/archives");
+      const queryString = buildQueryString(coordinationAssignedFilter, coordinationSearchQuery);
+      const response = await fetch(`/api/coordinator/coordination/archives${queryString}`);
       return response.json();
     },
   });
@@ -767,6 +790,16 @@ export default function CoordinatorDashboard() {
               >
                 {request.client.phoneNumber}
               </a>
+            </div>
+          )}
+
+          {isCoordination && request.assignedTo && (
+            <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950 p-2 rounded-md border border-blue-200 dark:border-blue-800">
+              <Compass className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <span className="text-muted-foreground">Assignée à:</span>
+              <span className="font-semibold text-blue-700 dark:text-blue-300" data-testid={`text-assigned-to-${request.id}`}>
+                {request.assignedTo.name}
+              </span>
             </div>
           )}
 
@@ -1238,6 +1271,52 @@ export default function CoordinatorDashboard() {
 
           <TabsContent value="coordination" className="space-y-4">
             <Tabs defaultValue="nouveau" className="w-full">
+              {/* Filtres de coordination */}
+              <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Rechercher par référence, ville, client, coordinateur..."
+                      value={coordinationSearchQuery}
+                      onChange={(e) => setCoordinationSearchQuery(e.target.value)}
+                      className="pl-10"
+                      data-testid="input-coordination-search"
+                    />
+                  </div>
+                </div>
+                <div className="w-full sm:w-64">
+                  <Select
+                    value={coordinationAssignedFilter}
+                    onValueChange={setCoordinationAssignedFilter}
+                  >
+                    <SelectTrigger data-testid="select-assigned-filter">
+                      <SelectValue placeholder="Assignée à..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="" data-testid="option-all-coordinators">Tous les coordinateurs</SelectItem>
+                      {coordinators.map((coordinator: any) => (
+                        <SelectItem key={coordinator.id} value={coordinator.id} data-testid={`option-coordinator-${coordinator.id}`}>
+                          {coordinator.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {(coordinationAssignedFilter || coordinationSearchQuery) && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setCoordinationAssignedFilter("");
+                      setCoordinationSearchQuery("");
+                    }}
+                    data-testid="button-clear-filters"
+                  >
+                    Effacer
+                  </Button>
+                )}
+              </div>
+              
               <TabsList className="grid w-full grid-cols-4 mb-4">
                 <TabsTrigger value="nouveau" data-testid="tab-coord-nouveau" className="gap-1 px-2">
                   <span className="text-xs sm:text-sm">Nouveau</span>
