@@ -244,7 +244,7 @@ export default function CoordinatorDashboard() {
   const [selectedCoordinationStatus, setSelectedCoordinationStatus] = useState("");
   const [coordinationReason, setCoordinationReason] = useState("");
   const [coordinationReminderDate, setCoordinationReminderDate] = useState("");
-  const [coordinationAssignedFilter, setCoordinationAssignedFilter] = useState("");
+  const [coordinationAssignedFilter, setCoordinationAssignedFilter] = useState("all");
   const [coordinationSearchQuery, setCoordinationSearchQuery] = useState("");
   const { toast} = useToast();
 
@@ -310,7 +310,7 @@ export default function CoordinatorDashboard() {
   // Fetch coordination views with filters
   const buildQueryString = (assignedTo: string, search: string) => {
     const params = new URLSearchParams();
-    if (assignedTo) params.append("assignedToId", assignedTo);
+    if (assignedTo && assignedTo !== "all") params.append("assignedToId", assignedTo);
     if (search) params.append("searchQuery", search);
     return params.toString() ? `?${params.toString()}` : "";
   };
@@ -1294,20 +1294,20 @@ export default function CoordinatorDashboard() {
                       <SelectValue placeholder="Assignée à..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="" data-testid="option-all-coordinators">Tous les coordinateurs</SelectItem>
-                      {coordinators.map((coordinator: any) => (
+                      <SelectItem value="all" data-testid="option-all-coordinators">Tous les coordinateurs</SelectItem>
+                      {Array.isArray(coordinators) && coordinators.map((coordinator: any) => (
                         <SelectItem key={coordinator.id} value={coordinator.id} data-testid={`option-coordinator-${coordinator.id}`}>
-                          {coordinator.name}
+                          {coordinator?.name || `Coordinateur ${coordinator.id.slice(0, 8)}`}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                {(coordinationAssignedFilter || coordinationSearchQuery) && (
+                {(coordinationAssignedFilter !== "all" || coordinationSearchQuery) && (
                   <Button
                     variant="outline"
                     onClick={() => {
-                      setCoordinationAssignedFilter("");
+                      setCoordinationAssignedFilter("all");
                       setCoordinationSearchQuery("");
                     }}
                     data-testid="button-clear-filters"
