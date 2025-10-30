@@ -1,0 +1,97 @@
+Suite à un retour externe, un problème de sécurité critique a été détecté : il est actuellement possible pour une personne techniquement compétente de récupérer tous les numéros de téléphone et mots de passe, y compris ceux des administrateurs.
+
+🎯 Votre mission : sécuriser totalement le système SANS impacter nos utilisateurs actuels.
+➡️ Aucun utilisateur ne doit perdre son accès
+➡️ Aucun mot de passe ne doit être réinitialisé
+➡️ L'expérience doit rester fluide et inchangée
+
+🔒 Correctifs de sécurité à implémenter immédiatement
+✅ 1 — Sécurité des Mots de Passe
+
+Hashage obligatoire de tous les mots de passe en base (ex : bcrypt)
+
+Jamais renvoyer le mot de passe dans une API ou réponse JSON
+
+Masquer entièrement les champs password dans toutes les réponses serveurs
+
+Migration en conservant les accès existants
+➡️ Les utilisateurs doivent continuer à se connecter comme d’habitude ✅
+
+✅ 2 — Sécurité des API & Permissions
+
+Vérifier tous les endpoints sensibles côté serveur (RBAC strict)
+
+Admin = /admin/*
+
+Coordinateur = /coord/*
+
+Transporteur = accessible uniquement aux transporteurs connectés
+
+Client = accessible uniquement aux clients connectés
+
+Empêcher toute modification d'accès via le frontend (pas de security by UI)
+
+✅ 3 — Sécurité JWT & Sessions
+
+Ne plus stocker d’informations sensibles côté frontend localStorage sans protection
+
+Ajouter :
+
+Rotation des tokens
+
+Expiration stricte (ex : 24h)
+
+Stockage HttpOnly cookie si possible
+
+✅ 4 — Protection du Champ Numéro de Téléphone
+
+Ne jamais exposer la liste complète des numéros dans aucune API publique
+
+Masquer le numéro dans les listes non-autorisées (format : +2126•••••534)
+
+✅ 5 — Logs & Monitoring Sécurité
+
+Logger les tentatives d’accès anormales
+
+Protection brute-force sur connexion
+
+Rate limiting sur les endpoints sensibles
+
+❌ Ce qu’il faut ABSOLUMENT éviter
+
+🚫 Réinitialiser tous les mots de passe
+
+🚫 Forcer les utilisateurs à modifier leur mot de passe maintenant
+
+🚫 Bloquer des comptes ou perturber les connexions
+➡️ Aucun impact utilisateur accepté ✅
+
+✅ Contrôles d’acceptation (Check-list après correctifs)
+
+Une fois les corrections déployées, merci de valider que :
+
+Test	Résultat attendu
+Connexion client & transporteur	Fonctionne comme avant ✅
+Mot de passe existant	Fonctionne encore ✅
+API mots de passe	Jamais visible ✅
+Profils admin/coord	Plus jamais récupérables ✅
+Tentative d’accès non autorisé	Bloquée ✅
+🔍 Bonus (à planifier après stabilisation)
+
+Non urgent, mais recommandé plus tard :
+
+Authentification OTP (SMS)
+
+2FA pour Admin & Coordinateur
+
+Page « Changer mot de passe » renforcée
+
+📌 Résumé essentiel
+
+Vous sécurisez tout.
+Vous ne touchez en rien l'expérience utilisateur.
+Les utilisateurs ne perdent aucun accès.
+✅ Sécurité maximale
+✅ Zéro friction
+
+🔐 Merci d’implémenter ces correctifs très rapidement, c’est une priorité absolue.

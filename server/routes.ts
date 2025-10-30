@@ -6,6 +6,8 @@ import { db } from "./db";
 import multer from "multer";
 import { z } from "zod";
 import bcrypt from "bcrypt";
+import { sanitizeUser, sanitizeUsers, sendUser, isAdmin, isAdminOrCoordinator } from "./security-utils";
+import { requireAuth, requireRole, getCurrentUser } from "./auth-middleware";
 import { 
   insertUserSchema, 
   insertOtpCodeSchema, 
@@ -178,11 +180,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create user without role (will be selected after)
       // Special case: if phone contains "000000", make it admin
-      const isAdmin = phoneNumber.includes("000000");
+      const isAdminUser = phoneNumber.includes("000000");
       const user = await storage.createUser({
         phoneNumber,
         passwordHash,
-        role: isAdmin ? "admin" : null, // Will be updated when role is selected
+        role: isAdminUser ? "admin" : null, // Will be updated when role is selected
         name: null,
         city: null,
         truckPhotos: null,
@@ -192,7 +194,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isActive: true,
       });
 
-      res.json({ user });
+      // Créer session sécurisée (userId stocké côté serveur uniquement)
+      req.session.userId = user.id;
+      req.session.role = user.role || undefined;
+      req.session.phoneNumber = user.phoneNumber || undefined;
+
+      // Sanitize user data before sending (remove passwordHash)
+      res.json({ user: sanitizeUser(user, 'owner') });
     } catch (error) {
       console.error("Registration error:", error);
       res.status(500).json({ error: "Échec de l'inscription" });
@@ -227,20 +235,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      res.json({ user });
+      // Créer session sécurisée (userId stocké côté serveur uniquement)
+      req.session.userId = user.id;
+      req.session.role = user.role || undefined;
+      req.session.phoneNumber = user.phoneNumber || undefined;
+
+      // Sanitize user data before sending (remove passwordHash)
+      // Note: userId n'est PAS envoyé au client - uniquement dans session cookie
+      res.json({ user: sanitizeUser(user, 'owner') });
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ error: "Échec de la connexion" });
     }
   });
 
-  // Get current user data (refreshes from database)
-  app.get("/api/auth/me/:userId", async (req, res) => {
+  // Logout - Destroy session
+  app.post("/api/auth/logout", async (req, res) => {
+    try {
+      req.session.destroy((err) => {
+        if (err) {
+          console.error("Logout error:", err);
+          return res.status(500).json({ error: "Échec de la déconnexion" });
+        }
+        res.json({ success: true, message: "Déconnexion réussie" });
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+      res.status(500).json({ error: "Échec de la déconnexion" });
+    }
+  });
+
+  // Get current user data from session (NEW SECURE ENDPOINT)
+  // This endpoint uses session cookie - no userId parameter needed
+  app.get("/api/auth/me", requireAuth, async (req, res) => {
+    try {
+      const user = req.user!; // requireAuth ensures user exists
+      
+      // Sanitize and return user data (remove passwordHash)
+      return sendUser(res, user, 'owner');
+    } catch (error) {
+      console.error("Get user error:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération des données" });
+    }
+  });
+
+  // LEGACY endpoint - PROTECTED for backwards compatibility during migration
+  // Requires authentication and ownership verification
+  // TODO: Remove after frontend migration to session-based auth
+  app.get("/api/auth/me/:userId", requireAuth, async (req, res) => {
     try {
       const { userId } = req.params;
+      const currentUser = req.user!;
       
       if (!userId) {
         return res.status(400).json({ error: "ID utilisateur requis" });
+      }
+
+      // SECURITY: Only allow users to access their own data
+      // Admins can access any user's data
+      const isAdmin = currentUser.role === 'admin';
+      const isOwner = currentUser.id === userId;
+      
+      if (!isAdmin && !isOwner) {
+        return res.status(403).json({ 
+          error: "Accès refusé",
+          message: "Vous ne pouvez accéder qu'à vos propres données"
+        });
       }
 
       const user = await storage.getUser(userId);
@@ -248,7 +308,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Utilisateur non trouvé" });
       }
 
-      res.json({ user });
+      // Sanitize with appropriate context (admin gets full data, owner gets own data)
+      const context = isAdmin ? 'admin' : 'owner';
+      res.json({ user: sanitizeUser(user, context) });
     } catch (error) {
       console.error("Get user error:", error);
       res.status(500).json({ error: "Erreur lors de la récupération des données" });
@@ -287,7 +349,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Utilisateur non trouvé" });
       }
 
-      res.json({ user });
+      // Update session with new role if session exists
+      if (req.session.userId === userId) {
+        req.session.role = user.role || undefined;
+      }
+
+      // Sanitize user data before sending (remove passwordHash)
+      res.json({ user: sanitizeUser(user, 'owner') });
     } catch (error) {
       console.error("Select role error:", error);
       res.status(500).json({ error: "Échec de la sélection du rôle" });
@@ -319,7 +387,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Utilisateur non trouvé" });
       }
 
-      res.json({ user });
+      // Update session if it exists
+      if (req.session.userId === userId) {
+        req.session.role = user.role || undefined;
+      }
+
+      // Sanitize user data before sending (remove passwordHash)
+      res.json({ user: sanitizeUser(user, 'owner') });
     } catch (error) {
       console.error("Complete profile error:", error);
       res.status(500).json({ error: "Échec de la complétion du profil" });
@@ -573,7 +647,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       console.log(`✅ Transporteur mis à jour - ID: ${id}, Nom: ${updatedUser.name}`);
-      res.json({ user: updatedUser });
+      // Sanitize user data before sending (remove passwordHash)
+      res.json({ user: sanitizeUser(updatedUser, 'owner') });
     } catch (error) {
       console.error("Update transporter error:", error);
       res.status(500).json({ error: "Échec de la mise à jour du transporteur" });

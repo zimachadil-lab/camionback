@@ -1,10 +1,15 @@
 import express, { type Request, Response, NextFunction } from "express";
+import session from "express-session";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { sessionConfig } from "./session-config";
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
+
+// Configuration des sessions sécurisées (AVANT les routes)
+app.use(session(sessionConfig));
 
 // Middleware custom sécurisé pour servir les fichiers statiques EN PREMIER
 import path from "path";
