@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { RecommendedTransportersDialog } from "./recommended-transporters-dialog";
+import { useAuth } from "@/lib/auth-context";
 
 const requestSchema = z.object({
   fromCity: z.string().min(2, "Ville de départ requise"),
@@ -38,6 +39,7 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
   const [recommendedTransporters, setRecommendedTransporters] = useState<any[]>([]);
   const [createdRequestId, setCreatedRequestId] = useState<string>("");
   const { toast } = useToast();
+  const { user } = useAuth();
 
   // Fetch cities from API
   const { data: cities = [], isLoading: citiesLoading } = useQuery({
@@ -79,7 +81,14 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
 
   const onSubmit = async (data: RequestFormData) => {
     try {
-      const currentUser = JSON.parse(localStorage.getItem("camionback_user") || "{}");
+      if (!user?.id) {
+        toast({
+          variant: "destructive",
+          title: "Erreur",
+          description: "Vous devez être connecté pour créer une demande",
+        });
+        return;
+      }
       
       // Convert photos to base64
       const photoBase64Promises = photos.map(photo => convertToBase64(photo));
@@ -91,7 +100,7 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
         toCity: data.toCity,
         description: data.description,
         goodsType: data.goodsType,
-        clientId: currentUser.id,
+        clientId: user.id,
         dateTime: data.dateTime ? new Date(data.dateTime).toISOString() : new Date().toISOString(),
         dateFlexible: data.dateFlexible,
         invoiceRequired: data.invoiceRequired,
