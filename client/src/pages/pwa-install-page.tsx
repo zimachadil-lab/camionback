@@ -34,13 +34,13 @@ export default function PWAInstallPage() {
       setDeferredPrompt(e);
       // Stocker globalement pour réutilisation
       (window as any).deferredPrompt = e;
-      console.log('📱 PWA installable - Prompt capturé');
+      console.log('[PWA] Install prompt captured');
     };
 
     const handleAppInstalled = () => {
       setIsInstalled(true);
       setDeferredPrompt(null);
-      console.log('✅ Application installée avec succès');
+      console.log('[PWA] Application installed successfully');
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -61,7 +61,7 @@ export default function PWAInstallPage() {
     const prompt = deferredPrompt || (window as any).deferredPrompt;
     
     if (!prompt) {
-      console.warn('⚠️ Prompt d\'installation non disponible');
+      console.warn('[PWA] Install prompt not available');
       alert('Veuillez utiliser Chrome ou Edge pour installer l\'application');
       return;
     }
@@ -71,15 +71,15 @@ export default function PWAInstallPage() {
       const { outcome } = await prompt.userChoice;
       
       if (outcome === 'accepted') {
-        console.log('✅ Installation acceptée');
+        console.log('[PWA] Installation accepted');
         setIsInstalled(true);
       } else {
-        console.log('❌ Installation refusée');
+        console.log('[PWA] Installation declined');
       }
       
       setDeferredPrompt(null);
     } catch (error) {
-      console.error('❌ Erreur installation:', error);
+      console.error('[PWA] Installation error:', error);
     }
   };
 
@@ -100,193 +100,171 @@ export default function PWAInstallPage() {
             </p>
           </div>
 
-          {/* État d'installation */}
-          {isInstalled && (
-            <Card className="mb-6 p-6 bg-green-500/10 border-green-500/20">
-              <div className="flex items-center gap-3">
-                <CheckCircle2 className="h-6 w-6 text-green-500 flex-shrink-0" />
-                <div>
-                  <h3 className="font-semibold text-green-700 dark:text-green-400">
-                    Application installée !
-                  </h3>
-                  <p className="text-sm text-green-600 dark:text-green-500">
-                    CamionBack est maintenant accessible depuis votre écran d'accueil
+          {/* Bouton d'installation principal - TOUJOURS VISIBLE */}
+          <Card className="mb-6 overflow-hidden shadow-xl">
+            {isInstalled ? (
+              <div className="p-6 bg-green-500/10 border-2 border-green-500/50">
+                <div className="flex items-center gap-3 mb-4">
+                  <CheckCircle2 className="h-8 w-8 text-green-500 flex-shrink-0" />
+                  <div>
+                    <h3 className="text-lg font-bold text-green-700 dark:text-green-400">
+                      Application installée !
+                    </h3>
+                    <p className="text-sm text-green-600 dark:text-green-500">
+                      CamionBack est accessible depuis votre écran d'accueil
+                    </p>
+                  </div>
+                </div>
+                <a
+                  href="/"
+                  className="block w-full"
+                  data-testid="link-open-app"
+                >
+                  <Button
+                    size="lg"
+                    variant="default"
+                    className="w-full bg-green-600 text-white"
+                  >
+                    <ArrowRight className="mr-2 h-5 w-5" />
+                    Ouvrir l'application
+                  </Button>
+                </a>
+              </div>
+            ) : platform === 'ios' ? (
+              <div className="p-6 bg-blue-500/10 border-2 border-blue-500/50">
+                <h3 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
+                  <Smartphone className="h-6 w-6 text-blue-500" />
+                  Installation sur iPhone/iPad
+                </h3>
+                <ol className="space-y-2 text-sm mb-4">
+                  <li className="flex items-start gap-2">
+                    <span className="font-bold text-blue-600 flex-shrink-0">1.</span>
+                    <span className="text-foreground">Appuyez sur le bouton <strong>Partager</strong> <Share className="inline h-4 w-4" /> (en bas de Safari)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="font-bold text-blue-600 flex-shrink-0">2.</span>
+                    <span className="text-foreground">Sélectionnez <strong>"Sur l'écran d'accueil"</strong> <Home className="inline h-4 w-4" /></span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="font-bold text-blue-600 flex-shrink-0">3.</span>
+                    <span className="text-foreground">Appuyez sur <strong>Ajouter</strong></span>
+                  </li>
+                </ol>
+                <div className="flex items-center justify-center gap-2 mt-3">
+                  <div className="h-4 w-4 rounded-full bg-blue-500/20 flex items-center justify-center">
+                    <span className="text-blue-600 dark:text-blue-400 text-xs font-bold">!</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground text-center">
+                    Assurez-vous d'utiliser Safari pour installer l'application
                   </p>
                 </div>
               </div>
-            </Card>
-          )}
+            ) : (
+              <div className="p-6 bg-gradient-to-r from-[#00BFA5] to-[#00897B]">
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <Smartphone className="h-6 w-6 text-white" />
+                  <h3 className="text-xl font-bold text-white text-center">
+                    Installez CamionBack maintenant
+                  </h3>
+                </div>
+                <p className="text-white/90 text-center mb-5">
+                  Un clic suffit pour avoir l'application sur votre appareil
+                </p>
+                <Button
+                  onClick={handleInstall}
+                  size="lg"
+                  variant="secondary"
+                  className="w-full bg-white text-[#00BFA5] text-lg font-bold"
+                  data-testid="button-install-pwa"
+                >
+                  <Download className="mr-2 h-6 w-6" />
+                  INSTALLER L'APPLICATION
+                </Button>
+                {!deferredPrompt && (
+                  <div className="flex items-center justify-center gap-2 mt-3">
+                    <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
+                      <span className="text-white text-xs">i</span>
+                    </div>
+                    <p className="text-white/70 text-xs text-center">
+                      Utilisez Chrome ou Edge pour installer l'application
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </Card>
 
-          {/* Carte principale */}
+          {/* Carte avantages */}
           <Card className="mb-8 overflow-hidden">
-            <div className="bg-gradient-to-r from-[#00BFA5] to-[#00897B] p-6 sm:p-8 text-white">
+            <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-6 sm:p-8 text-white">
               <h2 className="text-2xl font-bold mb-2">
-                Installez l'application mobile
+                Pourquoi installer CamionBack ?
               </h2>
               <p className="text-white/90">
-                Accédez instantanément à vos services de transport, gérez vos demandes et suivez vos livraisons en temps réel
+                Une expérience optimale pour gérer vos transports
               </p>
             </div>
 
             <div className="p-6 sm:p-8">
               {/* Avantages */}
-              <div className="space-y-3 mb-6">
+              <div className="space-y-4 mb-6">
                 <div className="flex items-start gap-3">
-                  <CheckCircle2 className="h-5 w-5 text-[#00BFA5] flex-shrink-0 mt-0.5" />
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#00BFA5]/10 flex items-center justify-center">
+                    <CheckCircle2 className="h-5 w-5 text-[#00BFA5]" />
+                  </div>
                   <div>
-                    <p className="font-medium text-foreground">Accès instantané</p>
-                    <p className="text-sm text-muted-foreground">Lancez l'app depuis votre écran d'accueil</p>
+                    <p className="font-semibold text-foreground">Accès instantané</p>
+                    <p className="text-sm text-muted-foreground">Lancez l'app depuis votre écran d'accueil en un clic</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <CheckCircle2 className="h-5 w-5 text-[#00BFA5] flex-shrink-0 mt-0.5" />
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#00BFA5]/10 flex items-center justify-center">
+                    <CheckCircle2 className="h-5 w-5 text-[#00BFA5]" />
+                  </div>
                   <div>
-                    <p className="font-medium text-foreground">Notifications en temps réel</p>
-                    <p className="text-sm text-muted-foreground">Restez informé de vos demandes et offres</p>
+                    <p className="font-semibold text-foreground">Notifications en temps réel</p>
+                    <p className="text-sm text-muted-foreground">Recevez des alertes pour vos demandes et offres</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <CheckCircle2 className="h-5 w-5 text-[#00BFA5] flex-shrink-0 mt-0.5" />
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#00BFA5]/10 flex items-center justify-center">
+                    <CheckCircle2 className="h-5 w-5 text-[#00BFA5]" />
+                  </div>
                   <div>
-                    <p className="font-medium text-foreground">Fonctionne hors ligne</p>
-                    <p className="text-sm text-muted-foreground">Consultez vos données même sans connexion</p>
+                    <p className="font-semibold text-foreground">Fonctionne hors ligne</p>
+                    <p className="text-sm text-muted-foreground">Consultez vos données même sans connexion internet</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <CheckCircle2 className="h-5 w-5 text-[#00BFA5] flex-shrink-0 mt-0.5" />
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#00BFA5]/10 flex items-center justify-center">
+                    <CheckCircle2 className="h-5 w-5 text-[#00BFA5]" />
+                  </div>
                   <div>
-                    <p className="font-medium text-foreground">Zéro téléchargement</p>
-                    <p className="text-sm text-muted-foreground">Pas besoin de passer par un store</p>
+                    <p className="font-semibold text-foreground">Zéro téléchargement</p>
+                    <p className="text-sm text-muted-foreground">Pas besoin du Play Store ou App Store</p>
                   </div>
                 </div>
               </div>
 
-              {/* Bouton d'installation Android/Desktop */}
-              {platform !== 'ios' && (
-                <div className="mb-6">
-                  {deferredPrompt ? (
-                    <Button
-                      onClick={handleInstall}
-                      size="lg"
-                      className="w-full bg-[#00BFA5] hover:bg-[#00a892] text-white text-base"
-                      disabled={isInstalled}
-                      data-testid="button-install-pwa"
-                    >
-                      <Download className="mr-2 h-5 w-5" />
-                      {isInstalled ? 'Déjà installée' : 'Installer maintenant'}
-                    </Button>
-                  ) : (
-                    <div className="text-center">
-                      <Badge variant="outline" className="mb-3">
-                        Installation disponible sur Chrome/Edge
-                      </Badge>
-                      <p className="text-sm text-muted-foreground">
-                        Ouvrez cette page avec Chrome ou Edge pour installer l'application
-                      </p>
-                    </div>
-                  )}
+              {/* Note d'aide */}
+              <div className="border-t pt-6 text-center">
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <div className="h-6 w-6 rounded-full bg-[#00BFA5]/10 flex items-center justify-center">
+                    <span className="text-[#00BFA5] font-bold">!</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Astuce</strong> : Une fois installée, l'application apparaîtra sur votre écran d'accueil comme une application native
+                  </p>
                 </div>
-              )}
-
-              {/* Instructions spécifiques à la plateforme */}
-              <div className="border-t pt-6">
-                <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <Smartphone className="h-5 w-5 text-[#00BFA5]" />
-                  Instructions d'installation
-                </h3>
-
-                {platform === 'ios' && (
-                  <Card className="p-4 bg-blue-500/5 border-blue-500/20">
-                    <h4 className="font-medium text-foreground mb-3 flex items-center gap-2">
-                      <Share className="h-4 w-4" />
-                      Sur iPhone/iPad (Safari)
-                    </h4>
-                    <ol className="space-y-2 text-sm text-muted-foreground">
-                      <li className="flex items-start gap-2">
-                        <span className="font-semibold text-foreground flex-shrink-0">1.</span>
-                        <span>Ouvrez cette page dans <strong>Safari</strong></span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="font-semibold text-foreground flex-shrink-0">2.</span>
-                        <span>Appuyez sur le bouton <strong>Partager</strong> <Share className="inline h-3 w-3" /> (en bas)</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="font-semibold text-foreground flex-shrink-0">3.</span>
-                        <span>Sélectionnez <strong>"Sur l'écran d'accueil"</strong> <Home className="inline h-3 w-3" /></span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="font-semibold text-foreground flex-shrink-0">4.</span>
-                        <span>Confirmez en appuyant sur <strong>Ajouter</strong></span>
-                      </li>
-                    </ol>
-                  </Card>
+                {!isInstalled && (
+                  <a
+                    href="/"
+                    className="inline-flex items-center text-sm text-[#00BFA5] hover:underline"
+                  >
+                    Utiliser la version web sans installer
+                    <ArrowRight className="ml-1 h-4 w-4" />
+                  </a>
                 )}
-
-                {platform === 'android' && (
-                  <Card className="p-4 bg-green-500/5 border-green-500/20">
-                    <h4 className="font-medium text-foreground mb-3 flex items-center gap-2">
-                      <Chrome className="h-4 w-4" />
-                      Sur Android (Chrome)
-                    </h4>
-                    <ol className="space-y-2 text-sm text-muted-foreground">
-                      <li className="flex items-start gap-2">
-                        <span className="font-semibold text-foreground flex-shrink-0">1.</span>
-                        <span>Cliquez sur le bouton <strong>"Installer maintenant"</strong> ci-dessus</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="font-semibold text-foreground flex-shrink-0">2.</span>
-                        <span>Ou appuyez sur le menu <strong>⋮</strong> (en haut à droite)</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="font-semibold text-foreground flex-shrink-0">3.</span>
-                        <span>Sélectionnez <strong>"Ajouter à l'écran d'accueil"</strong></span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="font-semibold text-foreground flex-shrink-0">4.</span>
-                        <span>Confirmez l'installation</span>
-                      </li>
-                    </ol>
-                  </Card>
-                )}
-
-                {platform === 'desktop' && (
-                  <Card className="p-4 bg-purple-500/5 border-purple-500/20">
-                    <h4 className="font-medium text-foreground mb-3 flex items-center gap-2">
-                      <Chrome className="h-4 w-4" />
-                      Sur ordinateur (Chrome/Edge)
-                    </h4>
-                    <ol className="space-y-2 text-sm text-muted-foreground">
-                      <li className="flex items-start gap-2">
-                        <span className="font-semibold text-foreground flex-shrink-0">1.</span>
-                        <span>Cliquez sur le bouton <strong>"Installer maintenant"</strong> ci-dessus</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="font-semibold text-foreground flex-shrink-0">2.</span>
-                        <span>Ou cliquez sur l'icône <strong>Installer</strong> dans la barre d'adresse</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="font-semibold text-foreground flex-shrink-0">3.</span>
-                        <span>Confirmez l'installation dans la popup</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="font-semibold text-foreground flex-shrink-0">4.</span>
-                        <span>L'application s'ouvrira dans sa propre fenêtre</span>
-                      </li>
-                    </ol>
-                  </Card>
-                )}
-              </div>
-
-              {/* Lien vers l'application */}
-              <div className="mt-6 text-center">
-                <a
-                  href="/"
-                  className="inline-flex items-center text-sm text-[#00BFA5] hover:underline"
-                  data-testid="link-open-app"
-                >
-                  Accéder directement à l'application
-                  <ArrowRight className="ml-1 h-4 w-4" />
-                </a>
               </div>
             </div>
           </Card>
