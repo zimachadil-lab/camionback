@@ -102,6 +102,12 @@ export default function AdminDashboard() {
   const [selectedReference, setSelectedReference] = useState<any>(null);
   const [loadingPhotos, setLoadingPhotos] = useState<Record<string, boolean>>({});
   const [loadedPhotos, setLoadedPhotos] = useState<Record<string, string[]>>({});
+  const [coordinationDialogOpen, setCoordinationDialogOpen] = useState(false);
+  const [selectedRequestForCoordination, setSelectedRequestForCoordination] = useState<any>(null);
+  const [adminCoordinationStatus, setAdminCoordinationStatus] = useState("");
+  const [adminCoordinationReason, setAdminCoordinationReason] = useState("");
+  const [adminCoordinationReminderDate, setAdminCoordinationReminderDate] = useState("");
+  const [adminCoordinationAssignedTo, setAdminCoordinationAssignedTo] = useState("");
   const { toast} = useToast();
 
   // Redirect to login if not authenticated
@@ -213,6 +219,26 @@ export default function AdminDashboard() {
     queryKey: ["/api/admin/stats"],
     queryFn: async () => {
       const response = await fetch("/api/admin/stats");
+      return response.json();
+    },
+  });
+
+  // Fetch coordinators for coordination assignment
+  const { data: coordinators = [] } = useQuery({
+    queryKey: ["/api/admin/coordinators"],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const response = await fetch(`/api/admin/coordinators?adminId=${user.id}`);
+      return response.json();
+    },
+  });
+
+  // Fetch coordination statuses
+  const { data: coordinationStatuses = [] } = useQuery({
+    queryKey: ["/api/admin/coordination-statuses"],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const response = await fetch(`/api/admin/coordination-statuses?userId=${user.id}`);
       return response.json();
     },
   });
@@ -703,6 +729,45 @@ export default function AdminDashboard() {
         variant: "destructive",
         title: "Erreur",
         description: "Impossible de modifier l'offre",
+      });
+    },
+  });
+
+  // Update coordination status mutation (admin)
+  const updateCoordinationMutation = useMutation({
+    mutationFn: async ({ requestId, coordinationStatus, coordinationReason, coordinationReminderDate, assignedToId }: {
+      requestId: string;
+      coordinationStatus: string;
+      coordinationReason: string | null;
+      coordinationReminderDate: string | null;
+      assignedToId: string | null;
+    }) => {
+      // Update coordination status and assignedToId in a single call (admin-authorized)
+      return await apiRequest("PATCH", `/api/coordinator/requests/${requestId}/coordination-status`, {
+        coordinationStatus,
+        coordinationReason,
+        coordinationReminderDate,
+        assignedToId
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Coordination mise à jour",
+        description: "Les informations de coordination ont été modifiées",
+      });
+      setCoordinationDialogOpen(false);
+      setSelectedRequestForCoordination(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/nouveau"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/en-action"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/prioritaires"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/archives"] });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de modifier la coordination",
       });
     },
   });
@@ -1228,6 +1293,22 @@ export default function AdminDashboard() {
                                     data-testid={`button-view-request-${request.id}`}
                                   >
                                     <Eye className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    size="icon" 
+                                    variant="ghost"
+                                    onClick={() => {
+                                      setSelectedRequestForCoordination(request);
+                                      setAdminCoordinationStatus(request.coordinationStatus || "nouveau");
+                                      setAdminCoordinationReason(request.coordinationReason || "");
+                                      setAdminCoordinationReminderDate(request.coordinationReminderDate || "");
+                                      setAdminCoordinationAssignedTo(request.assignedToId || "");
+                                      setCoordinationDialogOpen(true);
+                                    }}
+                                    data-testid={`button-coordination-${request.id}`}
+                                    title="Gérer la coordination"
+                                  >
+                                    <Compass className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                                   </Button>
                                   <Button 
                                     size="icon" 
@@ -4752,6 +4833,129 @@ export default function AdminDashboard() {
               data-testid="button-confirm-edit-transporter"
             >
               Enregistrer les modifications
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de gestion de coordination (Admin) */}
+      <Dialog open={coordinationDialogOpen} onOpenChange={setCoordinationDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Gestion de la coordination</DialogTitle>
+            <DialogDescription>
+              Commande {selectedRequestForCoordination?.referenceId}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Info: Date de dernière mise à jour */}
+            {selectedRequestForCoordination?.coordinationUpdatedAt && (
+              <div className="bg-muted p-3 rounded-md text-sm">
+                <div className="font-medium mb-1">Dernière mise à jour</div>
+                <div className="text-muted-foreground">
+                  {format(new Date(selectedRequestForCoordination.coordinationUpdatedAt), "dd MMMM yyyy 'à' HH:mm", { locale: fr })}
+                </div>
+              </div>
+            )}
+
+            {/* Select: Statut de coordination */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Statut de coordination</label>
+              <Select
+                value={adminCoordinationStatus}
+                onValueChange={setAdminCoordinationStatus}
+              >
+                <SelectTrigger data-testid="select-admin-coordination-status">
+                  <SelectValue placeholder="Sélectionner un statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="nouveau">Nouveau</SelectItem>
+                  {coordinationStatuses
+                    .filter((s: any) => s.isActive)
+                    .map((status: any) => (
+                      <SelectItem key={status.id} value={status.value}>
+                        {status.label}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Select: Assigné à */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Assigné à</label>
+              <Select
+                value={adminCoordinationAssignedTo}
+                onValueChange={setAdminCoordinationAssignedTo}
+              >
+                <SelectTrigger data-testid="select-admin-assigned-to">
+                  <SelectValue placeholder="Sélectionner un coordinateur" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Non assigné</SelectItem>
+                  {coordinators.map((coordinator: any) => (
+                    <SelectItem key={coordinator.id} value={coordinator.id}>
+                      {coordinator.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Textarea: Raison */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Raison (optionnel)</label>
+              <Textarea
+                value={adminCoordinationReason}
+                onChange={(e) => setAdminCoordinationReason(e.target.value)}
+                placeholder="Précisez la raison du statut..."
+                rows={3}
+                data-testid="textarea-admin-coordination-reason"
+              />
+            </div>
+
+            {/* Input: Date de rappel (conditionnel) */}
+            {adminCoordinationStatus === "rappel_prevu" && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Date de rappel</label>
+                <Input
+                  type="datetime-local"
+                  value={adminCoordinationReminderDate}
+                  onChange={(e) => setAdminCoordinationReminderDate(e.target.value)}
+                  data-testid="input-admin-reminder-date"
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setCoordinationDialogOpen(false);
+                setSelectedRequestForCoordination(null);
+              }}
+              data-testid="button-cancel-coordination"
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={() => {
+                if (!selectedRequestForCoordination) return;
+                
+                updateCoordinationMutation.mutate({
+                  requestId: selectedRequestForCoordination.id,
+                  coordinationStatus: adminCoordinationStatus,
+                  coordinationReason: adminCoordinationReason || null,
+                  coordinationReminderDate: adminCoordinationReminderDate || null,
+                  assignedToId: adminCoordinationAssignedTo || null,
+                });
+              }}
+              disabled={updateCoordinationMutation.isPending}
+              data-testid="button-save-coordination"
+            >
+              {updateCoordinationMutation.isPending ? "Enregistrement..." : "Enregistrer"}
             </Button>
           </div>
         </DialogContent>

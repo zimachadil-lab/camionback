@@ -21,9 +21,10 @@ import {
   insertCoordinationStatusSchema,
   type Offer,
   type TransportRequest,
-  clientTransporterContacts
+  clientTransporterContacts,
+  transportRequests
 } from "@shared/schema";
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { sendNewOfferSMS, sendOfferAcceptedSMS, sendTransporterActivatedSMS, sendBulkSMS } from "./infobip-sms";
 import { emailService } from "./email-service";
 
@@ -3896,8 +3897,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/coordinator/requests/:id/coordination-status", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
       const coordinatorId = req.user!.id;
+      const isAdmin = req.user!.role === 'admin';
       const { id } = req.params;
-      const { coordinationStatus, coordinationReason, coordinationReminderDate } = req.body;
+      const { coordinationStatus, coordinationReason, coordinationReminderDate, assignedToId } = req.body;
 
       const reminderDate = coordinationReminderDate ? new Date(coordinationReminderDate) : null;
 
@@ -3909,6 +3911,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         coordinatorId
       );
 
+      // If admin is manually changing assignedToId, update it separately
+      if (isAdmin && assignedToId !== undefined) {
+        await db.update(transportRequests)
+          .set({ assignedToId: assignedToId || null })
+          .where(eq(transportRequests.id, id));
+      }
+
       // Create coordinator log for this action
       await storage.createCoordinatorLog({
         coordinatorId,
@@ -3919,6 +3928,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           newStatus: coordinationStatus,
           reason: coordinationReason,
           reminderDate: coordinationReminderDate,
+          assignedToId: isAdmin && assignedToId !== undefined ? assignedToId : undefined,
         }),
       });
 
