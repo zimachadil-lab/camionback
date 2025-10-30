@@ -3816,7 +3816,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/coordinator/coordination/nouveau", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
       const coordinatorId = req.user!.id;
-      const requests = await storage.getCoordinationNouveauRequests();
+      const assignedToId = req.query.assignedToId as string | undefined;
+      const searchQuery = req.query.searchQuery as string | undefined;
+      
+      const filters = {
+        assignedToId,
+        searchQuery
+      };
+      
+      const requests = await storage.getCoordinationNouveauRequests(filters);
       res.json(requests);
     } catch (error) {
       console.error("Erreur récupération commandes nouveau:", error);
@@ -3828,7 +3836,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/coordinator/coordination/en-action", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
       const coordinatorId = req.user!.id;
-      const requests = await storage.getCoordinationEnActionRequests();
+      const assignedToId = req.query.assignedToId as string | undefined;
+      const searchQuery = req.query.searchQuery as string | undefined;
+      
+      const filters = {
+        assignedToId,
+        searchQuery
+      };
+      
+      const requests = await storage.getCoordinationEnActionRequests(filters);
       res.json(requests);
     } catch (error) {
       console.error("Erreur récupération commandes en action:", error);
@@ -3840,7 +3856,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/coordinator/coordination/prioritaires", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
       const coordinatorId = req.user!.id;
-      const requests = await storage.getCoordinationPrioritairesRequests();
+      const assignedToId = req.query.assignedToId as string | undefined;
+      const searchQuery = req.query.searchQuery as string | undefined;
+      
+      const filters = {
+        assignedToId,
+        searchQuery
+      };
+      
+      const requests = await storage.getCoordinationPrioritairesRequests(filters);
       res.json(requests);
     } catch (error) {
       console.error("Erreur récupération commandes prioritaires:", error);
@@ -3852,7 +3876,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/coordinator/coordination/archives", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
       const coordinatorId = req.user!.id;
-      const requests = await storage.getCoordinationArchivesRequests();
+      const assignedToId = req.query.assignedToId as string | undefined;
+      const searchQuery = req.query.searchQuery as string | undefined;
+      
+      const filters = {
+        assignedToId,
+        searchQuery
+      };
+      
+      const requests = await storage.getCoordinationArchivesRequests(filters);
       res.json(requests);
     } catch (error) {
       console.error("Erreur récupération archives:", error);
