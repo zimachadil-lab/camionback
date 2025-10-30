@@ -104,6 +104,13 @@ export default function AdminDashboard() {
 
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("camionback_user") || "{}"));
 
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!user?.id || user?.role !== "admin") {
+      setLocation("/");
+    }
+  }, [user, setLocation]);
+
   // Fetch conversation messages (enabled only when conversation dialog is open)
   const { data: conversationMessages = [] } = useQuery({
     queryKey: ["/api/chat/messages", selectedConversation?.requestId],
@@ -315,11 +322,13 @@ export default function AdminDashboard() {
 
   // Fetch all stories
   const { data: allStories = [], isLoading: storiesLoading } = useQuery({
-    queryKey: ["/api/stories"],
+    queryKey: ["/api/stories", user?.id],
     queryFn: async () => {
+      if (!user?.id) return [];
       const response = await fetch(`/api/stories?adminId=${user.id}`);
       return response.json();
     },
+    enabled: !!user?.id,
   });
 
   // Calculate contract statistics

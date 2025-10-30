@@ -3684,15 +3684,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all coordination status configurations
   app.get("/api/admin/coordination-statuses", async (req, res) => {
     try {
-      const adminId = req.query.adminId as string;
+      const userId = (req.query.adminId || req.query.userId) as string;
 
-      if (!adminId) {
+      if (!userId) {
         return res.status(401).json({ error: "Non authentifié" });
       }
 
-      const admin = await storage.getUser(adminId);
-      if (!admin || admin.role !== "admin") {
-        return res.status(403).json({ error: "Accès refusé - Admin requis" });
+      const user = await storage.getUser(userId);
+      if (!user || (user.role !== "admin" && user.role !== "coordinateur")) {
+        return res.status(403).json({ error: "Accès refusé - Admin ou Coordinateur requis" });
       }
 
       const statuses = await storage.getAllCoordinationStatusConfigs();
