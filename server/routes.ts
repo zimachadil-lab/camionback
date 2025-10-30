@@ -1073,13 +1073,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/requests/:id", async (req, res) => {
     try {
+      console.log("[PATCH /api/requests/:id] Request body:", JSON.stringify(req.body, null, 2));
       const request = await storage.updateTransportRequest(req.params.id, req.body);
       if (!request) {
         return res.status(404).json({ error: "Request not found" });
       }
       res.json(request);
     } catch (error) {
-      res.status(500).json({ error: "Failed to update request" });
+      console.error("[PATCH /api/requests/:id] Error:", error);
+      res.status(500).json({ error: "Failed to update request", details: error instanceof Error ? error.message : String(error) });
     }
   });
 
