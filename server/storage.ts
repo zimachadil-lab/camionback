@@ -2346,6 +2346,7 @@ export class DbStorage implements IStorage {
       status: transportRequests.status,
       isHidden: transportRequests.isHidden,
       paymentStatus: transportRequests.paymentStatus,
+      shareToken: transportRequests.shareToken,
       createdAt: transportRequests.createdAt,
     })
     .from(transportRequests)
@@ -2391,6 +2392,7 @@ export class DbStorage implements IStorage {
       isHidden: transportRequests.isHidden,
       paymentStatus: transportRequests.paymentStatus,
       acceptedOfferId: transportRequests.acceptedOfferId,
+      shareToken: transportRequests.shareToken,
       createdAt: transportRequests.createdAt,
     })
     .from(transportRequests)
@@ -2451,6 +2453,7 @@ export class DbStorage implements IStorage {
       status: transportRequests.status,
       paymentStatus: transportRequests.paymentStatus,
       acceptedOfferId: transportRequests.acceptedOfferId,
+      shareToken: transportRequests.shareToken,
       createdAt: transportRequests.createdAt,
     })
     .from(transportRequests)
@@ -2551,6 +2554,7 @@ export class DbStorage implements IStorage {
       coordinationReminderDate: transportRequests.coordinationReminderDate,
       coordinationUpdatedAt: transportRequests.coordinationUpdatedAt,
       assignedToId: transportRequests.assignedToId,
+      shareToken: transportRequests.shareToken,
       createdAt: transportRequests.createdAt,
     })
     .from(transportRequests)
@@ -2644,6 +2648,7 @@ export class DbStorage implements IStorage {
       coordinationReminderDate: transportRequests.coordinationReminderDate,
       coordinationUpdatedAt: transportRequests.coordinationUpdatedAt,
       assignedToId: transportRequests.assignedToId,
+      shareToken: transportRequests.shareToken,
       createdAt: transportRequests.createdAt,
     })
     .from(transportRequests)
@@ -2741,6 +2746,7 @@ export class DbStorage implements IStorage {
       coordinationReminderDate: transportRequests.coordinationReminderDate,
       coordinationUpdatedAt: transportRequests.coordinationUpdatedAt,
       assignedToId: transportRequests.assignedToId,
+      shareToken: transportRequests.shareToken,
       createdAt: transportRequests.createdAt,
     })
     .from(transportRequests)
@@ -2837,6 +2843,7 @@ export class DbStorage implements IStorage {
       coordinationReason: transportRequests.coordinationReason,
       coordinationUpdatedAt: transportRequests.coordinationUpdatedAt,
       assignedToId: transportRequests.assignedToId,
+      shareToken: transportRequests.shareToken,
       createdAt: transportRequests.createdAt,
     })
     .from(transportRequests)

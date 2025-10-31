@@ -19,9 +19,10 @@ The backend is built with Express.js and TypeScript, providing RESTful JSON APIs
 - **User Management:** Transporter rating, contract management, account blocking/deletion, and automated client ID generation.
 - **Messaging & Notifications:** Centralized admin messaging, voice messaging, SMS notifications, email notifications, and PWA with native push notifications.
 - **Admin & Coordinator Tools:** Dynamic admin dashboard statistics, request management (hide/delete/expire), reporting and dispute system, comprehensive filtering/search, full CRUD for cities, and advanced coordination status tracking with automated coordinator assignment and expiration for archived requests.
+- **Public Order Sharing:** Coordinators can share transport requests via unique, secure public links. Features include: shareToken-based URLs (`/public/request/:shareToken`), public view with complete order details (route map, photos, client info), WhatsApp sharing integration, copy-to-clipboard functionality, and "Make Offer" button with authentication redirect for non-logged users.
 - **CamioMatch:** Intelligent, Tinder-style transporter matching for clients based on various criteria.
 - **File Management:** Base64 for client photos, Multer for transporter truck photos, and multimedia messaging.
-- **Security:** Comprehensive backend security with 72 protected and sanitized endpoints, session-based authentication using PostgreSQL, HttpOnly/Secure/SameSite cookies, and role-based access control. No password hashes are exposed, and phone numbers are masked.
+- **Security:** Comprehensive backend security with 72 protected and sanitized endpoints, session-based authentication using PostgreSQL, HttpOnly/Secure/SameSite cookies, and role-based access control. No password hashes are exposed, and phone numbers are masked. Public sharing links use unique tokens and expose only sanitized data.
 - **PWA Installation:** Dedicated `/app` route for direct PWA installation with platform detection and instructions, and a contextual PWA installation toast.
 
 ### System Design Choices
