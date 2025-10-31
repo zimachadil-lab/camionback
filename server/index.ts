@@ -8,6 +8,10 @@ const app = express();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
+// CRITIQUE: Trust proxy pour que Express accepte les cookies sécurisés derrière un reverse proxy (CDN, nginx, etc.)
+// Sans cela, req.secure reste false en production HTTPS et les cookies de session ne sont jamais envoyés
+app.set('trust proxy', 1);
+
 // Configuration des sessions sécurisées (AVANT les routes)
 app.use(session(sessionConfig));
 
