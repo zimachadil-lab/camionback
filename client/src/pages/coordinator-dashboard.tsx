@@ -259,7 +259,8 @@ export default function CoordinatorDashboard() {
     queryKey: ["/api/coordinator/available-requests"],
     queryFn: async () => {
       const response = await fetch("/api/coordinator/available-requests");
-      return response.json();
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
@@ -268,7 +269,8 @@ export default function CoordinatorDashboard() {
     queryKey: ["/api/coordinator/active-requests"],
     queryFn: async () => {
       const response = await fetch("/api/coordinator/active-requests");
-      return response.json();
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
@@ -277,7 +279,8 @@ export default function CoordinatorDashboard() {
     queryKey: ["/api/coordinator/payment-requests"],
     queryFn: async () => {
       const response = await fetch("/api/coordinator/payment-requests");
-      return response.json();
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
@@ -286,7 +289,8 @@ export default function CoordinatorDashboard() {
     queryKey: ["/api/cities"],
     queryFn: async () => {
       const response = await fetch("/api/cities");
-      return response.json();
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
@@ -296,7 +300,8 @@ export default function CoordinatorDashboard() {
     enabled: !!user?.id,
     queryFn: async () => {
       const response = await fetch(`/api/coordinators`);
-      return response.json();
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
@@ -305,7 +310,8 @@ export default function CoordinatorDashboard() {
     queryKey: ["/api/empty-returns"],
     queryFn: async () => {
       const response = await fetch("/api/empty-returns");
-      return response.json();
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
@@ -322,7 +328,8 @@ export default function CoordinatorDashboard() {
     queryFn: async () => {
       const queryString = buildQueryString(coordinationAssignedFilter, coordinationSearchQuery);
       const response = await fetch(`/api/coordinator/coordination/nouveau${queryString}`);
-      return response.json();
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
@@ -331,7 +338,8 @@ export default function CoordinatorDashboard() {
     queryFn: async () => {
       const queryString = buildQueryString(coordinationAssignedFilter, coordinationSearchQuery);
       const response = await fetch(`/api/coordinator/coordination/en-action${queryString}`);
-      return response.json();
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
@@ -340,7 +348,8 @@ export default function CoordinatorDashboard() {
     queryFn: async () => {
       const queryString = buildQueryString(coordinationAssignedFilter, coordinationSearchQuery);
       const response = await fetch(`/api/coordinator/coordination/prioritaires${queryString}`);
-      return response.json();
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
@@ -349,7 +358,8 @@ export default function CoordinatorDashboard() {
     queryFn: async () => {
       const queryString = buildQueryString(coordinationAssignedFilter, coordinationSearchQuery);
       const response = await fetch(`/api/coordinator/coordination/archives${queryString}`);
-      return response.json();
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
