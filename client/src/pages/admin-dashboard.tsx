@@ -123,7 +123,8 @@ export default function AdminDashboard() {
     queryFn: async () => {
       if (!selectedConversation?.requestId) return [];
       const response = await fetch(`/api/chat/messages?requestId=${selectedConversation.requestId}`);
-      return response.json();
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
     enabled: conversationDialogOpen && !!selectedConversation?.requestId,
   });
@@ -137,7 +138,8 @@ export default function AdminDashboard() {
     queryKey: ["/api/admin/pending-drivers"],
     queryFn: async () => {
       const response = await fetch("/api/admin/pending-drivers");
-      return response.json();
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
     refetchOnMount: "always",
     staleTime: 0,
@@ -165,7 +167,8 @@ export default function AdminDashboard() {
     queryKey: ["/api/requests"],
     queryFn: async () => {
       const response = await fetch("/api/requests");
-      return response.json();
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
@@ -183,7 +186,8 @@ export default function AdminDashboard() {
     queryKey: ["/api/offers/all"],
     queryFn: async () => {
       const response = await fetch("/api/offers");
-      return response.json();
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
@@ -192,7 +196,8 @@ export default function AdminDashboard() {
     queryKey: ["/api/empty-returns"],
     queryFn: async () => {
       const response = await fetch("/api/empty-returns");
-      return response.json();
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
@@ -201,7 +206,8 @@ export default function AdminDashboard() {
     queryKey: ["/api/contracts"],
     queryFn: async () => {
       const response = await fetch("/api/contracts");
-      return response.json();
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
@@ -210,7 +216,8 @@ export default function AdminDashboard() {
     queryKey: ["/api/admin/conversations"],
     queryFn: async () => {
       const response = await fetch("/api/admin/conversations");
-      return response.json();
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
@@ -229,7 +236,8 @@ export default function AdminDashboard() {
     enabled: !!user?.id,
     queryFn: async () => {
       const response = await fetch(`/api/admin/coordinators?adminId=${user!.id}`);
-      return response.json();
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
@@ -295,7 +303,8 @@ export default function AdminDashboard() {
     queryKey: ["/api/admin/clients"],
     queryFn: async () => {
       const response = await fetch("/api/admin/clients");
-      return response.json();
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
@@ -309,7 +318,8 @@ export default function AdminDashboard() {
     queryKey: ["/api/reports"],
     queryFn: async () => {
       const response = await fetch("/api/reports");
-      return response.json();
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
@@ -318,7 +328,8 @@ export default function AdminDashboard() {
     queryKey: ["/api/cities"],
     queryFn: async () => {
       const response = await fetch("/api/cities");
-      return response.json();
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
@@ -328,7 +339,8 @@ export default function AdminDashboard() {
     queryFn: async () => {
       if (!user?.id) return [];
       const response = await fetch(`/api/stories?adminId=${user.id}`);
-      return response.json();
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
     enabled: !!user?.id,
   });
