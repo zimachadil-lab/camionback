@@ -75,6 +75,19 @@ export default function TransporterDashboard() {
   const [notValidatedDialogOpen, setNotValidatedDialogOpen] = useState(false);
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | null>(null);
 
+  // Handle incoming request parameter from public share link
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const requestId = params.get('request');
+    if (requestId) {
+      // Open offer dialog for this request
+      setSelectedRequestId(requestId);
+      setOfferDialogOpen(true);
+      // Clean URL after processing
+      window.history.replaceState({}, '', '/transporter-dashboard');
+    }
+  }, []);
+
   // Initialize edit offer form when offer is selected
   useEffect(() => {
     if (selectedOffer && editOfferDialogOpen) {

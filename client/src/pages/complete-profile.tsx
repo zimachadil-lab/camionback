@@ -45,6 +45,15 @@ export default function CompleteProfile() {
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
 
+  // IMPORTANT: All hooks must be called before any conditional returns
+  const form = useForm<ProfileForm>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      name: "",
+      city: "",
+    },
+  });
+
   // Redirect if not authenticated or not a transporter
   useEffect(() => {
     if (!authLoading && (!user || user.role !== 'transporter')) {
@@ -68,14 +77,6 @@ export default function CompleteProfile() {
   if (!user) {
     return null;
   }
-
-  const form = useForm<ProfileForm>({
-    resolver: zodResolver(profileSchema),
-    defaultValues: {
-      name: "",
-      city: "",
-    },
-  });
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

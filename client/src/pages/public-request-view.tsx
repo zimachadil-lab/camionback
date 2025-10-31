@@ -72,7 +72,7 @@ export default function PublicRequestView() {
       const { user } = await response.json();
       if (user && user.role === 'transporter') {
         // Redirect to transporter dashboard with this request
-        setLocation(`/transporter?request=${request?.id}`);
+        setLocation(`/transporter-dashboard?request=${request?.id}`);
       } else if (user) {
         // User is logged in but not a transporter
         alert("Vous devez avoir un compte transporteur pour faire une offre.");
