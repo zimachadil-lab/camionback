@@ -140,6 +140,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public routes - No authentication required
+  
+  // Get public request details via share token
+  app.get("/api/public/request/:shareToken", async (req, res) => {
+    try {
+      const { shareToken } = req.params;
+      
+      if (!shareToken) {
+        return res.status(400).json({ error: "Token de partage requis" });
+      }
+
+      // Find request by share token
+      const request = await storage.getRequestByShareToken(shareToken);
+      
+      if (!request) {
+        return res.status(404).json({ error: "Commande introuvable" });
+      }
+
+      // Get client info (sanitized)
+      const client = await storage.getUser(request.clientId);
+      if (!client) {
+        return res.status(404).json({ error: "Client introuvable" });
+      }
+
+      // Get all offers for this request
+      const allOffers = await storage.getOffersByRequest(request.id);
+      
+      // Get transporter info for accepted offer if any
+      let acceptedOffer = null;
+      let acceptedTransporter = null;
+      
+      if (request.acceptedOfferId) {
+        acceptedOffer = allOffers.find(o => o.id === request.acceptedOfferId);
+        if (acceptedOffer) {
+          const transporter = await storage.getUser(acceptedOffer.transporterId);
+          if (transporter) {
+            acceptedTransporter = {
+              id: transporter.id,
+              name: transporter.name,
+              rating: transporter.rating,
+              totalTrips: transporter.totalTrips,
+            };
+          }
+        }
+      }
+
+      // Build public response (exclude sensitive data)
+      const publicRequest = {
+        id: request.id,
+        referenceId: request.referenceId,
+        fromCity: request.fromCity,
+        toCity: request.toCity,
+        description: request.description,
+        goodsType: request.goodsType,
+        dateTime: request.dateTime,
+        dateFlexible: request.dateFlexible,
+        invoiceRequired: request.invoiceRequired,
+        budget: request.budget,
+        photos: request.photos, // Include photos for viewing
+        status: request.status,
+        viewCount: request.viewCount,
+        createdAt: request.createdAt,
+        client: {
+          clientId: client.clientId,
+          name: client.name,
+          city: client.city,
+        },
+        acceptedOffer: acceptedOffer ? {
+          id: acceptedOffer.id,
+          amount: acceptedOffer.amount,
+          pickupDate: acceptedOffer.pickupDate,
+          loadType: acceptedOffer.loadType,
+          transporter: acceptedTransporter,
+        } : null,
+        offersCount: allOffers.length,
+      };
+
+      res.json(publicRequest);
+    } catch (error) {
+      console.error("❌ [GET /api/public/request/:shareToken] ERROR:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération de la commande" });
+    }
+  });
+
   // Auth routes - New PIN-based system
   
   // Check if phone number exists

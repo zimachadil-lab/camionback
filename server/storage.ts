@@ -50,6 +50,7 @@ export interface IStorage {
   // Transport request operations
   createTransportRequest(request: InsertTransportRequest): Promise<TransportRequest>;
   getTransportRequest(id: string): Promise<TransportRequest | undefined>;
+  getRequestByShareToken(shareToken: string): Promise<TransportRequest | undefined>;
   getAllTransportRequests(): Promise<TransportRequest[]>;
   getRequestsByClient(clientId: string): Promise<TransportRequest[]>;
   getOpenRequests(transporterId?: string): Promise<TransportRequest[]>;
@@ -1506,6 +1507,13 @@ export class DbStorage implements IStorage {
   async getTransportRequest(id: string): Promise<TransportRequest | undefined> {
     const result = await db.select().from(transportRequests)
       .where(eq(transportRequests.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  async getRequestByShareToken(shareToken: string): Promise<TransportRequest | undefined> {
+    const result = await db.select().from(transportRequests)
+      .where(eq(transportRequests.shareToken, shareToken))
       .limit(1);
     return result[0];
   }
