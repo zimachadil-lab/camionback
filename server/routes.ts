@@ -1048,6 +1048,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint de diagnostic avancé pour identifier quelle ligne cause des problèmes
+  app.get("/api/requests/debug-normalize", async (req, res) => {
+    try {
+      const rawRequests = await storage.getAllTransportRequests();
+      
+      const problems: any[] = [];
+      const normalized: any[] = [];
+      
+      rawRequests.forEach((req, index) => {
+        try {
+          // Tester la normalisation de chaque ligne
+          const normalizedReq = {
+            ...req,
+            photos: safeParse(req.photos, []),
+            declinedBy: safeParse(req.declinedBy, []),
+            paymentReceipt: (req.paymentReceipt === 'null' || req.paymentReceipt === 'undefined' || req.paymentReceipt === '') ? null : req.paymentReceipt,
+            coordinationReason: (req.coordinationReason === 'null' || req.coordinationReason === 'undefined' || req.coordinationReason === '') ? null : req.coordinationReason,
+          };
+          
+          // Tester aussi la sérialisation JSON
+          JSON.stringify(normalizedReq);
+          
+          normalized.push({
+            id: req.id,
+            referenceId: req.referenceId,
+            status: 'OK'
+          });
+        } catch (error) {
+          problems.push({
+            id: req.id,
+            referenceId: req.referenceId,
+            index,
+            error: error instanceof Error ? error.message : String(error),
+            photos: typeof req.photos,
+            declinedBy: typeof req.declinedBy,
+            photosValue: String(req.photos).substring(0, 100),
+            declinedByValue: String(req.declinedBy).substring(0, 100)
+          });
+        }
+      });
+      
+      res.json({
+        success: true,
+        totalRequests: rawRequests.length,
+        normalizedSuccessfully: normalized.length,
+        problemsCount: problems.length,
+        problems: problems.slice(0, 10), // Premier 10 problèmes
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      });
+    }
+  });
+
   app.get("/api/requests", async (req, res) => {
     try {
       console.log("🔍 [GET /api/requests] Starting request fetch...");
