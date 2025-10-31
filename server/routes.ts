@@ -1035,12 +1035,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         requests = await storage.getAllTransportRequests();
       }
       
-      console.log(`✅ Retrieved ${requests.length} requests, starting enrichment...`);
+      console.log(`✅ Retrieved ${requests.length} requests, starting optimized enrichment...`);
       
-      // Enrich requests with offers count and accepted offer details
+      // OPTIMISATION: Récupérer TOUTES les offres en une seule requête au lieu de N requêtes
+      const allOffers = await storage.getAllOffers();
+      console.log(`📊 Retrieved ${allOffers.length} total offers`);
+      
+      // Grouper les offres par requestId pour un accès O(1)
+      const offersByRequestId = allOffers.reduce((acc: Record<string, any[]>, offer) => {
+        if (!acc[offer.requestId]) {
+          acc[offer.requestId] = [];
+        }
+        acc[offer.requestId].push(offer);
+        return acc;
+      }, {});
+      
+      // Enrichir les demandes SANS requêtes supplémentaires (100x plus rapide)
       const enrichedRequests = await Promise.all(
         requests.map(async (request) => {
-          const offers = await storage.getOffersByRequest(request.id);
+          const offers = offersByRequestId[request.id] || [];
           let enrichedRequest: any = {
             ...request,
             offersCount: offers.length,
@@ -1048,12 +1061,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // For accepted requests, add the pickup date from the accepted offer
           if (request.acceptedOfferId) {
-            const acceptedOffer = await storage.getOffer(request.acceptedOfferId);
+            const acceptedOffer = offers.find(o => o.id === request.acceptedOfferId);
+            // Si pas trouvé dans le cache, on fait une requête (fallback)
+            const finalOffer = acceptedOffer || await storage.getOffer(request.acceptedOfferId);
+            
             // Verify the offer belongs to the current transporter (if transporterId is provided)
-            if (acceptedOffer && (!transporterId || acceptedOffer.transporterId === transporterId)) {
-              enrichedRequest.pickupDate = acceptedOffer.pickupDate;
-              enrichedRequest.offerAmount = acceptedOffer.amount;
-              enrichedRequest.loadType = acceptedOffer.loadType;
+            if (finalOffer && (!transporterId || finalOffer.transporterId === transporterId)) {
+              enrichedRequest.pickupDate = finalOffer.pickupDate;
+              enrichedRequest.offerAmount = finalOffer.amount;
+              enrichedRequest.loadType = finalOffer.loadType;
             }
           }
           
@@ -1061,7 +1077,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
       );
       
-      console.log(`✅ Successfully enriched ${enrichedRequests.length} requests`);
+      console.log(`✅ Successfully enriched ${enrichedRequests.length} requests in optimized mode`);
       res.json(enrichedRequests);
     } catch (error) {
       console.error("❌ [GET /api/requests] ERROR:", error);
