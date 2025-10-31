@@ -25,6 +25,7 @@ import HowItWorksTransporter from "@/pages/how-it-works-transporter";
 import PushDiagnostic from "@/pages/push-diagnostic";
 import ForceSWUpdate from "@/pages/force-sw-update";
 import PWAInstallPage from "@/pages/pwa-install-page";
+import PublicRequestView from "@/pages/public-request-view";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -50,6 +51,7 @@ function Router() {
       <Route path="/push-diagnostic" component={PushDiagnostic} />
       <Route path="/force-sw-update" component={ForceSWUpdate} />
       <Route path="/app" component={PWAInstallPage} />
+      <Route path="/public/request/:shareToken" component={PublicRequestView} />
       <Route component={NotFound} />
     </Switch>
   );
