@@ -1367,6 +1367,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`📋 Grouped offers by requestId, starting enrichment...`);
       
+      // Get all unique transporter IDs from assigned transporters
+      const assignedTransporterIds = [...new Set(
+        requests
+          .filter(r => r.assignedTransporterId)
+          .map(r => r.assignedTransporterId)
+      )];
+      
+      // Fetch transporter info for assigned transporters
+      const assignedTransporters: Record<string, any> = {};
+      if (assignedTransporterIds.length > 0) {
+        const transporterPromises = assignedTransporterIds.map(async (id) => {
+          const transporter = await storage.getUser(id!);
+          return { id, transporter };
+        });
+        const transporterResults = await Promise.all(transporterPromises);
+        transporterResults.forEach(({ id, transporter }) => {
+          if (transporter && id) {
+            assignedTransporters[id] = {
+              id: transporter.id,
+              name: transporter.name,
+              phoneNumber: transporter.phoneNumber,
+            };
+          }
+        });
+      }
+      
       // Enrichir les demandes SANS requêtes supplémentaires (synchrone, pas de Promise.all)
       const enrichedRequests = requests.map((request) => {
         const offers = offersByRequestId[request.id] || [];
@@ -1392,6 +1418,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             enrichedRequest.offerAmount = acceptedOffer.amount;
             enrichedRequest.loadType = acceptedOffer.loadType;
           }
+        }
+        
+        // For manually assigned transporters, add basic transporter info
+        if (request.assignedTransporterId && assignedTransporters[request.assignedTransporterId]) {
+          enrichedRequest.transporter = assignedTransporters[request.assignedTransporterId];
         }
         
         return enrichedRequest;
@@ -1466,7 +1497,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get accepted transporter info for a request
+  // Get accepted transporter info for a request (handles both accepted offers and manual assignments)
   app.get("/api/requests/:id/accepted-transporter", async (req, res) => {
     try {
       const request = await storage.getTransportRequest(req.params.id);
@@ -1474,8 +1505,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Request not found" });
       }
 
+      // Case 1: Manual assignment by coordinator
+      if (request.assignedTransporterId) {
+        const transporter = await storage.getUser(request.assignedTransporterId);
+        if (!transporter) {
+          return res.status(404).json({ error: "Assigned transporter not found" });
+        }
+
+        res.json({
+          transporterName: transporter.name,
+          transporterPhone: transporter.phoneNumber,
+          transporterCity: transporter.city,
+          totalAmount: request.manualAssignmentClientTotal || 0,
+          transporterAmount: request.manualAssignmentAmount,
+          platformFee: request.manualAssignmentPlatformFee,
+          acceptedAt: request.manualAssignmentDate,
+          assignedManually: true,
+        });
+        return;
+      }
+
+      // Case 2: Accepted offer (traditional flow)
       if (!request.acceptedOfferId) {
-        return res.status(400).json({ error: "No accepted offer for this request" });
+        return res.status(400).json({ error: "No accepted offer or assigned transporter for this request" });
       }
 
       const offer = await storage.getOffer(request.acceptedOfferId);
@@ -1500,6 +1552,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         transporterCity: transporter.city,
         totalAmount: totalWithCommission, // Only show total to client (commission is invisible)
         acceptedAt: offer.createdAt,
+        assignedManually: false,
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch transporter info" });

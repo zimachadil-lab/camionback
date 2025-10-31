@@ -81,6 +81,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
   const [editPhotos, setEditPhotos] = useState<File[]>([]);
   const [editedExistingPhotos, setEditedExistingPhotos] = useState<string[]>([]);
   const isAccepted = request.status === "accepted";
+  const hasTransporter = isAccepted || !!request.assignedTransporterId;
   const { toast } = useToast();
 
   const { data: offers = [] } = useQuery({
@@ -361,7 +362,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
           )}
 
           {/* Nouveaux boutons: CamioMatch et Coordinateur */}
-          {!isAccepted && (
+          {!hasTransporter && (
             <div className="flex flex-wrap gap-2.5">
               <Button
                 onClick={() => setShowCamioMatchDialog(true)}
@@ -382,8 +383,8 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
             </div>
           )}
 
-          {/* Actions pour commande acceptée */}
-          {isAccepted && (
+          {/* Actions pour commande avec transporteur (acceptée ou assignée) */}
+          {hasTransporter && (
             <div className="flex flex-col sm:flex-row gap-2 pt-2">
               <Button
                 variant="secondary"
@@ -399,9 +400,15 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                 variant="default"
                 size="sm"
                 onClick={() => {
-                  const acceptedOffer = offersWithTransporters.find((o: any) => o.id === request.acceptedOfferId);
-                  if (acceptedOffer) {
-                    onChat(acceptedOffer.transporterId, acceptedOffer.transporterName, request.id);
+                  // Handle manual assignment
+                  if (request.assignedTransporterId && request.transporter) {
+                    onChat(request.transporter.id, request.transporter.name, request.id);
+                  } else {
+                    // Handle accepted offer
+                    const acceptedOffer = offersWithTransporters.find((o: any) => o.id === request.acceptedOfferId);
+                    if (acceptedOffer) {
+                      onChat(acceptedOffer.transporterId, acceptedOffer.transporterName, request.id);
+                    }
                   }
                 }}
                 data-testid={`button-chat-active-${request.id}`}
@@ -410,6 +417,33 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
               >
                 <MessageSquare className="h-4 w-4" />
                 <span className="hidden sm:inline">Message</span>
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  let phone = "";
+                  let refId = request.referenceId;
+                  // Handle manual assignment
+                  if (request.assignedTransporterId && request.transporter) {
+                    phone = request.transporter.phoneNumber;
+                  } else {
+                    // Handle accepted offer
+                    const acceptedOffer = offersWithTransporters.find((o: any) => o.id === request.acceptedOfferId);
+                    if (acceptedOffer && acceptedOffer.transporter) {
+                      phone = acceptedOffer.transporter.phoneNumber;
+                    }
+                  }
+                  if (phone) {
+                    const message = encodeURIComponent(`Bonjour, concernant la commande ${refId} (${request.fromCity} → ${request.toCity})`);
+                    window.open(`https://wa.me/${phone.replace(/\D/g, '')}?text=${message}`, '_blank');
+                  }
+                }}
+                data-testid={`button-whatsapp-transporter-${request.id}`}
+                className="gap-2"
+              >
+                <Phone className="h-4 w-4" />
+                <span className="hidden sm:inline">WhatsApp</span>
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -1789,11 +1823,28 @@ export default function ClientDashboard() {
               </div>
 
               {transporterInfo?.totalAmount && (
-                <div className="border-t pt-3">
-                  <div className="flex justify-between">
-                    <span className="font-semibold text-foreground">Montant</span>
-                    <span className="font-bold text-primary text-xl">{transporterInfo.totalAmount.toFixed(2)} MAD</span>
-                  </div>
+                <div className="border-t pt-3 space-y-2">
+                  {transporterInfo?.assignedManually ? (
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Total Transporteur</span>
+                        <span className="font-semibold">{transporterInfo.transporterAmount?.toFixed(2)} MAD</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Cotisation Plateforme</span>
+                        <span className="font-semibold">{transporterInfo.platformFee?.toFixed(2)} MAD</span>
+                      </div>
+                      <div className="flex justify-between border-t pt-2">
+                        <span className="font-semibold text-foreground">Total à payer</span>
+                        <span className="font-bold text-primary text-xl">{transporterInfo.totalAmount.toFixed(2)} MAD</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between">
+                      <span className="font-semibold text-foreground">Montant</span>
+                      <span className="font-bold text-primary text-xl">{transporterInfo.totalAmount.toFixed(2)} MAD</span>
+                    </div>
+                  )}
                 </div>
               )}
 

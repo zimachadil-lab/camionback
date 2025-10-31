@@ -1582,20 +1582,30 @@ export class DbStorage implements IStorage {
     
     const acceptedOfferIds = allOffers.map(o => o.id);
     
-    if (acceptedOfferIds.length === 0) {
-      return [];
+    // Get requests from accepted offers
+    let requestsFromOffers: TransportRequest[] = [];
+    if (acceptedOfferIds.length > 0) {
+      requestsFromOffers = await db.select().from(transportRequests)
+        .where(
+          and(
+            eq(transportRequests.status, 'accepted'),
+            sql`${transportRequests.acceptedOfferId} IN (${sql.join(acceptedOfferIds.map(id => sql`${id}`), sql`, `)})`,
+            sql`${transportRequests.paymentStatus} NOT IN ('pending_admin_validation', 'paid')`
+          )
+        );
     }
     
-    const requests = await db.select().from(transportRequests)
+    // Get manually assigned requests
+    const manuallyAssignedRequests = await db.select().from(transportRequests)
       .where(
         and(
-          eq(transportRequests.status, 'accepted'),
-          sql`${transportRequests.acceptedOfferId} IN (${sql.join(acceptedOfferIds.map(id => sql`${id}`), sql`, `)})`,
-          sql`${transportRequests.paymentStatus} NOT IN ('pending_admin_validation', 'paid')`
+          eq(transportRequests.assignedTransporterId, transporterId),
+          sql`${transportRequests.paymentStatus} NOT IN ('pending_admin_validation', 'paid', 'completed')`
         )
       );
     
-    return requests;
+    // Combine both types of requests
+    return [...requestsFromOffers, ...manuallyAssignedRequests];
   }
 
   async getPaymentsByTransporter(transporterId: string): Promise<TransportRequest[]> {
@@ -1604,14 +1614,26 @@ export class DbStorage implements IStorage {
     
     const offerIds = allOffers.map(o => o.id);
     
-    if (offerIds.length === 0) {
-      return [];
+    // Get requests from accepted offers
+    let requestsFromOffers: TransportRequest[] = [];
+    if (offerIds.length > 0) {
+      requestsFromOffers = await db.select().from(transportRequests)
+        .where(
+          and(
+            sql`${transportRequests.acceptedOfferId} IN (${sql.join(offerIds.map(id => sql`${id}`), sql`, `)})`,
+            or(
+              eq(transportRequests.paymentStatus, 'pending_admin_validation'),
+              eq(transportRequests.paymentStatus, 'paid')
+            )
+          )
+        );
     }
     
-    const requests = await db.select().from(transportRequests)
+    // Get manually assigned requests with payment status
+    const manuallyAssignedRequests = await db.select().from(transportRequests)
       .where(
         and(
-          sql`${transportRequests.acceptedOfferId} IN (${sql.join(offerIds.map(id => sql`${id}`), sql`, `)})`,
+          eq(transportRequests.assignedTransporterId, transporterId),
           or(
             eq(transportRequests.paymentStatus, 'pending_admin_validation'),
             eq(transportRequests.paymentStatus, 'paid')
@@ -1619,7 +1641,8 @@ export class DbStorage implements IStorage {
         )
       );
     
-    return requests;
+    // Combine both types of requests
+    return [...requestsFromOffers, ...manuallyAssignedRequests];
   }
 
   async updateTransportRequest(id: string, updates: Partial<TransportRequest>): Promise<TransportRequest | undefined> {
@@ -2389,7 +2412,7 @@ export class DbStorage implements IStorage {
   }
 
   async getCoordinatorActiveRequests(): Promise<any[]> {
-    // Get all accepted requests
+    // Get all accepted requests AND manually assigned requests
     const requests = await db.select({
       id: transportRequests.id,
       referenceId: transportRequests.referenceId,
@@ -2404,11 +2427,20 @@ export class DbStorage implements IStorage {
       isHidden: transportRequests.isHidden,
       paymentStatus: transportRequests.paymentStatus,
       acceptedOfferId: transportRequests.acceptedOfferId,
+      assignedTransporterId: transportRequests.assignedTransporterId,
+      manualAssignmentAmount: transportRequests.manualAssignmentAmount,
+      manualAssignmentPlatformFee: transportRequests.manualAssignmentPlatformFee,
+      manualAssignmentClientTotal: transportRequests.manualAssignmentClientTotal,
       shareToken: transportRequests.shareToken,
       createdAt: transportRequests.createdAt,
     })
     .from(transportRequests)
-    .where(eq(transportRequests.status, 'accepted'))
+    .where(
+      or(
+        eq(transportRequests.status, 'accepted'),
+        isNotNull(transportRequests.assignedTransporterId)
+      )
+    )
     .orderBy(desc(transportRequests.createdAt));
 
     // Enrich with client, transporter, and accepted offer
@@ -2421,10 +2453,19 @@ export class DbStorage implements IStorage {
           .limit(1);
         const client = clientResult[0]?.users || null;
 
-        // Get accepted offer and transporter
+        // Get transporter and accepted offer
         let acceptedOffer = null;
         let transporter = null;
-        if (request.acceptedOfferId) {
+        
+        // Priority 1: Check for manually assigned transporter
+        if (request.assignedTransporterId) {
+          const transporterResult = await db.select().from(users)
+            .where(eq(users.id, request.assignedTransporterId))
+            .limit(1);
+          transporter = transporterResult[0] || null;
+        }
+        // Priority 2: Check for accepted offer transporter
+        else if (request.acceptedOfferId) {
           const offerResult = await db.select().from(offers)
             .where(eq(offers.id, request.acceptedOfferId))
             .limit(1);
