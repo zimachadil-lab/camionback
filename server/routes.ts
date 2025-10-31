@@ -1070,32 +1070,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return acc;
       }, {});
       
-      // Enrichir les demandes SANS requêtes supplémentaires (100x plus rapide)
-      const enrichedRequests = await Promise.all(
-        requests.map(async (request) => {
-          const offers = offersByRequestId[request.id] || [];
-          let enrichedRequest: any = {
-            ...request,
-            offersCount: offers.length,
-          };
+      console.log(`📋 Grouped offers by requestId, starting enrichment...`);
+      
+      // Enrichir les demandes SANS requêtes supplémentaires (synchrone, pas de Promise.all)
+      const enrichedRequests = requests.map((request) => {
+        const offers = offersByRequestId[request.id] || [];
+        let enrichedRequest: any = {
+          ...request,
+          offersCount: offers.length,
+        };
+        
+        // For accepted requests, add the pickup date from the accepted offer
+        if (request.acceptedOfferId) {
+          const acceptedOffer = offers.find(o => o.id === request.acceptedOfferId);
           
-          // For accepted requests, add the pickup date from the accepted offer
-          if (request.acceptedOfferId) {
-            const acceptedOffer = offers.find(o => o.id === request.acceptedOfferId);
-            // Si pas trouvé dans le cache, on fait une requête (fallback)
-            const finalOffer = acceptedOffer || await storage.getOffer(request.acceptedOfferId);
-            
-            // Verify the offer belongs to the current transporter (if transporterId is provided)
-            if (finalOffer && (!transporterId || finalOffer.transporterId === transporterId)) {
-              enrichedRequest.pickupDate = finalOffer.pickupDate;
-              enrichedRequest.offerAmount = finalOffer.amount;
-              enrichedRequest.loadType = finalOffer.loadType;
-            }
+          // Verify the offer belongs to the current transporter (if transporterId is provided)
+          if (acceptedOffer && (!transporterId || acceptedOffer.transporterId === transporterId)) {
+            enrichedRequest.pickupDate = acceptedOffer.pickupDate;
+            enrichedRequest.offerAmount = acceptedOffer.amount;
+            enrichedRequest.loadType = acceptedOffer.loadType;
           }
-          
-          return enrichedRequest;
-        })
-      );
+        }
+        
+        return enrichedRequest;
+      });
       
       console.log(`✅ Successfully enriched ${enrichedRequests.length} requests in optimized mode`);
       res.json(enrichedRequests);
