@@ -61,7 +61,7 @@ export default function PublicRequestView() {
   const shareToken = params?.shareToken;
 
   const { data: request, isLoading, error } = useQuery<PublicRequest>({
-    queryKey: ['/api/public/request', shareToken],
+    queryKey: [`/api/public/request/${shareToken}`],
     enabled: !!shareToken,
   });
 
