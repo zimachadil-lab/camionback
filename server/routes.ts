@@ -1012,6 +1012,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Helper pour parser JSON de manière sécurisée (évite les plantages sur "null", "undefined", etc.)
+  function safeParse(value: any, fallback: any = null): any {
+    if (!value || value === 'null' || value === 'undefined' || value === '') {
+      return fallback;
+    }
+    if (typeof value !== 'string') {
+      return value; // Déjà un objet/array
+    }
+    try {
+      return JSON.parse(value);
+    } catch {
+      console.warn(`⚠️ Failed to parse JSON value: ${value?.substring(0, 50)}...`);
+      return fallback;
+    }
+  }
+
   // Endpoint de diagnostic simple pour tester en production
   app.get("/api/requests/diagnostic", async (req, res) => {
     try {
@@ -1075,9 +1091,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Enrichir les demandes SANS requêtes supplémentaires (synchrone, pas de Promise.all)
       const enrichedRequests = requests.map((request) => {
         const offers = offersByRequestId[request.id] || [];
+        
+        // Parser de manière sécurisée les colonnes JSON/array pour éviter les erreurs sur anciennes données
         let enrichedRequest: any = {
           ...request,
           offersCount: offers.length,
+          // Parser les arrays de manière sécurisée (anciennes données peuvent contenir des strings)
+          photos: safeParse(request.photos, []),
+          declinedBy: safeParse(request.declinedBy, []),
         };
         
         // For accepted requests, add the pickup date from the accepted offer
