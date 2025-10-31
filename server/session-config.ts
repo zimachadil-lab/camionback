@@ -42,7 +42,7 @@ export const sessionConfig: session.SessionOptions = {
   cookie: {
     httpOnly: true, // Protection XSS - le cookie n'est PAS accessible via JavaScript
     secure: process.env.NODE_ENV === 'production', // HTTPS only en production
-    sameSite: 'lax', // Protection CSRF
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // none en prod pour compatibilité cross-site
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 jours - pas de logout forcé
   },
   name: 'camionback.sid', // Nom personnalisé pour éviter détection automatique
