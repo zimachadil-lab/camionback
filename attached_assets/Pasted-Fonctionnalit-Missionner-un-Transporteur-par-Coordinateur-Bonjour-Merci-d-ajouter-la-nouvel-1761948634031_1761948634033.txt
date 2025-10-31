@@ -1,0 +1,121 @@
+Fonctionnalité : Missionner un Transporteur (par Coordinateur)
+
+Bonjour 👋
+Merci d’ajouter la nouvelle fonctionnalité stratégique suivante au niveau du rôle Coordinateur :
+
+✅ 📍 Objectif de la fonctionnalité
+
+Permettre au Coordinateur de sélectionner manuellement un transporteur pour une commande sans passer par le système d’offres
+= Mode assignation directe ✅
+
+✅ 1️⃣ Ajout du CTA Principal
+
+Sur le Tableau de Bord Coordinateur :
+
+➕ Ajouter un bouton CTA principal :
+"🚛 Missionner un transporteur"
+
+🔹 Visible sur la fiche de chaque commande sans offre validée
+🔹 Design bien visible / couleur action
+
+✅ 2️⃣ Processus lorsqu’on clique sur le bouton
+
+Ouvrir une popup structurée :
+
+a) Recherche Transporteur
+
+Champ de recherche intelligent :
+
+Par nom
+
+Par numéro de téléphone
+
+Affichage listé des résultats :
+
+Photo du camion
+
+Nom du transporteur
+
+Ville 
+
+→ Sélection en un clic ✅
+
+b) Définition Tarif & Cotisation (⚠️ règles spéciales pour cette fonctionnalité)
+
+Remplacer entièrement le modèle tarifaire automatique actuel spécifiquement pour cette fonctionnalité⚠️
+
+Formulaire :
+
+Champ	Qui voit ?	Qui le remplit ?	Rôle
+Total Transporteur (MAD)	Transporteur	Coordinateur	Paiement transporteur
+Cotisation CamionBack (MAD)	Admin / Client	Coordinateur	Rémunération plateforme
+Total Client (MAD)	Client	Automatique (addition)	Prix affiché au client
+
+🧮 Calcul automatique :
+Total Client (vue par le client) = Total Transporteur (vue par transporteur sur son tableau de bord) + Cotisation
+
+🔐 Cotisation fixée manuellement → pas de % automatique ici
+
+✅ Le coordinateur clique sur Confirm
+
+✅ 3️⃣ Mise à jour automatique des interfaces
+
+Lors de la confirmation :
+
+✅ Côté Client
+
+Afficher :
+
+Transporteur sélectionné
+
+Total client (calculé)
+
+Bouton de contact transporteur (tel + WhatsApp)
+
+Envoyer immédiatement :
+
+📩 SMS + Notification Push
+
+💬 “Votre commande [Ville départ → Ville arrivée] a été assignée à un transporteur par l’équipe CamionBack. Cliquez pour le contacter.”
+
+✅ Côté Transporteur
+
+Afficher la commande sur à traiter avec le modèle de carte actuel et le meme actions encours... :
+
+à souligner que le Total Transporteur sera son tarif final indiqué par le coordinateur)
+
+Vue normale “À traiter”
+
+✅ Côté Coordinateur
+
+La commande change de statut elle quitte la vue coordination
+↪ elle apparaît dans la vue à traiter 
+✅ 4️⃣ Notifications & Triggers requis
+Action	Notification Client	Notification Transporteur	SMS
+Assignation réussie	✅ Oui	✅ Oui	✅ Oui
+
+⚠️ Le transporteur doit être alerté immédiatement ✅
+
+✅ 5️⃣ Log & Tracking Admin
+
+Historiser :
+
+Qui a missionné ?
+
+Quand ?
+
+Quel tarif ?
+
+Cotisation choisie ?
+
+Transporteur sélectionné ?
+
+Pour sécurité & audit interne ✅
+
+🏁 Résultat attendu
+
+✔ Gain de temps dans les cas urgents
+✔ Meilleure conversion commandes → marchés réels
+✔ Fluidité opérationnelle pour le coordinateur
+✔ Alignement clair sur ce que voit chaque rôle
+✔ Transparence totale des tarifs

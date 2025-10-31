@@ -67,6 +67,14 @@ export const transportRequests = pgTable("transport_requests", {
   coordinationUpdatedAt: timestamp("coordination_updated_at"), // Last coordination status update
   coordinationUpdatedBy: varchar("coordination_updated_by").references(() => users.id), // Coordinator who updated
   assignedToId: varchar("assigned_to_id").references(() => users.id), // Coordinator assigned to this request
+  // Manual assignment fields - for coordinator direct assignment
+  assignedTransporterId: varchar("assigned_transporter_id").references(() => users.id), // Transporter assigned manually by coordinator
+  transporterAmount: decimal("transporter_amount", { precision: 10, scale: 2 }), // Amount paid to transporter (set by coordinator)
+  platformFee: decimal("platform_fee", { precision: 10, scale: 2 }), // CamionBack commission (set by coordinator)
+  clientTotal: decimal("client_total", { precision: 10, scale: 2 }), // Total amount client pays (transporterAmount + platformFee)
+  assignedByCoordinatorId: varchar("assigned_by_coordinator_id").references(() => users.id), // Coordinator who made the assignment
+  assignedManually: boolean("assigned_manually").default(false), // True if assigned manually by coordinator
+  assignedAt: timestamp("assigned_at"), // Timestamp of manual assignment
   createdAt: timestamp("created_at").defaultNow(),
 });
 
