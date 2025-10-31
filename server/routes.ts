@@ -1014,20 +1014,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/requests", async (req, res) => {
     try {
+      console.log("🔍 [GET /api/requests] Starting request fetch...");
       const { clientId, status, transporterId, accepted, payments } = req.query;
       
       let requests;
       if (clientId) {
+        console.log("📋 Fetching requests for client:", clientId);
         requests = await storage.getRequestsByClient(clientId as string);
       } else if (payments === "true" && transporterId) {
+        console.log("💰 Fetching payment requests for transporter:", transporterId);
         requests = await storage.getPaymentsByTransporter(transporterId as string);
       } else if (accepted === "true" && transporterId) {
+        console.log("✅ Fetching accepted requests for transporter:", transporterId);
         requests = await storage.getAcceptedRequestsByTransporter(transporterId as string);
       } else if (status === "open") {
+        console.log("🟡 Fetching open requests");
         requests = await storage.getOpenRequests(transporterId as string | undefined);
       } else {
+        console.log("📦 Fetching ALL transport requests");
         requests = await storage.getAllTransportRequests();
       }
+      
+      console.log(`✅ Retrieved ${requests.length} requests, starting enrichment...`);
       
       // Enrich requests with offers count and accepted offer details
       const enrichedRequests = await Promise.all(
@@ -1053,8 +1061,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
       );
       
+      console.log(`✅ Successfully enriched ${enrichedRequests.length} requests`);
       res.json(enrichedRequests);
     } catch (error) {
+      console.error("❌ [GET /api/requests] ERROR:", error);
+      console.error("Error details:", error instanceof Error ? error.message : String(error));
+      console.error("Stack trace:", error instanceof Error ? error.stack : "N/A");
       res.status(500).json({ error: "Failed to fetch requests" });
     }
   });
