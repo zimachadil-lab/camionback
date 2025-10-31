@@ -166,8 +166,11 @@ export default function AdminDashboard() {
   const { data: allRequests = [] } = useQuery({
     queryKey: ["/api/requests"],
     queryFn: async () => {
+      console.log("🔍 [ADMIN] Fetching ALL requests from /api/requests");
       const response = await fetch("/api/requests");
+      console.log("📡 [ADMIN] Response status:", response.status, response.statusText);
       const data = await response.json();
+      console.log("📦 [ADMIN] Requests data:", Array.isArray(data) ? `${data.length} requests` : "ERROR - not an array", data);
       return Array.isArray(data) ? data : [];
     },
   });
