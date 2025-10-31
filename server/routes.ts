@@ -1277,10 +1277,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const enrichedRequests = requests.map((request) => {
         const offers = offersByRequestId[request.id] || [];
         
-        // Les colonnes JSON/array ont déjà été normalisées plus haut
+        // Exclure les photos en base64 de la liste pour éviter une réponse de 34MB+
+        // Les photos seront chargées uniquement lors de la consultation d'une demande spécifique
+        const { photos, paymentReceipt, ...requestWithoutPhotos } = request;
+        
         let enrichedRequest: any = {
-          ...request,
+          ...requestWithoutPhotos,
           offersCount: offers.length,
+          // Indiquer seulement le NOMBRE de photos, pas leur contenu
+          photosCount: Array.isArray(photos) ? photos.length : 0,
         };
         
         // For accepted requests, add the pickup date from the accepted offer
