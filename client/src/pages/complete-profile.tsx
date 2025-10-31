@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,6 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload, Truck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth-context";
 
 const MOROCCAN_CITIES = [
   "Casablanca",
@@ -42,8 +43,31 @@ export default function CompleteProfile() {
   const [loading, setLoading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user, loading: authLoading } = useAuth();
 
-  const user = JSON.parse(localStorage.getItem("camionback_user") || "{}");
+  // Redirect if not authenticated or not a transporter
+  useEffect(() => {
+    if (!authLoading && (!user || user.role !== 'transporter')) {
+      setLocation("/");
+    }
+  }, [user, authLoading, setLocation]);
+  
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Redirect if not authenticated
+  if (!user) {
+    return null;
+  }
 
   const form = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
@@ -69,7 +93,6 @@ export default function CompleteProfile() {
     setLoading(true);
     try {
       const formData = new FormData();
-      formData.append("userId", user.id);
       formData.append("name", data.name);
       formData.append("city", data.city);
       formData.append("truckPhoto", data.truckPhoto);
@@ -77,6 +100,7 @@ export default function CompleteProfile() {
       const response = await fetch("/api/auth/complete-profile", {
         method: "POST",
         body: formData,
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -84,9 +108,6 @@ export default function CompleteProfile() {
       }
 
       const result = await response.json();
-      
-      // Update localStorage with new user data
-      localStorage.setItem("camionback_user", JSON.stringify(result.user));
 
       toast({
         title: "Profil complété",

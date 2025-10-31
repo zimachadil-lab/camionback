@@ -1,20 +1,39 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Truck, Package, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth-context";
 
 export default function SelectRole() {
   const [, setLocation] = useLocation();
   const [loading, setLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState<"client" | "transporter" | null>(null);
   const { toast } = useToast();
-  
-  const user = JSON.parse(localStorage.getItem("camionback_user") || "{}");
+  const { user, loading: authLoading } = useAuth();
   
   // Redirect if user already has a role
-  if (user.role) {
+  useEffect(() => {
+    if (!authLoading && user?.role) {
+      setLocation("/");
+    }
+  }, [user, authLoading, setLocation]);
+  
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-[#0A2540] to-[#163049]">
+        <div className="text-white text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p>Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Redirect to home if not authenticated
+  if (!authLoading && !user) {
     setLocation("/");
     return null;
   }
@@ -26,7 +45,8 @@ export default function SelectRole() {
       const response = await fetch("/api/auth/select-role", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id, role }),
+        body: JSON.stringify({ role }),
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -34,9 +54,6 @@ export default function SelectRole() {
       }
 
       const data = await response.json();
-      
-      // Update localStorage with new user data
-      localStorage.setItem("camionback_user", JSON.stringify(data.user));
       
       // Redirect based on role
       if (role === "client") {

@@ -407,10 +407,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Select role after registration
   app.post("/api/auth/select-role", async (req, res) => {
     try {
-      const { userId, role } = req.body;
+      const { role } = req.body;
       
-      if (!userId || !role) {
-        return res.status(400).json({ error: "ID utilisateur et rôle requis" });
+      // Get userId from session instead of request body
+      const userId = req.session.userId;
+      
+      if (!userId) {
+        return res.status(401).json({ error: "Non authentifié" });
+      }
+      
+      if (!role) {
+        return res.status(400).json({ error: "Rôle requis" });
       }
 
       if (role !== "client" && role !== "transporter") {
@@ -436,10 +443,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Utilisateur non trouvé" });
       }
 
-      // Update session with new role if session exists
-      if (req.session.userId === userId) {
-        req.session.role = user.role || undefined;
-      }
+      // Update session with new role
+      req.session.role = user.role || undefined;
 
       // Sanitize user data before sending (remove passwordHash)
       res.json({ user: sanitizeUser(user, 'owner') });
@@ -452,10 +457,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Complete transporter profile
   app.post("/api/auth/complete-profile", upload.single("truckPhoto"), async (req, res) => {
     try {
-      const { userId, name, city } = req.body;
+      const { name, city } = req.body;
       const truckPhoto = req.file;
+      
+      // Get userId from session
+      const userId = req.session.userId;
+      
+      if (!userId) {
+        return res.status(401).json({ error: "Non authentifié" });
+      }
 
-      if (!userId || !name || !city || !truckPhoto) {
+      if (!name || !city || !truckPhoto) {
         return res.status(400).json({ error: "Tous les champs sont requis" });
       }
 
@@ -474,10 +486,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Utilisateur non trouvé" });
       }
 
-      // Update session if it exists
-      if (req.session.userId === userId) {
-        req.session.role = user.role || undefined;
-      }
+      // Update session
+      req.session.role = user.role || undefined;
 
       // Sanitize user data before sending (remove passwordHash)
       res.json({ user: sanitizeUser(user, 'owner') });
