@@ -59,6 +59,7 @@ export const transportRequests = pgTable("transport_requests", {
   declinedBy: text("declined_by").array().default(sql`ARRAY[]::text[]`), // IDs of transporters who declined
   smsSent: boolean("sms_sent").default(false), // Track if first offer SMS was sent to client
   isHidden: boolean("is_hidden").default(false), // Admin can hide requests from transporters
+  shareToken: text("share_token").unique().default(sql`substring(md5(random()::text) from 1 for 16)`), // Unique token for public sharing
   // Coordination fields - for coordinator request management
   coordinationStatus: text("coordination_status").default("nouveau"), // Status for coordination workflow
   coordinationReason: text("coordination_reason"), // Archive reason if archived
