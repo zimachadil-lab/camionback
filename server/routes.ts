@@ -2933,28 +2933,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all transporters with detailed stats (admin)
   app.get("/api/admin/transporters", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
+      console.log("🔍 [GET /api/admin/transporters] Starting optimized fetch...");
       const users = await storage.getAllUsers();
       const offers = await storage.getAllOffers();
       const requests = await storage.getAllTransportRequests();
       
+      console.log(`📊 Fetched ${users.length} users, ${offers.length} offers, ${requests.length} requests`);
+      
       // Filter transporters
       const transporters = users.filter(u => u.role === "transporter" && u.status === "validated");
+      console.log(`👤 Found ${transporters.length} validated transporters`);
       
       // Get admin settings for commission calculation
       const adminSettings = await storage.getAdminSettings();
       const commissionRate = adminSettings?.commissionPercentage ? parseFloat(adminSettings.commissionPercentage) : 10;
       
+      // OPTIMISATION: Grouper les offers par transporterId AVANT la boucle (évite N×M comparaisons)
+      console.log("🗂️ Grouping offers by transporterId...");
+      const offersByTransporterId = offers.reduce((acc: Record<string, any[]>, offer) => {
+        if (!acc[offer.transporterId]) {
+          acc[offer.transporterId] = [];
+        }
+        acc[offer.transporterId].push(offer);
+        return acc;
+      }, {});
+      
+      // OPTIMISATION: Créer un index des requests par ID pour accès O(1)
+      const requestsById = requests.reduce((acc: Record<string, any>, req) => {
+        acc[req.id] = req;
+        return acc;
+      }, {});
+      
+      console.log("📋 Starting transporter stats calculation...");
+      
       // Build transporter stats
       const transportersWithStats = transporters.map(transporter => {
-        // Get all accepted offers by this transporter
-        const transporterAcceptedOffers = offers.filter(
-          o => o.transporterId === transporter.id && o.status === "accepted"
-        );
+        // Get all offers by this transporter (O(1) lookup au lieu de O(N))
+        const transporterOffers = offersByTransporterId[transporter.id] || [];
+        const transporterAcceptedOffers = transporterOffers.filter(o => o.status === "accepted");
         
-        // Calculate total trips (completed requests)
-        const completedRequests = requests.filter(r => {
-          const acceptedOffer = transporterAcceptedOffers.find(o => o.requestId === r.id);
-          return acceptedOffer && r.status === "completed";
+        // Calculate total trips (completed requests) - accès direct par ID
+        const completedRequests = transporterAcceptedOffers.filter(offer => {
+          const request = requestsById[offer.requestId];
+          return request && request.status === "completed";
         });
         const totalTrips = completedRequests.length;
         
@@ -2965,10 +2986,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return sum + commission;
         }, 0);
         
-        // Get last activity date (most recent offer created)
-        const allTransporterOffers = offers.filter(o => o.transporterId === transporter.id);
-        const lastActivityDate = allTransporterOffers.length > 0
-          ? allTransporterOffers.reduce((latest, offer) => {
+        // Get last activity date (most recent offer created) - utilise le groupe déjà créé
+        const lastActivityDate = transporterOffers.length > 0
+          ? transporterOffers.reduce((latest, offer) => {
               const offerDate = offer.createdAt ? new Date(offer.createdAt) : new Date(0);
               return offerDate > latest ? offerDate : latest;
             }, new Date(0))

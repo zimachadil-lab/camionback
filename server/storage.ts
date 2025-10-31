@@ -1338,14 +1338,33 @@ export class DbStorage implements IStorage {
     const allRequests = await db.select().from(transportRequests);
     const allRatings = await db.select().from(ratings);
     
+    // OPTIMISATION: Grouper les requests par clientId AVANT la boucle (évite N×M comparaisons)
+    const requestsByClientId = allRequests.reduce((acc: Record<string, any[]>, req) => {
+      if (!acc[req.clientId]) {
+        acc[req.clientId] = [];
+      }
+      acc[req.clientId].push(req);
+      return acc;
+    }, {});
+    
+    // OPTIMISATION: Grouper les ratings par clientId AVANT la boucle
+    const ratingsByClientId = allRatings.reduce((acc: Record<string, any[]>, rating) => {
+      if (!acc[rating.clientId]) {
+        acc[rating.clientId] = [];
+      }
+      acc[rating.clientId].push(rating);
+      return acc;
+    }, {});
+    
     return allUsers.map(client => {
-      const clientRequests = allRequests.filter(req => req.clientId === client.id);
+      // Accès O(1) au lieu de O(N) filtrage
+      const clientRequests = requestsByClientId[client.id] || [];
       const totalOrders = clientRequests.length;
       const completedOrders = clientRequests.filter(
         req => req.status === "completed" || req.paymentStatus === "paid"
       ).length;
       
-      const clientRatings = allRatings.filter(rating => rating.clientId === client.id);
+      const clientRatings = ratingsByClientId[client.id] || [];
       const averageRating = clientRatings.length > 0
         ? clientRatings.reduce((sum, r) => sum + r.score, 0) / clientRatings.length
         : 0;
