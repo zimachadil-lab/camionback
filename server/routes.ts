@@ -1106,6 +1106,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Diagnostic COMPLET incluant l'enrichissement
+  app.get("/api/requests/debug-full", async (req, res) => {
+    const log: any[] = [];
+    try {
+      
+      log.push({ step: 1, action: "Fetching requests", time: new Date().toISOString() });
+      const rawRequests = await storage.getAllTransportRequests();
+      log.push({ step: 2, action: "Requests fetched", count: rawRequests.length });
+      
+      log.push({ step: 3, action: "Normalizing requests" });
+      const requests = rawRequests.map((req, index) => {
+        try {
+          return {
+            ...req,
+            photos: safeParse(req.photos, []),
+            declinedBy: safeParse(req.declinedBy, []),
+            paymentReceipt: (req.paymentReceipt === 'null' || req.paymentReceipt === 'undefined' || req.paymentReceipt === '') ? null : req.paymentReceipt,
+            coordinationReason: (req.coordinationReason === 'null' || req.coordinationReason === 'undefined' || req.coordinationReason === '') ? null : req.coordinationReason,
+          };
+        } catch (error) {
+          log.push({ step: 4, action: "Normalization error", index, error: String(error) });
+          return {
+            ...req,
+            photos: [],
+            declinedBy: [],
+            paymentReceipt: null,
+            coordinationReason: null,
+          };
+        }
+      });
+      log.push({ step: 5, action: "Requests normalized", count: requests.length });
+      
+      log.push({ step: 6, action: "Fetching offers" });
+      const allOffers = await storage.getAllOffers();
+      log.push({ step: 7, action: "Offers fetched", count: allOffers.length });
+      
+      log.push({ step: 8, action: "Grouping offers by requestId" });
+      const offersByRequestId = allOffers.reduce((acc: Record<string, any[]>, offer) => {
+        if (!acc[offer.requestId]) {
+          acc[offer.requestId] = [];
+        }
+        acc[offer.requestId].push(offer);
+        return acc;
+      }, {});
+      log.push({ step: 9, action: "Offers grouped", keysCount: Object.keys(offersByRequestId).length });
+      
+      log.push({ step: 10, action: "Starting enrichment" });
+      const enrichedRequests = requests.map((request, index) => {
+        try {
+          const offers = offersByRequestId[request.id] || [];
+          
+          let enrichedRequest: any = {
+            ...request,
+            offersCount: offers.length,
+          };
+          
+          if (request.acceptedOfferId) {
+            const acceptedOffer = offers.find(o => o.id === request.acceptedOfferId);
+            if (acceptedOffer) {
+              enrichedRequest.pickupDate = acceptedOffer.pickupDate;
+              enrichedRequest.offerAmount = acceptedOffer.amount;
+              enrichedRequest.loadType = acceptedOffer.loadType;
+            }
+          }
+          
+          return enrichedRequest;
+        } catch (error) {
+          log.push({ step: 11, action: "Enrichment error", index, requestId: request.id, error: String(error) });
+          return { ...request, offersCount: 0 };
+        }
+      });
+      log.push({ step: 12, action: "Enrichment completed", count: enrichedRequests.length });
+      
+      log.push({ step: 13, action: "Testing JSON serialization" });
+      const jsonString = JSON.stringify(enrichedRequests);
+      log.push({ step: 14, action: "JSON serialization OK", size: jsonString.length });
+      
+      res.json({
+        success: true,
+        log,
+        summary: {
+          requestsCount: rawRequests.length,
+          offersCount: allOffers.length,
+          enrichedCount: enrichedRequests.length,
+          jsonSize: jsonString.length
+        },
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        log
+      });
+    }
+  });
+
   app.get("/api/requests", async (req, res) => {
     try {
       console.log("🔍 [GET /api/requests] Starting request fetch...");
