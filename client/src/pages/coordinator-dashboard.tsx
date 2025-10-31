@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, MessageCircle, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck, Trash2 } from "lucide-react";
+import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, MessageCircle, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck, Trash2, Share2, Copy, Send } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth-context";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -820,6 +821,30 @@ export default function CoordinatorDashboard() {
     setSelectedRequestForCoordination(null);
   };
 
+  const handleCopyShareLink = (shareToken: string) => {
+    const shareUrl = `${window.location.origin}/public/request/${shareToken}`;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      toast({
+        title: "Lien copié !",
+        description: "Le lien de partage a été copié dans le presse-papiers.",
+      });
+    }).catch(() => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de copier le lien.",
+      });
+    });
+  };
+
+  const handleShareViaWhatsApp = (shareToken: string, referenceId: string) => {
+    const shareUrl = `${window.location.origin}/public/request/${shareToken}`;
+    const message = encodeURIComponent(
+      `🚚 Commande CamionBack ${referenceId}\n\nConsultez les détails complets de cette commande :\n${shareUrl}`
+    );
+    window.open(`https://wa.me/?text=${message}`, "_blank");
+  };
+
   const renderRequestCard = (request: any, showVisibilityToggle = false, showPaymentControls = false, isCoordination = false) => (
     <Card key={request.id} className="hover-elevate" data-testid={`card-request-${request.id}`}>
       <CardHeader className="pb-3">
@@ -949,6 +974,36 @@ export default function CoordinatorDashboard() {
             >
               📷 Photos ({request.photos.length})
             </Button>
+          )}
+
+          {request.shareToken && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  data-testid={`button-share-${request.id}`}
+                >
+                  <Share2 className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem
+                  onClick={() => handleCopyShareLink(request.shareToken)}
+                  data-testid={`menu-copy-link-${request.id}`}
+                >
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copier le lien
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => handleShareViaWhatsApp(request.shareToken, request.referenceId)}
+                  data-testid={`menu-share-whatsapp-${request.id}`}
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  Partager via WhatsApp
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
 
           {request.client && request.transporter && (
