@@ -18,6 +18,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ManualAssignmentDialog } from "@/components/coordinator/manual-assignment-dialog";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -249,6 +250,8 @@ export default function CoordinatorDashboard() {
   const [coordinationAssignedFilter, setCoordinationAssignedFilter] = useState("all");
   const [coordinationSearchQuery, setCoordinationSearchQuery] = useState("");
   const [deleteRequestId, setDeleteRequestId] = useState<string | null>(null);
+  const [manualAssignmentDialogOpen, setManualAssignmentDialogOpen] = useState(false);
+  const [selectedRequestForAssignment, setSelectedRequestForAssignment] = useState<any>(null);
   const { toast} = useToast();
 
   const handleLogout = () => {
@@ -845,6 +848,21 @@ export default function CoordinatorDashboard() {
     window.open(`https://wa.me/?text=${message}`, "_blank");
   };
 
+  const handleOpenManualAssignment = (request: any) => {
+    setSelectedRequestForAssignment(request);
+    setManualAssignmentDialogOpen(true);
+  };
+
+  const handleManualAssignmentSuccess = () => {
+    toast({
+      title: "Transporteur assigné !",
+      description: "Le transporteur a été assigné avec succès à cette commande.",
+    });
+    queryClient.invalidateQueries({ queryKey: ["/api/coordinator/available-requests"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/coordinator/active-requests"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination-requests"] });
+  };
+
   const renderRequestCard = (request: any, showVisibilityToggle = false, showPaymentControls = false, isCoordination = false) => (
     <Card key={request.id} className="hover-elevate" data-testid={`card-request-${request.id}`}>
       <CardHeader className="pb-3">
@@ -1068,6 +1086,19 @@ export default function CoordinatorDashboard() {
               data-testid={`button-coordination-status-${request.id}`}
             >
               📋 Statut de coordination
+            </Button>
+          )}
+
+          {isCoordination && !request.transporter && request.status !== 'accepted' && (
+            <Button
+              size="sm"
+              variant="default"
+              className="bg-[#5BC0EB] hover:bg-[#4AA8D8]"
+              onClick={() => handleOpenManualAssignment(request)}
+              data-testid={`button-manual-assignment-${request.id}`}
+            >
+              <Truck className="h-4 w-4 mr-1" />
+              Missionner un transporteur
             </Button>
           )}
 
@@ -2057,6 +2088,16 @@ export default function CoordinatorDashboard() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Manual Assignment Dialog */}
+      {selectedRequestForAssignment && (
+        <ManualAssignmentDialog
+          open={manualAssignmentDialogOpen}
+          onOpenChange={setManualAssignmentDialogOpen}
+          request={selectedRequestForAssignment}
+          onSuccess={handleManualAssignmentSuccess}
+        />
+      )}
 
       {/* Delete Request Confirmation Dialog */}
       <AlertDialog open={!!deleteRequestId} onOpenChange={(open) => !open && setDeleteRequestId(null)}>
