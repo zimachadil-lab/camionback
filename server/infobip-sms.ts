@@ -232,6 +232,34 @@ export async function sendBulkSMS(
   return { success: successCount, failed: failedCount };
 }
 
+/**
+ * Send SMS to transporter when they are manually assigned to a request
+ */
+export async function sendManualAssignmentSMS(transporterPhone: string, referenceId: string): Promise<boolean> {
+  const message = `Vous avez ete assigne a une nouvelle mission ${referenceId} sur CamionBack. Consultez votre tableau de bord pour plus de details.`;
+  
+  // Fire and forget - don't block the main process
+  sendSMS(transporterPhone, message).catch(err => {
+    console.error('[Infobip] Erreur SMS assignation manuelle:', err);
+  });
+  
+  return true;
+}
+
+/**
+ * Send SMS to client when a transporter is manually assigned to their request
+ */
+export async function sendTransporterAssignedSMS(clientPhone: string, referenceId: string): Promise<boolean> {
+  const message = `Un transporteur a ete assigne a votre commande ${referenceId} sur CamionBack. Consultez votre tableau de bord pour le contacter.`;
+  
+  // Fire and forget - don't block the main process
+  sendSMS(clientPhone, message).catch(err => {
+    console.error('[Infobip] Erreur SMS transporteur assigne:', err);
+  });
+  
+  return true;
+}
+
 // Log configuration status on startup
 if (isInfobipConfigured()) {
   console.log("[Infobip] Service SMS Infobip configure avec succes");

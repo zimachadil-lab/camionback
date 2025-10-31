@@ -152,6 +152,18 @@ export const NotificationTemplates = {
     title: '✅ Litige résolu',
     body: `Le litige sur ${requestRef} a été résolu`,
     url: '/dashboard'
+  }),
+
+  manualAssignment: (requestRef: string) => ({
+    title: '📦 Nouvelle mission assignée !',
+    body: `Vous avez été assigné à la mission ${requestRef} par un coordinateur`,
+    url: '/transporter-dashboard'
+  }),
+
+  transporterAssigned: (requestRef: string) => ({
+    title: '✅ Transporteur assigné !',
+    body: `Un transporteur a été assigné à votre commande ${requestRef}`,
+    url: '/client-dashboard'
   })
 };
 

@@ -25,7 +25,7 @@ import {
   transportRequests
 } from "@shared/schema";
 import { desc, eq } from "drizzle-orm";
-import { sendNewOfferSMS, sendOfferAcceptedSMS, sendTransporterActivatedSMS, sendBulkSMS } from "./infobip-sms";
+import { sendNewOfferSMS, sendOfferAcceptedSMS, sendTransporterActivatedSMS, sendBulkSMS, sendManualAssignmentSMS, sendTransporterAssignedSMS } from "./infobip-sms";
 import { emailService } from "./email-service";
 
 const upload = multer({ 
@@ -4515,6 +4515,154 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Erreur acceptation offre:", error);
       res.status(500).json({ error: "Erreur lors de l'acceptation de l'offre" });
+    }
+  });
+
+  // Search transporters for manual assignment
+  app.get("/api/coordinator/search-transporters", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
+    try {
+      const { query } = req.query;
+      
+      if (!query || typeof query !== 'string' || query.trim().length < 2) {
+        return res.status(400).json({ error: "Requête de recherche requise (minimum 2 caractères)" });
+      }
+      
+      const transporters = await storage.searchTransporters(query.trim());
+      
+      // Sanitize user data before sending
+      const sanitizedTransporters = sanitizeUsers(transporters, 'admin');
+      
+      res.json(sanitizedTransporters);
+    } catch (error) {
+      console.error("Erreur recherche transporteurs:", error);
+      res.status(500).json({ error: "Erreur lors de la recherche des transporteurs" });
+    }
+  });
+
+  // Manually assign a transporter to a request
+  app.post("/api/coordinator/assign-transporter", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
+    try {
+      const coordinatorId = req.user!.id;
+      const { requestId, transporterId, transporterAmount, platformFee } = req.body;
+      
+      // Validation
+      if (!requestId || !transporterId || transporterAmount === undefined || platformFee === undefined) {
+        return res.status(400).json({ error: "Tous les champs sont requis" });
+      }
+      
+      if (transporterAmount <= 0 || platformFee < 0) {
+        return res.status(400).json({ error: "Montants invalides" });
+      }
+      
+      // Get request, transporter, and client
+      const request = await storage.getTransportRequest(requestId);
+      if (!request) {
+        return res.status(404).json({ error: "Commande introuvable" });
+      }
+      
+      const transporter = await storage.getUser(transporterId);
+      if (!transporter || transporter.role !== 'transporter' || transporter.status !== 'validated') {
+        return res.status(404).json({ error: "Transporteur invalide" });
+      }
+      
+      const client = await storage.getUser(request.clientId);
+      if (!client) {
+        return res.status(404).json({ error: "Client introuvable" });
+      }
+      
+      // Assign transporter
+      const updatedRequest = await storage.assignTransporterManually(
+        requestId,
+        transporterId,
+        transporterAmount,
+        platformFee,
+        coordinatorId
+      );
+      
+      if (!updatedRequest) {
+        return res.status(500).json({ error: "Échec de l'assignation" });
+      }
+      
+      // Create notifications
+      await storage.createNotification({
+        userId: transporterId,
+        type: "manual_assignment",
+        title: "Nouvelle mission assignée !",
+        message: `Vous avez été assigné à la mission ${request.referenceId}. Montant: ${transporterAmount} MAD.`,
+        relatedId: requestId
+      });
+      
+      await storage.createNotification({
+        userId: request.clientId,
+        type: "transporter_assigned",
+        title: "Transporteur assigné !",
+        message: `Un transporteur a été assigné à votre commande ${request.referenceId}. Total: ${(transporterAmount + platformFee).toFixed(2)} MAD.`,
+        relatedId: requestId
+      });
+      
+      // Send push notifications
+      try {
+        const { sendNotificationToUser, NotificationTemplates } = await import('./push-notifications');
+        
+        // Notify transporter
+        if (transporter.deviceToken) {
+          const transporterNotif = NotificationTemplates.manualAssignment(request.referenceId);
+          await sendNotificationToUser(transporterId, transporterNotif, storage);
+          console.log(`📨 Notification push envoyée au transporteur pour assignation manuelle`);
+        }
+        
+        // Notify client
+        if (client.deviceToken) {
+          const clientNotif = NotificationTemplates.transporterAssigned(request.referenceId);
+          await sendNotificationToUser(request.clientId, clientNotif, storage);
+          console.log(`📨 Notification push envoyée au client pour transporteur assigné`);
+        }
+      } catch (pushError) {
+        console.error('❌ Erreur lors de l\'envoi des notifications push:', pushError);
+      }
+      
+      // Send SMS notifications
+      try {
+        if (transporter.phoneNumber) {
+          await sendManualAssignmentSMS(transporter.phoneNumber, request.referenceId);
+        }
+        if (client.phoneNumber) {
+          await sendTransporterAssignedSMS(client.phoneNumber, request.referenceId);
+        }
+      } catch (smsError) {
+        console.error('❌ Erreur lors de l\'envoi des SMS:', smsError);
+      }
+      
+      // Create coordinator log
+      await storage.createCoordinatorLog({
+        coordinatorId,
+        action: "manual_assignment",
+        targetType: "request",
+        targetId: requestId,
+        details: JSON.stringify({
+          transporterId,
+          transporterName: transporter.name,
+          transporterAmount,
+          platformFee,
+          clientTotal: transporterAmount + platformFee,
+          referenceId: request.referenceId,
+          timestamp: new Date().toISOString(),
+        }),
+      });
+      
+      res.json({
+        success: true,
+        request: updatedRequest,
+        transporter: sanitizeUser(transporter, 'admin'),
+        pricing: {
+          transporterAmount,
+          platformFee,
+          clientTotal: transporterAmount + platformFee
+        }
+      });
+    } catch (error) {
+      console.error("Erreur assignation manuelle:", error);
+      res.status(500).json({ error: "Erreur lors de l'assignation manuelle du transporteur" });
     }
   });
 
