@@ -1053,25 +1053,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("🔍 [GET /api/requests] Starting request fetch...");
       const { clientId, status, transporterId, accepted, payments } = req.query;
       
-      let requests;
+      let rawRequests;
       if (clientId) {
         console.log("📋 Fetching requests for client:", clientId);
-        requests = await storage.getRequestsByClient(clientId as string);
+        rawRequests = await storage.getRequestsByClient(clientId as string);
       } else if (payments === "true" && transporterId) {
         console.log("💰 Fetching payment requests for transporter:", transporterId);
-        requests = await storage.getPaymentsByTransporter(transporterId as string);
+        rawRequests = await storage.getPaymentsByTransporter(transporterId as string);
       } else if (accepted === "true" && transporterId) {
         console.log("✅ Fetching accepted requests for transporter:", transporterId);
-        requests = await storage.getAcceptedRequestsByTransporter(transporterId as string);
+        rawRequests = await storage.getAcceptedRequestsByTransporter(transporterId as string);
       } else if (status === "open") {
         console.log("🟡 Fetching open requests");
-        requests = await storage.getOpenRequests(transporterId as string | undefined);
+        rawRequests = await storage.getOpenRequests(transporterId as string | undefined);
       } else {
         console.log("📦 Fetching ALL transport requests");
-        requests = await storage.getAllTransportRequests();
+        rawRequests = await storage.getAllTransportRequests();
       }
       
-      console.log(`✅ Retrieved ${requests.length} requests, starting optimized enrichment...`);
+      console.log(`✅ Retrieved ${rawRequests.length} requests`);
+      
+      // ÉTAPE CRITIQUE: Normaliser TOUTES les colonnes JSON/array IMMÉDIATEMENT
+      // AVANT tout traitement pour éviter les plantages sur données legacy corrompues
+      console.log("🛡️ Normalizing JSON/array columns for legacy data compatibility...");
+      const requests = rawRequests.map((req, index) => {
+        try {
+          return {
+            ...req,
+            // Arrays - convertir les strings "null"/"undefined"/"" en arrays vides
+            photos: safeParse(req.photos, []),
+            declinedBy: safeParse(req.declinedBy, []),
+            // Textes simples - nettoyer les "null"/"undefined" strings
+            paymentReceipt: (req.paymentReceipt === 'null' || req.paymentReceipt === 'undefined' || req.paymentReceipt === '') ? null : req.paymentReceipt,
+            coordinationReason: (req.coordinationReason === 'null' || req.coordinationReason === 'undefined' || req.coordinationReason === '') ? null : req.coordinationReason,
+          };
+        } catch (error) {
+          console.error(`⚠️ Failed to normalize request ${req.id} (index ${index}):`, error);
+          // Retourner une version minimale sûre pour ne pas faire échouer toute la requête
+          return {
+            ...req,
+            photos: [],
+            declinedBy: [],
+            paymentReceipt: null,
+            coordinationReason: null,
+          };
+        }
+      });
+      
+      console.log(`✅ Normalized ${requests.length} requests, starting optimized enrichment...`);
       
       // OPTIMISATION: Récupérer TOUTES les offres en une seule requête au lieu de N requêtes
       const allOffers = await storage.getAllOffers();
@@ -1092,13 +1121,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const enrichedRequests = requests.map((request) => {
         const offers = offersByRequestId[request.id] || [];
         
-        // Parser de manière sécurisée les colonnes JSON/array pour éviter les erreurs sur anciennes données
+        // Les colonnes JSON/array ont déjà été normalisées plus haut
         let enrichedRequest: any = {
           ...request,
           offersCount: offers.length,
-          // Parser les arrays de manière sécurisée (anciennes données peuvent contenir des strings)
-          photos: safeParse(request.photos, []),
-          declinedBy: safeParse(request.declinedBy, []),
         };
         
         // For accepted requests, add the pickup date from the accepted offer
