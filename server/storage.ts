@@ -151,6 +151,10 @@ export interface IStorage {
   getCoordinationArchivesRequests(filters?: { assignedToId?: string; searchQuery?: string }): Promise<any[]>;
   updateCoordinationStatus(requestId: string, coordinationStatus: string, coordinationReason: string | null, coordinationReminderDate: Date | null, coordinatorId: string): Promise<TransportRequest | undefined>;
   
+  // Coordinator manual assignment
+  searchTransporters(query: string): Promise<User[]>;
+  assignTransporterManually(requestId: string, transporterId: string, transporterAmount: number, platformFee: number, coordinatorId: string): Promise<TransportRequest | undefined>;
+  
   // Coordinator management (Admin)
   getAllCoordinators(): Promise<User[]>;
   getCoordinatorById(id: string): Promise<User | undefined>;
@@ -1200,6 +1204,14 @@ export class MemStorage implements IStorage {
     return undefined;
   }
   async updateTransporterReference(id: string, updates: Partial<TransporterReference>): Promise<TransporterReference | undefined> {
+    return undefined;
+  }
+  
+  // Coordinator manual assignment (stubs - MemStorage not used in production)
+  async searchTransporters(query: string): Promise<User[]> {
+    return [];
+  }
+  async assignTransporterManually(requestId: string, transporterId: string, transporterAmount: number, platformFee: number, coordinatorId: string): Promise<TransportRequest | undefined> {
     return undefined;
   }
   
@@ -2942,6 +2954,54 @@ export class DbStorage implements IStorage {
 
     const result = await db.update(transportRequests)
       .set(updateData)
+      .where(eq(transportRequests.id, requestId))
+      .returning();
+    
+    return result[0];
+  }
+
+  // Coordinator manual assignment
+  async searchTransporters(query: string): Promise<User[]> {
+    const searchTerm = `%${query}%`;
+    return await db.select().from(users)
+      .where(
+        and(
+          eq(users.role, 'transporter'),
+          eq(users.status, 'validated'),
+          eq(users.accountStatus, 'active'),
+          or(
+            sql`${users.name} ILIKE ${searchTerm}`,
+            sql`${users.phoneNumber} ILIKE ${searchTerm}`
+          )
+        )
+      )
+      .orderBy(asc(users.name))
+      .limit(20);
+  }
+
+  async assignTransporterManually(
+    requestId: string,
+    transporterId: string,
+    transporterAmount: number,
+    platformFee: number,
+    coordinatorId: string
+  ): Promise<TransportRequest | undefined> {
+    const clientTotal = transporterAmount + platformFee;
+    
+    const result = await db.update(transportRequests)
+      .set({
+        assignedTransporterId: transporterId,
+        transporterAmount: transporterAmount.toString(),
+        platformFee: platformFee.toString(),
+        clientTotal: clientTotal.toString(),
+        assignedByCoordinatorId: coordinatorId,
+        assignedManually: true,
+        assignedAt: new Date(),
+        status: 'accepted',
+        coordinationStatus: 'assigned',
+        coordinationUpdatedAt: new Date(),
+        coordinationUpdatedBy: coordinatorId,
+      })
       .where(eq(transportRequests.id, requestId))
       .returning();
     
