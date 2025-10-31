@@ -359,7 +359,9 @@ export default function CoordinatorDashboard() {
     enabled: !!user?.id,
     queryFn: async () => {
       const response = await fetch(`/api/admin/coordination-statuses?userId=${user!.id}`);
-      return response.json();
+      const data = await response.json();
+      // Protection: toujours retourner un tableau, même en cas d'erreur
+      return Array.isArray(data) ? data : [];
     },
   });
 

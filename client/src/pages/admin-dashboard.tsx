@@ -228,7 +228,7 @@ export default function AdminDashboard() {
     queryKey: ["/api/admin/coordinators"],
     enabled: !!user?.id,
     queryFn: async () => {
-      const response = await fetch(`/api/admin/coordinators?adminId=${user.id}`);
+      const response = await fetch(`/api/admin/coordinators?adminId=${user!.id}`);
       return response.json();
     },
   });
@@ -238,8 +238,10 @@ export default function AdminDashboard() {
     queryKey: ["/api/admin/coordination-statuses"],
     enabled: !!user?.id,
     queryFn: async () => {
-      const response = await fetch(`/api/admin/coordination-statuses?userId=${user.id}`);
-      return response.json();
+      const response = await fetch(`/api/admin/coordination-statuses?userId=${user!.id}`);
+      const data = await response.json();
+      // Protection: toujours retourner un tableau, même en cas d'erreur
+      return Array.isArray(data) ? data : [];
     },
   });
 
@@ -935,7 +937,7 @@ export default function AdminDashboard() {
       ) : (
         <>
           <Header
-            user={user}
+            user={user as { id: string; name?: string; role: string; clientId?: string }}
             onLogout={handleLogout}
           />
           
