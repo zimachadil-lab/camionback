@@ -1012,6 +1012,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint de diagnostic simple pour tester en production
+  app.get("/api/requests/diagnostic", async (req, res) => {
+    try {
+      const requests = await storage.getAllTransportRequests();
+      const offers = await storage.getAllOffers();
+      res.json({
+        success: true,
+        optimizationDeployed: true,
+        requestsCount: requests.length,
+        offersCount: offers.length,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
   app.get("/api/requests", async (req, res) => {
     try {
       console.log("🔍 [GET /api/requests] Starting request fetch...");
