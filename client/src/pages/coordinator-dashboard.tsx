@@ -1903,7 +1903,7 @@ export default function CoordinatorDashboard() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="nouveau">Nouveau</SelectItem>
-                    {coordinationStatuses
+                    {Array.isArray(coordinationStatuses) && coordinationStatuses
                       .filter((s: any) => s.category === "en_action")
                       .sort((a: any, b: any) => a.displayOrder - b.displayOrder)
                       .map((status: any) => (
@@ -1911,7 +1911,7 @@ export default function CoordinatorDashboard() {
                           {status.label}
                         </SelectItem>
                       ))}
-                    {coordinationStatuses
+                    {Array.isArray(coordinationStatuses) && coordinationStatuses
                       .filter((s: any) => s.category === "prioritaires")
                       .sort((a: any, b: any) => a.displayOrder - b.displayOrder)
                       .map((status: any) => (
