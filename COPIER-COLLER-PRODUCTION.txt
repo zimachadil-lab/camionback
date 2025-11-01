@@ -1,0 +1,29 @@
+════════════════════════════════════════════════════════════════════════
+   🚨 MIGRATION PRODUCTION - À COPIER-COLLER 🚨
+   GARANTIE : Vos données client/transporteur sont 100% SAFE
+════════════════════════════════════════════════════════════════════════
+
+ÉTAPE 1 - Ouvrez votre base Production dans un client PostgreSQL
+         (pgAdmin, DBeaver, ou la console psql)
+
+ÉTAPE 2 - Copiez-collez le SQL ci-dessous ET EXÉCUTEZ :
+
+UPDATE users SET role = 'transporteur' WHERE role = 'transporter';
+UPDATE users SET role = 'coordinator' WHERE role = 'coordinateur';
+DELETE FROM users WHERE role IS NULL OR role = '';
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('client', 'transporteur', 'admin', 'coordinator'));
+
+ÉTAPE 3 - Vérifiez le résultat (optionnel) :
+
+SELECT role, COUNT(*) as count FROM users GROUP BY role ORDER BY role;
+
+Vous devriez voir :
+- admin: X
+- client: Y
+- coordinator: Z
+- transporteur: W (au lieu de "transporter")
+
+ÉTAPE 4 - Retournez dans Replit et REPUBLIEZ l'application !
+
+════════════════════════════════════════════════════════════════════════

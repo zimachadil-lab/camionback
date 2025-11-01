@@ -26,6 +26,7 @@ import PushDiagnostic from "@/pages/push-diagnostic";
 import ForceSWUpdate from "@/pages/force-sw-update";
 import PWAInstallPage from "@/pages/pwa-install-page";
 import PublicRequestView from "@/pages/public-request-view";
+import AdminMigrate from "@/pages/admin-migrate";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -36,6 +37,7 @@ function Router() {
       <Route path="/select-role" component={SelectRole} />
       <Route path="/complete-profile" component={CompleteProfile} />
       <Route path="/admin-dashboard" component={AdminDashboard} />
+      <Route path="/admin/migrate" component={AdminMigrate} />
       <Route path="/client-dashboard" component={ClientDashboard} />
       <Route path="/transporter-dashboard" component={TransporterDashboard} />
       <Route path="/coordinator-dashboard" component={CoordinatorDashboard} />
