@@ -118,7 +118,6 @@ export default function CompleteProfile() {
       // CRITICAL: Force full page navigation to ensure user context is fresh
       // React setState is async, so using window.location instead of setLocation
       // This forces a complete page reload with the updated user data from the server
-      console.log("✅ [COMPLETE-PROFILE] Profile saved, redirecting to dashboard with page reload");
       window.location.href = "/";
     } catch (error) {
       toast({

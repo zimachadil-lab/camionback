@@ -49,17 +49,9 @@ export default function Home() {
     // Check if transporter has completed their profile (name and city are required)
     const hasCompletedProfile = user.name && user.city;
     
-    console.log("🔍 [HOME] Transporter check:", { 
-      hasName: !!user.name, 
-      hasCity: !!user.city, 
-      hasCompletedProfile,
-      pathname: window.location.pathname 
-    });
-    
     if (!hasCompletedProfile) {
       // Redirect to complete profile if not done yet
       if (window.location.pathname !== "/complete-profile") {
-        console.log("⚠️ [HOME] Profile incomplete, redirecting to /complete-profile");
         setLocation("/complete-profile");
         return (
           <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#0A2540] to-[#163049]">
@@ -69,7 +61,6 @@ export default function Home() {
       }
     }
     
-    console.log("✅ [HOME] Profile complete, showing TransporterDashboard");
     return <TransporterDashboard />;
   }
 
