@@ -117,7 +117,9 @@ export default function CompleteProfile() {
 
       // CRITICAL: Refresh user context BEFORE redirecting
       // This ensures home.tsx sees the updated profile (name, city)
+      console.log("🔄 [COMPLETE-PROFILE] Refreshing user context...");
       await refreshUser();
+      console.log("✅ [COMPLETE-PROFILE] User context refreshed, redirecting to dashboard");
 
       // Redirect to home, which will route to transporter dashboard
       setLocation("/");
