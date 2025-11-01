@@ -37,6 +37,62 @@ export async function ensureSchemaSync() {
       console.log("✅ Colonne client_id déjà présente");
     }
 
+    // Vérifier si la colonne is_active existe (CRITIQUE pour stats transporteurs)
+    const checkIsActive = await db.execute(sql`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'users' 
+      AND column_name = 'is_active'
+    `);
+
+    if (checkIsActive.rows.length === 0) {
+      console.log("⚠️  Colonne is_active manquante - Création en cours...");
+      
+      await db.execute(sql`
+        ALTER TABLE users 
+        ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true
+      `);
+      
+      // Set all existing users to active by default
+      await db.execute(sql`
+        UPDATE users 
+        SET is_active = true 
+        WHERE is_active IS NULL
+      `);
+      
+      console.log("✅ Colonne is_active créée et tous les utilisateurs activés");
+    } else {
+      console.log("✅ Colonne is_active déjà présente");
+    }
+
+    // Vérifier si la colonne account_status existe
+    const checkAccountStatus = await db.execute(sql`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'users' 
+      AND column_name = 'account_status'
+    `);
+
+    if (checkAccountStatus.rows.length === 0) {
+      console.log("⚠️  Colonne account_status manquante - Création en cours...");
+      
+      await db.execute(sql`
+        ALTER TABLE users 
+        ADD COLUMN IF NOT EXISTS account_status TEXT DEFAULT 'active'
+      `);
+      
+      // Set all existing users to active by default
+      await db.execute(sql`
+        UPDATE users 
+        SET account_status = 'active' 
+        WHERE account_status IS NULL
+      `);
+      
+      console.log("✅ Colonne account_status créée avec valeur par défaut 'active'");
+    } else {
+      console.log("✅ Colonne account_status déjà présente");
+    }
+
     // Vérifier et créer d'autres contraintes manquantes si nécessaire
     const checkShareToken = await db.execute(sql`
       SELECT constraint_name 

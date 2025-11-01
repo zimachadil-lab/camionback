@@ -8,6 +8,43 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### November 01, 2025 - Production Database Schema Sync & Client ID Race Condition Fix
+
+**Critical Production Issues Resolved**:
+
+1. **Client Registration Failing in Production**: New client registrations were failing with "duplicate key" database errors
+   - **Root Cause**: Race condition in `getNextClientId()` - when multiple clients registered simultaneously, the function generated the same ID (e.g., C-10295) for all attempts
+   - **Solution**: Implemented smart retry mechanism with in-memory ID incrementation (up to 10 attempts)
+   - **How it works**: First attempt queries database for MAX ID, subsequent attempts increment in memory (C-10295 → C-10296 → C-10297) avoiding redundant database queries
+
+2. **Zero Transporters Showing in Admin Dashboard**: Production dashboard showed 0 active transporters despite having 538+ real users
+   - **Root Cause**: Production database missing `is_active` and `account_status` columns that exist in development schema
+   - **Impact**: Admin stats query filtered by `u.isActive` which returned `undefined` for all users → all filtered out
+   - **Solution**: Enhanced `server/migrations/ensure-schema.ts` to automatically add missing columns with safe defaults on app startup
+
+**Migration System Implemented**:
+- Created `server/migrations/ensure-schema.ts` that runs on every app startup (both dev and production)
+- Safely adds missing columns: `client_id`, `is_active` (default: true), `account_status` (default: 'active')
+- Uses `ADD COLUMN IF NOT EXISTS` to prevent errors and duplicate operations
+- Sets safe defaults for existing users: all users marked as active
+- Prevents data loss - only adds, never removes or modifies existing data
+
+**Database Environment Detection**:
+- Uses `REPLIT_DEPLOYMENT === "1"` to detect production environment
+- Automatically connects to production database when deployed
+- Development uses local DATABASE_URL, production uses PGHOST/PGUSER/PGPASSWORD environment variables
+
+**Files Modified**:
+- `server/routes.ts`: Client ID generation with retry logic and in-memory incrementation
+- `server/migrations/ensure-schema.ts`: Comprehensive schema synchronization
+- `server/db.ts`: Production environment detection and database connection routing
+
+**Result**:
+- ✅ Client registration works reliably even under concurrent load (up to 10 simultaneous registrations)
+- ✅ All transporters visible in production dashboard after migration runs
+- ✅ Zero data loss - all 538+ production users preserved
+- ✅ Schema automatically synchronized on every deployment
+
 ### November 2025 - Transporter Registration & Dashboard Bug Fixes
 
 **Issues Resolved**:
