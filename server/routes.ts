@@ -514,15 +514,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If client, generate automatic clientId ONLY if user doesn't have one
       // Use retry mechanism to handle race conditions with concurrent registrations
       let user;
-      const maxRetries = 5;
+      const maxRetries = 10;
+      let currentClientIdNumber: number | null = null;
       
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
-          // Generate new clientId for each attempt (in case of collision)
+          // Generate clientId with smart retry logic
           if (role === "client" && !existingUser.clientId) {
-            const clientId = await storage.getNextClientId();
-            updates.clientId = clientId;
-            console.log(`📝 [SELECT-ROLE] Generated new clientId: ${clientId} (attempt ${attempt}/${maxRetries})`);
+            if (attempt === 1) {
+              // First attempt: Get next ID from database
+              const clientId = await storage.getNextClientId();
+              updates.clientId = clientId;
+              // Extract number from "C-10295" format
+              const match = clientId.match(/C-(\d+)/);
+              if (match) {
+                currentClientIdNumber = parseInt(match[1], 10);
+              }
+              console.log(`📝 [SELECT-ROLE] Generated new clientId: ${clientId} (attempt ${attempt}/${maxRetries})`);
+            } else {
+              // Subsequent attempts: Increment the number instead of querying DB
+              // This avoids getting the same MAX value each time
+              if (currentClientIdNumber !== null) {
+                currentClientIdNumber++;
+                updates.clientId = `C-${currentClientIdNumber}`;
+                console.log(`📝 [SELECT-ROLE] Incremented clientId to: ${updates.clientId} (attempt ${attempt}/${maxRetries})`);
+              } else {
+                // Fallback: generate new ID from DB
+                const clientId = await storage.getNextClientId();
+                updates.clientId = clientId;
+                console.log(`📝 [SELECT-ROLE] Generated fallback clientId: ${clientId} (attempt ${attempt}/${maxRetries})`);
+              }
+            }
           } else if (role === "client" && existingUser.clientId) {
             console.log("ℹ️ [SELECT-ROLE] User already has clientId:", existingUser.clientId);
           }
@@ -540,8 +562,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                                      updateError.code === '23505';
           
           if (isDuplicateKeyError && attempt < maxRetries) {
-            console.warn(`⚠️ [SELECT-ROLE] Duplicate key collision on attempt ${attempt}, retrying with new ID...`);
-            // Don't return, continue to next iteration with new clientId
+            console.warn(`⚠️ [SELECT-ROLE] Duplicate key collision on attempt ${attempt}, retrying with incremented ID...`);
+            // Don't return, continue to next iteration with incremented clientId
             continue;
           } else {
             // Either not a duplicate key error, or we've exhausted all retries
