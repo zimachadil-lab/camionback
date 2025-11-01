@@ -44,19 +44,26 @@ export default function TransporterProfile() {
   const [newPin, setNewPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
 
-  // Fetch user profile
-  const { data: profile, isLoading } = useQuery<UserProfile>({
-    queryKey: [`/api/users/${currentUser?.id}`],
-    enabled: !!currentUser?.id,
-  });
+  // Use currentUser from AuthContext (already loaded via /api/auth/me)
+  // No need for separate query - data is already available
+  const profile: UserProfile | null = currentUser ? {
+    id: currentUser.id,
+    name: currentUser.name || "",
+    phoneNumber: currentUser.phoneNumber,
+    city: currentUser.city || "",
+    truckPhotos: [], // TODO: Add truckPhotos to currentUser type if needed
+    role: currentUser.role || "",
+  } : null;
 
-  // Initialize form when profile loads
+  const isLoading = authLoading;
+
+  // Initialize form when currentUser loads
   useEffect(() => {
-    if (profile) {
-      setPhoneNumber(profile.phoneNumber);
-      setName(profile.name);
+    if (currentUser) {
+      setPhoneNumber(currentUser.phoneNumber);
+      setName(currentUser.name || "");
     }
-  }, [profile]);
+  }, [currentUser]);
 
   // Update profile mutation
   const updateProfileMutation = useMutation({
@@ -189,21 +196,25 @@ export default function TransporterProfile() {
     updatePinMutation.mutate(newPin);
   };
 
-  if (isLoading) {
+  // Early return if still loading or no user
+  if (isLoading || !currentUser) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header user={currentUser} onLogout={handleLogout} />
-        <div className="container py-8 flex items-center justify-center min-h-[60vh]">
-          <LoadingTruck message="Chargement du profil..." size="lg" />
-        </div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <LoadingTruck message="Chargement du profil..." size="lg" />
       </div>
     );
   }
 
+  // At this point, currentUser is guaranteed to be non-null
+  const userForHeader = {
+    ...currentUser,
+    role: currentUser.role || "transporteur",
+  };
+
   if (!profile) {
     return (
       <div className="min-h-screen bg-background">
-        <Header user={currentUser} onLogout={handleLogout} />
+        <Header user={userForHeader} onLogout={handleLogout} />
         <div className="container py-8">
           <p className="text-center text-muted-foreground">Profil introuvable</p>
         </div>
@@ -213,7 +224,7 @@ export default function TransporterProfile() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header user={currentUser} onLogout={handleLogout} />
+      <Header user={userForHeader} onLogout={handleLogout} />
       
       <div className="container max-w-3xl py-8 px-4">
         <Card>

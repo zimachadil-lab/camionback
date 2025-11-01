@@ -8,14 +8,19 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### November 2025 - Dashboard Transporteur Bug Fixes
-**Issue**: Transporters experiencing blank dashboard page and 404 errors after login.
+### November 2025 - Transporter Registration & Dashboard Bug Fixes
+
+**Issues Resolved**:
+1. **Dashboard 404 Errors**: Transporters experiencing blank dashboard page after login
+2. **Profile Completion Loop**: After completing profile, page stayed on /complete-profile instead of redirecting to dashboard
 
 **Root Causes Identified**:
-1. **23 TypeScript Errors**: "user is possibly null" errors throughout transporter-dashboard.tsx causing runtime failures
-2. **Role Mismatch**: Database stores role as "transporteur" (French) but frontend code checked for "transporter" (English)
+1. **TypeScript Null Safety**: 23 "user is possibly null" errors in transporter-dashboard.tsx causing runtime failures
+2. **Role Mismatch**: Database stores role as "transporteur" (French) but frontend checked for "transporter" (English)
+3. **React State Async Issue**: Using `await refreshUser()` + `setLocation("/")` caused race condition - redirect happened before state update completed
 
 **Corrections Applied**:
+
 1. **TypeScript Null Safety** (transporter-dashboard.tsx, transporter-payments.tsx):
    - Added `enabled: !!user` to all useQuery hooks to prevent queries when user is null
    - Added early return after all hooks with loading screen for null/loading states
@@ -32,12 +37,17 @@ Preferred communication style: Simple, everyday language.
    - `client/src/components/layout/header.tsx`: Updated menu and button role checks (2 locations)
    - `client/src/pages/client-dashboard.tsx`: Fixed transporter search in payment requests
 
+3. **Profile Completion Navigation** (complete-profile.tsx, select-role.tsx):
+   - Replaced React Router navigation (`setLocation`) with `window.location.href` after role selection and profile completion
+   - Forces full page reload to ensure fresh user data from server, avoiding React setState async race conditions
+   - Guarantees home.tsx receives updated user.name and user.city fields
+
 **Result**: 
-- ✅ Transporter dashboard loads successfully without blank page
-- ✅ No more 404 errors after transporter login
+- ✅ Complete registration flow works end-to-end: Register → Select Role → Complete Profile → Dashboard
+- ✅ Transporter dashboard loads successfully without blank page or 404 errors
+- ✅ Profile completion redirects correctly to dashboard with status "En attente de validation"
 - ✅ All navigation (tabs, menu, payments page) working correctly
-- ✅ Zero "user is possibly null" console errors
-- ✅ API endpoints returning 200 successfully
+- ✅ Zero TypeScript or console errors
 
 **Test Account**: +212600111222 / PIN: 123456 (validated transporter)
 
