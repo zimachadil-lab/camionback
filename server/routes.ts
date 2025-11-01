@@ -506,31 +506,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update user role directly - no conversion needed (database accepts "transporteur" and "client")
       const updates: any = { role };
       
-      // If client, generate automatic clientId ONLY if user doesn't have one
-      if (role === "client" && !existingUser.clientId) {
-        const clientId = await storage.getNextClientId();
-        updates.clientId = clientId;
-        console.log("📝 [SELECT-ROLE] Generated new clientId:", clientId);
-      } else if (role === "client" && existingUser.clientId) {
-        console.log("ℹ️ [SELECT-ROLE] User already has clientId:", existingUser.clientId);
-      }
-      
       // If transporter, set status to pending
       if (role === "transporteur") {
         updates.status = "pending";
       }
 
-      console.log("🔄 [SELECT-ROLE] Updating user with:", updates);
-      
+      // If client, generate automatic clientId ONLY if user doesn't have one
+      // Use retry mechanism to handle race conditions with concurrent registrations
       let user;
-      try {
-        user = await storage.updateUser(userId, updates);
-      } catch (updateError: any) {
-        console.error("❌ [SELECT-ROLE] Database update error:", updateError);
-        return res.status(500).json({ 
-          error: "Erreur base de données", 
-          details: updateError.message 
-        });
+      const maxRetries = 5;
+      
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          // Generate new clientId for each attempt (in case of collision)
+          if (role === "client" && !existingUser.clientId) {
+            const clientId = await storage.getNextClientId();
+            updates.clientId = clientId;
+            console.log(`📝 [SELECT-ROLE] Generated new clientId: ${clientId} (attempt ${attempt}/${maxRetries})`);
+          } else if (role === "client" && existingUser.clientId) {
+            console.log("ℹ️ [SELECT-ROLE] User already has clientId:", existingUser.clientId);
+          }
+
+          console.log(`🔄 [SELECT-ROLE] Updating user with: ${JSON.stringify(updates)} (attempt ${attempt}/${maxRetries})`);
+          
+          user = await storage.updateUser(userId, updates);
+          
+          // Success! Break out of retry loop
+          console.log(`✅ [SELECT-ROLE] Update successful on attempt ${attempt}`);
+          break;
+          
+        } catch (updateError: any) {
+          const isDuplicateKeyError = updateError.message?.includes('duplicate key') || 
+                                     updateError.code === '23505';
+          
+          if (isDuplicateKeyError && attempt < maxRetries) {
+            console.warn(`⚠️ [SELECT-ROLE] Duplicate key collision on attempt ${attempt}, retrying with new ID...`);
+            // Don't return, continue to next iteration with new clientId
+            continue;
+          } else {
+            // Either not a duplicate key error, or we've exhausted all retries
+            console.error(`❌ [SELECT-ROLE] Database update error (attempt ${attempt}/${maxRetries}):`, updateError);
+            return res.status(500).json({ 
+              error: "Erreur base de données", 
+              details: updateError.message 
+            });
+          }
+        }
       }
       
       if (!user) {
