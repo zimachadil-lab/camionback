@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/auth-context";
 export default function SelectRole() {
   const [, setLocation] = useLocation();
   const [loading, setLoading] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<"client" | "transporter" | null>(null);
+  const [selectedRole, setSelectedRole] = useState<"client" | "transporteur" | null>(null);
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
   
@@ -38,7 +38,7 @@ export default function SelectRole() {
     return null;
   }
 
-  const handleSelectRole = async (role: "client" | "transporter") => {
+  const handleSelectRole = async (role: "client" | "transporteur") => {
     setSelectedRole(role);
     setLoading(true);
     try {
@@ -143,11 +143,11 @@ export default function SelectRole() {
             className={`
               relative overflow-hidden cursor-pointer transition-all duration-300 border-2
               hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98]
-              ${selectedRole === "transporter" ? "ring-4 ring-[#2BB673] border-[#2BB673]" : "hover:border-[#2BB673]/50"}
+              ${selectedRole === "transporteur" ? "ring-4 ring-[#2BB673] border-[#2BB673]" : "hover:border-[#2BB673]/50"}
               animate-in fade-in slide-in-from-bottom-6 duration-500 delay-100
               py-2 md:py-4
             `}
-            onClick={() => !loading && handleSelectRole("transporter")}
+            onClick={() => !loading && handleSelectRole("transporteur")}
             data-testid="card-role-transporter"
           >
             {/* Gradient Background */}
@@ -176,7 +176,7 @@ export default function SelectRole() {
                 disabled={loading}
                 data-testid="button-select-transporter"
               >
-                {loading && selectedRole === "transporter" ? (
+                {loading && selectedRole === "transporteur" ? (
                   <span className="flex items-center gap-2">
                     <div className="animate-spin rounded-full h-3 w-3 md:h-4 md:w-4 border-b-2 border-white" />
                     <span className="text-xs md:text-base">Sélection en cours...</span>

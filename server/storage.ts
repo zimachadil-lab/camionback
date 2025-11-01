@@ -274,7 +274,7 @@ export class MemStorage implements IStorage {
   async getPendingDrivers(): Promise<User[]> {
     return Array.from(this.users.values())
       .filter((user) => 
-        user.role === "transporter" && 
+        user.role === "transporteur" && 
         user.status === "pending" &&
         user.truckPhotos && 
         user.truckPhotos.length > 0
@@ -807,7 +807,7 @@ export class MemStorage implements IStorage {
         otherUser = {
           id: conv.otherUserId,
           name: viewerIsClient ? 'Transporteur' : 'Client',
-          role: viewerIsClient ? 'transporter' : 'client',
+          role: viewerIsClient ? 'transporteur' : 'client',
           phoneNumber: '',
         } as any;
       }
@@ -1301,7 +1301,7 @@ export class DbStorage implements IStorage {
     }).from(users)
       .where(
         and(
-          eq(users.role, 'transporter'),
+          eq(users.role, 'transporteur'),
           eq(users.status, 'pending'),
           isNotNull(users.truckPhotos),
           sql`array_length(${users.truckPhotos}, 1) > 0`
@@ -1675,7 +1675,7 @@ export class DbStorage implements IStorage {
         .where(
           and(
             sql`${users.id} IN (${sql.join(transporterIds.map(id => sql`${id}`), sql`, `)})`,
-            eq(users.role, 'transporter'),
+            eq(users.role, 'transporteur'),
             eq(users.status, 'validated'),
             eq(users.accountStatus, 'active')
           )
@@ -1696,7 +1696,7 @@ export class DbStorage implements IStorage {
       .where(
         and(
           eq(users.city, fromCity),
-          eq(users.role, 'transporter'),
+          eq(users.role, 'transporteur'),
           eq(users.status, 'validated'),
           eq(users.accountStatus, 'active')
         )
@@ -1719,7 +1719,7 @@ export class DbStorage implements IStorage {
     const topTransporters = await db.select().from(users)
       .where(
         and(
-          eq(users.role, 'transporter'),
+          eq(users.role, 'transporteur'),
           eq(users.status, 'validated'),
           eq(users.accountStatus, 'active')
         )
@@ -1911,14 +1911,14 @@ export class DbStorage implements IStorage {
         otherUser = {
           id: conv.otherUserId,
           name: viewerIsClient ? 'Transporteur' : 'Client',
-          role: viewerIsClient ? 'transporter' : 'client',
+          role: viewerIsClient ? 'transporteur' : 'client',
           phoneNumber: '',
         } as any;
       }
       
       if (request && otherUser) {
         // Anonymize client for transporters: show clientId instead of name/phone
-        const displayName = currentUser?.role === 'transporter' && otherUser.role === 'client'
+        const displayName = currentUser?.role === 'transporteur' && otherUser.role === 'client'
           ? otherUser.clientId || 'Client'
           : (otherUser.name || otherUser.phoneNumber);
         
@@ -2007,10 +2007,10 @@ export class DbStorage implements IStorage {
       // If no accepted offer, try to find transporter from message participants
       if (!transporterId) {
         // Try finding by senderType first
-        const transporterMessage = messages.find(m => m.senderType === 'transporter');
+        const transporterMessage = messages.find(m => m.senderType === 'transporteur');
         if (transporterMessage) {
           const transporter = await this.getUser(transporterMessage.senderId);
-          if (transporter && transporter.role === 'transporter') {
+          if (transporter && transporter.role === 'transporteur') {
             transporterId = transporter.id;
             transporterName = transporter.name || transporter.phoneNumber || "Transporteur inconnu";
           }
@@ -2021,7 +2021,7 @@ export class DbStorage implements IStorage {
           for (const msg of messages) {
             if (msg.senderId !== request.clientId) {
               const sender = await this.getUser(msg.senderId);
-              if (sender && sender.role === 'transporter') {
+              if (sender && sender.role === 'transporteur') {
                 transporterId = sender.id;
                 transporterName = sender.name || sender.phoneNumber || "Transporteur inconnu";
                 break;
@@ -3007,7 +3007,7 @@ export class DbStorage implements IStorage {
     return await db.select().from(users)
       .where(
         and(
-          eq(users.role, 'transporter'),
+          eq(users.role, 'transporteur'),
           eq(users.status, 'validated'),
           eq(users.accountStatus, 'active'),
           or(

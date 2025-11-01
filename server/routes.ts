@@ -436,7 +436,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Rôle requis" });
       }
 
-      if (role !== "client" && role !== "transporter") {
+      if (role !== "client" && role !== "transporteur") {
         return res.status(400).json({ error: "Rôle invalide" });
       }
 
@@ -450,7 +450,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // If transporter, set status to pending
-      if (role === "transporter") {
+      if (role === "transporteur") {
         updates.status = "pending";
       }
 
@@ -525,7 +525,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/diagnostic/database-stats", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const allUsers = await storage.getAllUsers();
-      const transporters = allUsers.filter(u => u.role === 'transporter');
+      const transporters = allUsers.filter(u => u.role === 'transporteur');
       
       const stats = {
         environment: process.env.NODE_ENV || 'unknown',
@@ -729,7 +729,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Transporteur non trouvé" });
       }
 
-      if (user.role !== "transporter") {
+      if (user.role !== "transporteur") {
         return res.status(400).json({ error: "L'utilisateur n'est pas un transporteur" });
       }
 
@@ -2117,7 +2117,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const user = await storage.getUser(userId);
-      if (!user || user.role !== "transporter") {
+      if (!user || user.role !== "transporteur") {
         return res.status(403).json({ error: "Accès refusé" });
       }
 
@@ -2140,7 +2140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const user = await storage.getUser(userId);
-      if (!user || user.role !== "transporter") {
+      if (!user || user.role !== "transporteur") {
         return res.status(403).json({ error: "Accès refusé" });
       }
 
@@ -2981,7 +2981,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         : activeClientsThisMonth > 0 ? 100 : 0;
       
       // Transporteurs actifs
-      const activeTransporters = users.filter(u => u.role === "transporter" && u.isActive && u.status === "validated");
+      const activeTransporters = users.filter(u => u.role === "transporteur" && u.isActive && u.status === "validated");
       const activeTransportersCount = activeTransporters.length;
       const activeTransportersLastMonth = activeTransporters.filter(u => 
         u.createdAt && new Date(u.createdAt) >= startOfLastMonth && new Date(u.createdAt) <= endOfLastMonth
@@ -3039,7 +3039,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Taux de satisfaction transporteurs (moyenne des notes)
       const transportersWithRating = users.filter(u => 
-        u.role === "transporter" && u.rating !== null && parseFloat(u.rating) > 0
+        u.role === "transporteur" && u.rating !== null && parseFloat(u.rating) > 0
       );
       const averageRating = transportersWithRating.length > 0
         ? transportersWithRating.reduce((sum, u) => sum + parseFloat(u.rating || "0"), 0) / transportersWithRating.length
@@ -3112,7 +3112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`📊 Fetched ${users.length} users, ${offers.length} offers, ${requests.length} requests`);
       
       // Filter transporters
-      const transporters = users.filter(u => u.role === "transporter" && u.status === "validated");
+      const transporters = users.filter(u => u.role === "transporteur" && u.status === "validated");
       console.log(`👤 Found ${transporters.length} validated transporters`);
       
       // Get admin settings for commission calculation
@@ -3199,7 +3199,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Transporteur non trouvé" });
       }
       
-      if (user.role !== "transporter") {
+      if (user.role !== "transporteur") {
         return res.status(400).json({ error: "Cet utilisateur n'est pas un transporteur" });
       }
       
@@ -3432,7 +3432,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get all validated and active transporters (exclude blocked accounts)
       const allUsers = await storage.getAllUsers();
       const validatedTransporters = allUsers.filter(
-        (u: any) => u.role === "transporter" && u.status === "validated" && u.accountStatus === "active"
+        (u: any) => u.role === "transporteur" && u.status === "validated" && u.accountStatus === "active"
       );
 
       // Get active empty returns for same route (priority 1)
@@ -3621,7 +3621,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get all validated transporters
       const allUsers = await storage.getAllUsers();
       const validatedTransporters = allUsers.filter(
-        user => user.role === "transporter" && user.status === "validated" && user.accountStatus === "active"
+        user => user.role === "transporteur" && user.status === "validated" && user.accountStatus === "active"
       );
 
       if (validatedTransporters.length === 0) {
@@ -3674,7 +3674,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (targetAudience === "transporters") {
         targetUsers = allUsers.filter(
-          user => user.role === "transporter" && user.status === "validated" && user.accountStatus === "active"
+          user => user.role === "transporteur" && user.status === "validated" && user.accountStatus === "active"
         );
       } else if (targetAudience === "clients") {
         targetUsers = allUsers.filter(
@@ -3684,7 +3684,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         targetUsers = allUsers.filter(
           user => (
             (user.role === "client" && user.accountStatus === "active") ||
-            (user.role === "transporter" && user.status === "validated" && user.accountStatus === "active")
+            (user.role === "transporteur" && user.status === "validated" && user.accountStatus === "active")
           )
         );
       }
@@ -3818,7 +3818,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Verify user exists and is a transporter
       const user = await storage.getUser(transporterId);
-      if (!user || user.role !== "transporter") {
+      if (!user || user.role !== "transporteur") {
         return res.status(403).json({ error: "Seuls les transporteurs peuvent soumettre des références" });
       }
 
@@ -4028,7 +4028,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const role = req.query.role as string;
 
-      if (!role || !["client", "transporter", "all"].includes(role)) {
+      if (!role || !["client", "transporteur", "all"].includes(role)) {
         return res.status(400).json({ error: "Rôle invalide" });
       }
 
@@ -4638,7 +4638,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const transporter = await storage.getUser(transporterId);
-      if (!transporter || transporter.role !== 'transporter' || transporter.status !== 'validated') {
+      if (!transporter || transporter.role !== 'transporteur' || transporter.status !== 'validated') {
         return res.status(404).json({ error: "Transporteur invalide" });
       }
       

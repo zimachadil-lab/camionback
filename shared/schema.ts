@@ -105,7 +105,7 @@ export const chatMessages = pgTable("chat_messages", {
   fileSize: integer("file_size"), // File size in bytes
   filteredMessage: text("filtered_message"), // Message after phone/link filtering
   isRead: boolean("is_read").default(false),
-  senderType: text("sender_type"), // 'client', 'transporter', 'coordinateur', or 'admin'
+  senderType: text("sender_type"), // 'client', 'transporteur', 'coordinateur', or 'admin'
   createdAt: timestamp("created_at").defaultNow(),
 });
 
