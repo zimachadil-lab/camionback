@@ -9,11 +9,13 @@ neonConfig.webSocketConstructor = ws;
 // Determine the correct database URL based on environment
 function getDatabaseUrl(): string {
   // In production deployment, use production database credentials
-  if (process.env.REPLIT_DEPLOYMENT === 'true' || process.env.NODE_ENV === 'production') {
+  // REPLIT_DEPLOYMENT is set to "1" when deployed (not "true")
+  if (process.env.REPLIT_DEPLOYMENT === '1' || process.env.NODE_ENV === 'production') {
     // Check if we have production-specific credentials
     if (process.env.PGHOST && process.env.PGUSER && process.env.PGPASSWORD && process.env.PGDATABASE) {
       const prodUrl = `postgresql://${process.env.PGUSER}:${process.env.PGPASSWORD}@${process.env.PGHOST}:${process.env.PGPORT || '5432'}/${process.env.PGDATABASE}?sslmode=require`;
       console.log('🔄 [DATABASE] Using PRODUCTION database connection');
+      console.log(`📍 [DATABASE] Connected to: ${process.env.PGHOST}/${process.env.PGDATABASE}`);
       return prodUrl;
     }
   }
