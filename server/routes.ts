@@ -460,8 +460,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("✅ [SELECT-ROLE] Validation OK - userId:", userId, "role:", role);
 
+      // TEMPORARY: Write old format to DB for production compatibility during migration
+      // Frontend sends "transporteur", but we write "transporter" to match production constraint
+      // Middleware will normalize "transporter" → "transporteur" when reading
+      const dbRole = role === "transporteur" ? "transporter" : role;
+      
       // Update user role
-      const updates: any = { role };
+      const updates: any = { role: dbRole };
       
       // If client, generate automatic clientId
       if (role === "client") {
