@@ -115,14 +115,11 @@ export default function CompleteProfile() {
         description: "Votre profil est en cours de validation par notre équipe",
       });
 
-      // CRITICAL: Refresh user context BEFORE redirecting
-      // This ensures home.tsx sees the updated profile (name, city)
-      console.log("🔄 [COMPLETE-PROFILE] Refreshing user context...");
-      await refreshUser();
-      console.log("✅ [COMPLETE-PROFILE] User context refreshed, redirecting to dashboard");
-
-      // Redirect to home, which will route to transporter dashboard
-      setLocation("/");
+      // CRITICAL: Force full page navigation to ensure user context is fresh
+      // React setState is async, so using window.location instead of setLocation
+      // This forces a complete page reload with the updated user data from the server
+      console.log("✅ [COMPLETE-PROFILE] Profile saved, redirecting to dashboard with page reload");
+      window.location.href = "/";
     } catch (error) {
       toast({
         variant: "destructive",
