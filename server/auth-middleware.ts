@@ -84,7 +84,12 @@ export function requireRole(allowedRoles: string[]) {
       return;
     }
     
-    if (!user.role || !allowedRoles.includes(user.role)) {
+    // Normaliser les anciens rôles pour compatibilité migration
+    let normalizedRole = user.role;
+    if (normalizedRole === 'transporter') normalizedRole = 'transporteur';
+    if (normalizedRole === 'coordinateur') normalizedRole = 'coordinator';
+    
+    if (!normalizedRole || !allowedRoles.includes(normalizedRole)) {
       res.status(403).json({ 
         error: "Accès refusé",
         message: `Cette ressource nécessite un des rôles suivants: ${allowedRoles.join(', ')}` 
