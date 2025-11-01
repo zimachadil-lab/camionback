@@ -43,7 +43,7 @@ export const sessionConfig: session.SessionOptions = {
     httpOnly: true, // Protection XSS - le cookie n'est PAS accessible via JavaScript
     secure: true, // TOUJOURS HTTPS sur Replit (même en dev)
     sameSite: 'none', // CRITICAL: 'none' requis pour PWA/mobile cross-site requests
-    domain: process.env.NODE_ENV === 'production' ? '.camionback.com' : undefined, // Production: all subdomains
+    // No domain restriction - let browser use the actual host (*.replit.app in production)
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 jours - pas de logout forcé
   },
   name: 'camionback.sid', // Nom personnalisé pour éviter détection automatique
