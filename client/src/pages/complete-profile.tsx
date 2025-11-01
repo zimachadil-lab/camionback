@@ -43,7 +43,7 @@ export default function CompleteProfile() {
   const [loading, setLoading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const { toast } = useToast();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, refreshUser } = useAuth();
 
   // IMPORTANT: All hooks must be called before any conditional returns
   const form = useForm<ProfileForm>({
@@ -114,6 +114,10 @@ export default function CompleteProfile() {
         title: "Profil complété",
         description: "Votre profil est en cours de validation par notre équipe",
       });
+
+      // CRITICAL: Refresh user context BEFORE redirecting
+      // This ensures home.tsx sees the updated profile (name, city)
+      await refreshUser();
 
       // Redirect to home, which will route to transporter dashboard
       setLocation("/");
