@@ -189,6 +189,121 @@ export async function ensureSchemaSync() {
       console.log("✅ Aucun utilisateur avec role='coordinator' (anglais) trouvé");
     }
 
+    // NEW: Add transporter_interests column for coordinator-centric workflow
+    const checkTransporterInterests = await db.execute(sql`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'transport_requests' 
+      AND column_name = 'transporter_interests'
+    `);
+
+    if (checkTransporterInterests.rows.length === 0) {
+      console.log("⚠️  Colonne transporter_interests manquante - Création en cours...");
+      
+      await db.execute(sql`
+        ALTER TABLE transport_requests 
+        ADD COLUMN IF NOT EXISTS transporter_interests TEXT[] DEFAULT ARRAY[]::TEXT[]
+      `);
+      
+      console.log("✅ Colonne transporter_interests créée");
+    } else {
+      console.log("✅ Colonne transporter_interests déjà présente");
+    }
+
+    // CRITICAL: Backfill NULL values to empty array (for legacy data)
+    const nullInterestsResult = await db.execute(sql`
+      UPDATE transport_requests 
+      SET transporter_interests = ARRAY[]::TEXT[]
+      WHERE transporter_interests IS NULL
+    `);
+    const nullInterestsCount = nullInterestsResult.rowCount || 0;
+    if (nullInterestsCount > 0) {
+      console.log(`✅ Backfill transporter_interests: ${nullInterestsCount} lignes mises à jour`);
+    }
+
+    // CRITICAL: Set default value for existing columns (legacy deployments)
+    await db.execute(sql`
+      ALTER TABLE transport_requests 
+      ALTER COLUMN transporter_interests SET DEFAULT ARRAY[]::TEXT[]
+    `);
+    console.log("✅ DEFAULT ARRAY[] défini sur transporter_interests");
+
+    // CRITICAL: Ensure NOT NULL constraint to prevent future NULL values
+    await db.execute(sql`
+      ALTER TABLE transport_requests 
+      ALTER COLUMN transporter_interests SET NOT NULL
+    `);
+    console.log("✅ Contrainte NOT NULL ajoutée sur transporter_interests");
+
+    // NEW: Add qualified_at column
+    const checkQualifiedAt = await db.execute(sql`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'transport_requests' 
+      AND column_name = 'qualified_at'
+    `);
+
+    if (checkQualifiedAt.rows.length === 0) {
+      console.log("⚠️  Colonne qualified_at manquante - Création en cours...");
+      
+      await db.execute(sql`
+        ALTER TABLE transport_requests 
+        ADD COLUMN IF NOT EXISTS qualified_at TIMESTAMP
+      `);
+      
+      console.log("✅ Colonne qualified_at créée");
+    } else {
+      console.log("✅ Colonne qualified_at déjà présente");
+    }
+
+    // NEW: Add published_for_matching_at column
+    const checkPublishedForMatchingAt = await db.execute(sql`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'transport_requests' 
+      AND column_name = 'published_for_matching_at'
+    `);
+
+    if (checkPublishedForMatchingAt.rows.length === 0) {
+      console.log("⚠️  Colonne published_for_matching_at manquante - Création en cours...");
+      
+      await db.execute(sql`
+        ALTER TABLE transport_requests 
+        ADD COLUMN IF NOT EXISTS published_for_matching_at TIMESTAMP
+      `);
+      
+      console.log("✅ Colonne published_for_matching_at créée");
+    } else {
+      console.log("✅ Colonne published_for_matching_at déjà présente");
+    }
+
+    // NEW WORKFLOW: Migrate existing requests to "qualification_pending" status
+    const existingRequestsCount = await db.execute(sql`
+      SELECT COUNT(*) as count 
+      FROM transport_requests 
+      WHERE coordination_status = 'nouveau'
+      AND status = 'open'
+    `);
+    
+    const existingCountValue = (existingRequestsCount.rows[0] as any)?.count || '0';
+    const existingCount = parseInt(String(existingCountValue), 10);
+    
+    if (existingCount > 0) {
+      console.log(`⚠️  Migration workflow: ${existingCount} demandes 'nouveau' → 'qualification_pending'`);
+      
+      await db.execute(sql`
+        UPDATE transport_requests 
+        SET coordination_status = 'qualification_pending',
+            coordination_updated_at = NOW()
+        WHERE coordination_status = 'nouveau'
+        AND status = 'open'
+      `);
+      
+      console.log(`✅ ${existingCount} demandes migrées vers "À qualifier"`);
+    } else {
+      console.log("✅ Aucune demande à migrer vers qualification_pending");
+    }
+
     console.log("✅ Synchronisation du schéma terminée avec succès");
   } catch (error) {
     console.error("❌ Erreur lors de la synchronisation du schéma:", error);

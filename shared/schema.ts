@@ -61,7 +61,7 @@ export const transportRequests = pgTable("transport_requests", {
   isHidden: boolean("is_hidden").default(false), // Admin can hide requests from transporters
   shareToken: text("share_token").unique().default(sql`substring(md5(random()::text) from 1 for 16)`), // Unique token for public sharing
   // Coordination fields - for coordinator request management
-  coordinationStatus: text("coordination_status").default("nouveau"), // Status for coordination workflow
+  coordinationStatus: text("coordination_status").default("qualification_pending"), // Status for coordination workflow - NEW: starts as "qualification_pending"
   coordinationReason: text("coordination_reason"), // Archive reason if archived
   coordinationReminderDate: timestamp("coordination_reminder_date"), // Reminder date/time
   coordinationUpdatedAt: timestamp("coordination_updated_at"), // Last coordination status update
@@ -75,6 +75,10 @@ export const transportRequests = pgTable("transport_requests", {
   assignedByCoordinatorId: varchar("assigned_by_coordinator_id").references(() => users.id), // Coordinator who made the assignment
   assignedManually: boolean("assigned_manually").default(false), // True if assigned manually by coordinator
   assignedAt: timestamp("assigned_at"), // Timestamp of manual assignment
+  // Transporter interests - Track transporters who clicked "Intéressé" for matching workflow
+  transporterInterests: text("transporter_interests").array().default(sql`ARRAY[]::text[]`), // Array of transporter IDs who expressed interest
+  qualifiedAt: timestamp("qualified_at"), // When coordinator completed qualification (set prices)
+  publishedForMatchingAt: timestamp("published_for_matching_at"), // When published for transporter matching
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -236,7 +240,26 @@ export const transporterReferences = pgTable("transporter_references", {
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertOtpCodeSchema = createInsertSchema(otpCodes).omit({ id: true, createdAt: true, verified: true });
-export const insertTransportRequestSchema = createInsertSchema(transportRequests).omit({ id: true, createdAt: true, referenceId: true, status: true, acceptedOfferId: true, paymentStatus: true, paymentReceipt: true, paymentDate: true, viewCount: true, declinedBy: true, coordinationStatus: true, coordinationReason: true, coordinationReminderDate: true, coordinationUpdatedAt: true, coordinationUpdatedBy: true }).extend({
+export const insertTransportRequestSchema = createInsertSchema(transportRequests).omit({ 
+  id: true, 
+  createdAt: true, 
+  referenceId: true, 
+  status: true, 
+  acceptedOfferId: true, 
+  paymentStatus: true, 
+  paymentReceipt: true, 
+  paymentDate: true, 
+  viewCount: true, 
+  declinedBy: true, 
+  coordinationStatus: true, 
+  coordinationReason: true, 
+  coordinationReminderDate: true, 
+  coordinationUpdatedAt: true, 
+  coordinationUpdatedBy: true,
+  transporterInterests: true, // Auto-managed by system
+  qualifiedAt: true, // Auto-set when coordinator qualifies
+  publishedForMatchingAt: true, // Auto-set when published
+}).extend({
   dateTime: z.coerce.date(), // Accept ISO string and coerce to Date
 });
 export const insertOfferSchema = createInsertSchema(offers).omit({ id: true, createdAt: true, status: true, paymentProofUrl: true, paymentValidated: true }).extend({
@@ -372,8 +395,14 @@ export type ResetCoordinatorPin = z.infer<typeof resetCoordinatorPinSchema>;
 
 // Coordination Status Constants and Types
 export const COORDINATION_STATUS = {
-  // Vue: Nouveau
+  // Vue: À Qualifier (NEW - initial state for all requests)
+  QUALIFICATION_PENDING: "qualification_pending", // Nouveau statut initial - invisible aux transporteurs
+  
+  // Vue: Nouveau (requests qualified and ready)
   NOUVEAU: "nouveau",
+  
+  // Vue: Matching (NEW - published for transporter interest)
+  MATCHING: "matching", // Publié pour concurrence transporteurs (boutons Intéressé/Pas dispo)
   
   // Vue: En Action
   CLIENT_INJOIGNABLE: "client_injoignable",
@@ -394,19 +423,26 @@ export const COORDINATION_STATUS = {
 } as const;
 
 export const COORDINATION_ARCHIVE_REASONS = {
-  CLIENT_ANNULE: "client_annule",
-  TRAITE_AILLEURS: "traite_ailleurs",
-  AUCUNE_OFFRE: "aucune_offre",
-  PRIX_REFUSE: "prix_refuse",
-  INJOIGNABLE_LONG_TERME: "injoignable_long_terme",
-  A_REPRENDRE_PLUS_TARD: "a_reprendre_plus_tard",
-  OFFRE_EXPIREE: "offre_expiree",
+  CLIENT_INJOIGNABLE: "client_injoignable", // Client ne répond pas
+  TRAITE_AILLEURS: "traite_ailleurs", // Client a déjà trouvé ailleurs
+  BUDGET_INSUFFISANT: "budget_insuffisant", // Budget client insuffisant
+  INFOS_INCOMPLETES: "infos_incompletes", // Informations incomplètes
+  NON_PRIORITAIRE: "non_prioritaire", // Demande non prioritaire
+  NON_REALISABLE: "non_realisable", // Transport non réalisable
+  CLIENT_ANNULE: "client_annule", // Client a annulé la demande
+  AUCUNE_OFFRE: "aucune_offre", // Aucune offre reçue
+  PRIX_REFUSE: "prix_refuse", // Prix refusé par client
+  INJOIGNABLE_LONG_TERME: "injoignable_long_terme", // Client injoignable sur le long terme
+  A_REPRENDRE_PLUS_TARD: "a_reprendre_plus_tard", // À reprendre plus tard
+  OFFRE_EXPIREE: "offre_expiree", // Offre expirée
 } as const;
 
 // Schema for updating coordination status
 export const updateCoordinationStatusSchema = z.object({
   coordinationStatus: z.enum([
+    COORDINATION_STATUS.QUALIFICATION_PENDING,
     COORDINATION_STATUS.NOUVEAU,
+    COORDINATION_STATUS.MATCHING,
     COORDINATION_STATUS.CLIENT_INJOIGNABLE,
     COORDINATION_STATUS.INFOS_MANQUANTES,
     COORDINATION_STATUS.PHOTOS_A_RECUPERER,
@@ -420,8 +456,13 @@ export const updateCoordinationStatusSchema = z.object({
     COORDINATION_STATUS.ARCHIVE,
   ]),
   coordinationReason: z.enum([
-    COORDINATION_ARCHIVE_REASONS.CLIENT_ANNULE,
+    COORDINATION_ARCHIVE_REASONS.CLIENT_INJOIGNABLE,
     COORDINATION_ARCHIVE_REASONS.TRAITE_AILLEURS,
+    COORDINATION_ARCHIVE_REASONS.BUDGET_INSUFFISANT,
+    COORDINATION_ARCHIVE_REASONS.INFOS_INCOMPLETES,
+    COORDINATION_ARCHIVE_REASONS.NON_PRIORITAIRE,
+    COORDINATION_ARCHIVE_REASONS.NON_REALISABLE,
+    COORDINATION_ARCHIVE_REASONS.CLIENT_ANNULE,
     COORDINATION_ARCHIVE_REASONS.AUCUNE_OFFRE,
     COORDINATION_ARCHIVE_REASONS.PRIX_REFUSE,
     COORDINATION_ARCHIVE_REASONS.INJOIGNABLE_LONG_TERME,
@@ -432,4 +473,19 @@ export const updateCoordinationStatusSchema = z.object({
   coordinationUpdatedBy: z.string(),
 });
 
+// Schema for coordinator qualification (setting prices)
+export const qualifyRequestSchema = z.object({
+  requestId: z.string(),
+  transporterAmount: z.number().positive("Le montant transporteur doit être positif"),
+  platformFee: z.number().nonnegative("La cotisation ne peut pas être négative"),
+});
+
+// Schema for expressing transporter interest
+export const expressInterestSchema = z.object({
+  requestId: z.string(),
+  interested: z.boolean(), // true = "Intéressé", false = "Pas disponible"
+});
+
 export type UpdateCoordinationStatus = z.infer<typeof updateCoordinationStatusSchema>;
+export type QualifyRequest = z.infer<typeof qualifyRequestSchema>;
+export type ExpressInterest = z.infer<typeof expressInterestSchema>;

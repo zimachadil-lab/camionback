@@ -151,6 +151,16 @@ export interface IStorage {
   getCoordinationArchivesRequests(filters?: { assignedToId?: string; searchQuery?: string }): Promise<any[]>;
   updateCoordinationStatus(requestId: string, coordinationStatus: string, coordinationReason: string | null, coordinationReminderDate: Date | null, coordinatorId: string): Promise<TransportRequest | undefined>;
   
+  // NEW: Coordinator-centric workflow methods
+  getQualificationPendingRequests(filters?: { assignedToId?: string; searchQuery?: string }): Promise<any[]>;
+  qualifyRequest(requestId: string, transporterAmount: number, platformFee: number, coordinatorId: string): Promise<TransportRequest | undefined>;
+  publishForMatching(requestId: string, coordinatorId: string): Promise<TransportRequest | undefined>;
+  getMatchingRequests(filters?: { assignedToId?: string; searchQuery?: string }): Promise<any[]>;
+  expressInterest(requestId: string, transporterId: string): Promise<TransportRequest | undefined>;
+  withdrawInterest(requestId: string, transporterId: string): Promise<TransportRequest | undefined>;
+  getInterestedTransportersForRequest(requestId: string): Promise<User[]>;
+  archiveRequestWithReason(requestId: string, reason: string, coordinatorId: string): Promise<TransportRequest | undefined>;
+  
   // Coordinator manual assignment
   searchTransporters(query: string): Promise<User[]>;
   assignTransporterManually(requestId: string, transporterId: string, transporterAmount: number, platformFee: number, coordinatorId: string): Promise<TransportRequest | undefined>;
@@ -1204,6 +1214,32 @@ export class MemStorage implements IStorage {
     return undefined;
   }
   async updateTransporterReference(id: string, updates: Partial<TransporterReference>): Promise<TransporterReference | undefined> {
+    return undefined;
+  }
+  
+  // NEW: Coordinator-centric workflow methods (stubs - MemStorage not used in production)
+  async getQualificationPendingRequests(filters?: { assignedToId?: string; searchQuery?: string }): Promise<any[]> {
+    return [];
+  }
+  async qualifyRequest(requestId: string, transporterAmount: number, platformFee: number, coordinatorId: string): Promise<TransportRequest | undefined> {
+    return undefined;
+  }
+  async publishForMatching(requestId: string, coordinatorId: string): Promise<TransportRequest | undefined> {
+    return undefined;
+  }
+  async getMatchingRequests(filters?: { assignedToId?: string; searchQuery?: string }): Promise<any[]> {
+    return [];
+  }
+  async expressInterest(requestId: string, transporterId: string): Promise<TransportRequest | undefined> {
+    return undefined;
+  }
+  async withdrawInterest(requestId: string, transporterId: string): Promise<TransportRequest | undefined> {
+    return undefined;
+  }
+  async getInterestedTransportersForRequest(requestId: string): Promise<User[]> {
+    return [];
+  }
+  async archiveRequestWithReason(requestId: string, reason: string, coordinatorId: string): Promise<TransportRequest | undefined> {
     return undefined;
   }
   
@@ -2447,9 +2483,9 @@ export class DbStorage implements IStorage {
       paymentStatus: transportRequests.paymentStatus,
       acceptedOfferId: transportRequests.acceptedOfferId,
       assignedTransporterId: transportRequests.assignedTransporterId,
-      manualAssignmentAmount: transportRequests.manualAssignmentAmount,
-      manualAssignmentPlatformFee: transportRequests.manualAssignmentPlatformFee,
-      manualAssignmentClientTotal: transportRequests.manualAssignmentClientTotal,
+      transporterAmount: transportRequests.transporterAmount,
+      platformFee: transportRequests.platformFee,
+      clientTotal: transportRequests.clientTotal,
       shareToken: transportRequests.shareToken,
       createdAt: transportRequests.createdAt,
     })
@@ -3014,6 +3050,207 @@ export class DbStorage implements IStorage {
 
     const result = await db.update(transportRequests)
       .set(updateData)
+      .where(eq(transportRequests.id, requestId))
+      .returning();
+    
+    return result[0];
+  }
+
+  // NEW: Coordinator-centric workflow methods
+  async getQualificationPendingRequests(filters?: { assignedToId?: string; searchQuery?: string }): Promise<any[]> {
+    const whereConditions = [
+      eq(transportRequests.coordinationStatus, 'qualification_pending'),
+      eq(transportRequests.status, 'open'),
+    ];
+
+    if (filters?.assignedToId) {
+      whereConditions.push(eq(transportRequests.assignedToId, filters.assignedToId));
+    }
+
+    const requests = await db.select({
+      request: transportRequests,
+      client: users,
+    }).from(transportRequests)
+      .leftJoin(users, eq(transportRequests.clientId, users.id))
+      .where(and(...whereConditions))
+      .orderBy(desc(transportRequests.createdAt));
+
+    const enrichedRequests = requests.map(({ request, client }) => ({
+      ...request,
+      client: client ? {
+        id: client.id,
+        name: client.name,
+        phoneNumber: client.phoneNumber,
+        clientId: client.clientId,
+      } : null,
+    }));
+
+    if (filters?.searchQuery && filters.searchQuery.trim()) {
+      const query = filters.searchQuery.toLowerCase().trim();
+      return enrichedRequests.filter(req =>
+        req.referenceId?.toLowerCase().includes(query) ||
+        req.fromCity?.toLowerCase().includes(query) ||
+        req.toCity?.toLowerCase().includes(query) ||
+        req.client?.name?.toLowerCase().includes(query) ||
+        req.client?.phoneNumber?.includes(query)
+      );
+    }
+
+    return enrichedRequests;
+  }
+
+  async qualifyRequest(requestId: string, transporterAmount: number, platformFee: number, coordinatorId: string): Promise<TransportRequest | undefined> {
+    const clientTotal = transporterAmount + platformFee;
+    
+    const result = await db.update(transportRequests)
+      .set({
+        transporterAmount: transporterAmount.toString(),
+        platformFee: platformFee.toString(),
+        clientTotal: clientTotal.toString(),
+        qualifiedAt: new Date(),
+        coordinationUpdatedAt: new Date(),
+        coordinationUpdatedBy: coordinatorId,
+      })
+      .where(eq(transportRequests.id, requestId))
+      .returning();
+    
+    return result[0];
+  }
+
+  async publishForMatching(requestId: string, coordinatorId: string): Promise<TransportRequest | undefined> {
+    const result = await db.update(transportRequests)
+      .set({
+        coordinationStatus: 'matching',
+        publishedForMatchingAt: new Date(),
+        coordinationUpdatedAt: new Date(),
+        coordinationUpdatedBy: coordinatorId,
+      })
+      .where(eq(transportRequests.id, requestId))
+      .returning();
+    
+    return result[0];
+  }
+
+  async getMatchingRequests(filters?: { assignedToId?: string; searchQuery?: string }): Promise<any[]> {
+    const whereConditions = [
+      eq(transportRequests.coordinationStatus, 'matching'),
+      eq(transportRequests.status, 'open'),
+    ];
+
+    if (filters?.assignedToId) {
+      whereConditions.push(eq(transportRequests.assignedToId, filters.assignedToId));
+    }
+
+    const requests = await db.select({
+      request: transportRequests,
+      client: users,
+    }).from(transportRequests)
+      .leftJoin(users, eq(transportRequests.clientId, users.id))
+      .where(and(...whereConditions))
+      .orderBy(desc(transportRequests.publishedForMatchingAt));
+
+    const enrichedRequests = requests.map(({ request, client }) => ({
+      ...request,
+      client: client ? {
+        id: client.id,
+        name: client.name,
+        phoneNumber: client.phoneNumber,
+        clientId: client.clientId,
+      } : null,
+      interestedCount: request.transporterInterests?.length || 0,
+    }));
+
+    if (filters?.searchQuery && filters.searchQuery.trim()) {
+      const query = filters.searchQuery.toLowerCase().trim();
+      return enrichedRequests.filter(req =>
+        req.referenceId?.toLowerCase().includes(query) ||
+        req.fromCity?.toLowerCase().includes(query) ||
+        req.toCity?.toLowerCase().includes(query) ||
+        req.client?.name?.toLowerCase().includes(query) ||
+        req.client?.phoneNumber?.includes(query)
+      );
+    }
+
+    return enrichedRequests;
+  }
+
+  async expressInterest(requestId: string, transporterId: string): Promise<TransportRequest | undefined> {
+    // Atomic operation: only add if not already present
+    // COALESCE handles NULL case (legacy data), NOT ANY ensures idempotency
+    const result = await db.update(transportRequests)
+      .set({
+        transporterInterests: sql`array_append(COALESCE(${transportRequests.transporterInterests}, ARRAY[]::TEXT[]), ${transporterId})`,
+      })
+      .where(
+        and(
+          eq(transportRequests.id, requestId),
+          sql`NOT (${transporterId} = ANY(COALESCE(${transportRequests.transporterInterests}, ARRAY[]::TEXT[])))`
+        )
+      )
+      .returning();
+    
+    // If no rows updated, either request doesn't exist OR transporter was already interested
+    if (result.length === 0) {
+      const current = await db.select()
+        .from(transportRequests)
+        .where(eq(transportRequests.id, requestId))
+        .limit(1);
+      return current[0]; // undefined if request doesn't exist, current state otherwise
+    }
+    
+    return result[0];
+  }
+
+  async withdrawInterest(requestId: string, transporterId: string): Promise<TransportRequest | undefined> {
+    // Atomic operation: remove transporter from interests array
+    // array_remove is idempotent - safe to call multiple times
+    // COALESCE handles NULL case (legacy data)
+    const result = await db.update(transportRequests)
+      .set({
+        transporterInterests: sql`array_remove(COALESCE(${transportRequests.transporterInterests}, ARRAY[]::TEXT[]), ${transporterId})`,
+      })
+      .where(eq(transportRequests.id, requestId))
+      .returning();
+    
+    // If no rows returned, request doesn't exist
+    if (result.length === 0) {
+      return undefined;
+    }
+    
+    return result[0];
+  }
+
+  async getInterestedTransportersForRequest(requestId: string): Promise<User[]> {
+    const request = await db.select()
+      .from(transportRequests)
+      .where(eq(transportRequests.id, requestId))
+      .limit(1);
+
+    if (!request[0] || !request[0].transporterInterests || request[0].transporterInterests.length === 0) {
+      return [];
+    }
+
+    // Get all interested transporters
+    const transporters = await db.select().from(users)
+      .where(
+        and(
+          sql`${users.id} = ANY(${request[0].transporterInterests})`,
+          eq(users.role, 'transporteur')
+        )
+      );
+
+    return transporters;
+  }
+
+  async archiveRequestWithReason(requestId: string, reason: string, coordinatorId: string): Promise<TransportRequest | undefined> {
+    const result = await db.update(transportRequests)
+      .set({
+        coordinationStatus: 'archive',
+        coordinationReason: reason,
+        status: 'expired',
+        coordinationUpdatedAt: new Date(),
+        coordinationUpdatedBy: coordinatorId,
+      })
       .where(eq(transportRequests.id, requestId))
       .returning();
     

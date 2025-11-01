@@ -19,6 +19,8 @@ import {
   insertReportSchema,
   insertCitySchema,
   insertCoordinationStatusSchema,
+  qualifyRequestSchema,
+  expressInterestSchema,
   type Offer,
   type TransportRequest,
   clientTransporterContacts,
@@ -4469,6 +4471,169 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Erreur récupération statistiques statuts:", error);
       res.status(500).json({ error: "Erreur lors de la récupération des statistiques" });
+    }
+  });
+
+  // ===== NEW: Coordinator-Centric Workflow Routes =====
+
+  // Get requests pending qualification (À qualifier)
+  app.get("/api/coordinator/qualification-pending", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
+    try {
+      const assignedToId = req.query.assignedToId as string | undefined;
+      const searchQuery = req.query.searchQuery as string | undefined;
+      
+      const filters = { assignedToId, searchQuery };
+      const requests = await storage.getQualificationPendingRequests(filters);
+      res.json(requests);
+    } catch (error) {
+      console.error("Erreur récupération demandes à qualifier:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération des demandes" });
+    }
+  });
+
+  // Qualify a request (set prices)
+  app.post("/api/coordinator/qualify-request", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
+    try {
+      const validation = qualifyRequestSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.errors[0].message });
+      }
+
+      const { requestId, transporterAmount, platformFee } = validation.data;
+      const coordinatorId = req.user!.id;
+
+      const updated = await storage.qualifyRequest(requestId, transporterAmount, platformFee, coordinatorId);
+      
+      if (!updated) {
+        return res.status(404).json({ error: "Demande introuvable" });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Erreur qualification demande:", error);
+      res.status(500).json({ error: "Erreur lors de la qualification" });
+    }
+  });
+
+  // Publish qualified request for transporter matching
+  app.post("/api/coordinator/publish-for-matching", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
+    try {
+      const { requestId } = req.body;
+      if (!requestId) {
+        return res.status(400).json({ error: "requestId requis" });
+      }
+
+      const coordinatorId = req.user!.id;
+      const updated = await storage.publishForMatching(requestId, coordinatorId);
+      
+      if (!updated) {
+        return res.status(404).json({ error: "Demande introuvable" });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Erreur publication pour matching:", error);
+      res.status(500).json({ error: "Erreur lors de la publication" });
+    }
+  });
+
+  // Get matching requests (requests published for transporter interest)
+  app.get("/api/coordinator/matching-requests", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
+    try {
+      const assignedToId = req.query.assignedToId as string | undefined;
+      const searchQuery = req.query.searchQuery as string | undefined;
+      
+      const filters = { assignedToId, searchQuery };
+      const requests = await storage.getMatchingRequests(filters);
+      res.json(requests);
+    } catch (error) {
+      console.error("Erreur récupération demandes en matching:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération des demandes" });
+    }
+  });
+
+  // Archive request with reason
+  app.post("/api/coordinator/archive-request", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
+    try {
+      const { requestId, reason } = req.body;
+      if (!requestId || !reason) {
+        return res.status(400).json({ error: "requestId et reason requis" });
+      }
+
+      const coordinatorId = req.user!.id;
+      const updated = await storage.archiveRequestWithReason(requestId, reason, coordinatorId);
+      
+      if (!updated) {
+        return res.status(404).json({ error: "Demande introuvable" });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Erreur archivage demande:", error);
+      res.status(500).json({ error: "Erreur lors de l'archivage" });
+    }
+  });
+
+  // Transporter expresses interest in a request
+  app.post("/api/transporter/express-interest", requireAuth, requireRole(['transporteur']), async (req, res) => {
+    try {
+      const validation = expressInterestSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.errors[0].message });
+      }
+
+      const { requestId, interested } = validation.data;
+      const transporterId = req.user!.id;
+
+      let updated;
+      if (interested) {
+        updated = await storage.expressInterest(requestId, transporterId);
+      } else {
+        updated = await storage.withdrawInterest(requestId, transporterId);
+      }
+      
+      if (!updated) {
+        return res.status(404).json({ error: "Demande introuvable" });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Erreur expression intérêt:", error);
+      res.status(500).json({ error: "Erreur lors de l'expression d'intérêt" });
+    }
+  });
+
+  // Transporter withdraws interest from a request
+  app.post("/api/transporter/withdraw-interest", requireAuth, requireRole(['transporteur']), async (req, res) => {
+    try {
+      const { requestId } = req.body;
+      if (!requestId) {
+        return res.status(400).json({ error: "requestId requis" });
+      }
+
+      const transporterId = req.user!.id;
+      const updated = await storage.withdrawInterest(requestId, transporterId);
+      
+      if (!updated) {
+        return res.status(404).json({ error: "Demande introuvable" });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Erreur retrait intérêt:", error);
+      res.status(500).json({ error: "Erreur lors du retrait d'intérêt" });
+    }
+  });
+
+  // Get interested transporters for a request
+  app.get("/api/requests/:requestId/interested-transporters", requireAuth, requireRole(['admin', 'coordinateur', 'client']), async (req, res) => {
+    try {
+      const { requestId } = req.params;
+      const transporters = await storage.getInterestedTransportersForRequest(requestId);
+      res.json(transporters);
+    } catch (error) {
+      console.error("Erreur récupération transporteurs intéressés:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération" });
     }
   });
 
