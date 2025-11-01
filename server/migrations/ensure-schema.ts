@@ -167,6 +167,28 @@ export async function ensureSchemaSync() {
       console.log("✅ Aucun utilisateur avec role='transporter' (anglais) trouvé");
     }
 
+    // CRITICAL FIX: Rename 'coordinator' to 'coordinateur' (coordinators can't access dashboard)
+    const coordinatorEnglishCount = await db.execute(sql`
+      SELECT COUNT(*) as count FROM users WHERE role = 'coordinator'
+    `);
+    
+    const coordinatorCountValue = (coordinatorEnglishCount.rows[0] as any)?.count || '0';
+    const coordinatorCount = parseInt(String(coordinatorCountValue), 10);
+    
+    if (coordinatorCount > 0) {
+      console.log(`⚠️  Trouvé ${coordinatorCount} utilisateurs avec role='coordinator' (anglais) - Migration en cours...`);
+      
+      await db.execute(sql`
+        UPDATE users 
+        SET role = 'coordinateur' 
+        WHERE role = 'coordinator'
+      `);
+      
+      console.log(`✅ ${coordinatorCount} coordinateurs renommés de 'coordinator' → 'coordinateur'`);
+    } else {
+      console.log("✅ Aucun utilisateur avec role='coordinator' (anglais) trouvé");
+    }
+
     console.log("✅ Synchronisation du schéma terminée avec succès");
   } catch (error) {
     console.error("❌ Erreur lors de la synchronisation du schéma:", error);

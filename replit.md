@@ -22,6 +22,12 @@ Preferred communication style: Simple, everyday language.
    - **Impact**: Admin stats query filtered by `u.isActive` which returned `undefined` for all users → all filtered out
    - **Solution**: Enhanced `server/migrations/ensure-schema.ts` to automatically add missing columns with safe defaults on app startup
 
+3. **Coordinator Dashboard Showing Zero Orders**: Coordinators couldn't see any transport requests
+   - **Root Cause**: Same role naming mismatch - production had users with role='coordinator' (English) but routes required 'coordinateur' (French)
+   - **Impact**: Coordinators couldn't access `/api/coordinator/*` routes due to `requireRole(['coordinateur'])` failing
+   - **Solution**: Added role migration to `ensure-schema.ts` to rename 'coordinator' → 'coordinateur'
+   - **Result**: 2 coordinators successfully migrated in development, will auto-migrate in production on next deployment
+
 **Migration System Implemented**:
 - Created `server/migrations/ensure-schema.ts` that runs on every app startup (both dev and production)
 - Safely adds missing columns: `client_id`, `is_active` (default: true), `account_status` (default: 'active')
