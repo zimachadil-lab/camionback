@@ -27,6 +27,7 @@ import {
 import { desc, eq } from "drizzle-orm";
 import { sendNewOfferSMS, sendOfferAcceptedSMS, sendTransporterActivatedSMS, sendBulkSMS, sendManualAssignmentSMS, sendTransporterAssignedSMS } from "./infobip-sms";
 import { emailService } from "./email-service";
+import { migrateProductionData } from "./migrate-production-endpoint";
 
 const upload = multer({ 
   storage: multer.memoryStorage(),
@@ -34,6 +35,17 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // ENDPOINT TEMPORAIRE - Migration production (À SUPPRIMER APRÈS UTILISATION)
+  app.post("/api/admin/migrate-production", requireAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      console.log('🔧 [MIGRATION] Démarrage migration production par admin:', req.user?.id);
+      const result = await migrateProductionData();
+      res.json(result);
+    } catch (error: any) {
+      console.error('❌ [MIGRATION] Erreur:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
   // PWA - Get VAPID public key for push notifications
   app.get("/api/pwa/vapid-public-key", (req, res) => {
     const publicKey = process.env.VAPID_PUBLIC_KEY;
