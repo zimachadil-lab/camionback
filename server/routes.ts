@@ -467,13 +467,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Utilisateur non trouvé" });
       }
 
-      // TEMPORARY: Write old format to DB for production compatibility during migration
-      // Frontend sends "transporteur", but we write "transporter" to match production constraint
-      // Middleware will normalize "transporter" → "transporteur" when reading
-      const dbRole = role === "transporteur" ? "transporter" : role;
-      
-      // Update user role
-      const updates: any = { role: dbRole };
+      // Update user role directly - no conversion needed (database accepts "transporteur" and "client")
+      const updates: any = { role };
       
       // If client, generate automatic clientId ONLY if user doesn't have one
       if (role === "client" && !existingUser.clientId) {
@@ -509,8 +504,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log("✅ [SELECT-ROLE] User updated successfully:", { 
         id: user.id, 
-        role: user.role, 
-        dbRole: updates.role,
+        role: user.role,
         status: user.status 
       });
 
