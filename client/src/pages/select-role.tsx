@@ -11,7 +11,7 @@ export default function SelectRole() {
   const [loading, setLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState<"client" | "transporteur" | null>(null);
   const { toast } = useToast();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, refreshUser } = useAuth();
   
   // Redirect if user already has a role
   useEffect(() => {
@@ -61,6 +61,12 @@ export default function SelectRole() {
 
       const data = await response.json();
       console.log("✅ [SELECT-ROLE] Success:", data);
+      
+      // CRITICAL: Refresh user context BEFORE redirecting
+      // This ensures complete-profile.tsx sees the updated role
+      console.log("🔄 [SELECT-ROLE] Refreshing user context...");
+      await refreshUser();
+      console.log("✅ [SELECT-ROLE] User context refreshed");
       
       // Redirect based on role
       if (role === "client") {
