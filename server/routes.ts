@@ -60,7 +60,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         LIMIT 5
       `);
       
-      // Count transporters by various filters
+      // Count ALL users by role (to check for 'transporter' vs 'transporteur')
+      const allUsersByRole = await db.execute(sql`
+        SELECT role, COUNT(*) as count 
+        FROM users 
+        GROUP BY role
+        ORDER BY count DESC
+      `);
+      
+      // Count TOTAL users
+      const totalUsers = await db.execute(sql`
+        SELECT COUNT(*) as count FROM users
+      `);
+      
+      // Count transporters by various filters (French: 'transporteur')
       const allTransporters = await db.execute(sql`
         SELECT COUNT(*) as count FROM users WHERE role = 'transporteur'
       `);
@@ -75,6 +88,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const activeAndValidatedTransporters = await db.execute(sql`
         SELECT COUNT(*) as count FROM users WHERE role = 'transporteur' AND is_active = true AND status = 'validated'
+      `);
+      
+      // Check for English version: 'transporter' (potential bug)
+      const transporterEnglish = await db.execute(sql`
+        SELECT COUNT(*) as count FROM users WHERE role = 'transporter'
+      `);
+      
+      const transporterEnglishValidated = await db.execute(sql`
+        SELECT COUNT(*) as count FROM users WHERE role = 'transporter' AND status = 'validated'
       `);
       
       res.json({
@@ -93,14 +115,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
           hasIsActive: columnsCheck.rows.some((r: any) => r.column_name === 'is_active'),
           hasAccountStatus: columnsCheck.rows.some((r: any) => r.column_name === 'account_status')
         },
+        userStats: {
+          total: totalUsers.rows[0],
+          byRole: allUsersByRole.rows
+        },
         transporterCounts: {
-          all: allTransporters.rows[0],
-          validated: validatedTransporters.rows[0],
-          active: activeTransporters.rows[0],
-          activeAndValidated: activeAndValidatedTransporters.rows[0]
+          // French version: 'transporteur'
+          transporteur_all: allTransporters.rows[0],
+          transporteur_validated: validatedTransporters.rows[0],
+          transporteur_active: activeTransporters.rows[0],
+          transporteur_activeAndValidated: activeAndValidatedTransporters.rows[0],
+          
+          // English version: 'transporter' (BUG CHECK)
+          transporter_all: transporterEnglish.rows[0],
+          transporter_validated: transporterEnglishValidated.rows[0]
         },
         sampleTransporters: sampleTransporters.rows,
-        message: 'Database diagnostic complete'
+        message: 'Database diagnostic complete - checking for transporter vs transporteur bug'
       });
     } catch (error: any) {
       res.status(500).json({
