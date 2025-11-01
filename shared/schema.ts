@@ -8,7 +8,7 @@ export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   phoneNumber: text("phone_number").notNull().unique(),
   passwordHash: text("password_hash").notNull(), // Bcrypt hash of 6-digit PIN
-  role: text("role").$type<'client' | 'transporteur' | 'transporter' | 'coordinator' | 'admin' | null>(), // Accepte temporairement 'transporter' ET 'transporteur' pour migration
+  role: text("role"), // Pas de constraint - accepte toutes valeurs pendant migration (transporter/transporteur/coordinator/coordinateur)
   clientId: text("client_id").unique(), // Auto-generated ID for clients (C-XXXX)
   name: text("name"),
   city: text("city"), // City of residence
