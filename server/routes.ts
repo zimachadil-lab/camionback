@@ -35,6 +35,42 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // DEBUG ENDPOINT - Check database connection (PUBLIC - À SUPPRIMER APRÈS DEBUG)
+  app.get("/api/debug/db-info", async (req, res) => {
+    try {
+      const isDeployment = process.env.REPLIT_DEPLOYMENT === '1';
+      const nodeEnv = process.env.NODE_ENV;
+      const pgHost = process.env.PGHOST;
+      const pgDatabase = process.env.PGDATABASE;
+      
+      // Test database connection by counting users
+      const result = await db.select().from(clientTransporterContacts).limit(1);
+      
+      res.json({
+        environment: {
+          REPLIT_DEPLOYMENT: process.env.REPLIT_DEPLOYMENT,
+          NODE_ENV: nodeEnv,
+          isProduction: isDeployment || nodeEnv === 'production'
+        },
+        database: {
+          host: pgHost ? `${pgHost.substring(0, 10)}...` : 'Not set',
+          database: pgDatabase || 'Not set',
+          connectionWorks: true
+        },
+        message: 'Database connection OK'
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        error: 'Database connection failed',
+        message: error.message,
+        environment: {
+          REPLIT_DEPLOYMENT: process.env.REPLIT_DEPLOYMENT,
+          NODE_ENV: process.env.NODE_ENV
+        }
+      });
+    }
+  });
+  
   // ENDPOINT TEMPORAIRE - Migration production (À SUPPRIMER APRÈS UTILISATION)
   app.post("/api/admin/migrate-production", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
