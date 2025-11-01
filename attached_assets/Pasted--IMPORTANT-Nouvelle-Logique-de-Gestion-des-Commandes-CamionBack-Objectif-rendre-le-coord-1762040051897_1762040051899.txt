@@ -1,0 +1,124 @@
+🚧 IMPORTANT — Nouvelle Logique de Gestion des Commandes CamionBack 🚧
+📌 Objectif : rendre le coordinateur maître du workflow + supprimer les prix proposés par les transporteurs+ simplifier le rôle du transporteur → “Intéressé / X Pas dispo”
+
+🔹 Phase 1 — Qualification obligatoire par le Coordinateur
+
+🆕 Nouveau statut initial :
+1️⃣ “En attente de qualification logistique”
+→ Toute commande nouvellement créée par le client est invisible des transporteurs
+→ Le coordinateur doit d’abord :
+
+✅ Vérifier les informations
+✅ Compléter les détails (description + photos)
+✅ Fixer manuellement :
+• Prix transporteur (montant reçu par lui)
+• Montant cotisation (revenu CamionBack)
+📌 Total Client = Prix Transporteur + Cotisation
+
+💡 Le système de pricing automatique & les pourcentages sont supprimés dans toute l’application (client, transporteur, admin).
+
+🔹 Phase 2 — Décision du Coordinateur
+
+Une fois la qualification terminée, le coordinateur choisit UNE des trois actions :
+
+✅ Option A : Mise en concurrence transporteurs
+
+→ Le statut passe à 2️⃣ “Matching transporteurs”
+→ Publication uniquement quand prix fixé.. Les transporteurs devront voir en claire le prix proposé sur l'offre "essaie de le rendre plus claire" 
+
+Les transporteurs voient un affichage très simple façon Facebook ads :
+
+Cette demande vous intéresse-t-elle ?
+[ ✅ Je suis intéressé ]
+[ ❌ Pas disponible ]
+
+
+📌 Ce clic ne demande aucune saisie, juste une intention
+
+✅ Quand un transporteur clique Je suis intéressé :
+
+Le transporteur est ajouté à la liste d’intéressés
+
+Le coordinateur voit le nombre d’intéressés
+
+Le client voit les transporteurs intéressés et peut choisir un pro en 1 clic
+
+Affichage côté client :
+photo camion + nom + note/badge + bouton pour choisir le transporteur
+
+📌 Le transporteur voit uniquement son prix net
+📌 Le client voit uniquement son prix total (incluant cotisation)
+
+✅ Option B : Assignation directe ✅ la même fonctionnalité encours de missionner un transporteur
+
+→ Statut : 3️⃣ “Transporteur assigné”
+
+Le coordinateur choisit le transporteur via :
+🔍 recherche par nom ou téléphone
+✍️ Saisie prix transporteur + cotisation
+
+📩 Notifications automatiques :
+
+Client :
+“Votre transporteur est assigné. Consultez votre tableau de bord.”
+
+Transporteur :
+“Nouvelle mission assignée. Consultez vos commandes.”
+
+👁️ Le client ne voit pas les autres transporteurs dans ce cas
+
+✅ Option C : Archivage car non réalisable
+
+→ Statut : 5️⃣ “Archivé”
+
+Les motifs proposés :
+
+Client injoignable
+
+Client a déjà trouvé ailleurs
+
+Budget insuffisant
+
+Information incomplète
+
+Non prioritaire
+
+Non réalisable
+
+📌 La commande disparaît du tableau de bord actif et reste consultable en archive
+
+🔹 Phase 3 — Workflow déjà existant après assignation
+
+✅ Si transporteur & client confirment →
+➡️ Statut 4️⃣ “À traiter” (déjà existant ✅)
+
+✅ Après livraison → Passage “À facturer”
+✅ Paiement → Facturé (admin uniquement)
+
+Aucune modification sur cette partie ✅
+
+🔹 Mises à jour Admin
+
+✅ Retirer entièrement la vue Paramètres prix & pourcentages
+✅ Ajouter dans Admin :
+• Gestion complète des statuts coordinateurs
+• Historique qualification + choix coordo
+• Logs clics “intéressé / pas dispo”
+
+🔹 Améliorations UX importantes à respecter
+
+✅ Transporteur doit pouvoir retirer son intérêt → “Annuler mon intérêt”
+✅ Client doit pouvoir annuler une commande → justification → archive
+✅ Badge “Nouveau” jaune sur commandes à qualifier
+✅ Garder CTA camiomatch et demander un coordinateur
+
+
+✔ Aucun transporteur ne voit une commande sans prix (prix a rendre plus claire"
+✔ Aucun prix n’est calculé automatiquement
+✔ Le client choisit entre plusieurs pros sans voir les montants transporteur, le montant doit etre indiqué clairement quand le coordinateur l indique
+✔ Le coordinateur devient le centre du workflow
+✔ Toutes les notifications restent actives
+✔ Aucune perte d’accès ou perturbation utilisateur
+
+🛑 IMPORTANT : ne PAS réinitialiser ni supprimer les accès actuels
+→ Aucune perturbation pour les utilisateurs existants  revoi et adapte tt le contenu actuel des coordinateurs en fonction de cette logique... tu peux tt enlever ou ajouter des rubrique librement pour que ce processus soit très simple je veux avoir tt dememe une experience utilisateur très facile et simple soit libre dans ce sens et demande a tes expert le maximum de conseil pour avoir une experience optimale et facile
