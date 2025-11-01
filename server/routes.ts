@@ -460,6 +460,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("✅ [SELECT-ROLE] Validation OK - userId:", userId, "role:", role);
 
+      // Get existing user to check if clientId already exists
+      const existingUser = await storage.getUser(userId);
+      if (!existingUser) {
+        console.log("❌ [SELECT-ROLE] Utilisateur non trouvé");
+        return res.status(404).json({ error: "Utilisateur non trouvé" });
+      }
+
       // TEMPORARY: Write old format to DB for production compatibility during migration
       // Frontend sends "transporteur", but we write "transporter" to match production constraint
       // Middleware will normalize "transporter" → "transporteur" when reading
@@ -468,10 +475,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update user role
       const updates: any = { role: dbRole };
       
-      // If client, generate automatic clientId
-      if (role === "client") {
+      // If client, generate automatic clientId ONLY if user doesn't have one
+      if (role === "client" && !existingUser.clientId) {
         const clientId = await storage.getNextClientId();
         updates.clientId = clientId;
+        console.log("📝 [SELECT-ROLE] Generated new clientId:", clientId);
+      } else if (role === "client" && existingUser.clientId) {
+        console.log("ℹ️ [SELECT-ROLE] User already has clientId:", existingUser.clientId);
       }
       
       // If transporter, set status to pending
