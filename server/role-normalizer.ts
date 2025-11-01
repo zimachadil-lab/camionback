@@ -9,27 +9,29 @@
  * - fromDbRole: Convert database role to frontend role (transporter → transporteur)
  */
 
-export type FrontendRole = 'client' | 'transporteur' | 'coordinator' | 'admin' | null;
-export type DbRole = 'client' | 'transporter' | 'coordinator' | 'admin' | null;
+export type FrontendRole = 'client' | 'transporteur' | 'coordinateur' | 'admin' | null;
+export type DbRole = 'client' | 'transporter' | 'coordinateur' | 'admin' | null;
 
 /**
  * Convert frontend role to database role for writing to DB
- * transporteur → transporter
- * coordinator → coordinator (unchanged)
+ * transporteur → transporteur (DB migration complete)
+ * coordinateur → coordinateur (unchanged after migration)
  */
 export function toDbRole(frontendRole: FrontendRole): DbRole {
-  if (frontendRole === 'transporteur') return 'transporter';
+  // After migration, DB uses 'transporteur' and 'coordinateur'
+  // No conversion needed anymore
   return frontendRole as DbRole;
 }
 
 /**
  * Convert database role to frontend role for reading from DB
  * transporter → transporteur
- * coordinateur → coordinator (legacy)
+ * coordinator → coordinateur (updated after migration)
  */
 export function fromDbRole(dbRole: DbRole | string | null): FrontendRole {
   if (dbRole === 'transporter') return 'transporteur';
-  if (dbRole === 'coordinateur') return 'coordinator';
+  if (dbRole === 'coordinator') return 'coordinateur';
+  // After migration, DB uses 'coordinateur' - keep it as-is
   return dbRole as FrontendRole;
 }
 
