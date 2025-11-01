@@ -145,6 +145,28 @@ export async function ensureSchemaSync() {
       console.log("✅ Contrainte transporter_references créée");
     }
 
+    // CRITICAL FIX: Rename 'transporter' to 'transporteur' (197 users affected in production)
+    const transporterEnglishCount = await db.execute(sql`
+      SELECT COUNT(*) as count FROM users WHERE role = 'transporter'
+    `);
+    
+    const countValue = (transporterEnglishCount.rows[0] as any)?.count || '0';
+    const englishCount = parseInt(String(countValue), 10);
+    
+    if (englishCount > 0) {
+      console.log(`⚠️  Trouvé ${englishCount} utilisateurs avec role='transporter' (anglais) - Migration en cours...`);
+      
+      await db.execute(sql`
+        UPDATE users 
+        SET role = 'transporteur' 
+        WHERE role = 'transporter'
+      `);
+      
+      console.log(`✅ ${englishCount} transporteurs renommés de 'transporter' → 'transporteur'`);
+    } else {
+      console.log("✅ Aucun utilisateur avec role='transporter' (anglais) trouvé");
+    }
+
     console.log("✅ Synchronisation du schéma terminée avec succès");
   } catch (error) {
     console.error("❌ Erreur lors de la synchronisation du schéma:", error);
