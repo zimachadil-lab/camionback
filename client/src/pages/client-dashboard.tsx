@@ -1084,11 +1084,12 @@ export default function ClientDashboard() {
   };
 
   const { data: requests = [], isLoading } = useQuery({
-    queryKey: ["/api/requests", user.id],
+    queryKey: ["/api/requests", user?.id],
     queryFn: async () => {
-      const response = await fetch(`/api/requests?clientId=${user.id}`);
+      const response = await fetch(`/api/requests?clientId=${user!.id}`);
       return response.json();
     },
+    enabled: !!user,
   });
 
   const { data: users = [] } = useQuery({
@@ -1284,7 +1285,7 @@ export default function ClientDashboard() {
   const markAsPaidMutation = useMutation({
     mutationFn: async ({ requestId, receipt }: { requestId: string; receipt: string }) => {
       return await apiRequest("POST", `/api/requests/${requestId}/mark-as-paid`, {
-        clientId: user.id,
+        clientId: user!.id,
         paymentReceipt: receipt,
       });
     },
@@ -1345,7 +1346,7 @@ export default function ClientDashboard() {
       
       return await apiRequest("POST", "/api/reports", {
         requestId: data.requestId,
-        reporterId: user.id,
+        reporterId: user!.id,
         reporterType: "client",
         reportedUserId: transporterId,
         reason: data.type,
@@ -1463,6 +1464,14 @@ export default function ClientDashboard() {
     setChatOpen(true);
   };
 
+  if (authLoading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingTruck message="Vérification de votre session..." size="lg" />
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -1482,7 +1491,7 @@ export default function ClientDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <Header
-        user={user}
+        user={user as any}
         onNewRequest={() => setShowNewRequest(true)}
         onLogout={handleLogout}
       />
