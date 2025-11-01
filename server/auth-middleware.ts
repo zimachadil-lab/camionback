@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { storage } from "./storage";
 import type { User } from "@shared/schema";
+import { fromDbRole, hasAnyRole } from "./role-normalizer";
 
 /**
  * Récupère l'utilisateur actuel depuis la session
@@ -84,12 +85,8 @@ export function requireRole(allowedRoles: string[]) {
       return;
     }
     
-    // Normaliser les anciens rôles pour compatibilité migration
-    let normalizedRole = user.role;
-    if (normalizedRole === 'transporter') normalizedRole = 'transporteur';
-    if (normalizedRole === 'coordinateur') normalizedRole = 'coordinator';
-    
-    if (!normalizedRole || !allowedRoles.includes(normalizedRole)) {
+    // Use helper function to check role (handles both old and new formats)
+    if (!user.role || !hasAnyRole(user.role, allowedRoles as any[])) {
       res.status(403).json({ 
         error: "Accès refusé",
         message: `Cette ressource nécessite un des rôles suivants: ${allowedRoles.join(', ')}` 

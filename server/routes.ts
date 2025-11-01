@@ -480,13 +480,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       console.log("🔄 [SELECT-ROLE] Updating user with:", updates);
-      const user = await storage.updateUser(userId, updates);
+      
+      let user;
+      try {
+        user = await storage.updateUser(userId, updates);
+      } catch (updateError: any) {
+        console.error("❌ [SELECT-ROLE] Database update error:", updateError);
+        return res.status(500).json({ 
+          error: "Erreur base de données", 
+          details: updateError.message 
+        });
+      }
+      
       if (!user) {
         console.log("❌ [SELECT-ROLE] Utilisateur non trouvé après update");
         return res.status(404).json({ error: "Utilisateur non trouvé" });
       }
 
-      console.log("✅ [SELECT-ROLE] User updated:", { id: user.id, role: user.role, status: user.status });
+      console.log("✅ [SELECT-ROLE] User updated successfully:", { 
+        id: user.id, 
+        role: user.role, 
+        dbRole: updates.role,
+        status: user.status 
+      });
 
       // Update session with new role
       req.session.role = user.role || undefined;
@@ -495,7 +511,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       req.session.save((err) => {
         if (err) {
           console.error("❌ [SELECT-ROLE] Session save error:", err);
-          return res.status(500).json({ error: "Échec de la sélection du rôle" });
+          return res.status(500).json({ 
+            error: "Échec sauvegarde session", 
+            details: err.message 
+          });
         }
         
         console.log("✅ [SELECT-ROLE] Session saved successfully - sending response");
