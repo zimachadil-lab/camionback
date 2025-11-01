@@ -425,20 +425,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { role } = req.body;
       
+      console.log("🔍 [SELECT-ROLE] Request body:", { role });
+      console.log("🔍 [SELECT-ROLE] Session userId:", req.session.userId);
+      
       // Get userId from session instead of request body
       const userId = req.session.userId;
       
       if (!userId) {
+        console.log("❌ [SELECT-ROLE] Non authentifié - pas de userId dans session");
         return res.status(401).json({ error: "Non authentifié" });
       }
       
       if (!role) {
+        console.log("❌ [SELECT-ROLE] Rôle requis - role manquant");
         return res.status(400).json({ error: "Rôle requis" });
       }
 
       if (role !== "client" && role !== "transporteur") {
+        console.log("❌ [SELECT-ROLE] Rôle invalide - role reçu:", role);
         return res.status(400).json({ error: "Rôle invalide" });
       }
+      
+      console.log("✅ [SELECT-ROLE] Validation OK - userId:", userId, "role:", role);
 
       // Update user role
       const updates: any = { role };
@@ -454,10 +462,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updates.status = "pending";
       }
 
+      console.log("🔄 [SELECT-ROLE] Updating user with:", updates);
       const user = await storage.updateUser(userId, updates);
       if (!user) {
+        console.log("❌ [SELECT-ROLE] Utilisateur non trouvé après update");
         return res.status(404).json({ error: "Utilisateur non trouvé" });
       }
+
+      console.log("✅ [SELECT-ROLE] User updated:", { id: user.id, role: user.role, status: user.status });
 
       // Update session with new role
       req.session.role = user.role || undefined;
@@ -465,15 +477,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Force session save before responding
       req.session.save((err) => {
         if (err) {
-          console.error("Session save error:", err);
+          console.error("❌ [SELECT-ROLE] Session save error:", err);
           return res.status(500).json({ error: "Échec de la sélection du rôle" });
         }
         
+        console.log("✅ [SELECT-ROLE] Session saved successfully - sending response");
         // Sanitize user data before sending (remove passwordHash)
         res.json({ user: sanitizeUser(user, 'owner') });
       });
     } catch (error) {
-      console.error("Select role error:", error);
+      console.error("❌ [SELECT-ROLE] ERROR:", error);
       res.status(500).json({ error: "Échec de la sélection du rôle" });
     }
   });
