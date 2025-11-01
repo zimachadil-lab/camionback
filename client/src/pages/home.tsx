@@ -46,6 +46,21 @@ export default function Home() {
   }
 
   if (user.role === "transporteur") {
+    // Check if transporter has completed their profile (name and city are required)
+    const hasCompletedProfile = user.name && user.city;
+    
+    if (!hasCompletedProfile) {
+      // Redirect to complete profile if not done yet
+      if (window.location.pathname !== "/complete-profile") {
+        setLocation("/complete-profile");
+        return (
+          <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#0A2540] to-[#163049]">
+            <div className="text-white text-xl">Redirection vers complétion du profil...</div>
+          </div>
+        );
+      }
+    }
+    
     return <TransporterDashboard />;
   }
 
