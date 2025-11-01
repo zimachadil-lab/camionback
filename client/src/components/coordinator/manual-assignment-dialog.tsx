@@ -28,7 +28,7 @@ export function ManualAssignmentDialog({ open, onOpenChange, request, onSuccess 
   const { data: searchResults = [], isLoading: isLoadingSearch } = useQuery<any[]>({
     queryKey: ["/api/coordinator/search-transporters", searchQuery],
     queryFn: async () => {
-      const response = await fetch(`/api/coordinator/search-transporters?q=${encodeURIComponent(searchQuery)}`);
+      const response = await fetch(`/api/coordinator/search-transporters?query=${encodeURIComponent(searchQuery)}`);
       if (!response.ok) {
         throw new Error('Failed to search transporters');
       }

@@ -1516,10 +1516,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           transporterName: transporter.name,
           transporterPhone: transporter.phoneNumber,
           transporterCity: transporter.city,
-          totalAmount: request.manualAssignmentClientTotal || 0,
-          transporterAmount: request.manualAssignmentAmount,
-          platformFee: request.manualAssignmentPlatformFee,
-          acceptedAt: request.manualAssignmentDate,
+          totalAmount: request.clientTotal || 0,
+          transporterAmount: request.transporterAmount,
+          platformFee: request.platformFee,
+          acceptedAt: request.assignedAt,
           assignedManually: true,
         });
         return;
