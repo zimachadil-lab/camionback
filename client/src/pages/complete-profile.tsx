@@ -56,7 +56,7 @@ export default function CompleteProfile() {
 
   // Redirect if not authenticated or not a transporter
   useEffect(() => {
-    if (!authLoading && (!user || user.role !== 'transporter')) {
+    if (!authLoading && (!user || user.role !== 'transporteur')) {
       setLocation("/");
     }
   }, [user, authLoading, setLocation]);
