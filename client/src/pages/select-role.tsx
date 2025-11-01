@@ -42,6 +42,8 @@ export default function SelectRole() {
     setSelectedRole(role);
     setLoading(true);
     try {
+      console.log("🔄 [SELECT-ROLE] Sending request:", { role });
+      
       const response = await fetch("/api/auth/select-role", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -49,11 +51,16 @@ export default function SelectRole() {
         credentials: "include",
       });
 
+      console.log("📡 [SELECT-ROLE] Response status:", response.status);
+
       if (!response.ok) {
-        throw new Error("Failed to select role");
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
+        console.error("❌ [SELECT-ROLE] Error response:", errorData);
+        throw new Error(errorData.error || errorData.details || "Failed to select role");
       }
 
       const data = await response.json();
+      console.log("✅ [SELECT-ROLE] Success:", data);
       
       // Redirect based on role
       if (role === "client") {
@@ -61,11 +68,12 @@ export default function SelectRole() {
       } else {
         setLocation("/complete-profile");
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error("❌ [SELECT-ROLE] Final error:", error);
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: "Échec de la sélection du rôle",
+        description: error.message || "Échec de la sélection du rôle",
       });
       setSelectedRole(null);
     } finally {
