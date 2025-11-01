@@ -41,7 +41,7 @@ export const sessionConfig: session.SessionOptions = {
   rolling: true, // Reset expiration à chaque requête
   cookie: {
     httpOnly: true, // Protection XSS - le cookie n'est PAS accessible via JavaScript
-    secure: process.env.NODE_ENV === 'production', // HTTPS only en production
+    secure: true, // TOUJOURS HTTPS sur Replit (même en dev)
     sameSite: 'lax', // lax pour compatibilité maximale et sécurité
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 jours - pas de logout forcé
   },

@@ -286,8 +286,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       req.session.role = user.role || undefined;
       req.session.phoneNumber = user.phoneNumber || undefined;
 
-      // Sanitize user data before sending (remove passwordHash)
-      res.json({ user: sanitizeUser(user, 'owner') });
+      // Force session save before responding
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error:", err);
+          return res.status(500).json({ error: "Échec de l'inscription" });
+        }
+        
+        // Sanitize user data before sending (remove passwordHash)
+        res.json({ user: sanitizeUser(user, 'owner') });
+      });
     } catch (error) {
       console.error("Registration error:", error);
       res.status(500).json({ error: "Échec de l'inscription" });
@@ -327,9 +335,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       req.session.role = user.role || undefined;
       req.session.phoneNumber = user.phoneNumber || undefined;
 
-      // Sanitize user data before sending (remove passwordHash)
-      // Note: userId n'est PAS envoyé au client - uniquement dans session cookie
-      res.json({ user: sanitizeUser(user, 'owner') });
+      // Force session save before responding
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error:", err);
+          return res.status(500).json({ error: "Échec de la connexion" });
+        }
+        
+        // Sanitize user data before sending (remove passwordHash)
+        // Note: userId n'est PAS envoyé au client - uniquement dans session cookie
+        res.json({ user: sanitizeUser(user, 'owner') });
+      });
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ error: "Échec de la connexion" });
@@ -446,8 +462,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update session with new role
       req.session.role = user.role || undefined;
 
-      // Sanitize user data before sending (remove passwordHash)
-      res.json({ user: sanitizeUser(user, 'owner') });
+      // Force session save before responding
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error:", err);
+          return res.status(500).json({ error: "Échec de la sélection du rôle" });
+        }
+        
+        // Sanitize user data before sending (remove passwordHash)
+        res.json({ user: sanitizeUser(user, 'owner') });
+      });
     } catch (error) {
       console.error("Select role error:", error);
       res.status(500).json({ error: "Échec de la sélection du rôle" });
