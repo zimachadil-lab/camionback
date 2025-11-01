@@ -105,7 +105,7 @@ export default function TransporterDashboard() {
 
   const handleAnnounceReturn = () => {
     // Check if transporter is validated
-    if (user.status === "validated") {
+    if (user!.status === "validated") {
       // Allow access to announce return form
       setAnnounceReturnOpen(true);
     } else {
@@ -115,17 +115,19 @@ export default function TransporterDashboard() {
   };
 
   const { data: requests = [], isLoading: requestsLoading } = useQuery({
-    queryKey: ["/api/requests", user.id],
+    queryKey: ["/api/requests", user?.id],
+    enabled: !!user,
     queryFn: async () => {
-      const response = await fetch(`/api/requests?status=open&transporterId=${user.id}`);
+      const response = await fetch(`/api/requests?status=open&transporterId=${user!.id}`);
       return response.json();
     },
   });
 
   const { data: myOffers = [], isLoading: offersLoading } = useQuery({
-    queryKey: ["/api/offers", user.id],
+    queryKey: ["/api/offers", user?.id],
+    enabled: !!user,
     queryFn: async () => {
-      const response = await fetch(`/api/offers?transporterId=${user.id}`);
+      const response = await fetch(`/api/offers?transporterId=${user!.id}`);
       return response.json();
     },
     refetchInterval: 5000,
@@ -144,9 +146,10 @@ export default function TransporterDashboard() {
   const users: any[] = [];
 
   const { data: acceptedRequests = [], isLoading: acceptedLoading } = useQuery({
-    queryKey: ["/api/requests/accepted", user.id],
+    queryKey: ["/api/requests/accepted", user?.id],
+    enabled: !!user,
     queryFn: async () => {
-      const response = await fetch(`/api/requests?accepted=true&transporterId=${user.id}`);
+      const response = await fetch(`/api/requests?accepted=true&transporterId=${user!.id}`);
       return response.json();
     },
     refetchInterval: 5000,
@@ -222,8 +225,8 @@ export default function TransporterDashboard() {
     validatedAt?: string | null;
     createdAt: string;
   } | null>({
-    queryKey: [`/api/transporter-references/${user.id}`],
-    enabled: user.role === "transporter" && !!user.id,
+    queryKey: [`/api/transporter-references/${user?.id}`],
+    enabled: !!user && user.role === "transporteur",
   });
 
   const { toast } = useToast();
@@ -232,7 +235,7 @@ export default function TransporterDashboard() {
   const submitReferenceMutation = useMutation({
     mutationFn: async (data: { referenceName: string; referencePhone: string; referenceRelation: string }) => {
       return await apiRequest("POST", "/api/transporter-references", {
-        transporterId: user.id,
+        transporterId: user!.id,
         ...data,
       });
     },
@@ -241,7 +244,7 @@ export default function TransporterDashboard() {
         title: "Succès",
         description: "Votre référence a été enregistrée. Notre équipe vous contactera pour validation.",
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/transporter-references/${user.id}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/transporter-references/${user!.id}`] });
       referenceForm.reset();
     },
     onError: (error: any) => {
@@ -256,7 +259,7 @@ export default function TransporterDashboard() {
   const markForBillingMutation = useMutation({
     mutationFn: async (requestId: string) => {
       return await apiRequest("POST", `/api/requests/${requestId}/mark-for-billing`, {
-        transporterId: user.id,
+        transporterId: user!.id,
       });
     },
     onSuccess: () => {
@@ -278,7 +281,7 @@ export default function TransporterDashboard() {
   const declineRequestMutation = useMutation({
     mutationFn: async (requestId: string) => {
       return await apiRequest("POST", `/api/requests/${requestId}/decline`, {
-        transporterId: user.id,
+        transporterId: user!.id,
       });
     },
     onSuccess: () => {
@@ -306,7 +309,7 @@ export default function TransporterDashboard() {
   const announceReturnMutation = useMutation({
     mutationFn: async (data: { fromCity: string; toCity: string; returnDate: string }) => {
       return await apiRequest("POST", "/api/empty-returns", {
-        transporterId: user.id,
+        transporterId: user!.id,
         ...data,
       });
     },
@@ -390,7 +393,7 @@ export default function TransporterDashboard() {
       
       return await apiRequest("POST", "/api/reports", {
         requestId: data.requestId,
-        reporterId: user.id,
+        reporterId: user!.id,
         reporterType: "transporter",
         reportedUserId: clientId,
         reason: data.type,
@@ -413,6 +416,11 @@ export default function TransporterDashboard() {
       });
     },
   });
+
+  // Early return if auth is loading or user is null
+  if (authLoading || !user) {
+    return <LoadingTruck />;
+  }
 
   const handleOpenReportDialog = (requestId: string) => {
     setReportRequestId(requestId);
@@ -470,7 +478,7 @@ export default function TransporterDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <Header
-        user={user}
+        user={user!}
         onAnnounceReturn={handleAnnounceReturn}
         onLogout={handleLogout}
       />

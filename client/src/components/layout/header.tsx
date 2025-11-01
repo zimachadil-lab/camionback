@@ -40,7 +40,7 @@ export function Header({ user, onNewRequest, onAnnounceReturn, onLogout }: Heade
         { label: "Comment ça marche", icon: HelpCircle, href: "/how-it-works-client" },
         { label: "Nous contacter", icon: MessageCircle, onClick: () => setShowContactDialog(true) },
       ];
-    } else if (user.role === "transporter") {
+    } else if (user.role === "transporteur") {
       return [
         { label: "Tableau de bord", icon: Package, href: "/" },
         { label: "Mon Profil", icon: User, href: "/transporter/profile" },
@@ -116,7 +116,7 @@ export function Header({ user, onNewRequest, onAnnounceReturn, onLogout }: Heade
             </Button>
           )}
 
-          {user.role === "transporter" && onAnnounceReturn && (
+          {user.role === "transporteur" && onAnnounceReturn && (
             <Button
               onClick={onAnnounceReturn}
               size="default"

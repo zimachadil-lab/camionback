@@ -1574,7 +1574,7 @@ export default function ClientDashboard() {
                     const acceptedOffer = request.acceptedOfferId 
                       ? users.find((u: any) => {
                           // Find the transporter through the accepted offer
-                          return u.role === "transporter";
+                          return u.role === "transporteur";
                         })
                       : null;
 

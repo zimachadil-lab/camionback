@@ -70,7 +70,7 @@ export default function PublicRequestView() {
     const response = await fetch('/api/auth/me', { credentials: 'include' });
     if (response.ok) {
       const { user } = await response.json();
-      if (user && user.role === 'transporter') {
+      if (user && user.role === 'transporteur') {
         // Redirect to transporter dashboard with this request
         setLocation(`/transporter-dashboard?request=${request?.id}`);
       } else if (user) {

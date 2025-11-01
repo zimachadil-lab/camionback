@@ -45,7 +45,7 @@ export default function Home() {
     );
   }
 
-  if (user.role === "transporter") {
+  if (user.role === "transporteur") {
     return <TransporterDashboard />;
   }
 

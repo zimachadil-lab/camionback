@@ -121,7 +121,7 @@ export function PhoneAuth() {
       // Redirect based on user role and profile completion
       if (!user.role) {
         setLocation("/select-role");
-      } else if (user.role === "transporter" && (!user.name || !user.city)) {
+      } else if (user.role === "transporteur" && (!user.name || !user.city)) {
         setLocation("/complete-profile");
       } else {
         // All other users go to home which renders appropriate dashboard

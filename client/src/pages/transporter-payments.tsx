@@ -17,7 +17,7 @@ export default function TransporterPayments() {
 
   // Redirect non-transporters
   useEffect(() => {
-    if (!authLoading && user && user.role !== "transporter") {
+    if (!authLoading && user && user.role !== "transporteur") {
       setLocation("/");
     }
   }, [user, authLoading, setLocation]);
@@ -27,13 +27,13 @@ export default function TransporterPayments() {
   };
 
   const { data: paymentRequests = [], isLoading } = useQuery({
-    queryKey: ["/api/requests/payments", user.id],
+    queryKey: ["/api/requests/payments", user?.id],
     queryFn: async () => {
-      const response = await fetch(`/api/requests?payments=true&transporterId=${user.id}`);
+      const response = await fetch(`/api/requests?payments=true&transporterId=${user!.id}`);
       return response.json();
     },
     refetchInterval: 5000,
-    enabled: !!user.id && user.role === "transporter",
+    enabled: !!user?.id && user?.role === "transporteur",
   });
 
   const { data: allOffers = [] } = useQuery({
@@ -42,7 +42,17 @@ export default function TransporterPayments() {
       const response = await fetch("/api/offers");
       return response.json();
     },
+    enabled: !!user,
   });
+
+  // Early return after all hooks
+  if (authLoading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingTruck message="Chargement..." size="lg" />
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

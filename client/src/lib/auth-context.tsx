@@ -6,7 +6,7 @@ interface User {
   phoneNumber: string;
   name?: string;
   city?: string;
-  role?: "client" | "transporter" | "admin" | "coordinateur";
+  role?: "client" | "transporteur" | "admin" | "coordinateur";
   status?: string;
 }
 

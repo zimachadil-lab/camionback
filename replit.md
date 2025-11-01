@@ -6,6 +6,41 @@ CamionBack is a full-stack logistics marketplace web application for the Morocca
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+### November 2025 - Dashboard Transporteur Bug Fixes
+**Issue**: Transporters experiencing blank dashboard page and 404 errors after login.
+
+**Root Causes Identified**:
+1. **23 TypeScript Errors**: "user is possibly null" errors throughout transporter-dashboard.tsx causing runtime failures
+2. **Role Mismatch**: Database stores role as "transporteur" (French) but frontend code checked for "transporter" (English)
+
+**Corrections Applied**:
+1. **TypeScript Null Safety** (transporter-dashboard.tsx, transporter-payments.tsx):
+   - Added `enabled: !!user` to all useQuery hooks to prevent queries when user is null
+   - Added early return after all hooks with loading screen for null/loading states
+   - Used `user!` assertion after early return where user is guaranteed non-null
+   - Follows React Hooks rules: all hooks called before conditional returns
+
+2. **Role Normalization** (8 files updated):
+   - `client/src/lib/auth-context.tsx`: Updated User interface type to use "transporteur"
+   - `client/src/pages/home.tsx`: Changed role check from "transporter" to "transporteur"
+   - `client/src/pages/transporter-dashboard.tsx`: Updated reference query role check
+   - `client/src/pages/public-request-view.tsx`: Fixed public offer redirect role check
+   - `client/src/components/auth/phone-auth.tsx`: Updated profile completion redirect
+   - `client/src/pages/transporter-payments.tsx`: Fixed payments page role check
+   - `client/src/components/layout/header.tsx`: Updated menu and button role checks (2 locations)
+   - `client/src/pages/client-dashboard.tsx`: Fixed transporter search in payment requests
+
+**Result**: 
+- ✅ Transporter dashboard loads successfully without blank page
+- ✅ No more 404 errors after transporter login
+- ✅ All navigation (tabs, menu, payments page) working correctly
+- ✅ Zero "user is possibly null" console errors
+- ✅ API endpoints returning 200 successfully
+
+**Test Account**: +212600111222 / PIN: 123456 (validated transporter)
+
 ## System Architecture
 
 ### UI/UX Decisions
