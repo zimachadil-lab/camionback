@@ -3,6 +3,7 @@ import session from "express-session";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { sessionConfig } from "./session-config";
+import { ensureSchemaSync } from "./migrations/ensure-schema";
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -114,6 +115,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Synchroniser le schéma avant de démarrer l'application
+  await ensureSchemaSync();
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
