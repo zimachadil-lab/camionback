@@ -1325,25 +1325,44 @@ export class DbStorage implements IStorage {
   }
 
   async getNextClientId(): Promise<string> {
+    // ROBUST: Get all existing clientIds first
     const clients = await db.select({ clientId: users.clientId })
       .from(users)
       .where(and(eq(users.role, 'client'), isNotNull(users.clientId)));
     
-    if (clients.length === 0) {
-      return "C-0001";
-    }
+    // Create a Set of existing IDs for fast collision detection
+    const existingIds = new Set(clients.map(c => c.clientId).filter(Boolean));
     
+    // Extract valid numbers from existing IDs (ignore legacy/malformed ones)
     const clientNumbers = clients
       .map(client => {
-        const match = client.clientId?.match(/C-(\d+)/);
+        const match = client.clientId?.match(/C-(\d{4,})/);
         return match ? parseInt(match[1], 10) : 0;
       })
       .filter(num => num > 0);
     
-    const maxNumber = Math.max(...clientNumbers, 0);
-    const nextNumber = maxNumber + 1;
+    // Start from max + 1, or from 1 if no valid IDs exist
+    let nextNumber = clientNumbers.length > 0 ? Math.max(...clientNumbers) + 1 : 1;
     
-    return `C-${nextNumber.toString().padStart(4, '0')}`;
+    // Try up to 100 times to find a unique ID (handles collisions with legacy data)
+    for (let attempt = 0; attempt < 100; attempt++) {
+      const candidateId = `C-${nextNumber.toString().padStart(4, '0')}`;
+      
+      // If this ID doesn't exist, use it
+      if (!existingIds.has(candidateId)) {
+        console.log(`✅ [getNextClientId] Generated unique ID: ${candidateId} (attempt ${attempt + 1})`);
+        return candidateId;
+      }
+      
+      // Collision detected - try next number
+      console.warn(`⚠️ [getNextClientId] Collision detected for ${candidateId}, trying next...`);
+      nextNumber++;
+    }
+    
+    // Fallback: use timestamp-based ID if all sequential attempts fail (extremely unlikely)
+    const fallbackId = `C-${Date.now().toString().slice(-6)}`;
+    console.error(`❌ [getNextClientId] All attempts exhausted, using fallback: ${fallbackId}`);
+    return fallbackId;
   }
 
   async getClientStatistics(): Promise<any[]> {
