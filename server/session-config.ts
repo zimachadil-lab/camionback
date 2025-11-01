@@ -42,7 +42,8 @@ export const sessionConfig: session.SessionOptions = {
   cookie: {
     httpOnly: true, // Protection XSS - le cookie n'est PAS accessible via JavaScript
     secure: true, // TOUJOURS HTTPS sur Replit (même en dev)
-    sameSite: 'lax', // lax pour compatibilité maximale et sécurité
+    sameSite: 'none', // CRITICAL: 'none' requis pour PWA/mobile cross-site requests
+    domain: process.env.NODE_ENV === 'production' ? '.camionback.com' : undefined, // Production: all subdomains
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 jours - pas de logout forcé
   },
   name: 'camionback.sid', // Nom personnalisé pour éviter détection automatique
