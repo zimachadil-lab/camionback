@@ -24,7 +24,7 @@ import {
   clientTransporterContacts,
   transportRequests
 } from "@shared/schema";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { sendNewOfferSMS, sendOfferAcceptedSMS, sendTransporterActivatedSMS, sendBulkSMS, sendManualAssignmentSMS, sendTransporterAssignedSMS } from "./infobip-sms";
 import { emailService } from "./email-service";
 import { migrateProductionData } from "./migrate-production-endpoint";
@@ -35,7 +35,7 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // DEBUG ENDPOINT - Check database connection (PUBLIC - À SUPPRIMER APRÈS DEBUG)
+  // DEBUG ENDPOINT - Check database connection and schema (PUBLIC - À SUPPRIMER APRÈS DEBUG)
   app.get("/api/debug/db-info", async (req, res) => {
     try {
       const isDeployment = process.env.REPLIT_DEPLOYMENT === '1';
@@ -43,8 +43,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const pgHost = process.env.PGHOST;
       const pgDatabase = process.env.PGDATABASE;
       
-      // Test database connection by counting users
-      const result = await db.select().from(clientTransporterContacts).limit(1);
+      // Check if is_active and account_status columns exist
+      const columnsCheck = await db.execute(sql`
+        SELECT column_name, data_type, column_default
+        FROM information_schema.columns 
+        WHERE table_name = 'users' 
+        AND column_name IN ('is_active', 'account_status')
+        ORDER BY column_name
+      `);
+      
+      // Get sample transporters with their is_active and account_status values
+      const sampleTransporters = await db.execute(sql`
+        SELECT id, role, status, is_active, account_status
+        FROM users 
+        WHERE role = 'transporteur'
+        LIMIT 5
+      `);
+      
+      // Count transporters by various filters
+      const allTransporters = await db.execute(sql`
+        SELECT COUNT(*) as count FROM users WHERE role = 'transporteur'
+      `);
+      
+      const validatedTransporters = await db.execute(sql`
+        SELECT COUNT(*) as count FROM users WHERE role = 'transporteur' AND status = 'validated'
+      `);
+      
+      const activeTransporters = await db.execute(sql`
+        SELECT COUNT(*) as count FROM users WHERE role = 'transporteur' AND is_active = true
+      `);
+      
+      const activeAndValidatedTransporters = await db.execute(sql`
+        SELECT COUNT(*) as count FROM users WHERE role = 'transporteur' AND is_active = true AND status = 'validated'
+      `);
       
       res.json({
         environment: {
@@ -57,12 +88,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
           database: pgDatabase || 'Not set',
           connectionWorks: true
         },
-        message: 'Database connection OK'
+        schema: {
+          columns: columnsCheck.rows,
+          hasIsActive: columnsCheck.rows.some((r: any) => r.column_name === 'is_active'),
+          hasAccountStatus: columnsCheck.rows.some((r: any) => r.column_name === 'account_status')
+        },
+        transporterCounts: {
+          all: allTransporters.rows[0],
+          validated: validatedTransporters.rows[0],
+          active: activeTransporters.rows[0],
+          activeAndValidated: activeAndValidatedTransporters.rows[0]
+        },
+        sampleTransporters: sampleTransporters.rows,
+        message: 'Database diagnostic complete'
       });
     } catch (error: any) {
       res.status(500).json({
-        error: 'Database connection failed',
+        error: 'Database diagnostic failed',
         message: error.message,
+        stack: error.stack,
         environment: {
           REPLIT_DEPLOYMENT: process.env.REPLIT_DEPLOYMENT,
           NODE_ENV: process.env.NODE_ENV
