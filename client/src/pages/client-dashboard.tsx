@@ -1584,7 +1584,7 @@ export default function ClientDashboard() {
   }
 
   const activeRequests = requests.filter((r: any) => 
-    (r.status === "open" || r.status === "accepted") && r.paymentStatus !== "paid"
+    (r.status === "open" || r.status === "accepted" || r.status === "published_for_matching") && r.paymentStatus !== "paid"
   );
   const completedRequests = requests.filter((r: any) => 
     r.status === "completed" || r.status === "expired" || r.paymentStatus === "paid"
