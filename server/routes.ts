@@ -1829,6 +1829,126 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Client chooses a transporter from interested transporters (qualified workflow)
+  app.post("/api/requests/:id/choose-transporter", requireAuth, requireRole(['client']), async (req, res) => {
+    try {
+      const requestId = req.params.id;
+      const { transporterId } = req.body;
+      const clientId = req.user!.id;
+
+      if (!transporterId) {
+        return res.status(400).json({ error: "ID du transporteur requis" });
+      }
+
+      // Get request
+      const request = await storage.getTransportRequest(requestId);
+      if (!request) {
+        return res.status(404).json({ error: "Commande introuvable" });
+      }
+
+      // Verify client owns this request
+      if (request.clientId !== clientId) {
+        return res.status(403).json({ error: "Accès refusé" });
+      }
+
+      // Verify request is qualified
+      if (!request.qualifiedAt || !request.transporterAmount || !request.platformFee) {
+        return res.status(400).json({ error: "Cette commande n'a pas encore été qualifiée par un coordinateur" });
+      }
+
+      // Verify transporter has expressed interest
+      if (!request.transporterInterests || !request.transporterInterests.includes(transporterId)) {
+        return res.status(400).json({ error: "Ce transporteur n'a pas exprimé d'intérêt pour cette commande" });
+      }
+
+      // Get transporter
+      const transporter = await storage.getUser(transporterId);
+      if (!transporter || transporter.role !== 'transporteur' || transporter.status !== 'validated') {
+        return res.status(404).json({ error: "Transporteur invalide" });
+      }
+
+      // Assign transporter using existing prices from qualification
+      const updatedRequest = await storage.assignTransporterManually(
+        requestId,
+        transporterId,
+        request.transporterAmount,
+        request.platformFee,
+        request.coordinationUpdatedBy || null // Keep track of coordinator who qualified
+      );
+
+      if (!updatedRequest) {
+        return res.status(500).json({ error: "Échec de la sélection du transporteur" });
+      }
+
+      // Create notifications
+      await storage.createNotification({
+        userId: transporterId,
+        type: "client_chose_you",
+        title: "Félicitations ! Un client vous a choisi",
+        message: `Le client a choisi votre service pour la mission ${request.referenceId}. Montant: ${request.transporterAmount} MAD.`,
+        relatedId: requestId
+      });
+
+      await storage.createNotification({
+        userId: clientId,
+        type: "transporter_selected",
+        title: "Transporteur sélectionné !",
+        message: `Vous avez sélectionné ${transporter.name} pour votre commande ${request.referenceId}. Total: ${request.clientTotal} MAD.`,
+        relatedId: requestId
+      });
+
+      // Send push notifications
+      try {
+        const { sendNotificationToUser, NotificationTemplates } = await import('./push-notifications');
+
+        if (transporter.deviceToken) {
+          const transporterNotif = NotificationTemplates.clientChoseYou(request.referenceId);
+          await sendNotificationToUser(transporterId, transporterNotif, storage);
+          console.log(`📨 Notification push envoyée au transporteur sélectionné par le client`);
+        }
+
+        const client = await storage.getUser(clientId);
+        if (client?.deviceToken) {
+          const clientNotif = NotificationTemplates.transporterSelected(request.referenceId, transporter.name);
+          await sendNotificationToUser(clientId, clientNotif, storage);
+          console.log(`📨 Notification push envoyée au client pour sélection confirmée`);
+        }
+      } catch (pushError) {
+        console.error('❌ Erreur lors de l\'envoi des notifications push:', pushError);
+      }
+
+      // Send SMS notifications
+      try {
+        if (transporter.phoneNumber) {
+          await sendClientChoseYouSMS(transporter.phoneNumber, request.referenceId);
+        }
+        const client = await storage.getUser(clientId);
+        if (client?.phoneNumber) {
+          await sendTransporterSelectedSMS(client.phoneNumber, request.referenceId, transporter.name);
+        }
+      } catch (smsError) {
+        console.error('❌ Erreur lors de l\'envoi des SMS:', smsError);
+      }
+
+      res.json({
+        success: true,
+        request: updatedRequest,
+        transporter: {
+          id: transporter.id,
+          name: transporter.name,
+          city: transporter.city,
+          phoneNumber: transporter.phoneNumber,
+          rating: transporter.rating,
+          totalTrips: transporter.totalTrips,
+          truckPhotos: transporter.truckPhotos
+        }
+      });
+    } catch (error) {
+      console.error("Erreur sélection transporteur par client:", error);
+      res.status(500).json({ error: "Erreur lors de la sélection du transporteur" });
+    }
+  });
+
   // Republish a request (reset to open status, optionally with new date)
   app.post("/api/requests/:id/republish", async (req, res) => {
     try {

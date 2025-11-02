@@ -201,6 +201,18 @@ export const NotificationTemplates = {
     title: '📋 Nouvelle demande assignée',
     body: `La demande ${requestRef} vous a été assignée pour qualification`,
     url: '/coordinator-dashboard'
+  }),
+
+  clientChoseYou: (requestRef: string) => ({
+    title: '🎉 Félicitations ! Un client vous a choisi',
+    body: `Vous avez été sélectionné pour la mission ${requestRef}`,
+    url: '/transporter-dashboard'
+  }),
+
+  transporterSelected: (requestRef: string, transporterName: string) => ({
+    title: '✅ Transporteur sélectionné',
+    body: `Vous avez choisi ${transporterName} pour ${requestRef}`,
+    url: '/client-dashboard'
   })
 };
 
