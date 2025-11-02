@@ -51,7 +51,7 @@ export default function AdminDashboard() {
   const [addTransporterOpen, setAddTransporterOpen] = useState(false);
   const [addClientOpen, setAddClientOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [commissionRate, setCommissionRate] = useState("10");
+  // REMOVED: commissionRate state - no longer needed with manual coordinator pricing
   const [selectedReceipt, setSelectedReceipt] = useState<string>("");
   const [showReceiptDialog, setShowReceiptDialog] = useState(false);
   const [assignOrderDialogOpen, setAssignOrderDialogOpen] = useState(false);
@@ -175,7 +175,7 @@ export default function AdminDashboard() {
     },
   });
 
-  // Fetch admin settings for commission calculation
+  // Fetch admin settings to calculate commission for legacy orders (read-only, no longer configurable)
   const { data: adminSettings } = useQuery({
     queryKey: ["/api/admin/settings"],
     queryFn: async () => {
@@ -1127,7 +1127,7 @@ export default function AdminDashboard() {
                 <TabsTrigger value="cities" data-testid="tab-cities" className="flex-shrink-0">Villes</TabsTrigger>
                 <TabsTrigger value="stories" data-testid="tab-stories" className="flex-shrink-0">Stories</TabsTrigger>
                 <TabsTrigger value="stats" data-testid="tab-stats" className="flex-shrink-0">Statistiques</TabsTrigger>
-                <TabsTrigger value="settings" data-testid="tab-settings" className="flex-shrink-0">Paramètres</TabsTrigger>
+                {/* REMOVED: Settings tab - automatic pricing removed, now using manual coordinator pricing */}
               </TabsList>
             </div>
           </div>
@@ -1980,15 +1980,18 @@ export default function AdminDashboard() {
                           ? allUsers.find((u: any) => u.id === acceptedOffer.transporterId)
                           : null;
 
-                        // Calculate net amount (base amount that transporter gets, without commission)
-                        const netAmount = acceptedOffer 
-                          ? parseFloat(acceptedOffer.amount)
-                          : 0;
-
-                        // Calculate commission and total
-                        const commissionPercentage = adminSettings?.commissionPercentage || 10;
-                        const commissionAmount = netAmount * (commissionPercentage / 100);
-                        const totalClientAmount = netAmount + commissionAmount;
+                        // Use manual pricing values if available (qualified requests), otherwise calculate for legacy
+                        const netAmount = request.transporterAmount 
+                          ? parseFloat(request.transporterAmount)
+                          : (acceptedOffer ? parseFloat(acceptedOffer.amount) : 0);
+                        
+                        const commissionAmount = request.platformFee 
+                          ? parseFloat(request.platformFee)
+                          : (acceptedOffer ? netAmount * (parseFloat(adminSettings?.commissionPercentage || "10") / 100) : 0);
+                        
+                        const totalClientAmount = request.clientTotal 
+                          ? parseFloat(request.clientTotal)
+                          : (netAmount + commissionAmount); // For legacy requests, calculate total
 
                         return (
                           <TableRow key={request.id}>
@@ -2776,10 +2779,18 @@ export default function AdminDashboard() {
                               ? allUsers.find((u: any) => u.id === acceptedOffer.transporterId)
                               : null;
 
-                            const netAmount = acceptedOffer ? parseFloat(acceptedOffer.amount) : 0;
-                            const commissionPercentage = adminSettings?.commissionPercentage || 10;
-                            const commissionAmount = netAmount * (commissionPercentage / 100);
-                            const totalClientAmount = netAmount + commissionAmount;
+                            // Use manual pricing values if available (qualified requests), otherwise calculate for legacy
+                            const netAmount = request.transporterAmount 
+                              ? parseFloat(request.transporterAmount)
+                              : (acceptedOffer ? parseFloat(acceptedOffer.amount) : 0);
+                            
+                            const commissionAmount = request.platformFee 
+                              ? parseFloat(request.platformFee)
+                              : (acceptedOffer ? netAmount * (parseFloat(adminSettings?.commissionPercentage || "10") / 100) : 0);
+                            
+                            const totalClientAmount = request.clientTotal 
+                              ? parseFloat(request.clientTotal)
+                              : (netAmount + commissionAmount); // For legacy requests, calculate total
 
                             return (
                               <TableRow key={request.id}>
@@ -3279,81 +3290,8 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="settings" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="w-5 h-5" />
-                  Paramètres de commission
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium block mb-2">
-                      Pourcentage de commission CamionBack (%)
-                    </label>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Ce pourcentage est automatiquement ajouté au prix du transporteur pour calculer le montant total que le client doit payer.
-                    </p>
-                  </div>
-                  
-                  <div className="flex gap-4 items-end">
-                    <div className="flex-1 max-w-xs space-y-2">
-                      <Input
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="0.1"
-                        value={commissionRate}
-                        onChange={(e) => setCommissionRate(e.target.value)}
-                        data-testid="input-commission-rate"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Commission actuelle: {adminSettings?.commissionPercentage || commissionRate}%
-                      </p>
-                    </div>
-                    <Button 
-                      onClick={async () => {
-                        try {
-                          await apiRequest("PATCH", "/api/admin/settings", {
-                            commissionPercentage: parseFloat(commissionRate)
-                          });
-                          toast({
-                            title: "Commission mise à jour",
-                            description: `Le taux de commission est maintenant de ${commissionRate}%`,
-                          });
-                          queryClient.invalidateQueries({ queryKey: ["/api/admin/settings"] });
-                        } catch (error) {
-                          toast({
-                            variant: "destructive",
-                            title: "Erreur",
-                            description: "Échec de la mise à jour de la commission",
-                          });
-                        }
-                      }}
-                      data-testid="button-update-commission"
-                    >
-                      <DollarSign className="w-4 h-4 mr-2" />
-                      Mettre à jour
-                    </Button>
-                  </div>
-
-                  <div className="bg-muted/50 rounded-lg p-4 mt-6">
-                    <h4 className="font-medium mb-2">Exemple de calcul</h4>
-                    <div className="text-sm space-y-1">
-                      <p>Prix transporteur: <strong>1000 MAD</strong></p>
-                      <p>Commission ({commissionRate}%): <strong>{(1000 * parseFloat(commissionRate || "0") / 100).toFixed(2)} MAD</strong></p>
-                      <p className="pt-2 border-t border-border mt-2">
-                        Total client: <strong className="text-primary">{(1000 + (1000 * parseFloat(commissionRate || "0") / 100)).toFixed(2)} MAD</strong>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
+          {/* REMOVED: Old automatic pricing system with commission percentage - now using manual coordinator pricing */}
+          
           <TabsContent value="empty-returns" className="mt-6">
             <Card>
               <CardHeader>
@@ -4407,10 +4345,18 @@ export default function AdminDashboard() {
               ? allUsers.find((u: any) => u.id === acceptedOffer.transporterId)
               : null;
 
-            const netAmount = acceptedOffer ? parseFloat(acceptedOffer.amount) : 0;
-            const commissionPercentage = adminSettings?.commissionPercentage || 10;
-            const commissionAmount = netAmount * (commissionPercentage / 100);
-            const totalClientAmount = netAmount + commissionAmount;
+            // Use manual pricing values if available (qualified requests), otherwise calculate for legacy
+            const netAmount = selectedInvoice.transporterAmount 
+              ? parseFloat(selectedInvoice.transporterAmount)
+              : (acceptedOffer ? parseFloat(acceptedOffer.amount) : 0);
+            
+            const commissionAmount = selectedInvoice.platformFee 
+              ? parseFloat(selectedInvoice.platformFee)
+              : (acceptedOffer ? netAmount * (parseFloat(adminSettings?.commissionPercentage || "10") / 100) : 0);
+            
+            const totalClientAmount = selectedInvoice.clientTotal 
+              ? parseFloat(selectedInvoice.clientTotal)
+              : (netAmount + commissionAmount); // For legacy requests, calculate total
 
             return (
               <div className="mt-4 space-y-6">
@@ -4465,7 +4411,7 @@ export default function AdminDashboard() {
                       <span className="font-semibold">{netAmount.toFixed(2)} MAD</span>
                     </div>
                     <div className="flex justify-between items-center pb-2 border-b">
-                      <span className="text-muted-foreground">Commission CamionBack ({commissionPercentage}%)</span>
+                      <span className="text-muted-foreground">Commission CamionBack</span>
                       <span className="font-semibold text-green-600">{commissionAmount.toFixed(2)} MAD</span>
                     </div>
                     <div className="flex justify-between items-center pt-2">
