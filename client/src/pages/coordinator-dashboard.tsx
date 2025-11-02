@@ -999,10 +999,10 @@ export default function CoordinatorDashboard() {
 
       // Coordinator filtering (for qualified requests)
       const matchesCoordinator = selectedCoordinator === "Tous les coordinateurs" || 
-        (request.coordinationUpdatedBy && request.coordinationUpdatedBy === allCoordinators.find((c: any) => {
-          const coordName = c.name || c.phoneNumber;
-          return coordName === selectedCoordinator;
-        })?.id);
+        (request.coordinationUpdatedBy && (
+          request.coordinationUpdatedBy.name === selectedCoordinator ||
+          request.coordinationUpdatedBy.phoneNumber === selectedCoordinator
+        ));
       
       return matchesCity && matchesStatus && matchesSearch && matchesDate && matchesCoordinator;
     });

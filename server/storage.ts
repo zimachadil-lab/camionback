@@ -26,6 +26,7 @@ import {
   clientTransporterContacts, stories, coordinatorLogs, transporterReferences, coordinationStatuses
 } from '@shared/schema';
 import { eq, and, or, desc, asc, lte, gte, sql, inArray, isNull, isNotNull } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 
 export interface IStorage {
   // User operations
@@ -3182,28 +3183,42 @@ export class DbStorage implements IStorage {
   async getMatchingRequests(filters?: { assignedToId?: string; searchQuery?: string }): Promise<any[]> {
     const whereConditions = [
       eq(transportRequests.coordinationStatus, 'matching'),
-      eq(transportRequests.status, 'open'),
+      or(
+        eq(transportRequests.status, 'open'),
+        eq(transportRequests.status, 'published_for_matching')
+      ),
     ];
 
     if (filters?.assignedToId) {
       whereConditions.push(eq(transportRequests.assignedToId, filters.assignedToId));
     }
 
+    // Create aliases for the two user joins
+    const clientUser = alias(users, 'client_user');
+    const coordinatorUser = alias(users, 'coordinator_user');
+
     const requests = await db.select({
       request: transportRequests,
-      client: users,
+      client: clientUser,
+      coordinator: coordinatorUser,
     }).from(transportRequests)
-      .leftJoin(users, eq(transportRequests.clientId, users.id))
+      .leftJoin(clientUser, eq(transportRequests.clientId, clientUser.id))
+      .leftJoin(coordinatorUser, eq(transportRequests.coordinationUpdatedBy, coordinatorUser.id))
       .where(and(...whereConditions))
       .orderBy(desc(transportRequests.publishedForMatchingAt));
 
-    const enrichedRequests = requests.map(({ request, client }) => ({
+    const enrichedRequests = requests.map(({ request, client, coordinator }) => ({
       ...request,
       client: client ? {
         id: client.id,
         name: client.name,
         phoneNumber: client.phoneNumber,
         clientId: client.clientId,
+      } : null,
+      coordinationUpdatedBy: coordinator ? {
+        id: coordinator.id,
+        name: coordinator.name,
+        phoneNumber: coordinator.phoneNumber,
       } : null,
       interestedCount: request.transporterInterests?.length || 0,
     }));
