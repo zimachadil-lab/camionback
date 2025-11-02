@@ -2183,28 +2183,11 @@ export default function ClientDashboard() {
                   </div>
 
                   {transporterInfo.totalAmount != null && (
-                    <div className="border-t pt-3 space-y-2">
-                      {transporterInfo.assignedManually && transporterInfo.transporterAmount != null && transporterInfo.platformFee != null ? (
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Total Transporteur</span>
-                            <span className="font-semibold">{Number(transporterInfo.transporterAmount).toFixed(2)} MAD</span>
-                          </div>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Cotisation Plateforme</span>
-                            <span className="font-semibold">{Number(transporterInfo.platformFee).toFixed(2)} MAD</span>
-                          </div>
-                          <div className="flex justify-between border-t pt-2">
-                            <span className="font-semibold text-foreground">Total à payer</span>
-                            <span className="font-bold text-primary text-xl">{Number(transporterInfo.totalAmount).toFixed(2)} MAD</span>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex justify-between">
-                          <span className="font-semibold text-foreground">Montant</span>
-                          <span className="font-bold text-primary text-xl">{Number(transporterInfo.totalAmount).toFixed(2)} MAD</span>
-                        </div>
-                      )}
+                    <div className="border-t pt-3">
+                      <div className="flex justify-between">
+                        <span className="font-semibold text-foreground">Total à payer</span>
+                        <span className="font-bold text-primary text-xl">{Number(transporterInfo.totalAmount).toFixed(2)} MAD</span>
+                      </div>
                     </div>
                   )}
 
