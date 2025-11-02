@@ -1,0 +1,69 @@
+Merci de mettre à jour totalement la structure du Tableau de Bord Coordinateur afin de simplifier le workflow et éliminer les redondances d’affichage.
+
+🎯 Objectifs :
+
+Aligner l’affichage aux statuts réels du process
+
+Fluidifier le travail des coordinateurs
+
+Éviter toute répétition des commandes dans plusieurs vues
+
+✅ NOUVELLES VUES DU TABLEAU DE BORD COORDINATEUR
+
+➡️ Remplacer toutes les vues actuelles (En action, Prioritaires, À traiter, À payer)
+
+📌 Par 4 vues uniques dans une seule barre d’onglets :
+
+Nouvelle Vue	Rôle	Ce qu’elle contient
+Nouveau	Prise en charge initiale	Toutes les commandes en statut “Qualification logistique en cours…” (jamais traitées par coordinateur)
+Qualifiés	Matching transporteurs	Toutes les commandes validées par coordinateur côté détails/prix et publiées en concurrence
+En Production	Commandes actives validées	Commandes avec transporteur assigné ou en livraison (fusion des anciennes vues “À traiter” + “À payer”)
+Archives	Commandes non à traiter	Commandes abandonnées / refusées / expirées / externes / non joignables
+
+✅ Chaque commande se trouve dans UNE seule vue à la fois
+
+✅ Barre d’outils simplifiée
+
+Actuellement, il y a deux barres de recherche ➜ Merci de les fusionner en une seule barre de recherche intelligente située en haut :
+
+🔍 Recherche globale sur :
+
+Référence commande
+
+Numéro téléphone client / transporteur
+
+Nom transporteur
+
+Mot contenu dans le descriptif
+
+📌 Ajouter aussi un filtre rapide (dropdown) :
+
+Villes Départ / Arrivée
+
+Statut coordinateur
+
+Date création
+
+✅ Indications visuelles à conserver
+
+✔ Sur chaque carte :
+
+Badge statut coordinateur
+
+Badge statut logistique (workflow client)
+
+Nom + téléphone client visibles directement
+
+Icône photo si disponible
+
+Icône WhatsApp + Appel
+
+✔ Au clic : accès à la fiche complète commande comme actuellement
+
+✅ Résultat attendu
+
+✅ 4 vues claires et non redondantes
+✅ Meilleure priorité du travail et moins d’erreurs
+✅ Meilleure répartition des commandes
+✅ Recherche unique rapide → gain de temps important
+✅ Structure scalable pour future automatisation
