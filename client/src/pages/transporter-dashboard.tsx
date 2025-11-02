@@ -318,7 +318,10 @@ export default function TransporterDashboard() {
 
   const expressInterestMutation = useMutation({
     mutationFn: async (requestId: string) => {
-      return await apiRequest("POST", "/api/transporter/express-interest", { requestId });
+      return await apiRequest("POST", "/api/transporter/express-interest", { 
+        requestId,
+        interested: true 
+      });
     },
     onSuccess: () => {
       toast({
