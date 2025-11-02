@@ -437,6 +437,28 @@ export const COORDINATION_ARCHIVE_REASONS = {
   OFFRE_EXPIREE: "offre_expiree", // Offre expirée
 } as const;
 
+// Archive reasons with French labels for UI
+export const ARCHIVE_REASONS_LABELS: Record<string, string> = {
+  [COORDINATION_ARCHIVE_REASONS.CLIENT_INJOIGNABLE]: "Client injoignable",
+  [COORDINATION_ARCHIVE_REASONS.TRAITE_AILLEURS]: "Client a trouvé ailleurs",
+  [COORDINATION_ARCHIVE_REASONS.BUDGET_INSUFFISANT]: "Budget insuffisant",
+  [COORDINATION_ARCHIVE_REASONS.INFOS_INCOMPLETES]: "Informations incomplètes",
+  [COORDINATION_ARCHIVE_REASONS.NON_PRIORITAIRE]: "Demande non prioritaire",
+  [COORDINATION_ARCHIVE_REASONS.NON_REALISABLE]: "Transport non réalisable",
+  [COORDINATION_ARCHIVE_REASONS.CLIENT_ANNULE]: "Client a annulé",
+  [COORDINATION_ARCHIVE_REASONS.AUCUNE_OFFRE]: "Aucune offre reçue",
+  [COORDINATION_ARCHIVE_REASONS.PRIX_REFUSE]: "Prix refusé par le client",
+  [COORDINATION_ARCHIVE_REASONS.INJOIGNABLE_LONG_TERME]: "Client injoignable (long terme)",
+  [COORDINATION_ARCHIVE_REASONS.A_REPRENDRE_PLUS_TARD]: "À reprendre plus tard",
+  [COORDINATION_ARCHIVE_REASONS.OFFRE_EXPIREE]: "Offre expirée",
+};
+
+// Typed array for UI selects
+export const ARCHIVE_REASONS_OPTIONS = Object.entries(ARCHIVE_REASONS_LABELS).map(([value, label]) => ({
+  value,
+  label,
+}));
+
 // Schema for updating coordination status
 export const updateCoordinationStatusSchema = z.object({
   coordinationStatus: z.enum([

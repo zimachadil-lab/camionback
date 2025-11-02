@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { ARCHIVE_REASONS_OPTIONS, ARCHIVE_REASONS_LABELS } from "@shared/schema";
 import { CheckCircle, Send, UserPlus, Archive, DollarSign, Calculator, TrendingUp, Truck } from "lucide-react";
 import { ManualAssignmentDialog } from "./manual-assignment-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -27,16 +28,6 @@ export function QualificationDialog({ open, onOpenChange, request, onSuccess }: 
   const [archiveReason, setArchiveReason] = useState("");
   const [showArchiveSelect, setShowArchiveSelect] = useState(false);
   const [manualAssignmentOpen, setManualAssignmentOpen] = useState(false);
-
-  // Archive reasons from schema
-  const ARCHIVE_REASONS = [
-    { value: "client_injoignable", label: "Client injoignable" },
-    { value: "budget_insuffisant", label: "Budget insuffisant" },
-    { value: "trajet_impossible", label: "Trajet impossible" },
-    { value: "annulation_client", label: "Annulation client" },
-    { value: "doublon", label: "Doublon" },
-    { value: "autre", label: "Autre" }
-  ];
 
   // Calculate client total when amounts change
   useEffect(() => {
@@ -153,7 +144,7 @@ export function QualificationDialog({ open, onOpenChange, request, onSuccess }: 
     onSuccess: () => {
       toast({
         title: "Commande archivée",
-        description: `${request.referenceId} archivée : ${ARCHIVE_REASONS.find(r => r.value === archiveReason)?.label}`,
+        description: `${request.referenceId} archivée : ${ARCHIVE_REASONS_LABELS[archiveReason] || archiveReason}`,
       });
       // Invalidate correct query keys used by dashboard
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/qualification-pending"] });
@@ -335,7 +326,7 @@ export function QualificationDialog({ open, onOpenChange, request, onSuccess }: 
                     <SelectValue placeholder="Sélectionner un motif" />
                   </SelectTrigger>
                   <SelectContent>
-                    {ARCHIVE_REASONS.map((reason) => (
+                    {ARCHIVE_REASONS_OPTIONS.map((reason) => (
                       <SelectItem key={reason.value} value={reason.value}>
                         {reason.label}
                       </SelectItem>
