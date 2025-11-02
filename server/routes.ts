@@ -5370,7 +5370,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Tous les champs sont requis" });
       }
       
-      if (transporterAmount <= 0 || platformFee < 0) {
+      // Convert to numbers and validate
+      const transporterAmountNum = Number(transporterAmount);
+      const platformFeeNum = Number(platformFee);
+      
+      if (isNaN(transporterAmountNum) || isNaN(platformFeeNum)) {
+        return res.status(400).json({ error: "Les montants doivent être des nombres valides" });
+      }
+      
+      if (transporterAmountNum <= 0 || platformFeeNum < 0) {
         return res.status(400).json({ error: "Montants invalides" });
       }
       
@@ -5381,7 +5389,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const transporter = await storage.getUser(transporterId);
+      console.log("[ASSIGN DEBUG] Transporter lookup:", {
+        transporterId,
+        found: !!transporter,
+        role: transporter?.role,
+        status: transporter?.status,
+        name: transporter?.name,
+      });
+      
       if (!transporter || transporter.role !== 'transporteur' || transporter.status !== 'validated') {
+        console.error("[ASSIGN ERROR] Invalid transporter:", {
+          exists: !!transporter,
+          hasCorrectRole: transporter?.role === 'transporteur',
+          isValidated: transporter?.status === 'validated',
+          actualStatus: transporter?.status,
+        });
         return res.status(404).json({ error: "Transporteur invalide" });
       }
       
@@ -5390,12 +5412,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Client introuvable" });
       }
       
-      // Assign transporter
+      // Assign transporter with validated numeric amounts
       const updatedRequest = await storage.assignTransporterManually(
         requestId,
         transporterId,
-        transporterAmount,
-        platformFee,
+        transporterAmountNum,
+        platformFeeNum,
         coordinatorId
       );
       
@@ -5408,7 +5430,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: transporterId,
         type: "manual_assignment",
         title: "Nouvelle mission assignée !",
-        message: `Vous avez été assigné à la mission ${request.referenceId}. Montant: ${transporterAmount} MAD.`,
+        message: `Vous avez été assigné à la mission ${request.referenceId}. Montant: ${transporterAmountNum} MAD.`,
         relatedId: requestId
       });
       
@@ -5416,7 +5438,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: request.clientId,
         type: "transporter_assigned",
         title: "Transporteur assigné !",
-        message: `Un transporteur a été assigné à votre commande ${request.referenceId}. Total: ${(transporterAmount + platformFee).toFixed(2)} MAD.`,
+        message: `Un transporteur a été assigné à votre commande ${request.referenceId}. Total: ${(transporterAmountNum + platformFeeNum).toFixed(2)} MAD.`,
         relatedId: requestId
       });
       

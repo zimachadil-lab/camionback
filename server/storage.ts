@@ -3299,12 +3299,13 @@ export class DbStorage implements IStorage {
       return [];
     }
 
-    // Get all interested transporters
+    // Get all interested transporters (only validated ones)
     const transporters = await db.select().from(users)
       .where(
         and(
           sql`${users.id} = ANY(${request[0].transporterInterests})`,
-          eq(users.role, 'transporteur')
+          eq(users.role, 'transporteur'),
+          eq(users.status, 'validated')
         )
       );
 

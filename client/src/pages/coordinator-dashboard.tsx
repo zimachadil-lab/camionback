@@ -325,11 +325,27 @@ function InterestedTransportersView({ request, onAssignTransporter, isPending }:
   onAssignTransporter: (transporterId: string) => void;
   isPending: boolean;
 }) {
-  const transporterInterests = request.transporterInterests || [];
+  // Fetch interested transporters from API
+  // Query key will be joined with "/" to form: /api/requests/:requestId/interested-transporters
+  const { data: interestedTransporters, isLoading } = useQuery({
+    queryKey: [`/api/requests/${request.id}/interested-transporters`],
+    enabled: !!request.id,
+  });
+  
+  const transporterInterests = interestedTransporters || [];
 
   // State for managing truck photo viewing
   const [selectedTruckPhoto, setSelectedTruckPhoto] = useState<string | null>(null);
   const [photoDialogOpen, setPhotoDialogOpen] = useState(false);
+
+  if (isLoading) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <Users className="h-12 w-12 mx-auto mb-3 opacity-50 animate-pulse" />
+        <p>Chargement des transporteurs intéressés...</p>
+      </div>
+    );
+  }
 
   if (transporterInterests.length === 0) {
     return (
@@ -349,18 +365,18 @@ function InterestedTransportersView({ request, onAssignTransporter, isPending }:
   return (
     <>
       <div className="grid gap-4 md:grid-cols-2 mt-4" data-testid="grid-interested">
-        {transporterInterests.map((interest: any) => (
-          <Card key={interest.id} className="overflow-hidden" data-testid={`card-interested-${interest.id}`}>
+        {transporterInterests.map((transporter: any) => (
+          <Card key={transporter.id} className="overflow-hidden" data-testid={`card-interested-${transporter.id}`}>
             <CardContent className="p-4 space-y-3">
               {/* Truck Photo Button */}
-              {interest.transporter?.truckPhotos && interest.transporter.truckPhotos.length > 0 && (
+              {transporter.truckPhotos && transporter.truckPhotos.length > 0 && (
                 <div className="mb-2">
                   <Button
                     variant="outline"
                     size="sm"
                     className="w-full gap-2"
-                    onClick={() => handleViewTruckPhoto(interest.transporter.truckPhotos)}
-                    data-testid={`button-view-truck-photo-${interest.id}`}
+                    onClick={() => handleViewTruckPhoto(transporter.truckPhotos)}
+                    data-testid={`button-view-truck-photo-${transporter.id}`}
                   >
                     <Truck className="h-4 w-4" />
                     Voir photo du camion
@@ -373,20 +389,20 @@ function InterestedTransportersView({ request, onAssignTransporter, isPending }:
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <Truck className="h-4 w-4 text-[#17cfcf]" />
-                    <h4 className="font-semibold" data-testid={`text-transporter-name-${interest.id}`}>
-                      {interest.transporter?.name || "Transporteur"}
+                    <h4 className="font-semibold" data-testid={`text-transporter-name-${transporter.id}`}>
+                      {transporter.name || "Transporteur"}
                     </h4>
                   </div>
-                  {interest.transporter?.city && (
+                  {transporter.city && (
                     <p className="text-sm text-muted-foreground flex items-center gap-1">
                       <MapPin className="h-3 w-3" />
-                      {interest.transporter.city}
+                      {transporter.city}
                     </p>
                   )}
-                  {interest.transporter?.rating && (
+                  {transporter.rating && (
                     <div className="flex items-center gap-1 mt-1">
                       <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                      <span className="text-sm font-medium">{parseFloat(interest.transporter.rating).toFixed(1)}</span>
+                      <span className="text-sm font-medium">{parseFloat(transporter.rating).toFixed(1)}</span>
                     </div>
                   )}
                 </div>
@@ -402,11 +418,11 @@ function InterestedTransportersView({ request, onAssignTransporter, isPending }:
                 <div className="flex items-center gap-2">
                   <Phone className="h-3 w-3 text-[#17cfcf]" />
                   <a 
-                    href={`tel:${interest.transporter?.phoneNumber}`}
+                    href={`tel:${transporter.phoneNumber}`}
                     className="text-sm text-[#17cfcf] hover:underline font-medium"
-                    data-testid={`link-call-transporter-${interest.id}`}
+                    data-testid={`link-call-transporter-${transporter.id}`}
                   >
-                    {interest.transporter?.phoneNumber}
+                    {transporter.phoneNumber}
                   </a>
                 </div>
                 <Button
@@ -418,10 +434,10 @@ function InterestedTransportersView({ request, onAssignTransporter, isPending }:
                       `Bonjour 👋,\nJe suis coordinateur CamionBack.\nJe souhaite discuter de votre intérêt pour cette commande.`
                     );
                     // Normalize phone number: remove spaces, dashes, and + sign
-                    const normalizedPhone = interest.transporter?.phoneNumber.replace(/[\s\-\+]/g, "");
+                    const normalizedPhone = transporter.phoneNumber.replace(/[\s\-\+]/g, "");
                     window.open(`https://wa.me/${normalizedPhone}?text=${message}`, "_blank");
                   }}
-                  data-testid={`button-whatsapp-transporter-${interest.id}`}
+                  data-testid={`button-whatsapp-transporter-${transporter.id}`}
                 >
                   🟢 WhatsApp
                 </Button>
@@ -444,21 +460,11 @@ function InterestedTransportersView({ request, onAssignTransporter, isPending }:
               </div>
             </div>
 
-            <div className="space-y-2 text-sm">
-              <div className="flex items-center gap-2">
-                <Package className="h-3 w-3 text-muted-foreground" />
-                <span className="text-muted-foreground">Intéressé le:</span>
-                <span className="font-medium">
-                  {format(new Date(interest.createdAt), "dd MMM yyyy", { locale: fr })}
-                </span>
-              </div>
-            </div>
-
             <Button
               className="w-full bg-[#17cfcf] hover:bg-[#13b3b3]"
-              onClick={() => onAssignTransporter(interest.transporter.id)}
+              onClick={() => onAssignTransporter(transporter.id)}
               disabled={isPending}
-              data-testid={`button-assign-transporter-${interest.id}`}
+              data-testid={`button-assign-transporter-${transporter.id}`}
             >
               <Truck className="h-4 w-4 mr-2" />
               {isPending ? "Assignation..." : "Assigner ce transporteur"}
@@ -2418,8 +2424,8 @@ export default function CoordinatorDashboard() {
                 assignMutation.mutate({
                   requestId: selectedRequestForInterested.id,
                   transporterId: transporterId,
-                  transporterAmount: selectedRequestForInterested.transporterAmount || 0,
-                  platformFee: selectedRequestForInterested.platformFee || 0,
+                  transporterAmount: parseFloat(selectedRequestForInterested.transporterAmount) || 0,
+                  platformFee: parseFloat(selectedRequestForInterested.platformFee) || 0,
                 });
               }}
               isPending={assignMutation.isPending}
