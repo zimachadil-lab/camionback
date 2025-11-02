@@ -72,6 +72,106 @@ const reportSchema = z.object({
   type: z.string().min(1, "Type de problème requis"),
 });
 
+// Helper function to get client-friendly status with color
+function getClientStatus(request: any, interestedCount: number = 0) {
+  // 11. Commande terminée - Paiement validé
+  if (request.paymentStatus === "paid" || request.paymentStatus === "pending_admin_validation") {
+    return {
+      text: "Commande terminée",
+      variant: "default" as const,
+      icon: CheckCircle,
+    };
+  }
+
+  // 10. En attente de confirmation paiement - Livraison confirmée
+  if (request.paymentStatus === "awaiting_payment") {
+    return {
+      text: "En attente de confirmation paiement",
+      variant: "secondary" as const,
+      icon: CreditCard,
+    };
+  }
+
+  // 9. Livraison effectuée - Marquage "Livré"
+  if (request.status === "completed") {
+    return {
+      text: "Livraison effectuée ✅ Merci pour votre confiance",
+      variant: "default" as const,
+      icon: CheckCircle,
+    };
+  }
+
+  // 8. Livraison en cours - Transporteur marque "Pris en charge"
+  if (request.status === "in_progress") {
+    return {
+      text: "Livraison en cours 🚚📦",
+      variant: "default" as const,
+      icon: Truck,
+    };
+  }
+
+  // 7. Offre confirmée - Si client valide un transporteur
+  if (request.status === "accepted" && request.acceptedOfferId) {
+    return {
+      text: "Transporteur sélectionné ✅ Livraison prévue",
+      variant: "default" as const,
+      icon: CheckCircle,
+    };
+  }
+
+  // 6. Transporteur assigné manuellement - Coordinateur
+  if (request.assignedTransporterId && !request.acceptedOfferId) {
+    return {
+      text: "Transporteur assigné ✅ Suivi en cours",
+      variant: "default" as const,
+      icon: Truck,
+    };
+  }
+
+  // 5. En sélection Transporteur - Tant qu'aucune offre n'a été choisie
+  if (interestedCount > 0 && !request.acceptedOfferId && !request.assignedTransporterId) {
+    return {
+      text: "Choisissez votre transporteur 👇",
+      variant: "outline" as const,
+      icon: Users,
+    };
+  }
+
+  // 4. Transporteurs intéressés - Si ≥ 1 intéressé
+  if (request.status === "published_for_matching" && interestedCount > 0) {
+    return {
+      text: "Des transporteurs ont postulé 🚚 Comparez les profils",
+      variant: "outline" as const,
+      icon: Truck,
+    };
+  }
+
+  // 3. Publication aux transporteurs - Publication matching enclenchée
+  if (request.status === "published_for_matching") {
+    return {
+      text: "En attente d'offres transporteurs…",
+      variant: "secondary" as const,
+      icon: Package,
+    };
+  }
+
+  // 2. Prix vérifié / infos validées - Coordinateur valide détail + prix
+  if (request.qualifiedAt && request.status !== "published_for_matching") {
+    return {
+      text: "Finalisation de votre demande…",
+      variant: "secondary" as const,
+      icon: Info,
+    };
+  }
+
+  // 1. Création commande - Dès création (default)
+  return {
+    text: "Qualification logistique en cours…",
+    variant: "secondary" as const,
+    icon: RotateCcw,
+  };
+}
+
 function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onDelete, onViewTransporter, onUpdateStatus, onReport, users, cities, citiesLoading, currentUserId }: any) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showOffersDialog, setShowOffersDialog] = useState(false);
@@ -118,6 +218,10 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
   // Determine which workflow to use
   const isQualifiedWorkflow = !!request.qualifiedAt;
   const displayCount = isQualifiedWorkflow ? interestedTransporters.length : offersWithTransporters.length;
+
+  // Get client-friendly status
+  const clientStatus = getClientStatus(request, displayCount);
+  const StatusIcon = clientStatus.icon;
 
   const createdAt = request.createdAt 
     ? (typeof request.createdAt === 'string' ? new Date(request.createdAt) : request.createdAt)
@@ -336,6 +440,14 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                 Acceptée
               </Badge>
             )}
+          </div>
+
+          {/* Statut logistique visible */}
+          <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-[#1abc9c]/10 to-[#16a085]/10 rounded-lg border border-[#1abc9c]/30">
+            <StatusIcon className="w-5 h-5 text-[#1abc9c] flex-shrink-0" />
+            <span className="text-sm font-medium text-foreground">
+              {clientStatus.text}
+            </span>
           </div>
 
           {/* Infos compactes: Vues et Date */}
