@@ -1998,26 +1998,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Request not found" });
       }
 
-      if (request.status !== "accepted") {
-        return res.status(400).json({ error: "Only accepted requests can be marked as completed" });
+      // Accept requests that are either accepted OR already paid
+      const validStatuses = ["accepted", "completed"];
+      const validPaymentStatuses = ["awaiting_payment", "pending_admin_validation", "paid"];
+      
+      if (request.status !== "accepted" && !validPaymentStatuses.includes(request.paymentStatus || "")) {
+        return res.status(400).json({ error: "Only accepted or paid requests can be completed" });
       }
 
       if (!rating || rating < 1 || rating > 5) {
         return res.status(400).json({ error: "Valid rating (1-5) is required" });
       }
 
-      // Get the accepted offer to find the transporter
-      if (!request.acceptedOfferId) {
-        return res.status(400).json({ error: "No accepted offer found" });
-      }
-
-      const offer = await storage.getOffer(request.acceptedOfferId);
-      if (!offer) {
-        return res.status(404).json({ error: "Accepted offer not found" });
+      // Get transporter ID - either from accepted offer or manual assignment
+      let transporterId: string | null = null;
+      
+      if (request.acceptedOfferId) {
+        const offer = await storage.getOffer(request.acceptedOfferId);
+        if (!offer) {
+          return res.status(404).json({ error: "Accepted offer not found" });
+        }
+        transporterId = offer.transporterId;
+      } else if (request.assignedTransporterId) {
+        // Manually assigned by coordinator
+        transporterId = request.assignedTransporterId;
+      } else {
+        return res.status(400).json({ error: "No transporter assigned to this request" });
       }
 
       // Get transporter
-      const transporter = await storage.getUser(offer.transporterId);
+      const transporter = await storage.getUser(transporterId);
       if (!transporter) {
         return res.status(404).json({ error: "Transporter not found" });
       }
@@ -2031,7 +2041,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create individual rating record
       await storage.createRating({
         requestId: req.params.id,
-        transporterId: offer.transporterId,
+        transporterId: transporterId,
         clientId: request.clientId,
         score: rating,
         comment: null,
@@ -2044,7 +2054,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const newAverageRating = ((currentRating * currentTotalRatings) + rating) / newTotalRatings;
 
       // Update transporter stats
-      await storage.updateUser(offer.transporterId, {
+      await storage.updateUser(transporterId, {
         rating: newAverageRating.toFixed(2),
         totalRatings: newTotalRatings,
         totalTrips: (transporter.totalTrips || 0) + 1,
