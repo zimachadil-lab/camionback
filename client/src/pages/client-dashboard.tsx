@@ -62,9 +62,23 @@ const editRequestSchema = z.object({
   description: z.string().min(10, "Description minimale: 10 caractères"),
   goodsType: z.string().min(1, "Type de marchandise requis"),
   dateTime: z.string().optional(),
-  dateFlexible: z.boolean().default(false),
-  invoiceRequired: z.boolean().default(false),
   budget: z.string().optional(),
+  handlingRequired: z.boolean().default(false),
+  departureFloor: z.number().nullable().optional(),
+  departureElevator: z.boolean().nullable().optional(),
+  arrivalFloor: z.number().nullable().optional(),
+  arrivalElevator: z.boolean().nullable().optional(),
+}).refine((data) => {
+  if (data.handlingRequired) {
+    return data.departureFloor !== null && data.departureFloor !== undefined &&
+           data.arrivalFloor !== null && data.arrivalFloor !== undefined &&
+           data.departureElevator !== null && data.departureElevator !== undefined &&
+           data.arrivalElevator !== null && data.arrivalElevator !== undefined;
+  }
+  return true;
+}, {
+  message: "Tous les champs de manutention sont requis si la manutention est demandée",
+  path: ["handlingRequired"],
 });
 
 const reportSchema = z.object({
@@ -247,9 +261,12 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
       description: request.description || "",
       goodsType: request.goodsType || "",
       dateTime: formatDateTimeForInput(request.dateTime),
-      dateFlexible: request.dateFlexible || false,
-      invoiceRequired: request.invoiceRequired || false,
       budget: request.budget || "",
+      handlingRequired: request.handlingRequired || false,
+      departureFloor: request.departureFloor ?? null,
+      departureElevator: request.departureElevator ?? null,
+      arrivalFloor: request.arrivalFloor ?? null,
+      arrivalElevator: request.arrivalElevator ?? null,
     },
   });
 
@@ -262,9 +279,12 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
         description: request.description || "",
         goodsType: request.goodsType || "",
         dateTime: formatDateTimeForInput(request.dateTime),
-        dateFlexible: request.dateFlexible || false,
-        invoiceRequired: request.invoiceRequired || false,
         budget: request.budget || "",
+        handlingRequired: request.handlingRequired || false,
+        departureFloor: request.departureFloor ?? null,
+        departureElevator: request.departureElevator ?? null,
+        arrivalFloor: request.arrivalFloor ?? null,
+        arrivalElevator: request.arrivalElevator ?? null,
       });
       // Reset photos state - keep existing photos by default
       setEditPhotos([]);
@@ -321,8 +341,11 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
       toCity: data.toCity,
       description: data.description,
       goodsType: data.goodsType,
-      dateFlexible: data.dateFlexible,
-      invoiceRequired: data.invoiceRequired,
+      handlingRequired: data.handlingRequired,
+      departureFloor: data.departureFloor,
+      departureElevator: data.departureElevator,
+      arrivalFloor: data.arrivalFloor,
+      arrivalElevator: data.arrivalElevator,
     };
     
     if (data.dateTime) {
@@ -1107,49 +1130,129 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                 )}
               />
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField
-                  control={editForm.control}
-                  name="dateFlexible"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          data-testid="edit-checkbox-date-flexible"
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel className="cursor-pointer">
-                          Date flexible
-                        </FormLabel>
-                      </div>
-                    </FormItem>
-                  )}
-                />
+              <FormField
+                control={editForm.control}
+                name="handlingRequired"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        data-testid="edit-checkbox-handling-required"
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="cursor-pointer">
+                        Besoin de manutention
+                      </FormLabel>
+                      <p className="text-sm text-muted-foreground">
+                        Si vous avez besoin d'aide pour charger/décharger avec étages
+                      </p>
+                    </div>
+                  </FormItem>
+                )}
+              />
 
-                <FormField
-                  control={editForm.control}
-                  name="invoiceRequired"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          data-testid="edit-checkbox-invoice-required"
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel className="cursor-pointer">
-                          Besoin d'une facture TTC
-                        </FormLabel>
-                      </div>
-                    </FormItem>
-                  )}
-                />
-              </div>
+              {editForm.watch("handlingRequired") && (
+                <div className="space-y-4 p-4 rounded-lg border bg-muted/50">
+                  <h3 className="font-semibold text-sm">Informations de manutention</h3>
+                  
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-4">
+                      <h4 className="text-sm font-medium">🏢 Départ</h4>
+                      <FormField
+                        control={editForm.control}
+                        name="departureFloor"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Étage au départ</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                placeholder="ex: 3" 
+                                min="0"
+                                data-testid="edit-input-departure-floor"
+                                {...field}
+                                value={field.value ?? ""}
+                                onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={editForm.control}
+                        name="departureElevator"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value ?? false}
+                                onCheckedChange={field.onChange}
+                                data-testid="edit-checkbox-departure-elevator"
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel className="cursor-pointer">
+                                Ascenseur disponible
+                              </FormLabel>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="space-y-4">
+                      <h4 className="text-sm font-medium">🏠 Arrivée</h4>
+                      <FormField
+                        control={editForm.control}
+                        name="arrivalFloor"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Étage à l'arrivée</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                placeholder="ex: 2" 
+                                min="0"
+                                data-testid="edit-input-arrival-floor"
+                                {...field}
+                                value={field.value ?? ""}
+                                onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={editForm.control}
+                        name="arrivalElevator"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value ?? false}
+                                onCheckedChange={field.onChange}
+                                data-testid="edit-checkbox-arrival-elevator"
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel className="cursor-pointer">
+                                Ascenseur disponible
+                              </FormLabel>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Section Photos */}
               <div className="space-y-3">

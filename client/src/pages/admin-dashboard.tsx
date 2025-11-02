@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCircle, UserCheck, CreditCard, Phone, Eye, EyeOff, TruckIcon, MapPin, Calendar, FileText, MessageSquare, Trash2, Send, Flag, Pencil, Camera, RefreshCw, Circle, Edit, Compass, Settings } from "lucide-react";
+import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCircle, UserCheck, CreditCard, Phone, Eye, EyeOff, TruckIcon, MapPin, Calendar, FileText, MessageSquare, Trash2, Send, Flag, Pencil, Camera, RefreshCw, Circle, Edit, Compass, Settings, Weight, Building2, Home } from "lucide-react";
 import { LoadingTruck } from "@/components/ui/loading-truck";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -3671,14 +3671,55 @@ export default function AdminDashboard() {
                         <p className="text-sm text-muted-foreground">Description</p>
                         <p className="mt-1">{request.description}</p>
                       </div>
-                      <div className="flex gap-2">
-                        {request.dateFlexible && (
-                          <Badge variant="outline">Date flexible</Badge>
-                        )}
-                        {request.invoiceRequired && (
-                          <Badge variant="outline">Facture TTC requise</Badge>
-                        )}
-                      </div>
+                      {/* Handling/Manutention Information */}
+                      {request.handlingRequired !== undefined && request.handlingRequired !== null && (
+                        <div className="p-3 rounded-lg border bg-muted/30 space-y-2">
+                          <div className="flex items-center gap-2 text-sm font-medium">
+                            <Weight className="w-4 h-4" />
+                            <span>Manutention : {request.handlingRequired ? 'Oui' : 'Non'}</span>
+                          </div>
+                          {request.handlingRequired && (
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-1 text-muted-foreground">
+                                  <Building2 className="w-3 h-3" />
+                                  <span className="font-medium">Départ</span>
+                                </div>
+                                <div className="pl-4">
+                                  {request.departureFloor !== undefined && request.departureFloor !== null ? (
+                                    <>
+                                      <div>{request.departureFloor === 0 ? 'RDC' : `${request.departureFloor}ᵉ étage`}</div>
+                                      <div className="text-muted-foreground flex items-center gap-1">
+                                        Ascenseur {request.departureElevator ? <CheckCircle className="w-3 h-3 text-green-600" /> : <XCircle className="w-3 h-3 text-red-600" />}
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <div className="text-muted-foreground">Non spécifié</div>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-1 text-muted-foreground">
+                                  <Home className="w-3 h-3" />
+                                  <span className="font-medium">Arrivée</span>
+                                </div>
+                                <div className="pl-4">
+                                  {request.arrivalFloor !== undefined && request.arrivalFloor !== null ? (
+                                    <>
+                                      <div>{request.arrivalFloor === 0 ? 'RDC' : `${request.arrivalFloor}ᵉ étage`}</div>
+                                      <div className="text-muted-foreground flex items-center gap-1">
+                                        Ascenseur {request.arrivalElevator ? <CheckCircle className="w-3 h-3 text-green-600" /> : <XCircle className="w-3 h-3 text-red-600" />}
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <div className="text-muted-foreground">Non spécifié</div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                       {request.photos && request.photos.length > 0 && (
                         <div>
                           <p className="text-sm text-muted-foreground mb-2">Photos</p>
@@ -3841,12 +3882,6 @@ export default function AdminDashboard() {
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Date flexible</p>
-                        <p className="font-medium">
-                          {selectedRequest.dateFlexible ? "Oui" : "Non"}
-                        </p>
-                      </div>
-                      <div>
                         <p className="text-sm text-muted-foreground">Type de marchandise</p>
                         <p className="font-medium">{selectedRequest.goodsType}</p>
                       </div>
@@ -3857,10 +3892,6 @@ export default function AdminDashboard() {
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Facture TTC requise</p>
-                        <p className="font-medium">{selectedRequest.invoiceRequired ? "Oui" : "Non"}</p>
-                      </div>
-                      <div>
                         <p className="text-sm text-muted-foreground">Nombre de vues</p>
                         <p className="font-medium">{selectedRequest.viewCount || 0}</p>
                       </div>
@@ -3869,6 +3900,55 @@ export default function AdminDashboard() {
                       <p className="text-sm text-muted-foreground">Description</p>
                       <p className="font-medium text-sm bg-muted p-3 rounded-md">{selectedRequest.description}</p>
                     </div>
+                    {/* Handling/Manutention Information */}
+                    {selectedRequest.handlingRequired !== undefined && selectedRequest.handlingRequired !== null && (
+                      <div className="p-3 rounded-lg border bg-muted/30 space-y-2">
+                        <div className="flex items-center gap-2 text-sm font-medium">
+                          <Weight className="w-4 h-4" />
+                          <span>Manutention : {selectedRequest.handlingRequired ? 'Oui' : 'Non'}</span>
+                        </div>
+                        {selectedRequest.handlingRequired && (
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-1 text-muted-foreground">
+                                <Building2 className="w-3 h-3" />
+                                <span className="font-medium">Départ</span>
+                              </div>
+                              <div className="pl-4">
+                                {selectedRequest.departureFloor !== undefined && selectedRequest.departureFloor !== null ? (
+                                  <>
+                                    <div>{selectedRequest.departureFloor === 0 ? 'RDC' : `${selectedRequest.departureFloor}ᵉ étage`}</div>
+                                    <div className="text-muted-foreground flex items-center gap-1">
+                                      Ascenseur {selectedRequest.departureElevator ? <CheckCircle className="w-3 h-3 text-green-600" /> : <XCircle className="w-3 h-3 text-red-600" />}
+                                    </div>
+                                  </>
+                                ) : (
+                                  <div className="text-muted-foreground">Non spécifié</div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-1 text-muted-foreground">
+                                <Home className="w-3 h-3" />
+                                <span className="font-medium">Arrivée</span>
+                              </div>
+                              <div className="pl-4">
+                                {selectedRequest.arrivalFloor !== undefined && selectedRequest.arrivalFloor !== null ? (
+                                  <>
+                                    <div>{selectedRequest.arrivalFloor === 0 ? 'RDC' : `${selectedRequest.arrivalFloor}ᵉ étage`}</div>
+                                    <div className="text-muted-foreground flex items-center gap-1">
+                                      Ascenseur {selectedRequest.arrivalElevator ? <CheckCircle className="w-3 h-3 text-green-600" /> : <XCircle className="w-3 h-3 text-red-600" />}
+                                    </div>
+                                  </>
+                                ) : (
+                                  <div className="text-muted-foreground">Non spécifié</div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
