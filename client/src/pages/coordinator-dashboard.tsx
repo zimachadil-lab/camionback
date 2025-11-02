@@ -1498,282 +1498,6 @@ export default function CoordinatorDashboard() {
             <DialogHeader>
               <DialogTitle>Détails de la commande - {selectedRequest.referenceId}</DialogTitle>
               <DialogDescription>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {/* Itineraire */}
-                        <div className="space-y-2">
-                          <p className="text-sm text-muted-foreground">Itinéraire</p>
-                          <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4 text-[#5BC0EB]" />
-                            <span className="font-medium">{emptyReturn.fromCity}</span>
-                            <span className="text-muted-foreground">→</span>
-                            <span className="font-medium">{emptyReturn.toCity}</span>
-                          </div>
-                        </div>
-
-                        {/* Date */}
-                        <div className="space-y-2">
-                          <p className="text-sm text-muted-foreground">Date de retour</p>
-                          <p className="font-medium">
-                            {format(new Date(emptyReturn.returnDate), "dd MMMM yyyy", { locale: fr })}
-                          </p>
-                        </div>
-
-                        {/* Transporteur */}
-                        <div className="space-y-2">
-                          <p className="text-sm text-muted-foreground">Transporteur</p>
-                          <div className="space-y-1">
-                            <p className="font-medium">{emptyReturn.transporter?.name || "Non défini"}</p>
-                            {emptyReturn.transporter?.phoneNumber && (
-                              <a 
-                                href={`tel:${emptyReturn.transporter.phoneNumber}`}
-                                className="text-[#5BC0EB] hover:underline text-sm flex items-center gap-1"
-                                data-testid={`link-call-transporter-${emptyReturn.id}`}
-                              >
-                                <Phone className="h-3 w-3" />
-                                {emptyReturn.transporter.phoneNumber}
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t">
-                        <Button
-                          variant="default"
-                          size="sm"
-                          className="bg-[#5BC0EB] hover:bg-[#4AA8D8] gap-2"
-                          onClick={() => {
-                            setSelectedEmptyReturn(emptyReturn);
-                            setAssignOrderDialogOpen(true);
-                          }}
-                          data-testid={`button-assign-order-${emptyReturn.id}`}
-                        >
-                          <CheckCircle className="h-4 w-4" />
-                          Affecter une commande
-                        </Button>
-
-                        {emptyReturn.transporter && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="gap-2"
-                            onClick={() => handleLoadTruckPhotos(emptyReturn.transporterId)}
-                            disabled={loadingTruckPhotos[emptyReturn.transporterId]}
-                            data-testid={`button-view-truck-photo-${emptyReturn.id}`}
-                          >
-                            {loadingTruckPhotos[emptyReturn.transporterId] ? (
-                              <span className="animate-spin">⏳</span>
-                            ) : (
-                              <Truck className="h-4 w-4" />
-                            )}
-                            Photo du camion
-                          </Button>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="coordination" className="space-y-4">
-            <Tabs defaultValue="nouveau" className="w-full">
-              {/* Filtres de coordination */}
-              <div className="flex flex-col sm:flex-row gap-3 mb-4">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Rechercher par référence, ville, client, coordinateur..."
-                      value={coordinationSearchQuery}
-                      onChange={(e) => setCoordinationSearchQuery(e.target.value)}
-                      className="pl-10"
-                      data-testid="input-coordination-search"
-                    />
-                  </div>
-                </div>
-                <div className="w-full sm:w-64">
-                  <Select
-                    value={coordinationAssignedFilter}
-                    onValueChange={setCoordinationAssignedFilter}
-                  >
-                    <SelectTrigger data-testid="select-assigned-filter">
-                      <SelectValue placeholder="Assignée à..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all" data-testid="option-all-coordinators">Tous les coordinateurs</SelectItem>
-                      {Array.isArray(coordinators) && coordinators.map((coordinator: any) => (
-                        <SelectItem key={coordinator.id} value={coordinator.id} data-testid={`option-coordinator-${coordinator.id}`}>
-                          {coordinator?.name || `Coordinateur ${coordinator.id.slice(0, 8)}`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {(coordinationAssignedFilter !== "all" || coordinationSearchQuery) && (
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setCoordinationAssignedFilter("all");
-                      setCoordinationSearchQuery("");
-                    }}
-                    data-testid="button-clear-filters"
-                  >
-                    Effacer
-                  </Button>
-                )}
-              </div>
-              
-              <TabsList className="grid w-full grid-cols-4 mb-4">
-                <TabsTrigger value="nouveau" data-testid="tab-coord-nouveau" className="gap-1 px-2">
-                  <span className="text-xs sm:text-sm">À qualifier</span>
-                  <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white text-xs px-1.5 py-0">
-                    {nouveauRequests.length}
-                  </Badge>
-                </TabsTrigger>
-                <TabsTrigger value="en-action" data-testid="tab-coord-en-action" className="gap-1 px-2">
-                  <span className="text-xs sm:text-sm">En Action</span>
-                  <Badge className="bg-amber-500 hover:bg-amber-600 text-white text-xs px-1.5 py-0">
-                    {enActionRequests.length}
-                  </Badge>
-                </TabsTrigger>
-                <TabsTrigger value="prioritaires" data-testid="tab-coord-prioritaires" className="gap-1 px-2">
-                  <span className="text-xs sm:text-sm">Prioritaires</span>
-                  <Badge className="bg-red-500 hover:bg-red-600 text-white text-xs px-1.5 py-0">
-                    {prioritairesRequests.length}
-                  </Badge>
-                </TabsTrigger>
-                <TabsTrigger value="archives" data-testid="tab-coord-archives" className="gap-1 px-2">
-                  <span className="text-xs sm:text-sm">Archives</span>
-                  <Badge className="bg-gray-500 hover:bg-gray-600 text-white text-xs px-1.5 py-0">
-                    {archivesRequests.length}
-                  </Badge>
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="nouveau" className="space-y-4">
-                {nouveauLoading ? (
-                  <div className="flex justify-center py-12">
-                    <LoadingTruck />
-                  </div>
-                ) : nouveauRequests.length === 0 ? (
-                  <Card>
-                    <CardContent className="py-12 text-center text-muted-foreground">
-                      <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                      <p>Aucune commande à qualifier</p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  nouveauRequests.map((request: any) => renderRequestCard(request, true, false, true, true))
-                )}
-              </TabsContent>
-
-              <TabsContent value="en-action" className="space-y-4">
-                {enActionLoading ? (
-                  <div className="flex justify-center py-12">
-                    <LoadingTruck />
-                  </div>
-                ) : enActionRequests.length === 0 ? (
-                  <Card>
-                    <CardContent className="py-12 text-center text-muted-foreground">
-                      <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                      <p>Aucune commande en action</p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  enActionRequests.map((request: any) => renderRequestCard(request, true, true, true))
-                )}
-              </TabsContent>
-
-              <TabsContent value="prioritaires" className="space-y-4">
-                {prioritairesLoading ? (
-                  <div className="flex justify-center py-12">
-                    <LoadingTruck />
-                  </div>
-                ) : prioritairesRequests.length === 0 ? (
-                  <Card>
-                    <CardContent className="py-12 text-center text-muted-foreground">
-                      <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                      <p>Aucune commande prioritaire</p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  prioritairesRequests.map((request: any) => renderRequestCard(request, true, true, true))
-                )}
-              </TabsContent>
-
-              <TabsContent value="archives" className="space-y-4">
-                {archivesLoading ? (
-                  <div className="flex justify-center py-12">
-                    <LoadingTruck />
-                  </div>
-                ) : archivesRequests.length === 0 ? (
-                  <Card>
-                    <CardContent className="py-12 text-center text-muted-foreground">
-                      <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                      <p>Aucune commande archivée</p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  archivesRequests.map((request: any) => renderRequestCard(request, true, true, true))
-                )}
-              </TabsContent>
-            </Tabs>
-          </TabsContent>
-        </Tabs>
-      </main>
-
-      {/* Chat Window */}
-      {chatOpen && selectedParticipants && (
-        <ChatWindow
-          open={chatOpen}
-          currentUserId={user.id}
-          currentUserRole="coordinateur"
-          otherUser={selectedParticipants.transporter}
-          requestId={chatRequestId}
-          onClose={() => {
-            setChatOpen(false);
-            setSelectedParticipants(null);
-          }}
-        />
-      )}
-
-      {/* Photo Gallery Dialog */}
-      <PhotoGalleryDialog
-        photos={selectedPhotos}
-        open={photoGalleryOpen}
-        onClose={() => setPhotoGalleryOpen(false)}
-        referenceId={selectedReferenceId}
-      />
-
-      {/* Offers Dialog */}
-      {selectedRequestForOffers && (
-        <Dialog open={offersDialogOpen} onOpenChange={setOffersDialogOpen}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto" data-testid="dialog-coordinator-offers">
-            <DialogHeader>
-              <DialogTitle>Offres reçues - {selectedRequestForOffers.referenceId}</DialogTitle>
-              <DialogDescription>
-                {selectedRequestForOffers.fromCity} → {selectedRequestForOffers.toCity}
-              </DialogDescription>
-            </DialogHeader>
-            <CoordinatorOffersView 
-              requestId={selectedRequestForOffers.id}
-              onAcceptOffer={(offerId) => acceptOfferMutation.mutate(offerId)}
-              isPending={acceptOfferMutation.isPending}
-            />
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {/* Request Details Dialog */}
-      {selectedRequest && (
-        <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Détails de la commande - {selectedRequest.referenceId}</DialogTitle>
-              <DialogDescription>
                 Informations complètes sur la commande
               </DialogDescription>
             </DialogHeader>
@@ -2010,8 +1734,8 @@ export default function CoordinatorDashboard() {
               >
                 Annuler
               </Button>
-              <Button 
-                onClick={handleEditSubmit}
+              <Button
+                onClick={handleUpdateRequest}
                 disabled={updateRequestMutation.isPending}
                 data-testid="button-save-edit"
               >
@@ -2022,157 +1746,49 @@ export default function CoordinatorDashboard() {
         </Dialog>
       )}
 
-      {/* Assign Order Dialog */}
-      <Dialog open={assignOrderDialogOpen} onOpenChange={setAssignOrderDialogOpen}>
-        <DialogContent className="max-w-[90vw] sm:max-w-3xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Affecter une commande</DialogTitle>
-            <DialogDescription>
-              Sélectionnez une commande ouverte à affecter au transporteur
-              {selectedEmptyReturn && (
-                <span className="block mt-2 text-sm">
-                  Retour: <strong>{selectedEmptyReturn.fromCity} → {selectedEmptyReturn.toCity}</strong>
-                  {" "}le{" "}
-                  <strong>{new Date(selectedEmptyReturn.returnDate).toLocaleDateString("fr-FR")}</strong>
-                </span>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            {(() => {
-              const openRequests = availableRequests.filter((req: any) => 
-                req.status === "open" && !req.isHidden
-              );
-
-              if (availableLoading) {
-                return (
-                  <div className="flex justify-center py-8">
-                    <LoadingTruck />
-                  </div>
-                );
-              }
-
-              if (openRequests.length === 0) {
-                return (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p>Aucune commande disponible à affecter</p>
-                  </div>
-                );
-              }
-
-              return (
-                <div className="space-y-3">
-                  {openRequests.map((request: any) => {
-                    const client = request.client;
-                    return (
-                      <Card 
-                        key={request.id}
-                        className="hover-elevate cursor-pointer"
-                        onClick={() => {
-                          if (selectedEmptyReturn) {
-                            assignOrderMutation.mutate({
-                              emptyReturnId: selectedEmptyReturn.id,
-                              requestId: request.id,
-                            });
-                          }
-                        }}
-                        data-testid={`card-assign-request-${request.id}`}
-                      >
-                        <CardContent className="p-4">
-                          <div className="flex justify-between items-start gap-4">
-                            <div className="flex-1 space-y-2">
-                              <div className="flex items-center gap-2">
-                                <Badge variant="outline">Réf: {request.referenceId}</Badge>
-                                <span className="text-sm text-muted-foreground">
-                                  Client {client?.clientId || "Non défini"}
-                                </span>
-                              </div>
-                              <p className="font-medium">
-                                {request.fromCity} → {request.toCity}
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                {format(new Date(request.dateTime), "dd MMMM yyyy 'à' HH:mm", { locale: fr })}
-                              </p>
-                            </div>
-                            <Button
-                              size="sm"
-                              className="bg-[#5BC0EB] hover:bg-[#4AA8D8]"
-                              disabled={assignOrderMutation.isPending}
-                            >
-                              {assignOrderMutation.isPending ? "Affectation..." : "Affecter"}
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              );
-            })()}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Coordination Status Dialog */}
-      {selectedRequestForCoordination && (
-        <Dialog open={coordinationDialogOpen} onOpenChange={setCoordinationDialogOpen}>
-          <DialogContent className="max-w-lg">
+      {/* Archive Request Dialog */}
+      {archiveRequestData && (
+        <Dialog open={archiveDialogOpen} onOpenChange={setArchiveDialogOpen}>
+          <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Statut de coordination</DialogTitle>
+              <DialogTitle>Archiver la commande</DialogTitle>
               <DialogDescription>
-                Modifier le statut de coordination pour {selectedRequestForCoordination.referenceId}
+                Veuillez sélectionner un motif d'archivage
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">Statut</label>
-                <Select value={selectedCoordinationStatus} onValueChange={setSelectedCoordinationStatus}>
-                  <SelectTrigger data-testid="select-coordination-status">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="nouveau">Nouveau</SelectItem>
-                    {Array.isArray(coordinationStatuses) && coordinationStatuses
-                      .filter((s: any) => s.category === "en_action")
-                      .sort((a: any, b: any) => a.displayOrder - b.displayOrder)
-                      .map((status: any) => (
-                        <SelectItem key={status.id} value={status.value}>
-                          {status.label}
-                        </SelectItem>
-                      ))}
-                    {Array.isArray(coordinationStatuses) && coordinationStatuses
-                      .filter((s: any) => s.category === "prioritaires")
-                      .sort((a: any, b: any) => a.displayOrder - b.displayOrder)
-                      .map((status: any) => (
-                        <SelectItem key={status.id} value={status.value}>
-                          {status.label}
-                        </SelectItem>
-                      ))}
-                    <SelectItem value="archive">Archive</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <Select
+                value={archiveRequestData.archiveReason || ""}
+                onValueChange={(value) => setArchiveRequestData({ ...archiveRequestData, archiveReason: value as any })}
+              >
+                <SelectTrigger data-testid="select-archive-reason">
+                  <SelectValue placeholder="Sélectionnez un motif" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="client_cancelled">Client a annulé</SelectItem>
+                  <SelectItem value="no_transporters_available">Aucun transporteur disponible</SelectItem>
+                  <SelectItem value="client_found_alternative">Client a trouvé une alternative</SelectItem>
+                  <SelectItem value="expired">Demande expirée</SelectItem>
+                  <SelectItem value="duplicate_request">Demande dupliquée</SelectItem>
+                  <SelectItem value="budget_too_low">Budget insuffisant</SelectItem>
+                  <SelectItem value="route_not_serviceable">Itinéraire non desservable</SelectItem>
+                  <SelectItem value="administrative_error">Erreur administrative</SelectItem>
+                  <SelectItem value="client_unreachable">Client injoignable</SelectItem>
+                  <SelectItem value="goods_not_transportable">Marchandises non transportables</SelectItem>
+                  <SelectItem value="completed">Complétée avec succès</SelectItem>
+                  <SelectItem value="other">Autre</SelectItem>
+                </SelectContent>
+              </Select>
 
-              <div>
-                <label className="text-sm font-medium mb-2 block">Raison (optionnel)</label>
-                <Input
-                  value={coordinationReason}
-                  onChange={(e) => setCoordinationReason(e.target.value)}
-                  placeholder="Notes ou raison du changement..."
-                  data-testid="input-coordination-reason"
-                />
-              </div>
-
-              {selectedCoordinationStatus === "rappel_prevu" && (
+              {archiveRequestData.archiveReason === "other" && (
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Date de rappel</label>
+                  <label className="text-sm font-medium mb-1 block">Précisez le motif</label>
                   <Input
-                    type="date"
-                    value={coordinationReminderDate}
-                    onChange={(e) => setCoordinationReminderDate(e.target.value)}
-                    data-testid="input-coordination-reminder-date"
+                    value={archiveRequestData.archiveComment || ""}
+                    onChange={(e) => setArchiveRequestData({ ...archiveRequestData, archiveComment: e.target.value })}
+                    placeholder="Motif d'archivage..."
+                    data-testid="input-archive-comment"
                   />
                 </div>
               )}
@@ -2181,46 +1797,147 @@ export default function CoordinatorDashboard() {
             <DialogFooter>
               <Button 
                 variant="outline" 
-                onClick={() => setCoordinationDialogOpen(false)}
-                disabled={updateCoordinationStatusMutation.isPending}
+                onClick={() => setArchiveDialogOpen(false)}
+                disabled={archiveRequestMutation.isPending}
               >
                 Annuler
               </Button>
-              <Button 
-                onClick={handleUpdateCoordinationStatus}
-                disabled={updateCoordinationStatusMutation.isPending}
-                data-testid="button-save-coordination"
+              <Button
+                onClick={handleArchiveRequest}
+                disabled={archiveRequestMutation.isPending || !archiveRequestData.archiveReason}
+                data-testid="button-confirm-archive"
               >
-                {updateCoordinationStatusMutation.isPending ? "Enregistrement..." : "Enregistrer"}
+                {archiveRequestMutation.isPending ? "Archivage..." : "Archiver"}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
 
-      {/* Truck Photo Dialog */}
-      <Dialog open={truckPhotoDialogOpen} onOpenChange={setTruckPhotoDialogOpen}>
-        <DialogContent className="max-w-3xl">
+      {/* Truck Photos Dialog */}
+      <Dialog open={truckPhotosDialogOpen} onOpenChange={setTruckPhotosDialogOpen}>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Photo du camion</DialogTitle>
+            <DialogTitle>Photos du camion</DialogTitle>
+            <DialogDescription>
+              Photos du véhicule du transporteur
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            {selectedTruckPhoto ? (
-              <img
-                src={selectedTruckPhoto}
-                alt="Photo du camion"
-                className="w-full h-auto rounded-lg"
-                data-testid="img-truck-photo"
-              />
-            ) : (
-              <div className="text-center py-12 text-muted-foreground">
-                <Truck className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>Aucune photo disponible pour ce camion</p>
+
+          <div className="grid grid-cols-2 gap-4">
+            {selectedTruckPhotos.map((photo: any, index: number) => (
+              <div key={index}>
+                <img
+                  src={photo.photoUrl}
+                  alt={`Photo camion ${index + 1}`}
+                  className="w-full h-48 object-cover rounded"
+                />
               </div>
-            )}
+            ))}
           </div>
+
+          {selectedTruckPhotos.length === 0 && (
+            <p className="text-center text-muted-foreground py-8">Aucune photo disponible</p>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTruckPhotosDialogOpen(false)}>
+              Fermer
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Assign Order to Empty Return Dialog */}
+      {selectedEmptyReturn && (
+        <Dialog open={assignOrderDialogOpen} onOpenChange={setAssignOrderDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Affecter une commande au retour à vide</DialogTitle>
+              <DialogDescription>
+                Transporteur: {selectedEmptyReturn.transporter?.name} | 
+                {selectedEmptyReturn.fromCity} → {selectedEmptyReturn.toCity} | 
+                Date: {format(new Date(selectedEmptyReturn.returnDate), "dd/MM/yyyy", { locale: fr })}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              {qualifiedRequests.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">
+                  Aucune commande qualifiée compatible
+                </p>
+              ) : (
+                qualifiedRequests
+                  .filter((req: any) => 
+                    req.fromCity === selectedEmptyReturn.fromCity &&
+                    req.toCity === selectedEmptyReturn.toCity
+                  )
+                  .map((request: any) => (
+                    <Card key={request.id} className="hover-elevate">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1">
+                            <CardTitle className="text-base">{request.referenceId}</CardTitle>
+                            <CardDescription className="text-sm mt-1">
+                              {request.fromCity} → {request.toCity}
+                            </CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="space-y-2 text-sm">
+                          <div className="flex items-center gap-2">
+                            <Package className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-muted-foreground">Marchandise:</span>
+                            <span className="font-medium">{request.goodsType}</span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-muted-foreground">Date:</span>
+                            <span className="font-medium">
+                              {format(new Date(request.dateTime), "dd MMMM yyyy", { locale: fr })}
+                            </span>
+                          </div>
+
+                          {request.client && (
+                            <div className="flex items-center gap-2">
+                              <Phone className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-muted-foreground">Client:</span>
+                              <span className="font-medium">{request.client.name}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <Button
+                          size="sm"
+                          variant="default"
+                          className="w-full bg-[#5BC0EB] hover:bg-[#4AA8D8]"
+                          onClick={() => {
+                            // Here you would implement the assignment logic
+                            toast({
+                              title: "Fonctionnalité à venir",
+                              description: "L'affectation automatique sera bientôt disponible",
+                            });
+                          }}
+                          data-testid={`button-assign-request-${request.id}`}
+                        >
+                          Affecter cette commande
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setAssignOrderDialogOpen(false)}>
+                Fermer
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Manual Assignment Dialog */}
       {selectedRequestForAssignment && (
