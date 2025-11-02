@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, MessageCircle, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck, Trash2, Share2, Copy, Send } from "lucide-react";
+import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, MessageCircle, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck, Trash2, Share2, Copy, Send, RotateCcw, Info, Users, CreditCard } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -22,6 +22,106 @@ import { ManualAssignmentDialog } from "@/components/coordinator/manual-assignme
 import { QualificationDialog } from "@/components/coordinator/qualification-dialog";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+
+// Helper function to get client-friendly status with color
+function getClientStatus(request: any, interestedCount: number = 0) {
+  // 11. Commande terminée - Paiement validé
+  if (request.paymentStatus === "paid" || request.paymentStatus === "pending_admin_validation") {
+    return {
+      text: "Commande terminée",
+      variant: "default" as const,
+      icon: CheckCircle,
+    };
+  }
+
+  // 10. En attente de confirmation paiement - Livraison confirmée
+  if (request.paymentStatus === "awaiting_payment") {
+    return {
+      text: "En attente de confirmation paiement",
+      variant: "secondary" as const,
+      icon: CreditCard,
+    };
+  }
+
+  // 9. Livraison effectuée - Marquage "Livré"
+  if (request.status === "completed") {
+    return {
+      text: "Livraison effectuée ✅ Merci pour votre confiance",
+      variant: "default" as const,
+      icon: CheckCircle,
+    };
+  }
+
+  // 8. Livraison en cours - Transporteur marque "Pris en charge"
+  if (request.status === "in_progress") {
+    return {
+      text: "Livraison en cours 🚚📦",
+      variant: "default" as const,
+      icon: Truck,
+    };
+  }
+
+  // 7. Offre confirmée - Si client valide un transporteur
+  if (request.status === "accepted" && request.acceptedOfferId) {
+    return {
+      text: "Transporteur sélectionné ✅ Livraison prévue",
+      variant: "default" as const,
+      icon: CheckCircle,
+    };
+  }
+
+  // 6. Transporteur assigné manuellement - Coordinateur
+  if (request.assignedTransporterId && !request.acceptedOfferId) {
+    return {
+      text: "Transporteur assigné ✅ Suivi en cours",
+      variant: "default" as const,
+      icon: Truck,
+    };
+  }
+
+  // 5. En sélection Transporteur - Tant qu'aucune offre n'a été choisie
+  if (interestedCount > 0 && !request.acceptedOfferId && !request.assignedTransporterId) {
+    return {
+      text: "Choisissez votre transporteur 👇",
+      variant: "outline" as const,
+      icon: Users,
+    };
+  }
+
+  // 4. Transporteurs intéressés - Si ≥ 1 intéressé
+  if (request.status === "published_for_matching" && interestedCount > 0) {
+    return {
+      text: "Des transporteurs ont postulé 🚚 Comparez les profils",
+      variant: "outline" as const,
+      icon: Truck,
+    };
+  }
+
+  // 3. Publication aux transporteurs - Publication matching enclenchée
+  if (request.status === "published_for_matching") {
+    return {
+      text: "En attente d'offres transporteurs…",
+      variant: "secondary" as const,
+      icon: Package,
+    };
+  }
+
+  // 2. Prix vérifié / infos validées - Coordinateur valide détail + prix
+  if (request.qualifiedAt && request.status !== "published_for_matching") {
+    return {
+      text: "Finalisation de votre demande…",
+      variant: "secondary" as const,
+      icon: Info,
+    };
+  }
+
+  // 1. Création commande - Dès création (default)
+  return {
+    text: "Qualification logistique en cours…",
+    variant: "secondary" as const,
+    icon: RotateCcw,
+  };
+}
 
 // Component to display offers for coordinators with transporter contact info
 function CoordinatorOffersView({ requestId, onAcceptOffer, isPending }: { 
@@ -879,7 +979,14 @@ export default function CoordinatorDashboard() {
     queryClient.invalidateQueries({ queryKey: ["/api/coordinator/matching-requests"] });
   };
 
-  const renderRequestCard = (request: any, showVisibilityToggle = false, showPaymentControls = false, isCoordination = false, showQualifyButton = false) => (
+  const renderRequestCard = (request: any, showVisibilityToggle = false, showPaymentControls = false, isCoordination = false, showQualifyButton = false) => {
+    // Calculate interested count
+    const interestedCount = request.transporterInterests?.length || 0;
+    // Get client-friendly status
+    const clientStatus = getClientStatus(request, interestedCount);
+    const StatusIcon = clientStatus.icon;
+
+    return (
     <Card key={request.id} className="hover-elevate" data-testid={`card-request-${request.id}`}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
@@ -912,6 +1019,14 @@ export default function CoordinatorDashboard() {
               Créée le {format(new Date(request.createdAt), "dd MMM yyyy 'à' HH:mm", { locale: fr })}
             </p>
           </div>
+        </div>
+
+        {/* Statut logistique visible */}
+        <div className="flex items-center gap-2 px-3 py-2 mt-3 bg-gradient-to-r from-[#1abc9c]/10 to-[#16a085]/10 rounded-lg border border-[#1abc9c]/30">
+          <StatusIcon className="w-5 h-5 text-[#1abc9c] flex-shrink-0" />
+          <span className="text-sm font-medium text-foreground">
+            {clientStatus.text}
+          </span>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -1144,7 +1259,8 @@ export default function CoordinatorDashboard() {
         </div>
       </CardContent>
     </Card>
-  );
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background">
