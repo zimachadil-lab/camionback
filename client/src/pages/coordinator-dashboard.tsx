@@ -355,6 +355,10 @@ export default function CoordinatorDashboard() {
   const [selectedRequestForAssignment, setSelectedRequestForAssignment] = useState<any>(null);
   const [qualificationDialogOpen, setQualificationDialogOpen] = useState(false);
   const [selectedRequestForQualification, setSelectedRequestForQualification] = useState<any>(null);
+  const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
+  const [archiveRequestData, setArchiveRequestData] = useState<any>(null);
+  const [truckPhotosDialogOpen, setTruckPhotosDialogOpen] = useState(false);
+  const [selectedTruckPhotos, setSelectedTruckPhotos] = useState<any[]>([]);
   const { toast} = useToast();
 
   const handleLogout = () => {
@@ -735,6 +739,40 @@ export default function CoordinatorDashboard() {
     },
   });
 
+  // Archive request mutation
+  const archiveRequestMutation = useMutation({
+    mutationFn: async ({ requestId, archiveReason, archiveComment }: { requestId: string; archiveReason: string; archiveComment?: string }) => {
+      return apiRequest("PATCH", `/api/coordinator/requests/${requestId}/archive`, {
+        archiveReason,
+        archiveComment,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Commande archivée",
+        description: "La commande a été archivée avec succès",
+      });
+      setArchiveDialogOpen(false);
+      setArchiveRequestData(null);
+      // Invalidate all coordinator queries
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/qualification-pending"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/en-action"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/prioritaires"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/archives"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/available-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/active-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/payment-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/matching-requests"] });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Échec de l'archivage de la commande",
+      });
+    },
+  });
+
   // Redirect to login if not authenticated or not coordinator (after all hooks)
   useEffect(() => {
     if (!authLoading && (!user || user.role !== "coordinateur")) {
@@ -865,6 +903,15 @@ export default function CoordinatorDashboard() {
     setSelectedPhotos(photos);
     setSelectedReferenceId(referenceId || "");
     setPhotoGalleryOpen(true);
+  };
+
+  const handleArchiveRequest = () => {
+    if (!archiveRequestData) return;
+    archiveRequestMutation.mutate({
+      requestId: archiveRequestData.requestId,
+      archiveReason: archiveRequestData.archiveReason,
+      archiveComment: archiveRequestData.archiveComment,
+    });
   };
 
   const getPaymentStatusBadge = (status: string) => {
