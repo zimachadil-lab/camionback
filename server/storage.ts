@@ -3137,7 +3137,8 @@ export class DbStorage implements IStorage {
   }
 
   async getPublishedRequestsForTransporter(): Promise<any[]> {
-    // Explicitly project only transporter-safe columns (exclude all pricing fields)
+    // Explicitly project transporter-safe columns
+    // INCLUDE pricing fields that transporters need to see
     const requests = await db.select({
       id: transportRequests.id,
       clientId: transportRequests.clientId,
@@ -3155,8 +3156,12 @@ export class DbStorage implements IStorage {
       transporterInterests: transportRequests.transporterInterests,
       createdAt: transportRequests.createdAt,
       publishedForMatchingAt: transportRequests.publishedForMatchingAt,
-      // Explicitly exclude all pricing fields:
-      // transporterAmount, platformFee, clientTotal, budget
+      // Include coordinator-set pricing (transporters NEED to see their payment)
+      // Use alias 'transporterPrice' to match frontend component expectations
+      transporterPrice: transportRequests.transporterAmount,
+      platformFee: transportRequests.platformFee,
+      clientTotal: transportRequests.clientTotal,
+      // Exclude budget (old workflow field)
     })
       .from(transportRequests)
       .where(
