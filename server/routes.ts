@@ -4831,6 +4831,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get available requests for transporters (published for matching)
+  app.get("/api/transporter/available-requests", requireAuth, requireRole(['transporteur']), async (req, res) => {
+    try {
+      // Get published requests (already filtered and projected to exclude pricing)
+      // Storage layer handles: status, coordinationStatus, isHidden filtering
+      // AND projection to exclude all coordinator-only pricing fields
+      const requests = await storage.getPublishedRequestsForTransporter();
+      
+      res.json(requests);
+    } catch (error) {
+      console.error("Erreur récupération demandes disponibles:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération des demandes" });
+    }
+  });
+
   // Transporter withdraws interest from a request
   app.post("/api/transporter/withdraw-interest", requireAuth, requireRole(['transporteur']), async (req, res) => {
     try {

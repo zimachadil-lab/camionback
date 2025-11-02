@@ -156,6 +156,7 @@ export interface IStorage {
   qualifyRequest(requestId: string, transporterAmount: number, platformFee: number, coordinatorId: string): Promise<TransportRequest | undefined>;
   publishForMatching(requestId: string, coordinatorId: string): Promise<TransportRequest | undefined>;
   getMatchingRequests(filters?: { assignedToId?: string; searchQuery?: string }): Promise<any[]>;
+  getPublishedRequestsForTransporter(): Promise<any[]>;
   expressInterest(requestId: string, transporterId: string): Promise<TransportRequest | undefined>;
   withdrawInterest(requestId: string, transporterId: string): Promise<TransportRequest | undefined>;
   getInterestedTransportersForRequest(requestId: string): Promise<User[]>;
@@ -1228,6 +1229,9 @@ export class MemStorage implements IStorage {
     return undefined;
   }
   async getMatchingRequests(filters?: { assignedToId?: string; searchQuery?: string }): Promise<any[]> {
+    return [];
+  }
+  async getPublishedRequestsForTransporter(): Promise<any[]> {
     return [];
   }
   async expressInterest(requestId: string, transporterId: string): Promise<TransportRequest | undefined> {
@@ -3120,6 +3124,7 @@ export class DbStorage implements IStorage {
   async publishForMatching(requestId: string, coordinatorId: string): Promise<TransportRequest | undefined> {
     const result = await db.update(transportRequests)
       .set({
+        status: 'published_for_matching',
         coordinationStatus: 'matching',
         publishedForMatchingAt: new Date(),
         coordinationUpdatedAt: new Date(),
@@ -3129,6 +3134,44 @@ export class DbStorage implements IStorage {
       .returning();
     
     return result[0];
+  }
+
+  async getPublishedRequestsForTransporter(): Promise<any[]> {
+    // Explicitly project only transporter-safe columns (exclude all pricing fields)
+    const requests = await db.select({
+      id: transportRequests.id,
+      clientId: transportRequests.clientId,
+      referenceId: transportRequests.referenceId,
+      status: transportRequests.status,
+      fromCity: transportRequests.fromCity,
+      toCity: transportRequests.toCity,
+      description: transportRequests.description,
+      goodsType: transportRequests.goodsType,
+      dateTime: transportRequests.dateTime,
+      dateFlexible: transportRequests.dateFlexible,
+      invoiceRequired: transportRequests.invoiceRequired,
+      photos: transportRequests.photos,
+      declinedBy: transportRequests.declinedBy,
+      transporterInterests: transportRequests.transporterInterests,
+      createdAt: transportRequests.createdAt,
+      publishedForMatchingAt: transportRequests.publishedForMatchingAt,
+      // Explicitly exclude all pricing fields:
+      // transporterAmount, platformFee, clientTotal, budget
+    })
+      .from(transportRequests)
+      .where(
+        and(
+          eq(transportRequests.status, 'published_for_matching'),
+          eq(transportRequests.coordinationStatus, 'matching'),
+          or(
+            eq(transportRequests.isHidden, false),
+            isNull(transportRequests.isHidden)
+          )
+        )
+      )
+      .orderBy(desc(transportRequests.publishedForMatchingAt));
+    
+    return requests;
   }
 
   async getMatchingRequests(filters?: { assignedToId?: string; searchQuery?: string }): Promise<any[]> {
