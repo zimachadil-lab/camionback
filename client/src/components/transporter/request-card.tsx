@@ -251,7 +251,7 @@ export function RequestCard({
         )}
       </CardContent>
 
-      {showOfferButton && request.status === "open" && (
+      {showOfferButton && (request.status === "open" || request.status === "published_for_matching") && (
         <CardFooter className="p-4 pt-0 flex flex-row gap-2">
           {/* New interest-based workflow */}
           {onExpressInterest && onWithdrawInterest ? (
