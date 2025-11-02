@@ -500,13 +500,15 @@ export default function TransporterDashboard() {
     .filter((req: any) => {
       // Exclude requests declined by this transporter
       const notDeclined = !req.declinedBy || !req.declinedBy.includes(user.id);
+      // Exclude requests where transporter has already expressed interest
+      const notInterested = !req.transporterInterests?.includes(user.id);
       const cityMatch: boolean = selectedCity === "Toutes les villes" || 
                        req.fromCity === selectedCity || 
                        req.toCity === selectedCity;
       const searchMatch: boolean = searchQuery === "" || 
                          req.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          req.goodsType.toLowerCase().includes(searchQuery.toLowerCase());
-      return notDeclined && cityMatch && searchMatch;
+      return notDeclined && notInterested && cityMatch && searchMatch;
     })
     .sort((a: any, b: any) => {
       // Sort by most recent first
@@ -754,7 +756,7 @@ export default function TransporterDashboard() {
                 {requests
                   .filter((r: any) => r.transporterInterests?.includes(user?.id))
                   .map((request: any) => {
-                    const isPending = withdrawInterestMutation.isPending;
+                    const isPending = expressInterestMutation.isPending || withdrawInterestMutation.isPending;
                     
                     return (
                       <RequestCard
@@ -763,8 +765,9 @@ export default function TransporterDashboard() {
                         userStatus={user.status}
                         offerCount={0}
                         onTrackView={() => trackViewMutation.mutate(request.id)}
-                        // Interest-based props - already interested
+                        // Interest-based props - already interested, can withdraw
                         isInterested={true}
+                        onExpressInterest={(id) => expressInterestMutation.mutate(id)}
                         onWithdrawInterest={(id) => withdrawInterestMutation.mutate(id)}
                         isPendingInterest={isPending}
                       />
