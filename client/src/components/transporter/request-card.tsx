@@ -111,15 +111,19 @@ export function RequestCard({
     <>
     <Card className="overflow-hidden hover-elevate">
       <CardContent className="p-4 space-y-3">
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <Badge variant="outline" className="mb-2" data-testid={`text-reference-${request.id}`}>
-              {request.referenceId}
-            </Badge>
-            <h3 className="font-semibold text-lg mb-1">{request.goodsType}</h3>
+        <div className="space-y-2">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <Badge variant="outline" className="mb-2" data-testid={`text-reference-${request.id}`}>
+                {request.referenceId}
+              </Badge>
+              <h3 className="font-semibold text-lg mb-1">{request.goodsType}</h3>
+            </div>
           </div>
-          {request.status === "open" && (
-            <Badge variant="default" className="bg-green-600">Disponible</Badge>
+          {createdAt && (
+            <div className="text-sm font-medium text-green-600 dark:text-green-400">
+              Disponible depuis le {format(createdAt, "d MMMM yyyy", { locale: fr })}
+            </div>
           )}
         </div>
 
@@ -239,20 +243,12 @@ export function RequestCard({
         )}
 
         {/* Statistics */}
-        <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-          {request.viewCount !== undefined && (
-            <div className="flex items-center gap-1">
-              <Eye className="w-3 h-3" />
-              <span>{request.viewCount} vue{request.viewCount > 1 ? 's' : ''}</span>
-            </div>
-          )}
-          {createdAt && (
-            <div className="flex items-center gap-1">
-              <Calendar className="w-3 h-3" />
-              <span>Créée le {format(createdAt, "d MMM", { locale: fr })}</span>
-            </div>
-          )}
-        </div>
+        {request.viewCount !== undefined && (
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Eye className="w-3 h-3" />
+            <span>{request.viewCount} vue{request.viewCount > 1 ? 's' : ''}</span>
+          </div>
+        )}
 
         {request.photos && request.photos.length > 0 && (
           <Button
