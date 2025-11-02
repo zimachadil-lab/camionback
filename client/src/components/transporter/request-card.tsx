@@ -271,22 +271,22 @@ export function RequestCard({
                   <Button 
                     onClick={() => onDecline(request.id)} 
                     disabled={isPendingInterest}
-                    className="flex-1 bg-gray-600 hover:bg-gray-700"
+                    className="flex-1 bg-gray-600 hover:bg-gray-700 min-w-0"
                     variant="secondary"
                     data-testid={`button-not-available-${request.id}`}
                   >
-                    <ThumbsDown className="w-4 h-4 mr-2" />
-                    Pas disponible
+                    <ThumbsDown className="w-4 h-4 mr-1 flex-shrink-0" />
+                    <span className="truncate">Indisponible</span>
                   </Button>
                 )}
                 <Button 
                   onClick={handleExpressInterest} 
                   disabled={isPendingInterest}
-                  className="flex-1 bg-green-600 hover:bg-green-700"
+                  className="flex-1 bg-green-600 hover:bg-green-700 min-w-0"
                   data-testid={`button-express-interest-${request.id}`}
                 >
-                  <ThumbsUp className="w-4 h-4 mr-2" />
-                  {isPendingInterest ? "Envoi..." : "Je suis intéressé"}
+                  <ThumbsUp className="w-4 h-4 mr-1 flex-shrink-0" />
+                  <span className="truncate">{isPendingInterest ? "Envoi..." : "Intéressé"}</span>
                 </Button>
               </>
             )
