@@ -319,6 +319,180 @@ function CoordinatorOffersView({ requestId, onAcceptOffer, isPending }: {
   );
 }
 
+// Component to display interested transporters for coordinators
+function InterestedTransportersView({ request, onAssignTransporter, isPending }: { 
+  request: any; 
+  onAssignTransporter: (transporterId: string) => void;
+  isPending: boolean;
+}) {
+  const transporterInterests = request.transporterInterests || [];
+
+  // State for managing truck photo viewing
+  const [selectedTruckPhoto, setSelectedTruckPhoto] = useState<string | null>(null);
+  const [photoDialogOpen, setPhotoDialogOpen] = useState(false);
+
+  if (transporterInterests.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground" data-testid="text-no-interested">
+        <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
+        <p>Aucun transporteur intéressé pour cette commande</p>
+      </div>
+    );
+  }
+
+  const handleViewTruckPhoto = (truckPhotos: string[] | null) => {
+    const photo = truckPhotos && truckPhotos.length > 0 ? truckPhotos[0] : null;
+    setSelectedTruckPhoto(photo);
+    setPhotoDialogOpen(true);
+  };
+
+  return (
+    <>
+      <div className="grid gap-4 md:grid-cols-2 mt-4" data-testid="grid-interested">
+        {transporterInterests.map((interest: any) => (
+          <Card key={interest.id} className="overflow-hidden" data-testid={`card-interested-${interest.id}`}>
+            <CardContent className="p-4 space-y-3">
+              {/* Truck Photo Button */}
+              {interest.transporter?.truckPhotos && interest.transporter.truckPhotos.length > 0 && (
+                <div className="mb-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full gap-2"
+                    onClick={() => handleViewTruckPhoto(interest.transporter.truckPhotos)}
+                    data-testid={`button-view-truck-photo-${interest.id}`}
+                  >
+                    <Truck className="h-4 w-4" />
+                    Voir photo du camion
+                  </Button>
+                </div>
+              )}
+
+              {/* Transporter Info */}
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Truck className="h-4 w-4 text-[#17cfcf]" />
+                    <h4 className="font-semibold" data-testid={`text-transporter-name-${interest.id}`}>
+                      {interest.transporter?.name || "Transporteur"}
+                    </h4>
+                  </div>
+                  {interest.transporter?.city && (
+                    <p className="text-sm text-muted-foreground flex items-center gap-1">
+                      <MapPin className="h-3 w-3" />
+                      {interest.transporter.city}
+                    </p>
+                  )}
+                  {interest.transporter?.rating && (
+                    <div className="flex items-center gap-1 mt-1">
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                      <span className="text-sm font-medium">{parseFloat(interest.transporter.rating).toFixed(1)}</span>
+                    </div>
+                  )}
+                </div>
+                <Badge className="bg-[#17cfcf]/10 text-[#17cfcf] border-[#17cfcf]/30">
+                  Intéressé
+                </Badge>
+              </div>
+
+            {/* Contact Info - Visible for Coordinator */}
+            <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase">Contact Transporteur</p>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Phone className="h-3 w-3 text-[#17cfcf]" />
+                  <a 
+                    href={`tel:${interest.transporter?.phoneNumber}`}
+                    className="text-sm text-[#17cfcf] hover:underline font-medium"
+                    data-testid={`link-call-transporter-${interest.id}`}
+                  >
+                    {interest.transporter?.phoneNumber}
+                  </a>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full text-xs"
+                  onClick={() => {
+                    const message = encodeURIComponent(
+                      `Bonjour 👋,\nJe suis coordinateur CamionBack.\nJe souhaite discuter de votre intérêt pour cette commande.`
+                    );
+                    // Normalize phone number: remove spaces, dashes, and + sign
+                    const normalizedPhone = interest.transporter?.phoneNumber.replace(/[\s\-\+]/g, "");
+                    window.open(`https://wa.me/${normalizedPhone}?text=${message}`, "_blank");
+                  }}
+                  data-testid={`button-whatsapp-transporter-${interest.id}`}
+                >
+                  🟢 WhatsApp
+                </Button>
+              </div>
+            </div>
+
+            {/* Price Information */}
+            <div className="space-y-2 pt-2 border-t">
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Montant transporteur:</span>
+                <span className="font-medium">{request.transporterAmount || 0} DH</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Commission plateforme:</span>
+                <span className="font-medium text-orange-600">+{request.platformFee || 0} DH</span>
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t">
+                <span className="text-sm font-semibold">Total client:</span>
+                <span className="text-lg font-bold text-[#17cfcf]">{request.clientTotal || 0} DH</span>
+              </div>
+            </div>
+
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center gap-2">
+                <Package className="h-3 w-3 text-muted-foreground" />
+                <span className="text-muted-foreground">Intéressé le:</span>
+                <span className="font-medium">
+                  {format(new Date(interest.createdAt), "dd MMM yyyy", { locale: fr })}
+                </span>
+              </div>
+            </div>
+
+            <Button
+              className="w-full bg-[#17cfcf] hover:bg-[#13b3b3]"
+              onClick={() => onAssignTransporter(interest.transporter.id)}
+              disabled={isPending}
+              data-testid={`button-assign-transporter-${interest.id}`}
+            >
+              <Truck className="h-4 w-4 mr-2" />
+              {isPending ? "Assignation..." : "Assigner ce transporteur"}
+            </Button>
+          </CardContent>
+        </Card>
+      ))}
+      </div>
+
+      {/* Truck Photo Dialog */}
+      <Dialog open={photoDialogOpen} onOpenChange={setPhotoDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Photo du camion</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedTruckPhoto ? (
+              <img 
+                src={selectedTruckPhoto} 
+                alt="Camion" 
+                className="w-full h-auto rounded-md"
+              />
+            ) : (
+              <div className="flex items-center justify-center h-64 bg-muted rounded-md">
+                <p className="text-muted-foreground">Aucune photo disponible</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 export default function CoordinatorDashboard() {
   const [, setLocation] = useLocation();
   const { user, loading: authLoading, logout } = useAuth();
@@ -337,6 +511,8 @@ export default function CoordinatorDashboard() {
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [offersDialogOpen, setOffersDialogOpen] = useState(false);
   const [selectedRequestForOffers, setSelectedRequestForOffers] = useState<any>(null);
+  const [interestedTransportersDialogOpen, setInterestedTransportersDialogOpen] = useState(false);
+  const [selectedRequestForInterested, setSelectedRequestForInterested] = useState<any>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editFormData, setEditFormData] = useState<any>(null);
   const [loadedTruckPhotos, setLoadedTruckPhotos] = useState<Record<string, string[] | null>>({});
@@ -949,6 +1125,11 @@ export default function CoordinatorDashboard() {
     setOffersDialogOpen(true);
   };
 
+  const handleViewInterestedTransporters = (request: any) => {
+    setSelectedRequestForInterested(request);
+    setInterestedTransportersDialogOpen(true);
+  };
+
   // Helper function to deduplicate requests by ID
   const deduplicateRequests = (requests: any[]) => {
     const seen = new Set();
@@ -1074,6 +1255,29 @@ export default function CoordinatorDashboard() {
     queryClient.invalidateQueries({ queryKey: ["/api/coordinator/active-requests"] });
     queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination-requests"] });
   };
+
+  // Assign transporter mutation
+  const assignMutation = useMutation({
+    mutationFn: async (data: { requestId: string; transporterId: string; transporterAmount: number; platformFee: number }) => {
+      return await apiRequest("POST", "/api/coordinator/assign-transporter", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Transporteur assigné !",
+        description: "Le transporteur a été assigné avec succès à cette commande.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/matching-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/en-action"] });
+      setInterestedTransportersDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: error.message || "Impossible d'assigner le transporteur",
+      });
+    },
+  });
 
   // NEW: Handler for opening qualification dialog
   const handleOpenQualificationDialog = (request: any) => {
@@ -1252,6 +1456,18 @@ export default function CoordinatorDashboard() {
         )}
 
         <div className="space-y-2 text-sm">
+          {/* Show interested transporters count for qualified workflow */}
+          {interestedCount > 0 && request.qualifiedAt && (
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">Transporteurs intéressés:</span>
+              <Badge variant="outline" className="bg-[#17cfcf]/10 text-[#17cfcf] border-[#17cfcf]/30">
+                {interestedCount}
+              </Badge>
+            </div>
+          )}
+
+          {/* Show offers for old workflow */}
           {request.offers && request.offers.length > 0 && (
             <div className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-muted-foreground" />
@@ -1353,6 +1569,21 @@ export default function CoordinatorDashboard() {
             </Button>
           )}
 
+          {/* Show interested transporters button for qualified workflow */}
+          {interestedCount > 0 && request.qualifiedAt && !request.assignedTransporterId && (
+            <Button
+              size="sm"
+              variant="default"
+              className="bg-[#17cfcf] hover:bg-[#13b3b3]"
+              onClick={() => handleViewInterestedTransporters(request)}
+              data-testid={`button-view-interested-${request.id}`}
+            >
+              <Users className="h-4 w-4 mr-1" />
+              Transporteurs intéressés ({interestedCount})
+            </Button>
+          )}
+
+          {/* Show offers button for old workflow */}
           {showVisibilityToggle && request.offers && request.offers.length > 0 && (
             <Button
               size="sm"
@@ -2169,6 +2400,32 @@ export default function CoordinatorDashboard() {
           request={selectedRequestForAssignment}
           onSuccess={handleManualAssignmentSuccess}
         />
+      )}
+
+      {/* Interested Transporters Dialog */}
+      {selectedRequestForInterested && (
+        <Dialog open={interestedTransportersDialogOpen} onOpenChange={setInterestedTransportersDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto" data-testid="dialog-interested-transporters">
+            <DialogHeader>
+              <DialogTitle>Transporteurs intéressés - {selectedRequestForInterested.referenceId}</DialogTitle>
+              <DialogDescription>
+                {selectedRequestForInterested.fromCity} → {selectedRequestForInterested.toCity}
+              </DialogDescription>
+            </DialogHeader>
+            <InterestedTransportersView 
+              request={selectedRequestForInterested}
+              onAssignTransporter={(transporterId) => {
+                assignMutation.mutate({
+                  requestId: selectedRequestForInterested.id,
+                  transporterId: transporterId,
+                  transporterAmount: selectedRequestForInterested.transporterAmount || 0,
+                  platformFee: selectedRequestForInterested.platformFee || 0,
+                });
+              }}
+              isPending={assignMutation.isPending}
+            />
+          </DialogContent>
+        </Dialog>
       )}
 
       {/* NEW: Qualification Dialog */}
