@@ -186,7 +186,7 @@ function getClientStatus(request: any, interestedCount: number = 0) {
   };
 }
 
-function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onDelete, onViewTransporter, onUpdateStatus, onReport, users, cities, citiesLoading, currentUserId }: any) {
+function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onDelete, onViewTransporter, onUpdateStatus, onReport, onChooseTransporter, users, cities, citiesLoading, currentUserId }: any) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showOffersDialog, setShowOffersDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -717,12 +717,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                         {/* Action button */}
                         <Button
                           className="w-full bg-[#17cfcf] hover:bg-[#13b3b3]"
-                          onClick={() => {
-                            toast({
-                              title: "Fonctionnalité à venir",
-                              description: "La sélection manuelle de transporteur sera bientôt disponible",
-                            });
-                          }}
+                          onClick={() => onChooseTransporter(request.id, transporter.id)}
                           data-testid={`button-select-transporter-${transporter.id}`}
                         >
                           Choisir ce transporteur
@@ -1448,6 +1443,35 @@ export default function ClientDashboard() {
     },
   });
 
+  const chooseTransporterMutation = useMutation({
+    mutationFn: async ({ requestId, transporterId }: { requestId: string; transporterId: string }) => {
+      return await apiRequest("POST", `/api/requests/${requestId}/choose-transporter`, { transporterId }) as Promise<any>;
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+      
+      toast({
+        title: "Transporteur sélectionné !",
+        description: `Vous avez choisi ${data.transporter.name}. Vous pouvez maintenant le contacter.`,
+      });
+
+      setContactInfo({
+        transporterPhone: data.transporter.phoneNumber,
+        transporterName: data.transporter.name,
+        commission: 0,
+        total: data.request.clientTotal || 0
+      });
+      setShowContactDialog(true);
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: error.message || "Impossible de sélectionner ce transporteur",
+      });
+    }
+  });
+
   const declineOfferMutation = useMutation({
     mutationFn: async (offerId: string) => {
       const response = await fetch(`/api/offers/${offerId}/decline`, {
@@ -1543,6 +1567,10 @@ export default function ClientDashboard() {
 
   const handleDeclineOffer = (offerId: string) => {
     declineOfferMutation.mutate(offerId);
+  };
+
+  const handleChooseTransporter = (requestId: string, transporterId: string) => {
+    chooseTransporterMutation.mutate({ requestId, transporterId });
   };
 
   const handleDeleteRequest = (requestId: string) => {
@@ -1860,6 +1888,7 @@ export default function ClientDashboard() {
                     onViewTransporter={handleViewTransporter}
                     onUpdateStatus={handleUpdateStatus}
                     onReport={handleOpenReportDialog}
+                    onChooseTransporter={handleChooseTransporter}
                   />
                 ))
               ) : (

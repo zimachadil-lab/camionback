@@ -316,6 +316,34 @@ export async function sendRequestArchivedSMS(clientPhone: string, referenceId: s
   return true;
 }
 
+/**
+ * Send SMS to transporter when client chooses them
+ */
+export async function sendClientChoseYouSMS(transporterPhone: string, referenceId: string): Promise<boolean> {
+  const message = `Felicitations ! Un client vous a choisi pour la mission ${referenceId} sur CamionBack. Consultez votre tableau de bord pour plus de details.`;
+  
+  // Fire and forget - don't block the main process
+  sendSMS(transporterPhone, message).catch(err => {
+    console.error('[Infobip] Erreur SMS client vous a choisi:', err);
+  });
+  
+  return true;
+}
+
+/**
+ * Send SMS to client when they select a transporter
+ */
+export async function sendTransporterSelectedSMS(clientPhone: string, referenceId: string, transporterName: string): Promise<boolean> {
+  const message = `Vous avez selectionne ${transporterName} pour votre mission ${referenceId} sur CamionBack. Le transporteur a ete notifie.`;
+  
+  // Fire and forget - don't block the main process
+  sendSMS(clientPhone, message).catch(err => {
+    console.error('[Infobip] Erreur SMS transporteur selectionne:', err);
+  });
+  
+  return true;
+}
+
 // Log configuration status on startup
 if (isInfobipConfigured()) {
   console.log("[Infobip] Service SMS Infobip configure avec succes");

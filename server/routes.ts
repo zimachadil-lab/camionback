@@ -27,7 +27,7 @@ import {
   transportRequests
 } from "@shared/schema";
 import { desc, eq, sql } from "drizzle-orm";
-import { sendNewOfferSMS, sendOfferAcceptedSMS, sendTransporterActivatedSMS, sendBulkSMS, sendManualAssignmentSMS, sendTransporterAssignedSMS } from "./infobip-sms";
+import { sendNewOfferSMS, sendOfferAcceptedSMS, sendTransporterActivatedSMS, sendBulkSMS, sendManualAssignmentSMS, sendTransporterAssignedSMS, sendClientChoseYouSMS, sendTransporterSelectedSMS } from "./infobip-sms";
 import { emailService } from "./email-service";
 import { migrateProductionData } from "./migrate-production-endpoint";
 
@@ -1871,8 +1871,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedRequest = await storage.assignTransporterManually(
         requestId,
         transporterId,
-        request.transporterAmount,
-        request.platformFee,
+        parseFloat(request.transporterAmount),
+        parseFloat(request.platformFee),
         request.coordinationUpdatedBy || null // Keep track of coordinator who qualified
       );
 
@@ -1909,7 +1909,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const client = await storage.getUser(clientId);
         if (client?.deviceToken) {
-          const clientNotif = NotificationTemplates.transporterSelected(request.referenceId, transporter.name);
+          const clientNotif = NotificationTemplates.transporterSelected(request.referenceId, transporter.name || 'Transporteur');
           await sendNotificationToUser(clientId, clientNotif, storage);
           console.log(`📨 Notification push envoyée au client pour sélection confirmée`);
         }
@@ -1924,7 +1924,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         const client = await storage.getUser(clientId);
         if (client?.phoneNumber) {
-          await sendTransporterSelectedSMS(client.phoneNumber, request.referenceId, transporter.name);
+          await sendTransporterSelectedSMS(client.phoneNumber, request.referenceId, transporter.name || 'Transporteur');
         }
       } catch (smsError) {
         console.error('❌ Erreur lors de l\'envoi des SMS:', smsError);
