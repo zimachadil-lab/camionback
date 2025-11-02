@@ -2150,63 +2150,73 @@ export default function ClientDashboard() {
               <AlertDialogTitle className="text-xl">Informations du transporteur</AlertDialogTitle>
             </div>
             <AlertDialogDescription className="space-y-4 text-base">
-              <div className="space-y-3">
-                <div>
-                  <p className="text-sm text-muted-foreground">Nom</p>
-                  <p className="font-semibold text-foreground">{transporterInfo?.transporterName || "Non disponible"}</p>
-                </div>
-                
-                {transporterInfo?.transporterCity && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">Ville</p>
-                    <p className="font-semibold text-foreground">{transporterInfo.transporterCity}</p>
-                  </div>
-                )}
-
-                <div>
-                  <p className="text-sm text-muted-foreground">Téléphone</p>
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-primary" />
-                    <a 
-                      href={`tel:${transporterInfo?.transporterPhone}`} 
-                      className="font-semibold text-primary hover:underline"
-                      data-testid="link-transporter-phone"
-                    >
-                      {transporterInfo?.transporterPhone}
-                    </a>
-                  </div>
-                </div>
-              </div>
-
-              {transporterInfo?.totalAmount && (
-                <div className="border-t pt-3 space-y-2">
-                  {transporterInfo?.assignedManually ? (
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Total Transporteur</span>
-                        <span className="font-semibold">{transporterInfo.transporterAmount?.toFixed(2)} MAD</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Cotisation Plateforme</span>
-                        <span className="font-semibold">{transporterInfo.platformFee?.toFixed(2)} MAD</span>
-                      </div>
-                      <div className="flex justify-between border-t pt-2">
-                        <span className="font-semibold text-foreground">Total à payer</span>
-                        <span className="font-bold text-primary text-xl">{transporterInfo.totalAmount.toFixed(2)} MAD</span>
-                      </div>
+              {transporterInfo ? (
+                <>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Nom</p>
+                      <p className="font-semibold text-foreground">{transporterInfo.transporterName || "Non disponible"}</p>
                     </div>
-                  ) : (
-                    <div className="flex justify-between">
-                      <span className="font-semibold text-foreground">Montant</span>
-                      <span className="font-bold text-primary text-xl">{transporterInfo.totalAmount.toFixed(2)} MAD</span>
+                    
+                    {transporterInfo.transporterCity && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Ville</p>
+                        <p className="font-semibold text-foreground">{transporterInfo.transporterCity}</p>
+                      </div>
+                    )}
+
+                    {transporterInfo.transporterPhone && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Téléphone</p>
+                        <div className="flex items-center gap-2">
+                          <Phone className="w-4 h-4 text-primary" />
+                          <a 
+                            href={`tel:${transporterInfo.transporterPhone}`} 
+                            className="font-semibold text-primary hover:underline"
+                            data-testid="link-transporter-phone"
+                          >
+                            {transporterInfo.transporterPhone}
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {transporterInfo.totalAmount != null && (
+                    <div className="border-t pt-3 space-y-2">
+                      {transporterInfo.assignedManually && transporterInfo.transporterAmount != null && transporterInfo.platformFee != null ? (
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Total Transporteur</span>
+                            <span className="font-semibold">{Number(transporterInfo.transporterAmount).toFixed(2)} MAD</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Cotisation Plateforme</span>
+                            <span className="font-semibold">{Number(transporterInfo.platformFee).toFixed(2)} MAD</span>
+                          </div>
+                          <div className="flex justify-between border-t pt-2">
+                            <span className="font-semibold text-foreground">Total à payer</span>
+                            <span className="font-bold text-primary text-xl">{Number(transporterInfo.totalAmount).toFixed(2)} MAD</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex justify-between">
+                          <span className="font-semibold text-foreground">Montant</span>
+                          <span className="font-bold text-primary text-xl">{Number(transporterInfo.totalAmount).toFixed(2)} MAD</span>
+                        </div>
+                      )}
                     </div>
                   )}
+
+                  <p className="text-sm text-muted-foreground italic">
+                    Vous pouvez contacter directement le transporteur pour finaliser les détails du transport.
+                  </p>
+                </>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-muted-foreground">Chargement des informations...</p>
                 </div>
               )}
-
-              <p className="text-sm text-muted-foreground italic">
-                Vous pouvez contacter directement le transporteur pour finaliser les détails du transport.
-              </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
