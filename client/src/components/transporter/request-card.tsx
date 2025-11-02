@@ -169,19 +169,11 @@ export function RequestCard({
         </div>
 
         {/* Show qualified price if available (new workflow) */}
-        {request.transporterPrice && request.platformFee && request.clientTotal && (
-          <div className="space-y-1 p-3 bg-green-50 dark:bg-green-950/20 rounded-md border border-green-200 dark:border-green-800">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Votre part :</span>
-              <span className="font-semibold text-green-700 dark:text-green-400">{request.transporterPrice} MAD</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Cotisation :</span>
-              <span className="font-medium text-muted-foreground">{request.platformFee} MAD</span>
-            </div>
-            <div className="flex items-center justify-between text-base font-bold border-t border-green-200 dark:border-green-800 pt-1 mt-1">
-              <span className="text-foreground">Total client :</span>
-              <span className="text-green-700 dark:text-green-400">{request.clientTotal} MAD</span>
+        {request.transporterPrice && (
+          <div className="p-3 bg-green-600/10 dark:bg-green-500/20 rounded-md border border-green-600/30 dark:border-green-500/30">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-foreground">Montant Fixé :</span>
+              <span className="text-xl font-bold text-green-600 dark:text-green-400">{request.transporterPrice} MAD</span>
             </div>
           </div>
         )}
