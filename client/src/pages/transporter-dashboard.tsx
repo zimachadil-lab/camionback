@@ -132,27 +132,7 @@ export default function TransporterDashboard() {
     },
   });
 
-  const { data: myOffers = [], isLoading: offersLoading } = useQuery({
-    queryKey: ["/api/offers", user?.id],
-    enabled: !!user,
-    queryFn: async () => {
-      const response = await fetch(`/api/offers?transporterId=${user!.id}`);
-      return response.json();
-    },
-    refetchInterval: 5000,
-  });
-
-  const { data: allRequests = [] } = useQuery({
-    queryKey: ["/api/requests/all"],
-    queryFn: async () => {
-      const response = await fetch("/api/requests");
-      return response.json();
-    },
-  });
-
-  // Disable users query - transporters don't have access to /api/users (403 Forbidden)
-  // Client info should come from the backend with requests
-  const users: any[] = [];
+  // Note: myOffers query removed - new workflow uses interest-based matching instead
 
   const { data: acceptedRequests = [], isLoading: acceptedLoading } = useQuery({
     queryKey: ["/api/requests/accepted", user?.id],
@@ -199,12 +179,12 @@ export default function TransporterDashboard() {
   };
 
   const handleViewClientDetails = (request: any) => {
-    const client = users.find((u: any) => u.id === request.clientId);
+    // Client info should come from request object in new workflow
     setSelectedClientDetails({
       ...request,
-      clientId: client?.clientId,
-      clientPhone: client?.phoneNumber,
-      clientCity: client?.city,
+      clientId: request.clientId || "Non défini",
+      clientPhone: request.clientPhone || "Non disponible",
+      clientCity: request.clientCity || "Non disponible",
     });
     setClientDetailsOpen(true);
   };
@@ -328,9 +308,13 @@ export default function TransporterDashboard() {
         title: "Intérêt exprimé",
         description: "Votre intérêt a été enregistré. Le client sera notifié.",
       });
-      // Partial matching to invalidate compound query keys
+      // Invalidate queries to refresh both tabs and move the card automatically
       queryClient.invalidateQueries({ 
         queryKey: ["/api/transporter/available-requests"], 
+        exact: false 
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/requests"], 
         exact: false 
       });
     },
@@ -345,16 +329,23 @@ export default function TransporterDashboard() {
 
   const withdrawInterestMutation = useMutation({
     mutationFn: async (requestId: string) => {
-      return await apiRequest("POST", "/api/transporter/withdraw-interest", { requestId });
+      return await apiRequest("POST", "/api/transporter/express-interest", { 
+        requestId,
+        interested: false 
+      });
     },
     onSuccess: () => {
       toast({
         title: "Intérêt retiré",
         description: "Votre intérêt a été retiré",
       });
-      // Partial matching to invalidate compound query keys
+      // Invalidate queries to refresh both tabs and move the card automatically
       queryClient.invalidateQueries({ 
         queryKey: ["/api/transporter/available-requests"], 
+        exact: false 
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/requests"], 
         exact: false 
       });
     },
@@ -522,13 +513,9 @@ export default function TransporterDashboard() {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
-  // Count offers per request for display
-  const offerCounts = myOffers.reduce((acc: any, offer: any) => {
-    acc[offer.requestId] = (acc[offer.requestId] || 0) + 1;
-    return acc;
-  }, {});
+  // Note: offerCounts removed - new workflow uses interest-based matching
 
-  if (requestsLoading || offersLoading) {
+  if (requestsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingTruck message="Chargement de votre tableau de bord..." size="lg" />
@@ -687,9 +674,9 @@ export default function TransporterDashboard() {
               <Search className="mr-2 h-4 w-4" />
               Disponibles (<span className="text-[#00ff99]">{filteredRequests.length}</span>)
             </TabsTrigger>
-            <TabsTrigger value="my-offers" data-testid="tab-my-offers">
+            <TabsTrigger value="interested" data-testid="tab-interested">
               <Package className="mr-2 h-4 w-4" />
-              Mes offres
+              Intéressé ({requests.filter((r: any) => r.transporterInterests?.includes(user?.id)).length})
             </TabsTrigger>
             <TabsTrigger value="to-process" data-testid="tab-to-process">
               <CheckCircle className="mr-2 h-4 w-4" />
@@ -739,7 +726,7 @@ export default function TransporterDashboard() {
                       key={request.id}
                       request={request}
                       userStatus={user.status}
-                      offerCount={offerCounts[request.id] || 0}
+                      offerCount={0}
                       onDecline={handleDeclineRequest}
                       onTrackView={() => trackViewMutation.mutate(request.id)}
                       // New interest-based props
@@ -761,130 +748,37 @@ export default function TransporterDashboard() {
             )}
           </TabsContent>
 
-          <TabsContent value="my-offers" className="mt-6 space-y-6">
-            {myOffers.length > 0 ? (
-              <div className="space-y-4">
-                {myOffers.map((offer: any) => {
-                  const request = allRequests.find((r: any) => r.id === offer.requestId);
-                  const client = users.find((u: any) => u.id === request?.clientId);
-                  const isAccepted = offer.status === "accepted";
-
-                  return (
-                    <Card key={offer.id} className="hover-elevate">
-                      <CardContent className="p-6 space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <Badge 
-                              variant={
-                                offer.status === "pending" ? "outline" :
-                                offer.status === "accepted" ? "default" :
-                                "secondary"
-                              }
-                              className={isAccepted ? "bg-green-600" : ""}
-                            >
-                              {isAccepted && <CheckCircle className="w-3 h-3 mr-1" />}
-                              {offer.status === "pending" ? "En attente" :
-                               offer.status === "accepted" ? "Acceptée" :
-                               "Refusée"}
-                            </Badge>
-                            <span className="text-sm text-muted-foreground">
-                              Référence: <span className="font-semibold text-foreground">{request?.referenceId}</span>
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xl font-bold text-primary">{offer.amount} MAD</span>
-                            {offer.status === "pending" && (
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={() => {
-                                  setSelectedOffer(offer);
-                                  setEditOfferDialogOpen(true);
-                                }}
-                                data-testid={`button-edit-offer-${offer.id}`}
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-
-                        {request && (
-                          <>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <MapPin className="w-4 h-4" />
-                              <span>{request.fromCity} → {request.toCity}</span>
-                            </div>
-
-                            {request.photos && request.photos.length > 0 && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleViewPhotos(request.photos, request.referenceId)}
-                                className="gap-2"
-                                data-testid={`button-view-offer-photos-${offer.id}`}
-                              >
-                                <ImageIcon className="w-4 h-4" />
-                                Voir les photos ({request.photos.length})
-                              </Button>
-                            )}
-                          </>
-                        )}
-
-                        {isAccepted && client && (
-                          <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg p-4 space-y-3">
-                            <p className="text-sm font-medium text-green-900 dark:text-green-100 flex items-center gap-2">
-                              <CheckCircle className="w-4 h-4" />
-                              Votre offre a été acceptée !
-                            </p>
-                            <div className="space-y-2">
-                              <p className="text-sm text-green-800 dark:text-green-200">
-                                Vous pouvez maintenant contacter le client :
-                              </p>
-                              <div className="flex items-center gap-2">
-                                <Phone className="w-4 h-4 text-green-700 dark:text-green-300" />
-                                <a 
-                                  href={`tel:${client.phoneNumber}`} 
-                                  className="text-lg font-semibold text-green-700 dark:text-green-300 hover:underline"
-                                  data-testid={`link-client-phone-${offer.id}`}
-                                >
-                                  {client.phoneNumber}
-                                </a>
-                              </div>
-                              <p className="text-xs text-green-700 dark:text-green-400">
-                                Client {client.clientId || "Non défini"}
-                              </p>
-                              {request && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleChat(client.id, client.clientId || "Client", request.id)}
-                                  className="gap-2 mt-2 w-full"
-                                  data-testid={`button-chat-${offer.id}`}
-                                >
-                                  <MessageSquare className="w-4 h-4" />
-                                  Envoyer un message
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        {offer.message && (
-                          <p className="text-sm text-muted-foreground border-l-2 border-primary pl-3">
-                            {offer.message}
-                          </p>
-                        )}
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+          <TabsContent value="interested" className="mt-6 space-y-6">
+            {requests.filter((r: any) => r.transporterInterests?.includes(user?.id)).length > 0 ? (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {requests
+                  .filter((r: any) => r.transporterInterests?.includes(user?.id))
+                  .map((request: any) => {
+                    const isPending = withdrawInterestMutation.isPending;
+                    
+                    return (
+                      <RequestCard
+                        key={request.id}
+                        request={request}
+                        userStatus={user.status}
+                        offerCount={0}
+                        onTrackView={() => trackViewMutation.mutate(request.id)}
+                        // Interest-based props - already interested
+                        isInterested={true}
+                        onWithdrawInterest={(id) => withdrawInterestMutation.mutate(id)}
+                        isPendingInterest={isPending}
+                      />
+                    );
+                  })}
               </div>
             ) : (
               <div className="text-center py-12">
                 <Package className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">
-                  Vous n'avez pas encore fait d'offres
+                  Vous n'avez pas encore exprimé d'intérêt
+                </p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Cliquez sur "Intéressé" dans l'onglet Disponibles pour commencer
                 </p>
               </div>
             )}
@@ -924,7 +818,7 @@ export default function TransporterDashboard() {
             {filteredAcceptedRequests.length > 0 ? (
               <div className="space-y-4">
                 {filteredAcceptedRequests.map((request: any) => {
-                  const client = users.find((u: any) => u.id === request.clientId);
+                  // Client info comes from request object in new workflow
                   const isMarkedForBilling = request.paymentStatus === "awaiting_payment";
 
                   return (
@@ -1028,11 +922,11 @@ export default function TransporterDashboard() {
                           )}
                         </div>
 
-                        {client && (
+                        {request.clientId && (
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleChat(client.id, client.clientId || "Client", request.id)}
+                            onClick={() => handleChat(request.clientId, request.clientName || "Client", request.id)}
                             className="gap-2 w-full sm:w-auto bg-[#00cc88] hover:bg-[#00cc88]/90 text-white border-[#00cc88]"
                             data-testid={`button-chat-request-${request.id}`}
                             style={{ textShadow: "0 1px 1px rgba(0,0,0,0.2)" }}
