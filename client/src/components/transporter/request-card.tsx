@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { MapPin, Package, Calendar, DollarSign, Image as ImageIcon, AlertCircle, Eye, FileText, X, ChevronDown, ChevronUp } from "lucide-react";
+import { MapPin, Package, Calendar, DollarSign, Image as ImageIcon, AlertCircle, Eye, FileText, X, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { PhotoGalleryDialog } from "./photo-gallery-dialog";
@@ -26,13 +26,21 @@ interface RequestCardProps {
     createdAt?: Date | string;
     dateFlexible?: boolean | null;
     invoiceRequired?: boolean | null;
+    transporterPrice?: number | null;
+    platformFee?: number | null;
+    clientTotal?: number | null;
   };
-  onMakeOffer: (requestId: string) => void;
+  onMakeOffer?: (requestId: string) => void;
   showOfferButton?: boolean;
   userStatus?: string | null;
   offerCount?: number;
   onDecline?: (requestId: string) => void;
   onTrackView?: () => void;
+  // New props for interest-based workflow
+  isInterested?: boolean;
+  onExpressInterest?: (requestId: string) => void;
+  onWithdrawInterest?: (requestId: string) => void;
+  isPendingInterest?: boolean;
 }
 
 export function RequestCard({ 
@@ -42,7 +50,11 @@ export function RequestCard({
   userStatus,
   offerCount,
   onDecline,
-  onTrackView 
+  onTrackView,
+  isInterested = false,
+  onExpressInterest,
+  onWithdrawInterest,
+  isPendingInterest = false,
 }: RequestCardProps) {
   const [photoGalleryOpen, setPhotoGalleryOpen] = useState(false);
   const [showValidationWarning, setShowValidationWarning] = useState(false);
@@ -62,8 +74,22 @@ export function RequestCard({
   const handleOfferClick = () => {
     if (!isUserValidated) {
       setShowValidationWarning(true);
-    } else {
+    } else if (onMakeOffer) {
       onMakeOffer(request.id);
+    }
+  };
+
+  const handleExpressInterest = () => {
+    if (!isUserValidated) {
+      setShowValidationWarning(true);
+    } else if (onExpressInterest) {
+      onExpressInterest(request.id);
+    }
+  };
+
+  const handleWithdrawInterest = () => {
+    if (onWithdrawInterest) {
+      onWithdrawInterest(request.id);
     }
   };
 
@@ -142,7 +168,26 @@ export function RequestCard({
           )}
         </div>
 
-        {request.budget && (
+        {/* Show qualified price if available (new workflow) */}
+        {request.transporterPrice && request.platformFee && request.clientTotal && (
+          <div className="space-y-1 p-3 bg-green-50 dark:bg-green-950/20 rounded-md border border-green-200 dark:border-green-800">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Votre part :</span>
+              <span className="font-semibold text-green-700 dark:text-green-400">{request.transporterPrice} MAD</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Cotisation :</span>
+              <span className="font-medium text-muted-foreground">{request.platformFee} MAD</span>
+            </div>
+            <div className="flex items-center justify-between text-base font-bold border-t border-green-200 dark:border-green-800 pt-1 mt-1">
+              <span className="text-foreground">Total client :</span>
+              <span className="text-green-700 dark:text-green-400">{request.clientTotal} MAD</span>
+            </div>
+          </div>
+        )}
+
+        {/* Show client budget if no qualified price (old workflow) */}
+        {request.budget && !request.transporterPrice && (
           <div className="flex items-center gap-2 text-primary font-semibold">
             <DollarSign className="w-4 h-4" />
             <span>Budget: {request.budget}</span>
@@ -208,25 +253,67 @@ export function RequestCard({
 
       {showOfferButton && request.status === "open" && (
         <CardFooter className="p-4 pt-0 flex flex-row gap-2">
-          {onDecline && (
-            <Button 
-              onClick={() => onDecline(request.id)} 
-              className="flex-1 bg-red-600 hover:bg-red-700"
-              variant="destructive"
-              data-testid={`button-decline-${request.id}`}
-            >
-              <X className="w-4 h-4 mr-1" />
-              Décliner
-            </Button>
+          {/* New interest-based workflow */}
+          {onExpressInterest && onWithdrawInterest ? (
+            isInterested ? (
+              <Button 
+                onClick={handleWithdrawInterest} 
+                disabled={isPendingInterest}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+                data-testid={`button-withdraw-interest-${request.id}`}
+              >
+                <ThumbsUp className="w-4 h-4 mr-2" />
+                {isPendingInterest ? "Retrait..." : "Intéressé ✓"}
+              </Button>
+            ) : (
+              <>
+                {onDecline && (
+                  <Button 
+                    onClick={() => onDecline(request.id)} 
+                    disabled={isPendingInterest}
+                    className="flex-1 bg-gray-600 hover:bg-gray-700"
+                    variant="secondary"
+                    data-testid={`button-not-available-${request.id}`}
+                  >
+                    <ThumbsDown className="w-4 h-4 mr-2" />
+                    Pas disponible
+                  </Button>
+                )}
+                <Button 
+                  onClick={handleExpressInterest} 
+                  disabled={isPendingInterest}
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                  data-testid={`button-express-interest-${request.id}`}
+                >
+                  <ThumbsUp className="w-4 h-4 mr-2" />
+                  {isPendingInterest ? "Envoi..." : "Je suis intéressé"}
+                </Button>
+              </>
+            )
+          ) : (
+            /* Old offer-based workflow (backward compatibility) */
+            <>
+              {onDecline && (
+                <Button 
+                  onClick={() => onDecline(request.id)} 
+                  className="flex-1 bg-red-600 hover:bg-red-700"
+                  variant="destructive"
+                  data-testid={`button-decline-${request.id}`}
+                >
+                  <X className="w-4 h-4 mr-1" />
+                  Décliner
+                </Button>
+              )}
+              <Button 
+                onClick={handleOfferClick} 
+                className="flex-1"
+                variant={!isUserValidated ? "secondary" : "default"}
+                data-testid={`button-make-offer-${request.id}`}
+              >
+                Faire une offre
+              </Button>
+            </>
           )}
-          <Button 
-            onClick={handleOfferClick} 
-            className="flex-1"
-            variant={!isUserValidated ? "secondary" : "default"}
-            data-testid={`button-make-offer-${request.id}`}
-          >
-            Faire une offre
-          </Button>
         </CardFooter>
       )}
     </Card>

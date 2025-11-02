@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, Image as ImageIcon, Clock, Calendar, Flag, Edit, TruckIcon } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { RequestCard } from "@/components/transporter/request-card";
-import { OfferForm } from "@/components/transporter/offer-form";
+// OfferForm removed - new workflow uses interest-based matching instead of price offers
 import { InteractiveCalendar } from "@/components/transporter/interactive-calendar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -54,8 +54,7 @@ export default function TransporterDashboard() {
   const { user, loading: authLoading, logout } = useAuth();
   const [selectedCity, setSelectedCity] = useState("Toutes les villes");
   const [searchQuery, setSearchQuery] = useState("");
-  const [offerDialogOpen, setOfferDialogOpen] = useState(false);
-  const [selectedRequestId, setSelectedRequestId] = useState<string>("");
+  // Removed offerDialogOpen - new workflow uses interest buttons instead of offer form
   const [chatOpen, setChatOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<{ id: string; name: string; role: string } | null>(null);
   const [chatRequestId, setChatRequestId] = useState<string>("");
@@ -75,17 +74,23 @@ export default function TransporterDashboard() {
   const [notValidatedDialogOpen, setNotValidatedDialogOpen] = useState(false);
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | null>(null);
 
-  // Handle incoming request parameter from public share link
+  const { toast } = useToast();
+
+  // Public share link handling - now uses interest-based workflow
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const requestId = params.get('request');
     if (requestId) {
-      // Open offer dialog for this request
-      setSelectedRequestId(requestId);
-      setOfferDialogOpen(true);
+      // With new workflow, transporters can simply scroll to and click "Je suis intéressé"
+      // No need to open a separate dialog
+      toast({
+        title: "Commande partagée",
+        description: "Cliquez sur 'Je suis intéressé' pour exprimer votre intérêt",
+      });
       // Clean URL after processing
       window.history.replaceState({}, '', '/transporter-dashboard');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Initialize edit offer form when offer is selected
@@ -114,11 +119,15 @@ export default function TransporterDashboard() {
     }
   };
 
+  // Fetch available requests (qualified and published for matching)
   const { data: requests = [], isLoading: requestsLoading } = useQuery({
-    queryKey: ["/api/requests", user?.id],
+    queryKey: ["/api/transporter/available-requests", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const response = await fetch(`/api/requests?status=open&transporterId=${user!.id}`);
+      const response = await fetch(`/api/transporter/available-requests`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch requests');
+      }
       return response.json();
     },
   });
@@ -171,10 +180,7 @@ export default function TransporterDashboard() {
     });
   }, [acceptedRequests, selectedCalendarDate]);
 
-  const handleMakeOffer = (requestId: string) => {
-    setSelectedRequestId(requestId);
-    setOfferDialogOpen(true);
-  };
+  // handleMakeOffer removed - new workflow uses express interest instead
 
   const handleChat = (clientId: string, clientIdentifier: string, requestId: string) => {
     if (!requestId) {
@@ -228,8 +234,6 @@ export default function TransporterDashboard() {
     queryKey: [`/api/transporter-references/${user?.id}`],
     enabled: !!user && user.role === "transporteur",
   });
-
-  const { toast } = useToast();
 
   // Submit transporter reference
   const submitReferenceMutation = useMutation({
@@ -289,7 +293,13 @@ export default function TransporterDashboard() {
         title: "Commande masquée",
         description: "Cette commande ne sera plus affichée",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+      // Invalidate new query key with partial matching (TanStack Query v5)
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/transporter/available-requests"], 
+        exact: false 
+      });
+      // Keep old key for backward compatibility
+      queryClient.invalidateQueries({ queryKey: ["/api/requests"], exact: false });
     },
     onError: () => {
       toast({
@@ -303,6 +313,54 @@ export default function TransporterDashboard() {
   const trackViewMutation = useMutation({
     mutationFn: async (requestId: string) => {
       return await apiRequest("POST", `/api/requests/${requestId}/track-view`, {});
+    },
+  });
+
+  const expressInterestMutation = useMutation({
+    mutationFn: async (requestId: string) => {
+      return await apiRequest("POST", "/api/transporter/express-interest", { requestId });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Intérêt exprimé",
+        description: "Votre intérêt a été enregistré. Le client sera notifié.",
+      });
+      // Partial matching to invalidate compound query keys
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/transporter/available-requests"], 
+        exact: false 
+      });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible d'enregistrer votre intérêt",
+      });
+    },
+  });
+
+  const withdrawInterestMutation = useMutation({
+    mutationFn: async (requestId: string) => {
+      return await apiRequest("POST", "/api/transporter/withdraw-interest", { requestId });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Intérêt retiré",
+        description: "Votre intérêt a été retiré",
+      });
+      // Partial matching to invalidate compound query keys
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/transporter/available-requests"], 
+        exact: false 
+      });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de retirer votre intérêt",
+      });
     },
   });
 
@@ -478,7 +536,7 @@ export default function TransporterDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <Header
-        user={user!}
+        user={user! as { id: string; name?: string; role: string; clientId?: string }}
         onAnnounceReturn={handleAnnounceReturn}
         onLogout={handleLogout}
       />
@@ -668,17 +726,27 @@ export default function TransporterDashboard() {
 
             {filteredRequests.length > 0 ? (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {filteredRequests.map((request: any) => (
-                  <RequestCard
-                    key={request.id}
-                    request={request}
-                    onMakeOffer={handleMakeOffer}
-                    userStatus={user.status}
-                    offerCount={offerCounts[request.id] || 0}
-                    onDecline={handleDeclineRequest}
-                    onTrackView={() => trackViewMutation.mutate(request.id)}
-                  />
-                ))}
+                {filteredRequests.map((request: any) => {
+                  // Check if transporter has expressed interest
+                  const isInterested = request.transporterInterests?.includes(user.id) || false;
+                  const isPending = expressInterestMutation.isPending || withdrawInterestMutation.isPending;
+                  
+                  return (
+                    <RequestCard
+                      key={request.id}
+                      request={request}
+                      userStatus={user.status}
+                      offerCount={offerCounts[request.id] || 0}
+                      onDecline={handleDeclineRequest}
+                      onTrackView={() => trackViewMutation.mutate(request.id)}
+                      // New interest-based props
+                      isInterested={isInterested}
+                      onExpressInterest={(id) => expressInterestMutation.mutate(id)}
+                      onWithdrawInterest={(id) => withdrawInterestMutation.mutate(id)}
+                      isPendingInterest={isPending}
+                    />
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-12">
@@ -987,14 +1055,7 @@ export default function TransporterDashboard() {
         </Tabs>
       </div>
 
-      <OfferForm
-        open={offerDialogOpen}
-        onClose={() => setOfferDialogOpen(false)}
-        requestId={selectedRequestId}
-        onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ["/api/offers"] });
-        }}
-      />
+      {/* OfferForm removed - new workflow uses interest buttons in RequestCard */}
 
       {selectedClient && (
         <ChatWindow
