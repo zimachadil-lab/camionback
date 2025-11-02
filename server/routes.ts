@@ -2668,6 +2668,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateTransportRequest(offer.requestId, {
         status: "accepted",
         acceptedOfferId: req.params.id,
+        coordinationStatus: "assigned",
+        coordinationUpdatedAt: new Date(),
       });
 
       // Clean up: Delete all other offers for this request (auto-cleanup)
@@ -5156,6 +5158,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateTransportRequest(offer.requestId, {
         status: "accepted",
         acceptedOfferId: offerId,
+        coordinationStatus: "assigned",
+        coordinationUpdatedAt: new Date(),
+        coordinationUpdatedBy: coordinatorId,
       });
 
       // Clean up: Delete all other offers for this request
