@@ -943,6 +943,29 @@ export default function CoordinatorDashboard() {
     },
   });
 
+  // Assign transporter mutation for interested transporters
+  const assignMutation = useMutation({
+    mutationFn: async (data: { requestId: string; transporterId: string; transporterAmount: number; platformFee: number }) => {
+      return await apiRequest("POST", "/api/coordinator/assign-transporter", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Transporteur assigné !",
+        description: "Le transporteur a été assigné avec succès à cette commande.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/matching-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/en-action"] });
+      setInterestedTransportersDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: error.message || "Impossible d'assigner le transporteur",
+      });
+    },
+  });
+
   // Redirect to login if not authenticated or not coordinator (after all hooks)
   useEffect(() => {
     if (!authLoading && (!user || user.role !== "coordinateur")) {
@@ -1255,29 +1278,6 @@ export default function CoordinatorDashboard() {
     queryClient.invalidateQueries({ queryKey: ["/api/coordinator/active-requests"] });
     queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination-requests"] });
   };
-
-  // Assign transporter mutation
-  const assignMutation = useMutation({
-    mutationFn: async (data: { requestId: string; transporterId: string; transporterAmount: number; platformFee: number }) => {
-      return await apiRequest("POST", "/api/coordinator/assign-transporter", data);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Transporteur assigné !",
-        description: "Le transporteur a été assigné avec succès à cette commande.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/matching-requests"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/en-action"] });
-      setInterestedTransportersDialogOpen(false);
-    },
-    onError: (error: any) => {
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: error.message || "Impossible d'assigner le transporteur",
-      });
-    },
-  });
 
   // NEW: Handler for opening qualification dialog
   const handleOpenQualificationDialog = (request: any) => {
@@ -2188,7 +2188,7 @@ export default function CoordinatorDashboard() {
                 Annuler
               </Button>
               <Button
-                onClick={handleUpdateRequest}
+                onClick={handleEditSubmit}
                 disabled={updateRequestMutation.isPending}
                 data-testid="button-save-edit"
               >
@@ -2315,12 +2315,12 @@ export default function CoordinatorDashboard() {
             </DialogHeader>
 
             <div className="space-y-4">
-              {qualifiedRequests.length === 0 ? (
+              {matchingRequests.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">
                   Aucune commande qualifiée compatible
                 </p>
               ) : (
-                qualifiedRequests
+                matchingRequests
                   .filter((req: any) => 
                     req.fromCity === selectedEmptyReturn.fromCity &&
                     req.toCity === selectedEmptyReturn.toCity
