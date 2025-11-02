@@ -322,11 +322,9 @@ function CoordinatorOffersView({ requestId, onAcceptOffer, isPending }: {
 export default function CoordinatorDashboard() {
   const [, setLocation] = useLocation();
   const { user, loading: authLoading, logout } = useAuth();
-  // Unified search and filters
-  const [globalSearch, setGlobalSearch] = useState("");
-  const [cityFilter, setCityFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [dateFilter, setDateFilter] = useState("all");
+  const [selectedCity, setSelectedCity] = useState("Toutes les villes");
+  const [selectedStatus, setSelectedStatus] = useState("Tous les statuts");
+  const [searchQuery, setSearchQuery] = useState("");
   const [chatOpen, setChatOpen] = useState(false);
   const [selectedParticipants, setSelectedParticipants] = useState<{ client: any; transporter: any } | null>(null);
   const [chatRequestId, setChatRequestId] = useState<string>("");
@@ -345,6 +343,13 @@ export default function CoordinatorDashboard() {
   const [selectedTruckPhoto, setSelectedTruckPhoto] = useState<string | null>(null);
   const [assignOrderDialogOpen, setAssignOrderDialogOpen] = useState(false);
   const [selectedEmptyReturn, setSelectedEmptyReturn] = useState<any>(null);
+  const [coordinationDialogOpen, setCoordinationDialogOpen] = useState(false);
+  const [selectedRequestForCoordination, setSelectedRequestForCoordination] = useState<any>(null);
+  const [selectedCoordinationStatus, setSelectedCoordinationStatus] = useState("");
+  const [coordinationReason, setCoordinationReason] = useState("");
+  const [coordinationReminderDate, setCoordinationReminderDate] = useState("");
+  const [coordinationAssignedFilter, setCoordinationAssignedFilter] = useState("all");
+  const [coordinationSearchQuery, setCoordinationSearchQuery] = useState("");
   const [deleteRequestId, setDeleteRequestId] = useState<string | null>(null);
   const [manualAssignmentDialogOpen, setManualAssignmentDialogOpen] = useState(false);
   const [selectedRequestForAssignment, setSelectedRequestForAssignment] = useState<any>(null);
@@ -356,29 +361,17 @@ export default function CoordinatorDashboard() {
     logout();
   };
 
-  // ===== NEW 4-TAB STRUCTURE =====
-  
-  // 1. NOUVEAU: Requests pending qualification
-  const { data: nouveauRequests = [], isLoading: nouveauLoading } = useQuery({
-    queryKey: ["/api/coordinator/qualification-pending"],
+  // Fetch all available requests (open status)
+  const { data: availableRequests = [], isLoading: availableLoading } = useQuery({
+    queryKey: ["/api/coordinator/available-requests"],
     queryFn: async () => {
-      const response = await fetch("/api/coordinator/qualification-pending");
+      const response = await fetch("/api/coordinator/available-requests");
       const data = await response.json();
       return Array.isArray(data) ? data : [];
     },
   });
 
-  // 2. QUALIFIÉS: Requests published for matching
-  const { data: qualifiesRequests = [], isLoading: qualifiesLoading } = useQuery({
-    queryKey: ["/api/coordinator/matching-requests"],
-    queryFn: async () => {
-      const response = await fetch("/api/coordinator/matching-requests");
-      const data = await response.json();
-      return Array.isArray(data) ? data : [];
-    },
-  });
-
-  // 3. EN PRODUCTION: Active + Payment requests combined
+  // Fetch requests in progress (accepted status)
   const { data: activeRequests = [], isLoading: activeLoading } = useQuery({
     queryKey: ["/api/coordinator/active-requests"],
     queryFn: async () => {
@@ -388,23 +381,11 @@ export default function CoordinatorDashboard() {
     },
   });
 
+  // Fetch payment pending requests
   const { data: paymentRequests = [], isLoading: paymentLoading } = useQuery({
     queryKey: ["/api/coordinator/payment-requests"],
     queryFn: async () => {
       const response = await fetch("/api/coordinator/payment-requests");
-      const data = await response.json();
-      return Array.isArray(data) ? data : [];
-    },
-  });
-
-  // Combine active and payment for "En Production"
-  const enProductionRequests = [...activeRequests, ...paymentRequests];
-
-  // 4. ARCHIVES: Archived requests
-  const { data: archivesRequests = [], isLoading: archivesLoading } = useQuery({
-    queryKey: ["/api/coordinator/coordination/archives"],
-    queryFn: async () => {
-      const response = await fetch("/api/coordinator/coordination/archives");
       const data = await response.json();
       return Array.isArray(data) ? data : [];
     },
@@ -485,6 +466,26 @@ export default function CoordinatorDashboard() {
     queryFn: async () => {
       const queryString = buildQueryString(coordinationAssignedFilter, coordinationSearchQuery);
       const response = await fetch(`/api/coordinator/coordination/archives${queryString}`);
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
+    },
+  });
+
+  // Fetch all coordinators for filters
+  const { data: allCoordinators = [] } = useQuery({
+    queryKey: ["/api/coordinators"],
+    queryFn: async () => {
+      const response = await fetch("/api/coordinators");
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
+    },
+  });
+
+  // Fetch matching requests (published_for_matching status)
+  const { data: matchingRequests = [], isLoading: matchingLoading } = useQuery({
+    queryKey: ["/api/coordinator/matching-requests"],
+    queryFn: async () => {
+      const response = await fetch("/api/coordinator/matching-requests");
       const data = await response.json();
       return Array.isArray(data) ? data : [];
     },
