@@ -46,10 +46,14 @@ export const transportRequests = pgTable("transport_requests", {
   description: text("description").notNull(),
   goodsType: text("goods_type").notNull(),
   dateTime: timestamp("date_time").notNull(),
-  dateFlexible: boolean("date_flexible").default(false), // Whether date is flexible
-  invoiceRequired: boolean("invoice_required").default(false), // Whether TTC invoice is needed
   budget: decimal("budget", { precision: 10, scale: 2 }),
   photos: text("photos").array(),
+  // Handling/Manutention fields
+  handlingRequired: boolean("handling_required").default(false), // Besoin de manutention
+  departureFloor: integer("departure_floor"), // Étage au départ (null si pas de manutention)
+  departureElevator: boolean("departure_elevator"), // Ascenseur au départ
+  arrivalFloor: integer("arrival_floor"), // Étage à l'arrivée (null si pas de manutention)
+  arrivalElevator: boolean("arrival_elevator"), // Ascenseur à l'arrivée
   status: text("status").default("open"), // open, accepted, completed, cancelled
   acceptedOfferId: varchar("accepted_offer_id"),
   paymentStatus: text("payment_status").default("pending"), // pending, awaiting_payment, pending_admin_validation, paid

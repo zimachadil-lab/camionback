@@ -21,10 +21,27 @@ const requestSchema = z.object({
   description: z.string().min(10, "Description minimale: 10 caractères"),
   goodsType: z.string().min(1, "Type de marchandise requis"),
   dateTime: z.string().optional(),
-  dateFlexible: z.boolean().default(false),
-  invoiceRequired: z.boolean().default(false),
   budget: z.string().optional(),
-});
+  // Manutention fields
+  handlingRequired: z.boolean(),
+  departureFloor: z.string().optional(),
+  departureElevator: z.boolean().optional(),
+  arrivalFloor: z.string().optional(),
+  arrivalElevator: z.boolean().optional(),
+}).refine(
+  (data) => {
+    // Si manutention requise, les champs d'étage sont obligatoires
+    if (data.handlingRequired) {
+      return data.departureFloor && data.arrivalFloor && 
+             data.departureElevator !== undefined && data.arrivalElevator !== undefined;
+    }
+    return true;
+  },
+  {
+    message: "Les informations d'étage et d'ascenseur sont obligatoires si manutention requise",
+    path: ["handlingRequired"],
+  }
+);
 
 type RequestFormData = z.infer<typeof requestSchema>;
 
@@ -58,9 +75,12 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
       description: "",
       goodsType: "",
       dateTime: "",
-      dateFlexible: false,
-      invoiceRequired: false,
       budget: "",
+      handlingRequired: false,
+      departureFloor: "",
+      departureElevator: false,
+      arrivalFloor: "",
+      arrivalElevator: false,
     },
   });
 
@@ -102,13 +122,20 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
         goodsType: data.goodsType,
         clientId: user.id,
         dateTime: data.dateTime ? new Date(data.dateTime).toISOString() : new Date().toISOString(),
-        dateFlexible: data.dateFlexible,
-        invoiceRequired: data.invoiceRequired,
         photos: photoBase64Array,
+        handlingRequired: data.handlingRequired,
       };
       
       if (data.budget) {
         payload.budget = data.budget;
+      }
+      
+      // Add handling fields if manutention is required
+      if (data.handlingRequired) {
+        payload.departureFloor = parseInt(data.departureFloor || "0");
+        payload.departureElevator = data.departureElevator;
+        payload.arrivalFloor = parseInt(data.arrivalFloor || "0");
+        payload.arrivalElevator = data.arrivalElevator;
       }
       
       const response = await fetch("/api/requests", {
@@ -300,49 +327,125 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
               )}
             />
 
-            <div className="grid gap-4 grid-cols-2">
-              <FormField
-                control={form.control}
-                name="dateFlexible"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        data-testid="checkbox-date-flexible"
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel className="cursor-pointer">
-                        Date flexible
-                      </FormLabel>
-                    </div>
-                  </FormItem>
-                )}
-              />
+            <FormField
+              control={form.control}
+              name="handlingRequired"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      data-testid="checkbox-handling-required"
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel className="cursor-pointer">
+                      Besoin de manutention
+                    </FormLabel>
+                    <p className="text-sm text-muted-foreground">
+                      Si vous avez besoin d'aide pour charger/décharger avec étages
+                    </p>
+                  </div>
+                </FormItem>
+              )}
+            />
 
-              <FormField
-                control={form.control}
-                name="invoiceRequired"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        data-testid="checkbox-invoice-required"
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel className="cursor-pointer">
-                        Besoin d'une facture TTC
-                      </FormLabel>
-                    </div>
-                  </FormItem>
-                )}
-              />
-            </div>
+            {form.watch("handlingRequired") && (
+              <div className="space-y-4 p-4 rounded-lg border bg-muted/50">
+                <h3 className="font-semibold text-sm">Informations de manutention</h3>
+                
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-medium">🏢 Départ</h4>
+                    <FormField
+                      control={form.control}
+                      name="departureFloor"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Étage au départ</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              placeholder="ex: 3" 
+                              min="0"
+                              data-testid="input-departure-floor"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="departureElevator"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              data-testid="checkbox-departure-elevator"
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel className="cursor-pointer">
+                              Ascenseur disponible
+                            </FormLabel>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-medium">🏠 Arrivée</h4>
+                    <FormField
+                      control={form.control}
+                      name="arrivalFloor"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Étage à l'arrivée</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              placeholder="ex: 2" 
+                              min="0"
+                              data-testid="input-arrival-floor"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="arrivalElevator"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              data-testid="checkbox-arrival-elevator"
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel className="cursor-pointer">
+                              Ascenseur disponible
+                            </FormLabel>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Photos (optionnel)</label>

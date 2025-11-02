@@ -745,7 +745,6 @@ export default function TransporterDashboard() {
                       key={request.id}
                       request={request}
                       userStatus={user.status}
-                      offerCount={0}
                       onDecline={handleDeclineRequest}
                       onTrackView={() => trackViewMutation.mutate(request.id)}
                       // New interest-based props
@@ -780,7 +779,6 @@ export default function TransporterDashboard() {
                         key={request.id}
                         request={request}
                         userStatus={user.status}
-                        offerCount={0}
                         onTrackView={() => trackViewMutation.mutate(request.id)}
                         // Interest-based props - already interested, can withdraw
                         isInterested={true}

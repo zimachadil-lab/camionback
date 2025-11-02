@@ -24,16 +24,19 @@ interface RequestCardProps {
     status: string;
     viewCount?: number;
     createdAt?: Date | string;
-    dateFlexible?: boolean | null;
-    invoiceRequired?: boolean | null;
     transporterPrice?: number | null;
     platformFee?: number | null;
     clientTotal?: number | null;
+    // Handling/Manutention fields
+    handlingRequired?: boolean | null;
+    departureFloor?: number | null;
+    departureElevator?: boolean | null;
+    arrivalFloor?: number | null;
+    arrivalElevator?: boolean | null;
   };
   onMakeOffer?: (requestId: string) => void;
   showOfferButton?: boolean;
   userStatus?: string | null;
-  offerCount?: number;
   onDecline?: (requestId: string) => void;
   onTrackView?: () => void;
   // New props for interest-based workflow
@@ -48,7 +51,6 @@ export function RequestCard({
   onMakeOffer, 
   showOfferButton = true, 
   userStatus,
-  offerCount,
   onDecline,
   onTrackView,
   isInterested = false,
@@ -186,34 +188,66 @@ export function RequestCard({
           </div>
         )}
 
+        {/* Handling/Manutention Information */}
+        {request.handlingRequired !== undefined && request.handlingRequired !== null && (
+          <div className="p-3 rounded-lg border bg-muted/30 space-y-2">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <span>🏋️</span>
+              <span>Manutention : {request.handlingRequired ? 'Oui' : 'Non'}</span>
+            </div>
+            {request.handlingRequired && (
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <span>🏢</span>
+                    <span className="font-medium">Départ</span>
+                  </div>
+                  <div className="pl-4">
+                    {request.departureFloor !== undefined && request.departureFloor !== null ? (
+                      <>
+                        <div>{request.departureFloor === 0 ? 'RDC' : `${request.departureFloor}ᵉ étage`}</div>
+                        <div className="text-muted-foreground">
+                          Ascenseur {request.departureElevator ? '✅' : '❌'}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-muted-foreground">Non spécifié</div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <span>🏠</span>
+                    <span className="font-medium">Arrivée</span>
+                  </div>
+                  <div className="pl-4">
+                    {request.arrivalFloor !== undefined && request.arrivalFloor !== null ? (
+                      <>
+                        <div>{request.arrivalFloor === 0 ? 'RDC' : `${request.arrivalFloor}ᵉ étage`}</div>
+                        <div className="text-muted-foreground">
+                          Ascenseur {request.arrivalElevator ? '✅' : '❌'}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-muted-foreground">Non spécifié</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Statistics */}
         <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-          {offerCount !== undefined && (
-            <div className="flex items-center gap-1">
-              <FileText className="w-3 h-3" />
-              <span>{offerCount} offre{offerCount > 1 ? 's' : ''}</span>
-            </div>
-          )}
           {request.viewCount !== undefined && (
             <div className="flex items-center gap-1">
               <Eye className="w-3 h-3" />
               <span>{request.viewCount} vue{request.viewCount > 1 ? 's' : ''}</span>
             </div>
           )}
-          {request.dateFlexible !== undefined && request.dateFlexible !== null && (
-            <div className="flex items-center gap-1">
-              <Calendar className="w-3 h-3" />
-              <span>Date flexible : {request.dateFlexible ? 'Oui' : 'Non'}</span>
-            </div>
-          )}
-          {request.invoiceRequired !== undefined && request.invoiceRequired !== null && (
-            <div className="flex items-center gap-1">
-              <FileText className="w-3 h-3" />
-              <span>Facture TTC : {request.invoiceRequired ? 'Oui' : 'Non'}</span>
-            </div>
-          )}
           {createdAt && (
-            <div className="flex items-center gap-1 col-span-2">
+            <div className="flex items-center gap-1">
               <Calendar className="w-3 h-3" />
               <span>Créée le {format(createdAt, "d MMM", { locale: fr })}</span>
             </div>

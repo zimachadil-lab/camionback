@@ -1199,7 +1199,59 @@ export default function CoordinatorDashboard() {
               </a>
             </div>
           )}
+        </div>
 
+        {/* Handling/Manutention Information */}
+        {request.handlingRequired !== undefined && request.handlingRequired !== null && (
+          <div className="p-3 rounded-lg border bg-muted/30 space-y-2">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <span>🏋️</span>
+              <span>Manutention : {request.handlingRequired ? 'Oui' : 'Non'}</span>
+            </div>
+            {request.handlingRequired && (
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <span>🏢</span>
+                    <span className="font-medium">Départ</span>
+                  </div>
+                  <div className="pl-4">
+                    {request.departureFloor !== undefined && request.departureFloor !== null ? (
+                      <>
+                        <div>{request.departureFloor === 0 ? 'RDC' : `${request.departureFloor}ᵉ étage`}</div>
+                        <div className="text-muted-foreground">
+                          Ascenseur {request.departureElevator ? '✅' : '❌'}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-muted-foreground">Non spécifié</div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <span>🏠</span>
+                    <span className="font-medium">Arrivée</span>
+                  </div>
+                  <div className="pl-4">
+                    {request.arrivalFloor !== undefined && request.arrivalFloor !== null ? (
+                      <>
+                        <div>{request.arrivalFloor === 0 ? 'RDC' : `${request.arrivalFloor}ᵉ étage`}</div>
+                        <div className="text-muted-foreground">
+                          Ascenseur {request.arrivalElevator ? '✅' : '❌'}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-muted-foreground">Non spécifié</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="space-y-2 text-sm">
           {request.offers && request.offers.length > 0 && (
             <div className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-muted-foreground" />
