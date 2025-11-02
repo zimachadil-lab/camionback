@@ -536,20 +536,9 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
 
           {/* Actions pour commande avec transporteur (acceptée ou assignée) */}
           {hasTransporter && (
-            <div className="flex flex-col sm:flex-row gap-2 pt-2">
+            <div className="flex flex-col gap-3 pt-3">
+              {/* Bouton principal: Message */}
               <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => onViewTransporter(request.id)}
-                data-testid={`button-view-transporter-${request.id}`}
-                className="gap-2 flex-1"
-              >
-                <Info className="h-4 w-4" />
-                Infos transporteur
-              </Button>
-              <Button
-                variant="default"
-                size="sm"
                 onClick={() => {
                   // Handle manual assignment
                   if (request.assignedTransporterId && request.transporter) {
@@ -563,80 +552,127 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                   }
                 }}
                 data-testid={`button-chat-active-${request.id}`}
-                className="gap-2 flex-1 bg-[#00cc88] hover:bg-[#00cc88]/90 border-[#00cc88]"
+                className="w-full gap-2 h-12 text-base font-semibold bg-[#00cc88] hover:bg-[#00cc88]/90 border-[#00cc88]"
                 style={{ textShadow: "0 1px 1px rgba(0,0,0,0.2)" }}
               >
-                <MessageSquare className="h-4 w-4" />
-                <span className="hidden sm:inline">Message</span>
+                <MessageSquare className="h-5 w-5" />
+                Envoyer un message
               </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  let phone = "";
-                  let refId = request.referenceId;
-                  // Handle manual assignment
-                  if (request.assignedTransporterId && request.transporter) {
-                    phone = request.transporter.phoneNumber;
-                  } else {
-                    // Handle accepted offer
-                    const acceptedOffer = offersWithTransporters.find((o: any) => o.id === request.acceptedOfferId);
-                    if (acceptedOffer && acceptedOffer.transporter) {
-                      phone = acceptedOffer.transporter.phoneNumber;
-                    }
-                  }
-                  if (phone) {
-                    const message = encodeURIComponent(`Bonjour, concernant la commande ${refId} (${request.fromCity} → ${request.toCity})`);
-                    window.open(`https://wa.me/${phone.replace(/\D/g, '')}?text=${message}`, '_blank');
-                  }
-                }}
-                data-testid={`button-whatsapp-transporter-${request.id}`}
-                className="gap-2"
-              >
-                <Phone className="h-4 w-4" />
-                <span className="hidden sm:inline">WhatsApp</span>
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    data-testid={`button-update-status-${request.id}`}
-                    className="gap-2 flex-1"
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                    Statut
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={() => onUpdateStatus(request.id, "completed")}
-                    data-testid={`button-complete-${request.id}`}
-                    className="gap-2"
-                  >
-                    <CheckCircle className="h-4 w-4" />
-                    Terminée
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => onUpdateStatus(request.id, "republish")}
-                    data-testid={`button-republish-${request.id}`}
-                    className="gap-2"
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                    Republier
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => onReport(request.id)}
-                data-testid={`button-report-active-${request.id}`}
-                className="gap-2"
-              >
-                <Flag className="h-4 w-4" />
-                <span className="hidden sm:inline">Signaler</span>
-              </Button>
+
+              {/* Boutons secondaires */}
+              <div className="grid grid-cols-2 gap-2">
+                {/* Menu Contact */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="secondary"
+                      data-testid={`button-contact-menu-${request.id}`}
+                      className="gap-2 h-11 text-base"
+                    >
+                      <Phone className="h-5 w-5" />
+                      Contacter
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-56">
+                    <DropdownMenuItem
+                      onClick={() => onViewTransporter(request.id)}
+                      data-testid={`button-view-transporter-${request.id}`}
+                      className="gap-2 py-3"
+                    >
+                      <Info className="h-4 w-4" />
+                      Voir les informations
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        let phone = "";
+                        // Handle manual assignment
+                        if (request.assignedTransporterId && request.transporter) {
+                          phone = request.transporter.phoneNumber;
+                        } else {
+                          // Handle accepted offer
+                          const acceptedOffer = offersWithTransporters.find((o: any) => o.id === request.acceptedOfferId);
+                          if (acceptedOffer && acceptedOffer.transporter) {
+                            phone = acceptedOffer.transporter.phoneNumber;
+                          }
+                        }
+                        if (phone) {
+                          window.location.href = `tel:${phone}`;
+                        }
+                      }}
+                      data-testid={`button-call-transporter-${request.id}`}
+                      className="gap-2 py-3"
+                    >
+                      <Phone className="h-4 w-4" />
+                      Appeler le transporteur
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        let phone = "";
+                        let refId = request.referenceId;
+                        // Handle manual assignment
+                        if (request.assignedTransporterId && request.transporter) {
+                          phone = request.transporter.phoneNumber;
+                        } else {
+                          // Handle accepted offer
+                          const acceptedOffer = offersWithTransporters.find((o: any) => o.id === request.acceptedOfferId);
+                          if (acceptedOffer && acceptedOffer.transporter) {
+                            phone = acceptedOffer.transporter.phoneNumber;
+                          }
+                        }
+                        if (phone) {
+                          const message = encodeURIComponent(`Bonjour, concernant la commande ${refId} (${request.fromCity} → ${request.toCity})`);
+                          window.open(`https://wa.me/${phone.replace(/\D/g, '')}?text=${message}`, '_blank');
+                        }
+                      }}
+                      data-testid={`button-whatsapp-transporter-${request.id}`}
+                      className="gap-2 py-3"
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      Contacter par WhatsApp
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Menu Plus d'actions */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="secondary"
+                      data-testid={`button-more-actions-${request.id}`}
+                      className="gap-2 h-11 text-base"
+                    >
+                      <RotateCcw className="h-5 w-5" />
+                      Plus d'actions
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuItem
+                      onClick={() => onUpdateStatus(request.id, "completed")}
+                      data-testid={`button-complete-${request.id}`}
+                      className="gap-2 py-3"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      Marquer comme terminée
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onUpdateStatus(request.id, "republish")}
+                      data-testid={`button-republish-${request.id}`}
+                      className="gap-2 py-3"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                      Republier la demande
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onReport(request.id)}
+                      data-testid={`button-report-active-${request.id}`}
+                      className="gap-2 py-3 text-destructive focus:text-destructive"
+                    >
+                      <Flag className="h-4 w-4" />
+                      Signaler un problème
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           )}
         </CardContent>
@@ -1445,7 +1481,7 @@ export default function ClientDashboard() {
 
   const chooseTransporterMutation = useMutation({
     mutationFn: async ({ requestId, transporterId }: { requestId: string; transporterId: string }) => {
-      return await apiRequest("POST", `/api/requests/${requestId}/choose-transporter`, { transporterId }) as Promise<any>;
+      return await apiRequest("POST", `/api/requests/${requestId}/choose-transporter`, { transporterId });
     },
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
