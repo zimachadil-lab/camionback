@@ -1792,6 +1792,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get interested transporters for a qualified request (new workflow)
+  app.get("/api/requests/:id/interested-transporters", async (req, res) => {
+    try {
+      const request = await storage.getTransportRequest(req.params.id);
+      if (!request) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+
+      // Only return interested transporters if request has been qualified
+      if (!request.qualifiedAt || !request.transporterInterests || request.transporterInterests.length === 0) {
+        return res.json([]);
+      }
+
+      // Get transporter details
+      const transporters = await storage.getUsersByIds(request.transporterInterests);
+      
+      // Return sanitized transporter data (no phone numbers, no sensitive info)
+      const interestedTransporters = transporters.map(t => ({
+        id: t.id,
+        name: t.name,
+        city: t.city,
+        rating: t.rating,
+        totalTrips: t.totalTrips,
+        truckPhotos: t.truckPhotos,
+        isVerified: t.isVerified,
+      }));
+
+      res.json(interestedTransporters);
+    } catch (error) {
+      console.error("[GET /api/requests/:id/interested-transporters] Error:", error);
+      res.status(500).json({ error: "Failed to fetch interested transporters" });
+    }
+  });
+
   // Republish a request (reset to open status, optionally with new date)
   app.post("/api/requests/:id/republish", async (req, res) => {
     try {

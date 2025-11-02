@@ -92,6 +92,16 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
     },
   });
 
+  // Fetch interested transporters for qualified requests (new workflow)
+  const { data: interestedTransporters = [] } = useQuery({
+    queryKey: ["/api/requests", request.id, "interested-transporters"],
+    queryFn: async () => {
+      const response = await fetch(`/api/requests/${request.id}/interested-transporters`);
+      return response.json();
+    },
+    enabled: !!request.qualifiedAt, // Only fetch if request has been qualified
+  });
+
   const offersWithTransporters = offers.map((offer: any) => {
     // Use transporter data from offer if available (new API format)
     // Otherwise fall back to users array for backward compatibility
@@ -104,6 +114,10 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
       truckPhoto: transporterData?.truckPhotos?.[0] || offer.truckPhoto,
     };
   });
+
+  // Determine which workflow to use
+  const isQualifiedWorkflow = !!request.qualifiedAt;
+  const displayCount = isQualifiedWorkflow ? interestedTransporters.length : offersWithTransporters.length;
 
   const createdAt = request.createdAt 
     ? (typeof request.createdAt === 'string' ? new Date(request.createdAt) : request.createdAt)
@@ -348,7 +362,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
             </div>
           )}
 
-          {/* Bouton Offres reçues */}
+          {/* Bouton Offres reçues / Transporteurs intéressés */}
           {!isAccepted && (
             <Button
               variant="secondary"
@@ -356,8 +370,10 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
               onClick={() => setShowOffersDialog(true)}
               data-testid={`button-view-offers-${request.id}`}
             >
-              <MessageSquare className="w-4 h-4" />
-              Offres reçues ({offersWithTransporters.length})
+              <Users className="w-4 h-4" />
+              {isQualifiedWorkflow 
+                ? `Transporteurs intéressés (${displayCount})` 
+                : `Offres reçues (${displayCount})`}
             </Button>
           )}
 
@@ -491,40 +507,127 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
         </CardContent>
       </Card>
 
-      {/* Dialog des offres */}
+      {/* Dialog des offres / transporteurs intéressés */}
       <Dialog open={showOffersDialog} onOpenChange={setShowOffersDialog}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Offres reçues - {request.referenceId}</DialogTitle>
+            <DialogTitle>
+              {isQualifiedWorkflow 
+                ? `Transporteurs intéressés - ${request.referenceId}` 
+                : `Offres reçues - ${request.referenceId}`}
+            </DialogTitle>
             <DialogDescription>
               {request.fromCity} → {request.toCity}
+              {isQualifiedWorkflow && request.clientTotal && (
+                <span className="block mt-2 text-lg font-semibold text-[#17cfcf]">
+                  Prix total : {parseFloat(request.clientTotal).toFixed(2)} MAD
+                </span>
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-4">
-            {offersWithTransporters.length > 0 ? (
-              <div className="grid gap-4 md:grid-cols-2">
-                {offersWithTransporters.map((offer: any) => (
-                  <OfferCard
-                    key={offer.id}
-                    offer={offer}
-                    onAccept={(offerId) => {
-                      onAcceptOffer(offerId);
-                      setShowOffersDialog(false);
-                    }}
-                    onDecline={(offerId) => {
-                      onDeclineOffer(offerId);
-                    }}
-                    onChat={() => {
-                      onChat(offer.transporterId, offer.transporterName, request.id);
-                      setShowOffersDialog(false);
-                    }}
-                  />
-                ))}
-              </div>
+            {isQualifiedWorkflow ? (
+              // New workflow: Display interested transporters
+              interestedTransporters.length > 0 ? (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {interestedTransporters.map((transporter: any) => (
+                    <Card key={transporter.id} className="overflow-hidden">
+                      <CardContent className="p-4 space-y-3">
+                        {/* Transporter photo */}
+                        <div className="w-full h-32 bg-gradient-to-br from-[#0a2540] via-[#1d3c57] to-[#17cfcf]/20 rounded-lg overflow-hidden flex items-center justify-center">
+                          {transporter.truckPhotos?.[0] ? (
+                            <img
+                              src={transporter.truckPhotos[0]}
+                              alt="Camion"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Truck className="w-16 h-16 text-[#17cfcf] opacity-40" />
+                          )}
+                        </div>
+                        
+                        {/* Transporter info */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-semibold">{transporter.name || "Transporteur"}</h4>
+                            {transporter.isVerified && (
+                              <Badge className="bg-[#17cfcf]">Vérifié</Badge>
+                            )}
+                          </div>
+                          
+                          {transporter.city && (
+                            <p className="text-sm text-muted-foreground">{transporter.city}</p>
+                          )}
+                          
+                          {/* Rating */}
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`w-4 h-4 ${
+                                    i < Math.round(parseFloat(transporter.rating || "0"))
+                                      ? 'fill-yellow-400 text-yellow-400'
+                                      : 'text-gray-300'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-sm">
+                              {parseFloat(transporter.rating || "0").toFixed(1)} ({transporter.totalTrips || 0} trajets)
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {/* Action button */}
+                        <Button
+                          className="w-full bg-[#17cfcf] hover:bg-[#13b3b3]"
+                          onClick={() => {
+                            toast({
+                              title: "Fonctionnalité à venir",
+                              description: "La sélection manuelle de transporteur sera bientôt disponible",
+                            });
+                          }}
+                          data-testid={`button-select-transporter-${transporter.id}`}
+                        >
+                          Choisir ce transporteur
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  Aucun transporteur intéressé pour le moment
+                </p>
+              )
             ) : (
-              <p className="text-sm text-muted-foreground text-center py-8">
-                Aucune offre pour le moment
-              </p>
+              // Old workflow: Display offers
+              offersWithTransporters.length > 0 ? (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {offersWithTransporters.map((offer: any) => (
+                    <OfferCard
+                      key={offer.id}
+                      offer={offer}
+                      onAccept={(offerId) => {
+                        onAcceptOffer(offerId);
+                        setShowOffersDialog(false);
+                      }}
+                      onDecline={(offerId) => {
+                        onDeclineOffer(offerId);
+                      }}
+                      onChat={() => {
+                        onChat(offer.transporterId, offer.transporterName, request.id);
+                        setShowOffersDialog(false);
+                      }}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  Aucune offre pour le moment
+                </p>
+              )
             )}
           </div>
         </DialogContent>
