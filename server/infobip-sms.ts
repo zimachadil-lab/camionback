@@ -260,6 +260,62 @@ export async function sendTransporterAssignedSMS(clientPhone: string, referenceI
   return true;
 }
 
+/**
+ * Send SMS to client when their request is qualified with pricing
+ */
+export async function sendRequestQualifiedSMS(clientPhone: string, referenceId: string, clientTotal: number): Promise<boolean> {
+  const message = `Votre demande ${referenceId} a ete qualifiee sur CamionBack. Montant total: ${clientTotal} MAD. Consultez votre tableau de bord.`;
+  
+  // Fire and forget - don't block the main process
+  sendSMS(clientPhone, message).catch(err => {
+    console.error('[Infobip] Erreur SMS demande qualifiee:', err);
+  });
+  
+  return true;
+}
+
+/**
+ * Send SMS to transporter when a new qualified request is published for matching
+ */
+export async function sendNewMissionAvailableSMS(transporterPhone: string, referenceId: string): Promise<boolean> {
+  const message = `Nouvelle mission ${referenceId} disponible sur CamionBack ! Consultez votre tableau de bord pour exprimer votre interet.`;
+  
+  // Fire and forget - don't block the main process
+  sendSMS(transporterPhone, message).catch(err => {
+    console.error('[Infobip] Erreur SMS nouvelle mission:', err);
+  });
+  
+  return true;
+}
+
+/**
+ * Send SMS to client when a transporter expresses interest in their request
+ */
+export async function sendTransporterInterestedSMS(clientPhone: string, referenceId: string, transporterName: string): Promise<boolean> {
+  const message = `${transporterName} est interesse par votre mission ${referenceId} sur CamionBack. Consultez votre tableau de bord pour le contacter.`;
+  
+  // Fire and forget - don't block the main process
+  sendSMS(clientPhone, message).catch(err => {
+    console.error('[Infobip] Erreur SMS transporteur interesse:', err);
+  });
+  
+  return true;
+}
+
+/**
+ * Send SMS to client when their request is archived
+ */
+export async function sendRequestArchivedSMS(clientPhone: string, referenceId: string, reason: string): Promise<boolean> {
+  const message = `Votre demande ${referenceId} a ete archivee sur CamionBack. Motif: ${reason}. Contactez le support pour plus d'informations.`;
+  
+  // Fire and forget - don't block the main process
+  sendSMS(clientPhone, message).catch(err => {
+    console.error('[Infobip] Erreur SMS demande archivee:', err);
+  });
+  
+  return true;
+}
+
 // Log configuration status on startup
 if (isInfobipConfigured()) {
   console.log("[Infobip] Service SMS Infobip configure avec succes");

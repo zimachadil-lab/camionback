@@ -533,6 +533,175 @@ From: ${this.fromEmail}
 
     await this.sendEmail(subject, this.getEmailTemplate("Nouveau litige signalé", content));
   }
+
+  // New coordinator-centric workflow emails
+  async sendRequestQualifiedEmail(
+    request: TransportRequest,
+    client: User,
+    transporterAmount: number,
+    platformFee: number,
+    clientTotal: number
+  ): Promise<void> {
+    const subject = `[Commande #${request.referenceId}] Demande qualifiée - Prix établi`;
+
+    const content = `
+      <h2 style="color: #0a2540; margin-top: 0;">✅ Votre demande a été qualifiée</h2>
+      <div class="status-badge status-validated">Demande qualifiée</div>
+
+      <div class="info-section">
+        <h3 style="margin-top: 0; color: #0a2540;">📋 Détails de la tarification</h3>
+        <div class="info-row">
+          <span class="label">Numéro de commande:</span>
+          <span class="value"><strong>${request.referenceId}</strong></span>
+        </div>
+        <div class="info-row">
+          <span class="label">Montant transporteur:</span>
+          <span class="value">${transporterAmount.toFixed(2)} MAD</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Frais plateforme:</span>
+          <span class="value">${platformFee.toFixed(2)} MAD</span>
+        </div>
+        <div class="divider"></div>
+        <div class="info-row">
+          <span class="label">Total à payer:</span>
+          <span class="value"><strong style="color: #0a2540; font-size: 18px;">${clientTotal.toFixed(2)} MAD</strong></span>
+        </div>
+      </div>
+
+      <div class="info-section">
+        <h3 style="margin-top: 0; color: #0a2540;">📍 Trajet</h3>
+        <div class="info-row">
+          <span class="label">Départ:</span>
+          <span class="value">${request.fromCity}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Arrivée:</span>
+          <span class="value">${request.toCity}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Date souhaitée:</span>
+          <span class="value">${new Date(request.dateTime).toLocaleDateString('fr-FR')}</span>
+        </div>
+      </div>
+
+      <div style="background: #e8f5e9; border-left: 4px solid #388e3c; padding: 15px; margin: 20px 0; border-radius: 4px;">
+        <p style="margin: 0; color: #1b5e20;">
+          <strong>🚛 Prochaine étape:</strong> Des transporteurs qualifiés vont être notifiés. Vous pourrez consulter les profils intéressés depuis votre tableau de bord.
+        </p>
+      </div>
+
+      <div style="text-align: center; margin-top: 30px;">
+        <p style="color: #666;">Connectez-vous au tableau de bord pour suivre l'évolution de votre demande</p>
+      </div>
+    `;
+
+    await this.sendEmail(subject, this.getEmailTemplate("Demande qualifiée", content));
+  }
+
+  async sendTransporterInterestedEmail(
+    request: TransportRequest,
+    client: User,
+    transporter: User
+  ): Promise<void> {
+    const subject = `[Commande #${request.referenceId}] Un transporteur est intéressé`;
+
+    const content = `
+      <h2 style="color: #0a2540; margin-top: 0;">👋 Transporteur intéressé par votre mission</h2>
+      <div class="status-badge status-pending">Nouveau match</div>
+
+      <div class="info-section">
+        <h3 style="margin-top: 0; color: #0a2540;">📋 Mission</h3>
+        <div class="info-row">
+          <span class="label">Numéro:</span>
+          <span class="value"><strong>${request.referenceId}</strong></span>
+        </div>
+        <div class="info-row">
+          <span class="label">Trajet:</span>
+          <span class="value">${request.fromCity} → ${request.toCity}</span>
+        </div>
+      </div>
+
+      <div class="info-section">
+        <h3 style="margin-top: 0; color: #0a2540;">🚛 Transporteur intéressé</h3>
+        <div class="info-row">
+          <span class="label">Nom:</span>
+          <span class="value">${transporter.name}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Note:</span>
+          <span class="value">⭐ ${transporter.rating || '5.0'} / 5.0</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Trajets complétés:</span>
+          <span class="value">${transporter.totalTrips || 0} missions</span>
+        </div>
+      </div>
+
+      <div style="background: #e3f2fd; border-left: 4px solid #1976d2; padding: 15px; margin: 20px 0; border-radius: 4px;">
+        <p style="margin: 0; color: #0d47a1;">
+          <strong>💬 Action suggérée:</strong> Consultez le profil et contactez ce transporteur via CamioMatch dans votre tableau de bord.
+        </p>
+      </div>
+
+      <div style="text-align: center; margin-top: 30px;">
+        <p style="color: #666;">Connectez-vous pour voir tous les transporteurs intéressés</p>
+      </div>
+    `;
+
+    await this.sendEmail(subject, this.getEmailTemplate("Transporteur intéressé", content));
+  }
+
+  async sendRequestArchivedEmail(
+    request: TransportRequest,
+    client: User,
+    reason: string,
+    reasonLabel: string
+  ): Promise<void> {
+    const subject = `[Commande #${request.referenceId}] Demande archivée`;
+
+    const content = `
+      <h2 style="color: #0a2540; margin-top: 0;">📁 Demande archivée</h2>
+      <div class="status-badge" style="background: #f5f5f5; color: #666;">Archivée</div>
+
+      <div class="info-section">
+        <h3 style="margin-top: 0; color: #0a2540;">📋 Détails de la demande</h3>
+        <div class="info-row">
+          <span class="label">Numéro:</span>
+          <span class="value"><strong>${request.referenceId}</strong></span>
+        </div>
+        <div class="info-row">
+          <span class="label">Trajet:</span>
+          <span class="value">${request.fromCity} → ${request.toCity}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Date archivage:</span>
+          <span class="value">${new Date().toLocaleDateString('fr-FR', { dateStyle: 'full', timeStyle: 'short' })}</span>
+        </div>
+      </div>
+
+      <div class="info-section">
+        <h3 style="margin-top: 0; color: #0a2540;">📝 Motif d'archivage</h3>
+        <div style="background: #fff3e0; border-radius: 4px; padding: 15px;">
+          <p style="margin: 0; font-size: 16px; color: #e65100;">
+            <strong>${reasonLabel}</strong>
+          </p>
+        </div>
+      </div>
+
+      <div style="background: #e3f2fd; border-left: 4px solid #1976d2; padding: 15px; margin: 20px 0; border-radius: 4px;">
+        <p style="margin: 0; color: #0d47a1;">
+          <strong>💡 Besoin d'aide?</strong> Contactez notre équipe support pour plus d'informations ou pour soumettre une nouvelle demande.
+        </p>
+      </div>
+
+      <div style="text-align: center; margin-top: 30px;">
+        <p style="color: #666;">Vous pouvez créer une nouvelle demande depuis votre tableau de bord</p>
+      </div>
+    `;
+
+    await this.sendEmail(subject, this.getEmailTemplate("Demande archivée", content));
+  }
 }
 
 export const emailService = new EmailService();

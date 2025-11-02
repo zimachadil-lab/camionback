@@ -164,6 +164,43 @@ export const NotificationTemplates = {
     title: '✅ Transporteur assigné !',
     body: `Un transporteur a été assigné à votre commande ${requestRef}`,
     url: '/client-dashboard'
+  }),
+
+  // New coordinator-centric workflow notifications
+  requestQualified: (requestRef: string, clientTotal: number) => ({
+    title: '✅ Demande qualifiée !',
+    body: `Votre demande ${requestRef} a été évaluée. Montant total: ${clientTotal} MAD`,
+    url: '/client-dashboard'
+  }),
+
+  requestPublished: (requestRef: string) => ({
+    title: '🚛 Nouvelle mission disponible !',
+    body: `Mission ${requestRef} publiée - Cliquez pour exprimer votre intérêt`,
+    url: '/transporter-dashboard'
+  }),
+
+  transporterInterested: (requestRef: string, transporterName: string) => ({
+    title: '👋 Transporteur intéressé !',
+    body: `${transporterName} est intéressé par votre mission ${requestRef}`,
+    url: '/client-dashboard'
+  }),
+
+  clientContacted: (requestRef: string, clientName: string) => ({
+    title: '💬 Le client vous a contacté !',
+    body: `${clientName} souhaite discuter de la mission ${requestRef}`,
+    url: '/transporter-dashboard'
+  }),
+
+  requestArchived: (requestRef: string, reason: string) => ({
+    title: '📁 Demande archivée',
+    body: `Votre demande ${requestRef} a été archivée. Motif: ${reason}`,
+    url: '/client-dashboard'
+  }),
+
+  coordinatorAssigned: (requestRef: string) => ({
+    title: '📋 Nouvelle demande assignée',
+    body: `La demande ${requestRef} vous a été assignée pour qualification`,
+    url: '/coordinator-dashboard'
   })
 };
 

@@ -4542,6 +4542,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Demande introuvable" });
       }
 
+      // Send notifications to client about qualification
+      const client = await storage.getUser(updated.clientId);
+      const clientTotal = transporterAmount + platformFee;
+      
+      if (client) {
+        // In-app notification
+        await storage.createNotification({
+          userId: client.id,
+          type: "request_qualified",
+          title: "Demande qualifiée",
+          message: `Votre demande ${updated.referenceId} a été évaluée. Montant total: ${clientTotal} MAD`,
+          relatedId: updated.id,
+        });
+
+        // Push notification
+        try {
+          if (client.deviceToken) {
+            const { sendNotificationToUser, NotificationTemplates } = await import('./push-notifications');
+            const notification = NotificationTemplates.requestQualified(updated.referenceId, clientTotal);
+            await sendNotificationToUser(client.id, notification, storage);
+            console.log(`📨 Notification push envoyée au client pour qualification`);
+          }
+        } catch (pushError) {
+          console.error('❌ Erreur notification push qualification:', pushError);
+        }
+
+        // SMS notification
+        try {
+          const { sendRequestQualifiedSMS } = await import('./infobip-sms');
+          await sendRequestQualifiedSMS(client.phoneNumber, updated.referenceId, clientTotal);
+        } catch (smsError) {
+          console.error('❌ Erreur SMS qualification:', smsError);
+        }
+
+        // Email notification
+        try {
+          emailService.sendRequestQualifiedEmail(updated, client, transporterAmount, platformFee, clientTotal).catch(emailError => {
+            console.error('❌ Erreur email qualification:', emailError);
+          });
+        } catch (emailError) {
+          console.error('❌ Erreur email qualification:', emailError);
+        }
+      }
+
       res.json(updated);
     } catch (error) {
       console.error("Erreur qualification demande:", error);
@@ -4562,6 +4606,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!updated) {
         return res.status(404).json({ error: "Demande introuvable" });
+      }
+
+      // Notify active validated transporters about new mission
+      try {
+        const allUsers = await storage.getAllUsers();
+        const activeTransporters = allUsers.filter(u => 
+          u.role === 'transporteur' && 
+          u.status === 'validated' && 
+          u.isActive === true &&
+          u.accountStatus !== 'blocked'
+        );
+        
+        for (const transporter of activeTransporters) {
+          // In-app notification
+          await storage.createNotification({
+            userId: transporter.id,
+            type: "new_mission_available",
+            title: "Nouvelle mission disponible",
+            message: `Mission ${updated.referenceId} : ${updated.fromCity} → ${updated.toCity}`,
+            relatedId: updated.id,
+          });
+
+          // Push notification
+          if (transporter.deviceToken) {
+            try {
+              const { sendNotificationToUser, NotificationTemplates } = await import('./push-notifications');
+              const notification = NotificationTemplates.requestPublished(updated.referenceId);
+              await sendNotificationToUser(transporter.id, notification, storage);
+            } catch (pushError) {
+              console.error(`❌ Erreur push pour transporteur ${transporter.id}:`, pushError);
+            }
+          }
+
+          // SMS notification (optional, can be disabled to reduce costs)
+          // Uncomment if you want SMS for every new mission
+          // try {
+          //   const { sendNewMissionAvailableSMS } = await import('./infobip-sms');
+          //   await sendNewMissionAvailableSMS(transporter.phoneNumber, updated.referenceId);
+          // } catch (smsError) {
+          //   console.error(`❌ Erreur SMS pour transporteur ${transporter.id}:`, smsError);
+          // }
+        }
+
+        console.log(`📨 ${activeTransporters.length} transporteurs notifiés pour ${updated.referenceId}`);
+      } catch (notifError) {
+        console.error('❌ Erreur notification transporteurs:', notifError);
       }
 
       res.json(updated);
@@ -4601,6 +4691,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Demande introuvable" });
       }
 
+      // Notify client about archival
+      const client = await storage.getUser(updated.clientId);
+      
+      if (client) {
+        // Get reason label from shared schema
+        const { ARCHIVE_REASONS_LABELS } = await import('../shared/schema');
+        const reasonLabel = ARCHIVE_REASONS_LABELS[reason] || reason;
+
+        // In-app notification
+        await storage.createNotification({
+          userId: client.id,
+          type: "request_archived",
+          title: "Demande archivée",
+          message: `Votre demande ${updated.referenceId} a été archivée. Motif: ${reasonLabel}`,
+          relatedId: updated.id,
+        });
+
+        // Push notification
+        try {
+          if (client.deviceToken) {
+            const { sendNotificationToUser, NotificationTemplates } = await import('./push-notifications');
+            const notification = NotificationTemplates.requestArchived(updated.referenceId, reasonLabel);
+            await sendNotificationToUser(client.id, notification, storage);
+            console.log(`📨 Notification push envoyée au client pour archivage`);
+          }
+        } catch (pushError) {
+          console.error('❌ Erreur notification push archivage:', pushError);
+        }
+
+        // SMS notification
+        try {
+          const { sendRequestArchivedSMS } = await import('./infobip-sms');
+          await sendRequestArchivedSMS(client.phoneNumber, updated.referenceId, reasonLabel);
+        } catch (smsError) {
+          console.error('❌ Erreur SMS archivage:', smsError);
+        }
+
+        // Email notification
+        try {
+          emailService.sendRequestArchivedEmail(updated, client, reason, reasonLabel).catch(emailError => {
+            console.error('❌ Erreur email archivage:', emailError);
+          });
+        } catch (emailError) {
+          console.error('❌ Erreur email archivage:', emailError);
+        }
+      }
+
       res.json(updated);
     } catch (error) {
       console.error("Erreur archivage demande:", error);
@@ -4628,6 +4765,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!updated) {
         return res.status(404).json({ error: "Demande introuvable" });
+      }
+
+      // Only send notifications when expressing interest (not withdrawing)
+      if (interested) {
+        const client = await storage.getUser(updated.clientId);
+        const transporter = await storage.getUser(transporterId);
+        
+        if (client && transporter) {
+          // Notify client
+          await storage.createNotification({
+            userId: client.id,
+            type: "transporter_interested",
+            title: "Transporteur intéressé",
+            message: `${transporter.name} est intéressé par votre mission ${updated.referenceId}`,
+            relatedId: updated.id,
+          });
+
+          // Push notification to client
+          try {
+            if (client.deviceToken) {
+              const { sendNotificationToUser, NotificationTemplates } = await import('./push-notifications');
+              const notification = NotificationTemplates.transporterInterested(updated.referenceId, transporter.name || 'Un transporteur');
+              await sendNotificationToUser(client.id, notification, storage);
+              console.log(`📨 Notification push envoyée au client pour intérêt transporteur`);
+            }
+          } catch (pushError) {
+            console.error('❌ Erreur notification push intérêt:', pushError);
+          }
+
+          // SMS notification to client
+          try {
+            const { sendTransporterInterestedSMS } = await import('./infobip-sms');
+            await sendTransporterInterestedSMS(client.phoneNumber, updated.referenceId, transporter.name || 'Un transporteur');
+          } catch (smsError) {
+            console.error('❌ Erreur SMS intérêt:', smsError);
+          }
+
+          // Email notification to client
+          try {
+            emailService.sendTransporterInterestedEmail(updated, client, transporter).catch(emailError => {
+              console.error('❌ Erreur email intérêt:', emailError);
+            });
+          } catch (emailError) {
+            console.error('❌ Erreur email intérêt:', emailError);
+          }
+
+          // Notify coordinator (if assigned)
+          if (updated.assignedByCoordinatorId) {
+            await storage.createNotification({
+              userId: updated.assignedByCoordinatorId,
+              type: "transporter_interested",
+              title: "Match transporteur",
+              message: `${transporter.name} intéressé par ${updated.referenceId}`,
+              relatedId: updated.id,
+            });
+          }
+        }
       }
 
       res.json(updated);

@@ -17,7 +17,7 @@ The backend is an Express.js and TypeScript application providing RESTful JSON A
 **Key Features:**
 - **Request and Offer Workflow:** Multi-status client request progression, transporter offer submission, and acceptance. The workflow has been redesigned to centralize pricing and matching decisions with coordinators, simplifying the transporter's role to expressing interest.
 - **User Management:** Transporter rating, contract management, account blocking/deletion, and automated client ID generation with robust race-condition handling.
-- **Messaging & Notifications:** Centralized admin messaging, voice messaging, SMS, email, and PWA push notifications.
+- **Messaging & Notifications:** Comprehensive multi-channel notification system with in-app, SMS (Infobip), email (Nodemailer), and PWA push notifications for all coordinator-centric workflow events including qualification, publication for matching, transporter interest, archival, and client-transporter contacts. All 12 canonical archive reasons from shared/schema.ts have dedicated French labels for consistent messaging.
 - **Admin & Coordinator Tools:** Dynamic dashboards, comprehensive request management (hide/delete/expire, advanced coordination status tracking), reporting, dispute resolution, full CRUD for cities, and automated coordinator assignment.
 - **Public Order Sharing:** Coordinators can share transport requests via unique, secure public links with sanitized order details, WhatsApp integration, and direct offer submission for authenticated users.
 - **CamioMatch:** An intelligent, Tinder-style transporter matching system for clients.
