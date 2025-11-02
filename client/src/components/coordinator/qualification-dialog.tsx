@@ -117,6 +117,7 @@ export function QualificationDialog({ open, onOpenChange, request, onSuccess }: 
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/qualification-pending"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/en-action"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/available-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/matching-requests"] });
       onOpenChange(false);
       onSuccess();
     },

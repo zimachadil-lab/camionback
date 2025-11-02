@@ -326,6 +326,7 @@ export default function CoordinatorDashboard() {
   const [selectedStatus, setSelectedStatus] = useState("Tous les statuts");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDateFilter, setSelectedDateFilter] = useState("all");
+  const [selectedCoordinator, setSelectedCoordinator] = useState("Tous les coordinateurs");
   const [chatOpen, setChatOpen] = useState(false);
   const [selectedParticipants, setSelectedParticipants] = useState<{ client: any; transporter: any } | null>(null);
   const [chatRequestId, setChatRequestId] = useState<string>("");
@@ -995,8 +996,15 @@ export default function CoordinatorDashboard() {
             return true;
         }
       })();
+
+      // Coordinator filtering (for qualified requests)
+      const matchesCoordinator = selectedCoordinator === "Tous les coordinateurs" || 
+        (request.coordinationUpdatedBy && request.coordinationUpdatedBy === allCoordinators.find((c: any) => {
+          const coordName = c.name || c.phoneNumber;
+          return coordName === selectedCoordinator;
+        })?.id);
       
-      return matchesCity && matchesStatus && matchesSearch && matchesDate;
+      return matchesCity && matchesStatus && matchesSearch && matchesDate && matchesCoordinator;
     });
   };
 
@@ -1073,12 +1081,17 @@ export default function CoordinatorDashboard() {
     queryClient.invalidateQueries({ queryKey: ["/api/coordinator/matching-requests"] });
   };
 
-  const renderRequestCard = (request: any, showVisibilityToggle = false, showPaymentControls = false, isCoordination = false, showQualifyButton = false) => {
+  const renderRequestCard = (request: any, showVisibilityToggle = false, showPaymentControls = false, isCoordination = false, showQualifyButton = false, showQualifiedBy = false) => {
     // Calculate interested count
     const interestedCount = request.transporterInterests?.length || 0;
     // Get client-friendly status
     const clientStatus = getClientStatus(request, interestedCount);
     const StatusIcon = clientStatus.icon;
+    
+    // Get coordinator who qualified this request
+    const qualifiedBy = showQualifiedBy && request.coordinationUpdatedBy 
+      ? allCoordinators.find((c: any) => c.id === request.coordinationUpdatedBy)
+      : null;
 
     return (
     <Card key={request.id} className="hover-elevate" data-testid={`card-request-${request.id}`}>
@@ -1143,6 +1156,16 @@ export default function CoordinatorDashboard() {
               >
                 {request.client.phoneNumber}
               </a>
+            </div>
+          )}
+
+          {qualifiedBy && (
+            <div className="flex items-center gap-2 bg-green-50 dark:bg-green-950 p-2 rounded-md border border-green-200 dark:border-green-800">
+              <Users className="h-4 w-4 text-green-600 dark:text-green-400" />
+              <span className="text-muted-foreground">Qualifiée par:</span>
+              <span className="font-semibold text-green-700 dark:text-green-300" data-testid={`text-qualified-by-${request.id}`}>
+                {qualifiedBy.name || qualifiedBy.phoneNumber}
+              </span>
             </div>
           )}
 
@@ -1328,6 +1351,20 @@ export default function CoordinatorDashboard() {
             </Button>
           )}
 
+          {/* NEW: Requalify button for qualified requests */}
+          {showQualifiedBy && (
+            <Button
+              size="sm"
+              variant="default"
+              className="bg-blue-500 hover:bg-blue-600"
+              onClick={() => handleOpenQualificationDialog(request)}
+              data-testid={`button-requalify-${request.id}`}
+            >
+              <Edit className="h-4 w-4 mr-1" />
+              Requalifier
+            </Button>
+          )}
+
           {isCoordination && !request.transporter && request.status !== 'accepted' && (
             <Button
               size="sm"
@@ -1436,7 +1473,22 @@ export default function CoordinatorDashboard() {
               </SelectContent>
             </Select>
             
-            {(searchQuery || selectedCity !== "Toutes les villes" || selectedStatus !== "Tous les statuts" || selectedDateFilter !== "all") && (
+            <Select value={selectedCoordinator} onValueChange={setSelectedCoordinator}>
+              <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-coordinator">
+                <Users className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Coordinateur" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Tous les coordinateurs">Tous les coordinateurs</SelectItem>
+                {allCoordinators.map((coordinator: any) => (
+                  <SelectItem key={coordinator.id} value={coordinator.name || coordinator.phoneNumber}>
+                    {coordinator.name || coordinator.phoneNumber}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {(searchQuery || selectedCity !== "Toutes les villes" || selectedStatus !== "Tous les statuts" || selectedDateFilter !== "all" || selectedCoordinator !== "Tous les coordinateurs") && (
               <Button
                 variant="outline"
                 size="sm"
@@ -1445,6 +1497,7 @@ export default function CoordinatorDashboard() {
                   setSelectedCity("Toutes les villes");
                   setSelectedStatus("Tous les statuts");
                   setSelectedDateFilter("all");
+                  setSelectedCoordinator("Tous les coordinateurs");
                 }}
                 className="whitespace-nowrap"
                 data-testid="button-clear-filters"
@@ -1516,7 +1569,7 @@ export default function CoordinatorDashboard() {
                 </CardContent>
               </Card>
             ) : (
-              filterRequests(matchingRequests).map((request) => renderRequestCard(request, true, false, false, false))
+              filterRequests(matchingRequests).map((request) => renderRequestCard(request, true, false, false, false, true))
             )}
           </TabsContent>
 
