@@ -504,6 +504,7 @@ export default function CoordinatorDashboard() {
       // Annuler toutes les requêtes de coordination en cours
       await queryClient.cancelQueries({ predicate: (query) => 
         query.queryKey[0] === "/api/coordinator/qualification-pending" ||
+        query.queryKey[0] === "/api/coordinator/matching-requests" ||
         query.queryKey[0] === "/api/coordinator/coordination/en-action" ||
         query.queryKey[0] === "/api/coordinator/coordination/prioritaires" ||
         query.queryKey[0] === "/api/coordinator/coordination/archives"
@@ -520,6 +521,10 @@ export default function CoordinatorDashboard() {
       // Mettre à jour toutes les requêtes qui correspondent aux patterns
       queryClient.setQueriesData(
         { predicate: (query) => query.queryKey[0] === "/api/coordinator/qualification-pending" },
+        updateCache
+      );
+      queryClient.setQueriesData(
+        { predicate: (query) => query.queryKey[0] === "/api/coordinator/matching-requests" },
         updateCache
       );
       queryClient.setQueriesData(
@@ -545,6 +550,7 @@ export default function CoordinatorDashboard() {
       // Invalider toutes les queries pour recharger les données en cas d'erreur
       queryClient.invalidateQueries({ predicate: (query) => 
         query.queryKey[0] === "/api/coordinator/qualification-pending" ||
+        query.queryKey[0] === "/api/coordinator/matching-requests" ||
         query.queryKey[0] === "/api/coordinator/coordination/en-action" ||
         query.queryKey[0] === "/api/coordinator/coordination/prioritaires" ||
         query.queryKey[0] === "/api/coordinator/coordination/archives"
@@ -1551,7 +1557,7 @@ export default function CoordinatorDashboard() {
                 </CardContent>
               </Card>
             ) : (
-              filterRequests(nouveauRequests).map((request) => renderRequestCard(request, false, false, false, true))
+              filterRequests(nouveauRequests).map((request) => renderRequestCard(request, true, false, false, true))
             )}
           </TabsContent>
 
