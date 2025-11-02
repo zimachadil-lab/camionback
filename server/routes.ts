@@ -1604,11 +1604,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`📋 Grouped offers by requestId, starting enrichment...`);
       
       // Get all unique transporter IDs from assigned transporters
-      const assignedTransporterIds = [...new Set(
+      const assignedTransporterIds = Array.from(new Set(
         requests
           .filter(r => r.assignedTransporterId)
           .map(r => r.assignedTransporterId)
-      )];
+      ));
       
       // Fetch transporter info for assigned transporters
       const assignedTransporters: Record<string, any> = {};
@@ -1873,7 +1873,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         transporterId,
         parseFloat(request.transporterAmount),
         parseFloat(request.platformFee),
-        request.coordinationUpdatedBy || null // Keep track of coordinator who qualified
+        request.coordinationUpdatedBy ?? '' // Keep track of coordinator who qualified
       );
 
       if (!updatedRequest) {

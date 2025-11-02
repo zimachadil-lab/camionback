@@ -36,15 +36,6 @@ export default function TransporterPayments() {
     enabled: !!user?.id && user?.role === "transporteur",
   });
 
-  const { data: allOffers = [] } = useQuery({
-    queryKey: ["/api/offers"],
-    queryFn: async () => {
-      const response = await fetch("/api/offers");
-      return response.json();
-    },
-    enabled: !!user,
-  });
-
   // Early return after all hooks
   if (authLoading || !user) {
     return (
@@ -65,7 +56,7 @@ export default function TransporterPayments() {
   return (
     <div className="min-h-screen bg-background">
       <Header
-        user={user}
+        user={user as any}
         onLogout={handleLogout}
       />
       
@@ -94,11 +85,6 @@ export default function TransporterPayments() {
                   </TableHeader>
                   <TableBody>
                     {paymentRequests.map((request: any) => {
-                      // Find accepted offer for this request to get amount
-                      const acceptedOffer = allOffers.find(
-                        (offer: any) => offer.id === request.acceptedOfferId
-                      );
-
                       const isPendingValidation = request.paymentStatus === "pending_admin_validation";
                       const isPaid = request.paymentStatus === "paid";
 
@@ -110,7 +96,7 @@ export default function TransporterPayments() {
                           <TableCell data-testid={`text-created-${request.id}`}>
                             {request.createdAt 
                               ? format(new Date(request.createdAt), "dd/MM/yyyy", { locale: fr })
-                              : "N/A"
+                              : "-"
                             }
                           </TableCell>
                           <TableCell data-testid={`text-updated-${request.id}`}>
@@ -118,11 +104,14 @@ export default function TransporterPayments() {
                               ? format(new Date(request.updatedAt), "dd/MM/yyyy 'à' HH:mm", { locale: fr })
                               : request.createdAt 
                                 ? format(new Date(request.createdAt), "dd/MM/yyyy 'à' HH:mm", { locale: fr })
-                                : "N/A"
+                                : "-"
                             }
                           </TableCell>
                           <TableCell className="font-semibold" data-testid={`text-amount-${request.id}`}>
-                            {acceptedOffer ? `${acceptedOffer.amount} MAD` : "N/A"}
+                            {request.transporterAmount != null 
+                              ? `${Number(request.transporterAmount).toFixed(2)} MAD`
+                              : "-"
+                            }
                           </TableCell>
                           <TableCell data-testid={`status-payment-${request.id}`}>
                             {isPendingValidation && (
