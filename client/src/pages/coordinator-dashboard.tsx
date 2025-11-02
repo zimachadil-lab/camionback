@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, MessageCircle, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck, Trash2, Share2, Copy, Send, RotateCcw, Info, Users, CreditCard } from "lucide-react";
+import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, MessageCircle, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck, Trash2, Share2, Copy, Send, RotateCcw, Info, Users, CreditCard, Calendar, X } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -325,6 +325,7 @@ export default function CoordinatorDashboard() {
   const [selectedCity, setSelectedCity] = useState("Toutes les villes");
   const [selectedStatus, setSelectedStatus] = useState("Tous les statuts");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedDateFilter, setSelectedDateFilter] = useState("all");
   const [chatOpen, setChatOpen] = useState(false);
   const [selectedParticipants, setSelectedParticipants] = useState<{ client: any; transporter: any } | null>(null);
   const [chatRequestId, setChatRequestId] = useState<string>("");
@@ -348,8 +349,6 @@ export default function CoordinatorDashboard() {
   const [selectedCoordinationStatus, setSelectedCoordinationStatus] = useState("");
   const [coordinationReason, setCoordinationReason] = useState("");
   const [coordinationReminderDate, setCoordinationReminderDate] = useState("");
-  const [coordinationAssignedFilter, setCoordinationAssignedFilter] = useState("all");
-  const [coordinationSearchQuery, setCoordinationSearchQuery] = useState("");
   const [deleteRequestId, setDeleteRequestId] = useState<string | null>(null);
   const [manualAssignmentDialogOpen, setManualAssignmentDialogOpen] = useState(false);
   const [selectedRequestForAssignment, setSelectedRequestForAssignment] = useState<any>(null);
@@ -426,50 +425,38 @@ export default function CoordinatorDashboard() {
     },
   });
 
-  // Fetch coordination views with filters
-  const buildQueryString = (assignedTo: string, search: string) => {
-    const params = new URLSearchParams();
-    if (assignedTo && assignedTo !== "all") params.append("assignedToId", assignedTo);
-    if (search) params.append("searchQuery", search);
-    return params.toString() ? `?${params.toString()}` : "";
-  };
-
   // NEW WORKFLOW: "Nouveau" devient "À qualifier" avec status qualification_pending
   const { data: nouveauRequests = [], isLoading: nouveauLoading } = useQuery({
-    queryKey: ["/api/coordinator/qualification-pending", coordinationAssignedFilter, coordinationSearchQuery],
+    queryKey: ["/api/coordinator/qualification-pending"],
     queryFn: async () => {
-      const queryString = buildQueryString(coordinationAssignedFilter, coordinationSearchQuery);
-      const response = await fetch(`/api/coordinator/qualification-pending${queryString}`);
+      const response = await fetch("/api/coordinator/qualification-pending");
       const data = await response.json();
       return Array.isArray(data) ? data : [];
     },
   });
 
   const { data: enActionRequests = [], isLoading: enActionLoading } = useQuery({
-    queryKey: ["/api/coordinator/coordination/en-action", coordinationAssignedFilter, coordinationSearchQuery],
+    queryKey: ["/api/coordinator/coordination/en-action"],
     queryFn: async () => {
-      const queryString = buildQueryString(coordinationAssignedFilter, coordinationSearchQuery);
-      const response = await fetch(`/api/coordinator/coordination/en-action${queryString}`);
+      const response = await fetch("/api/coordinator/coordination/en-action");
       const data = await response.json();
       return Array.isArray(data) ? data : [];
     },
   });
 
   const { data: prioritairesRequests = [], isLoading: prioritairesLoading } = useQuery({
-    queryKey: ["/api/coordinator/coordination/prioritaires", coordinationAssignedFilter, coordinationSearchQuery],
+    queryKey: ["/api/coordinator/coordination/prioritaires"],
     queryFn: async () => {
-      const queryString = buildQueryString(coordinationAssignedFilter, coordinationSearchQuery);
-      const response = await fetch(`/api/coordinator/coordination/prioritaires${queryString}`);
+      const response = await fetch("/api/coordinator/coordination/prioritaires");
       const data = await response.json();
       return Array.isArray(data) ? data : [];
     },
   });
 
   const { data: archivesRequests = [], isLoading: archivesLoading } = useQuery({
-    queryKey: ["/api/coordinator/coordination/archives", coordinationAssignedFilter, coordinationSearchQuery],
+    queryKey: ["/api/coordinator/coordination/archives"],
     queryFn: async () => {
-      const queryString = buildQueryString(coordinationAssignedFilter, coordinationSearchQuery);
-      const response = await fetch(`/api/coordinator/coordination/archives${queryString}`);
+      const response = await fetch("/api/coordinator/coordination/archives");
       const data = await response.json();
       return Array.isArray(data) ? data : [];
     },
@@ -955,11 +942,25 @@ export default function CoordinatorDashboard() {
     setOffersDialogOpen(true);
   };
 
+  // Helper function to deduplicate requests by ID
+  const deduplicateRequests = (requests: any[]) => {
+    const seen = new Set();
+    return requests.filter((request) => {
+      if (seen.has(request.id)) {
+        return false;
+      }
+      seen.add(request.id);
+      return true;
+    });
+  };
+
   const filterRequests = (requests: any[], applyStatusFilter = true) => {
     if (!requests || !Array.isArray(requests)) {
       return [];
     }
-    return requests.filter((request) => {
+    // Deduplicate before filtering
+    const uniqueRequests = deduplicateRequests(requests);
+    return uniqueRequests.filter((request) => {
       const matchesCity = selectedCity === "Toutes les villes" || 
         request.fromCity === selectedCity || 
         request.toCity === selectedCity;
@@ -969,7 +970,33 @@ export default function CoordinatorDashboard() {
         request.referenceId.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (request.client?.name && request.client.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (request.transporter?.name && request.transporter.name.toLowerCase().includes(searchQuery.toLowerCase()));
-      return matchesCity && matchesStatus && matchesSearch;
+      
+      // Date filtering
+      const matchesDate = (() => {
+        if (selectedDateFilter === "all") return true;
+        const requestDate = new Date(request.createdAt);
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        
+        switch (selectedDateFilter) {
+          case "today":
+            return requestDate >= today;
+          case "week": {
+            const weekAgo = new Date(today);
+            weekAgo.setDate(today.getDate() - 7);
+            return requestDate >= weekAgo;
+          }
+          case "month": {
+            const monthAgo = new Date(today);
+            monthAgo.setMonth(today.getMonth() - 1);
+            return requestDate >= monthAgo;
+          }
+          default:
+            return true;
+        }
+      })();
+      
+      return matchesCity && matchesStatus && matchesSearch && matchesDate;
     });
   };
 
@@ -1351,45 +1378,82 @@ export default function CoordinatorDashboard() {
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="mb-6 flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Rechercher par référence, client, transporteur..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-              data-testid="input-search"
-            />
+        {/* Unified Search Bar with Filters */}
+        <div className="mb-6 space-y-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher par référence, client, transporteur..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+                data-testid="input-search"
+              />
+            </div>
           </div>
-          <Select value={selectedCity} onValueChange={setSelectedCity}>
-            <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-city">
-              <ListFilter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Filtrer par ville" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Toutes les villes">Toutes les villes</SelectItem>
-              {cities.map((city: any) => (
-                <SelectItem key={city.id} value={city.name}>
-                  {city.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-            <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-status">
-              <ListFilter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Filtrer par statut" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Tous les statuts">Tous les statuts</SelectItem>
-              <SelectItem value="open">Ouvert</SelectItem>
-              <SelectItem value="accepted">Accepté</SelectItem>
-              <SelectItem value="completed">Terminé</SelectItem>
-              <SelectItem value="cancelled">Annulé</SelectItem>
-            </SelectContent>
-          </Select>
+          
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Select value={selectedCity} onValueChange={setSelectedCity}>
+              <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-city">
+                <MapPin className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Ville" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Toutes les villes">Toutes les villes</SelectItem>
+                {cities.map((city: any) => (
+                  <SelectItem key={city.id} value={city.name}>
+                    {city.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+              <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-status">
+                <ListFilter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Statut" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Tous les statuts">Tous les statuts</SelectItem>
+                <SelectItem value="open">Ouvert</SelectItem>
+                <SelectItem value="accepted">Accepté</SelectItem>
+                <SelectItem value="completed">Terminé</SelectItem>
+                <SelectItem value="cancelled">Annulé</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Select value={selectedDateFilter} onValueChange={setSelectedDateFilter}>
+              <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-date">
+                <Calendar className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Période" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toutes les dates</SelectItem>
+                <SelectItem value="today">Aujourd'hui</SelectItem>
+                <SelectItem value="week">7 derniers jours</SelectItem>
+                <SelectItem value="month">30 derniers jours</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {(searchQuery || selectedCity !== "Toutes les villes" || selectedStatus !== "Tous les statuts" || selectedDateFilter !== "all") && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSearchQuery("");
+                  setSelectedCity("Toutes les villes");
+                  setSelectedStatus("Tous les statuts");
+                  setSelectedDateFilter("all");
+                }}
+                className="whitespace-nowrap"
+                data-testid="button-clear-filters"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Réinitialiser
+              </Button>
+            )}
+          </div>
         </div>
 
         <Tabs defaultValue="nouveau" className="w-full">
