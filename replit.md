@@ -22,7 +22,7 @@ The backend is an Express.js and TypeScript application providing RESTful JSON A
 - **Public Order Sharing:** Coordinators can share transport requests via unique, secure public links with sanitized order details, WhatsApp integration, and direct offer submission for authenticated users.
 - **CamioMatch:** An intelligent, Tinder-style transporter matching system for clients.
 - **File Management:** Base64 encoding for client photos, Multer for transporter truck photos, and multimedia messaging support.
-- **Security:** Comprehensive backend security with 72 protected and sanitized endpoints, session-based authentication using PostgreSQL, HttpOnly/Secure/SameSite cookies, role-based access control, masked phone numbers, and unique tokens for public sharing links exposing only sanitized data.
+- **Security:** Comprehensive backend security with 72 protected and sanitized endpoints, session-based authentication using PostgreSQL, HttpOnly/Secure/SameSite cookies, role-based access control, masked phone numbers, and unique tokens for public sharing links exposing only sanitized data. Transporter endpoints use explicit SQL projection to prevent coordinator pricing data leakage (transporterAmount, platformFee, clientTotal, budget fields excluded at query level). E2E security testing validates proper field redaction.
 - **PWA Installation:** Dedicated `/app` route for direct PWA installation with platform detection and a contextual installation toast.
 
 ### System Design Choices
