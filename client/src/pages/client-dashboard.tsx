@@ -669,7 +669,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                     <Card key={transporter.id} className="overflow-hidden">
                       <CardContent className="p-4 space-y-3">
                         {/* Transporter photo */}
-                        <div className="w-full h-32 bg-gradient-to-br from-[#0a2540] via-[#1d3c57] to-[#17cfcf]/20 rounded-lg overflow-hidden flex items-center justify-center">
+                        <div className="w-full aspect-video bg-gradient-to-br from-[#0a2540] via-[#1d3c57] to-[#17cfcf]/20 rounded-lg overflow-hidden flex items-center justify-center">
                           {transporter.truckPhotos?.[0] ? (
                             <img
                               src={transporter.truckPhotos[0]}
