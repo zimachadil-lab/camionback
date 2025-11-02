@@ -17,7 +17,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createCoordinatorSchema, resetCoordinatorPinSchema, type CreateCoordinator, type ResetCoordinatorPin } from "@shared/schema";
+import { createCoordinatorSchema, resetCoordinatorPinSchema, type CreateCoordinator, type ResetCoordinatorPin, type User, type CoordinatorLog } from "@shared/schema";
 
 export function CoordinatorManagement() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -44,12 +44,12 @@ export function CoordinatorManagement() {
   });
 
   // Fetch coordinators
-  const { data: coordinators = [], isLoading: coordinatorsLoading } = useQuery({
+  const { data: coordinators = [], isLoading: coordinatorsLoading } = useQuery<User[]>({
     queryKey: ["/api/admin/coordinators"],
   });
 
   // Fetch coordinator activity logs
-  const { data: activityLogs = [], isLoading: logsLoading } = useQuery({
+  const { data: activityLogs = [], isLoading: logsLoading } = useQuery<CoordinatorLog[]>({
     queryKey: ["/api/admin/coordinator-activity"],
   });
 
@@ -79,7 +79,7 @@ export function CoordinatorManagement() {
   // Toggle status mutation
   const toggleStatusMutation = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest(`/api/admin/coordinators/${id}/toggle-status`, "PATCH", {});
+      return await apiRequest("PATCH", `/api/admin/coordinators/${id}/toggle-status`, {});
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/coordinators"] });
@@ -93,7 +93,7 @@ export function CoordinatorManagement() {
   // Delete coordinator mutation
   const deleteCoordinatorMutation = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest(`/api/admin/coordinators/${id}`, "DELETE");
+      return await apiRequest("DELETE", `/api/admin/coordinators/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/coordinators"] });
@@ -108,7 +108,7 @@ export function CoordinatorManagement() {
   // Reset PIN mutation
   const resetPinMutation = useMutation({
     mutationFn: async ({ id, newPin }: { id: string; newPin: string }) => {
-      return await apiRequest(`/api/admin/coordinators/${id}/reset-pin`, "PATCH", { newPin });
+      return await apiRequest("PATCH", `/api/admin/coordinators/${id}/reset-pin`, { newPin });
     },
     onSuccess: () => {
       toast({
