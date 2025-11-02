@@ -1345,192 +1345,159 @@ export default function CoordinatorDashboard() {
           </Select>
         </div>
 
-        <Tabs defaultValue="coordination" className="w-full">
+        <Tabs defaultValue="nouveau" className="w-full">
           <TabsList className="grid w-full grid-cols-4 mb-6">
-            <TabsTrigger value="coordination" data-testid="tab-coordination" className="gap-1 px-2">
-              <span className="text-xs sm:text-sm">Coordination</span>
-              <Badge className="bg-purple-500 hover:bg-purple-600 text-white text-xs px-1.5 py-0">
-                {nouveauRequests.length + enActionRequests.length + prioritairesRequests.length}
+            <TabsTrigger value="nouveau" data-testid="tab-nouveau" className="gap-1 px-2">
+              <span className="text-xs sm:text-sm">Nouveau</span>
+              <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white text-xs px-1.5 py-0">
+                {filterRequests(nouveauRequests).length}
               </Badge>
             </TabsTrigger>
-            <TabsTrigger value="active" data-testid="tab-active" className="gap-1 px-2">
-              <span className="text-xs sm:text-sm">À traiter</span>
-              <Badge className="bg-orange-500 hover:bg-orange-600 text-white text-xs px-1.5 py-0">
-                {filterRequests(activeRequests, false).length}
+            <TabsTrigger value="qualifies" data-testid="tab-qualifies" className="gap-1 px-2">
+              <span className="text-xs sm:text-sm">Qualifiés</span>
+              <Badge className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-1.5 py-0">
+                {filterRequests(matchingRequests).length}
               </Badge>
             </TabsTrigger>
-            <TabsTrigger value="payment" data-testid="tab-payment" className="gap-1 px-2">
-              <span className="text-xs sm:text-sm">À payer</span>
+            <TabsTrigger value="production" data-testid="tab-production" className="gap-1 px-2">
+              <span className="text-xs sm:text-sm">En Production</span>
               <Badge className="bg-green-500 hover:bg-green-600 text-white text-xs px-1.5 py-0">
-                {filterRequests(paymentRequests, false).length}
+                {filterRequests([...activeRequests, ...paymentRequests]).length}
               </Badge>
             </TabsTrigger>
-            <TabsTrigger value="returns" data-testid="tab-returns" className="gap-1 px-2">
-              <span className="text-xs sm:text-sm">Retours</span>
-              <Badge className="bg-teal-500 hover:bg-teal-600 text-white text-xs px-1.5 py-0">
-                {emptyReturns.length}
+            <TabsTrigger value="archives" data-testid="tab-archives" className="gap-1 px-2">
+              <span className="text-xs sm:text-sm">Archives</span>
+              <Badge className="bg-gray-500 hover:bg-gray-600 text-white text-xs px-1.5 py-0">
+                {filterRequests(archivesRequests).length}
               </Badge>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="available" className="space-y-4">
-            {availableLoading ? (
+          {/* ONGLET 1: NOUVEAU - Demandes en attente de qualification */}
+          <TabsContent value="nouveau" className="space-y-4">
+            {nouveauLoading ? (
               <div className="flex justify-center py-12">
                 <LoadingTruck />
               </div>
-            ) : filterRequests(availableRequests).length === 0 ? (
+            ) : filterRequests(nouveauRequests).length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center text-muted-foreground">
                   <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p>Aucune commande disponible</p>
+                  <p>Aucune nouvelle commande à qualifier</p>
                 </CardContent>
               </Card>
             ) : (
-              filterRequests(availableRequests).map((request) => renderRequestCard(request, true, false))
+              filterRequests(nouveauRequests).map((request) => renderRequestCard(request, false, false, false, true))
             )}
           </TabsContent>
 
-          <TabsContent value="active" className="space-y-4">
-            {activeLoading ? (
+          {/* ONGLET 2: QUALIFIÉS - Demandes publiées pour matching transporteurs */}
+          <TabsContent value="qualifies" className="space-y-4">
+            {matchingLoading ? (
               <div className="flex justify-center py-12">
                 <LoadingTruck />
               </div>
-            ) : filterRequests(activeRequests, false).length === 0 ? (
+            ) : filterRequests(matchingRequests).length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center text-muted-foreground">
                   <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p>Aucune commande à traiter</p>
+                  <p>Aucune commande qualifiée en attente de matching</p>
                 </CardContent>
               </Card>
             ) : (
-              filterRequests(activeRequests, false).map((request) => renderRequestCard(request, false, false))
+              filterRequests(matchingRequests).map((request) => renderRequestCard(request, true, false, false, false))
             )}
           </TabsContent>
 
-          <TabsContent value="payment" className="space-y-4">
-            {paymentLoading ? (
+          {/* ONGLET 3: EN PRODUCTION - Commandes actives et en paiement */}
+          <TabsContent value="production" className="space-y-4">
+            {(activeLoading || paymentLoading) ? (
               <div className="flex justify-center py-12">
                 <LoadingTruck />
               </div>
-            ) : filterRequests(paymentRequests, false).length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center text-muted-foreground">
-                  <DollarSign className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p>Aucune commande en attente de paiement</p>
-                </CardContent>
-              </Card>
-            ) : (
-              filterRequests(paymentRequests, false).map((request) => (
-                <Card key={request.id} className="hover-elevate" data-testid={`card-payment-${request.id}`}>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <CardTitle className="text-base">{request.referenceId}</CardTitle>
-                          {getPaymentStatusBadge(request.paymentStatus)}
-                        </div>
-                        <CardDescription className="text-sm mt-1">
-                          {request.fromCity} → {request.toCity}
-                        </CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="space-y-2 text-sm">
-                      {request.acceptedOffer && (
-                        <div className="flex items-center gap-2">
-                          <DollarSign className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">Montant:</span>
-                          <span className="font-bold text-[#5BC0EB]">{request.acceptedOffer.amount} DH</span>
-                        </div>
-                      )}
-
-                      {request.client && (
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">Client:</span>
-                          <span className="font-medium">{request.client.name}</span>
-                          <a href={`tel:${request.client.phoneNumber}`} className="text-[#5BC0EB] hover:underline">
-                            {request.client.phoneNumber}
-                          </a>
-                        </div>
-                      )}
-
-                      {request.transporter && (
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">Transporteur:</span>
-                          <span className="font-medium">{request.transporter.name}</span>
-                          <a href={`tel:${request.transporter.phoneNumber}`} className="text-[#5BC0EB] hover:underline">
-                            {request.transporter.phoneNumber}
-                          </a>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex flex-wrap gap-2 pt-2">
-                      <Select
-                        value={request.paymentStatus}
-                        onValueChange={(value) => updatePaymentStatusMutation.mutate({ 
-                          requestId: request.id, 
-                          paymentStatus: value 
-                        })}
-                      >
-                        <SelectTrigger className="w-[180px]" data-testid={`select-payment-status-${request.id}`}>
-                          <SelectValue placeholder="Statut paiement" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">À facturer</SelectItem>
-                          <SelectItem value="awaiting_payment">En attente paiement</SelectItem>
-                          <SelectItem value="pending_admin_validation">Validation admin</SelectItem>
-                          <SelectItem value="paid">Payé</SelectItem>
-                        </SelectContent>
-                      </Select>
-
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleViewDetails(request)}
-                        data-testid={`button-view-details-payment-${request.id}`}
-                      >
-                        👁️ Détails
-                      </Button>
-
-                      {request.client && request.transporter && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleOpenChat(request.client, request.transporter, request.id)}
-                          data-testid={`button-open-chat-payment-${request.id}`}
-                        >
-                          <MessageSquare className="h-4 w-4 mr-1" />
-                          Messagerie
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </TabsContent>
-
-          <TabsContent value="returns" className="space-y-4">
-            {emptyReturnsLoading ? (
-              <div className="flex justify-center py-12">
-                <LoadingTruck />
-              </div>
-            ) : emptyReturns.length === 0 ? (
+            ) : filterRequests([...activeRequests, ...paymentRequests]).length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center text-muted-foreground">
                   <Truck className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p>Aucun retour à vide annoncé</p>
+                  <p>Aucune commande en production</p>
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid gap-4">
-                {emptyReturns.map((emptyReturn: any) => (
-                  <Card key={emptyReturn.id} className="hover-elevate" data-testid={`card-return-${emptyReturn.id}`}>
-                    <CardContent className="p-4">
+              filterRequests([...activeRequests, ...paymentRequests]).map((request) => 
+                renderRequestCard(request, false, true, false, false)
+              )
+            )}
+          </TabsContent>
+
+          {/* ONGLET 4: ARCHIVES - Commandes archivées */}
+          <TabsContent value="archives" className="space-y-4">
+            {archivesLoading ? (
+              <div className="flex justify-center py-12">
+                <LoadingTruck />
+              </div>
+            ) : filterRequests(archivesRequests).length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>Aucune commande archivée</p>
+                </CardContent>
+              </Card>
+            ) : (
+              filterRequests(archivesRequests).map((request) => renderRequestCard(request, false, false, false, false))
+            )}
+          </TabsContent>
+        </Tabs>
+      </main>
+
+      {/* Chat Window */}
+      {chatOpen && selectedParticipants && (
+        <ChatWindow
+          open={chatOpen}
+          currentUserId={user.id}
+          currentUserRole="coordinateur"
+          otherUser={selectedParticipants.transporter}
+          requestId={chatRequestId}
+          onClose={() => {
+            setChatOpen(false);
+            setSelectedParticipants(null);
+          }}
+        />
+      )}
+
+      {/* Photo Gallery Dialog */}
+      <PhotoGalleryDialog
+        photos={selectedPhotos}
+        open={photoGalleryOpen}
+        onClose={() => setPhotoGalleryOpen(false)}
+        referenceId={selectedReferenceId}
+      />
+
+      {/* Offers Dialog */}
+      {selectedRequestForOffers && (
+        <Dialog open={offersDialogOpen} onOpenChange={setOffersDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto" data-testid="dialog-coordinator-offers">
+            <DialogHeader>
+              <DialogTitle>Offres reçues - {selectedRequestForOffers.referenceId}</DialogTitle>
+              <DialogDescription>
+                {selectedRequestForOffers.fromCity} → {selectedRequestForOffers.toCity}
+              </DialogDescription>
+            </DialogHeader>
+            <CoordinatorOffersView 
+              requestId={selectedRequestForOffers.id}
+              onAcceptOffer={(offerId) => acceptOfferMutation.mutate(offerId)}
+              isPending={acceptOfferMutation.isPending}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Request Details Dialog */}
+      {selectedRequest && (
+        <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Détails de la commande - {selectedRequest.referenceId}</DialogTitle>
+              <DialogDescription>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {/* Itineraire */}
                         <div className="space-y-2">
