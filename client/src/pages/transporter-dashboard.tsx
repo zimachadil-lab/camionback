@@ -281,12 +281,29 @@ export default function TransporterDashboard() {
       // Keep old key for backward compatibility
       queryClient.invalidateQueries({ queryKey: ["/api/requests"], exact: false });
     },
-    onError: () => {
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Échec de l'opération",
-      });
+    onError: (error: any) => {
+      // Check if the error is a 404 (request not found/deleted)
+      const is404 = error?.message?.includes("404") || error?.message?.includes("not found");
+      
+      if (is404) {
+        toast({
+          variant: "destructive",
+          title: "Demande non disponible",
+          description: "Cette demande n'est plus disponible. Elle a peut-être été supprimée par le client.",
+        });
+        // Invalidate queries to refresh the list
+        queryClient.invalidateQueries({ 
+          queryKey: ["/api/transporter/available-requests"], 
+          exact: false 
+        });
+        queryClient.invalidateQueries({ queryKey: ["/api/requests"], exact: false });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Erreur",
+          description: "Échec de l'opération",
+        });
+      }
     },
   });
 
