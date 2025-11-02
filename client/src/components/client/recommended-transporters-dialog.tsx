@@ -21,6 +21,7 @@ interface RecommendedTransporter {
   rating: number;
   totalTrips: number;
   availabilityType: string;
+  truckPhoto?: string | null;
 }
 
 interface RecommendedTransportersDialogProps {
@@ -110,7 +111,20 @@ export function RecommendedTransportersDialog({
           <div className="space-y-3 my-4">
             {transporters.map((transporter) => (
               <Card key={transporter.id} className="p-4">
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  {/* Photo du camion */}
+                  <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-gradient-to-br from-[#0a2540] via-[#1d3c57] to-[#17cfcf]/20 flex items-center justify-center">
+                    {transporter.truckPhoto ? (
+                      <img
+                        src={transporter.truckPhoto}
+                        alt={`Camion de ${transporter.name || 'transporteur'}`}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Truck className="w-10 h-10 text-[#17cfcf] opacity-40" />
+                    )}
+                  </div>
+
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <h4 className="font-medium">
