@@ -19,6 +19,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ManualAssignmentDialog } from "@/components/coordinator/manual-assignment-dialog";
+import { QualificationDialog } from "@/components/coordinator/qualification-dialog";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -252,6 +253,8 @@ export default function CoordinatorDashboard() {
   const [deleteRequestId, setDeleteRequestId] = useState<string | null>(null);
   const [manualAssignmentDialogOpen, setManualAssignmentDialogOpen] = useState(false);
   const [selectedRequestForAssignment, setSelectedRequestForAssignment] = useState<any>(null);
+  const [qualificationDialogOpen, setQualificationDialogOpen] = useState(false);
+  const [selectedRequestForQualification, setSelectedRequestForQualification] = useState<any>(null);
   const { toast} = useToast();
 
   const handleLogout = () => {
@@ -327,11 +330,12 @@ export default function CoordinatorDashboard() {
     return params.toString() ? `?${params.toString()}` : "";
   };
 
+  // NEW WORKFLOW: "Nouveau" devient "À qualifier" avec status qualification_pending
   const { data: nouveauRequests = [], isLoading: nouveauLoading } = useQuery({
-    queryKey: ["/api/coordinator/coordination/nouveau", coordinationAssignedFilter, coordinationSearchQuery],
+    queryKey: ["/api/coordinator/qualification-pending", coordinationAssignedFilter, coordinationSearchQuery],
     queryFn: async () => {
       const queryString = buildQueryString(coordinationAssignedFilter, coordinationSearchQuery);
-      const response = await fetch(`/api/coordinator/coordination/nouveau${queryString}`);
+      const response = await fetch(`/api/coordinator/qualification-pending${queryString}`);
       const data = await response.json();
       return Array.isArray(data) ? data : [];
     },
@@ -387,7 +391,7 @@ export default function CoordinatorDashboard() {
     onMutate: async ({ requestId, isHidden }) => {
       // Annuler toutes les requêtes de coordination en cours
       await queryClient.cancelQueries({ predicate: (query) => 
-        query.queryKey[0] === "/api/coordinator/coordination/nouveau" ||
+        query.queryKey[0] === "/api/coordinator/qualification-pending" ||
         query.queryKey[0] === "/api/coordinator/coordination/en-action" ||
         query.queryKey[0] === "/api/coordinator/coordination/prioritaires" ||
         query.queryKey[0] === "/api/coordinator/coordination/archives"
@@ -403,7 +407,7 @@ export default function CoordinatorDashboard() {
       
       // Mettre à jour toutes les requêtes qui correspondent aux patterns
       queryClient.setQueriesData(
-        { predicate: (query) => query.queryKey[0] === "/api/coordinator/coordination/nouveau" },
+        { predicate: (query) => query.queryKey[0] === "/api/coordinator/qualification-pending" },
         updateCache
       );
       queryClient.setQueriesData(
@@ -428,7 +432,7 @@ export default function CoordinatorDashboard() {
     onError: () => {
       // Invalider toutes les queries pour recharger les données en cas d'erreur
       queryClient.invalidateQueries({ predicate: (query) => 
-        query.queryKey[0] === "/api/coordinator/coordination/nouveau" ||
+        query.queryKey[0] === "/api/coordinator/qualification-pending" ||
         query.queryKey[0] === "/api/coordinator/coordination/en-action" ||
         query.queryKey[0] === "/api/coordinator/coordination/prioritaires" ||
         query.queryKey[0] === "/api/coordinator/coordination/archives"
@@ -568,7 +572,7 @@ export default function CoordinatorDashboard() {
         title: "Statut mis à jour",
         description: "Le statut de coordination a été mis à jour",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/nouveau"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/qualification-pending"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/en-action"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/prioritaires"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/archives"] });
@@ -594,7 +598,7 @@ export default function CoordinatorDashboard() {
       });
       setDeleteRequestId(null);
       // Invalidate all coordinator queries
-      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/nouveau"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/qualification-pending"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/en-action"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/prioritaires"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/archives"] });
@@ -863,7 +867,19 @@ export default function CoordinatorDashboard() {
     queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination-requests"] });
   };
 
-  const renderRequestCard = (request: any, showVisibilityToggle = false, showPaymentControls = false, isCoordination = false) => (
+  // NEW: Handler for opening qualification dialog
+  const handleOpenQualificationDialog = (request: any) => {
+    setSelectedRequestForQualification(request);
+    setQualificationDialogOpen(true);
+  };
+
+  const handleQualificationSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/coordinator/qualification-pending"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/en-action"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/coordinator/matching-requests"] });
+  };
+
+  const renderRequestCard = (request: any, showVisibilityToggle = false, showPaymentControls = false, isCoordination = false, showQualifyButton = false) => (
     <Card key={request.id} className="hover-elevate" data-testid={`card-request-${request.id}`}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
@@ -1086,6 +1102,20 @@ export default function CoordinatorDashboard() {
               data-testid={`button-coordination-status-${request.id}`}
             >
               📋 Statut de coordination
+            </Button>
+          )}
+
+          {/* NEW: Qualify button for qualification_pending requests */}
+          {showQualifyButton && (
+            <Button
+              size="sm"
+              variant="default"
+              className="bg-yellow-500 hover:bg-yellow-600"
+              onClick={() => handleOpenQualificationDialog(request)}
+              data-testid={`button-qualify-${request.id}`}
+            >
+              <DollarSign className="h-4 w-4 mr-1" />
+              Qualifier
             </Button>
           )}
 
@@ -1495,8 +1525,8 @@ export default function CoordinatorDashboard() {
               
               <TabsList className="grid w-full grid-cols-4 mb-4">
                 <TabsTrigger value="nouveau" data-testid="tab-coord-nouveau" className="gap-1 px-2">
-                  <span className="text-xs sm:text-sm">Nouveau</span>
-                  <Badge className="bg-blue-400 hover:bg-blue-500 text-white text-xs px-1.5 py-0">
+                  <span className="text-xs sm:text-sm">À qualifier</span>
+                  <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white text-xs px-1.5 py-0">
                     {nouveauRequests.length}
                   </Badge>
                 </TabsTrigger>
@@ -1529,11 +1559,11 @@ export default function CoordinatorDashboard() {
                   <Card>
                     <CardContent className="py-12 text-center text-muted-foreground">
                       <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                      <p>Aucune nouvelle commande</p>
+                      <p>Aucune commande à qualifier</p>
                     </CardContent>
                   </Card>
                 ) : (
-                  nouveauRequests.map((request: any) => renderRequestCard(request, true, true, true))
+                  nouveauRequests.map((request: any) => renderRequestCard(request, true, false, true, true))
                 )}
               </TabsContent>
 
@@ -2096,6 +2126,16 @@ export default function CoordinatorDashboard() {
           onOpenChange={setManualAssignmentDialogOpen}
           request={selectedRequestForAssignment}
           onSuccess={handleManualAssignmentSuccess}
+        />
+      )}
+
+      {/* NEW: Qualification Dialog */}
+      {selectedRequestForQualification && (
+        <QualificationDialog
+          open={qualificationDialogOpen}
+          onOpenChange={setQualificationDialogOpen}
+          request={selectedRequestForQualification}
+          onSuccess={handleQualificationSuccess}
         />
       )}
 
