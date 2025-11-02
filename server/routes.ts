@@ -320,8 +320,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description: request.description,
         goodsType: request.goodsType,
         dateTime: request.dateTime,
-        dateFlexible: request.dateFlexible,
-        invoiceRequired: request.invoiceRequired,
+        handlingRequired: request.handlingRequired,
+        departureFloor: request.departureFloor,
+        departureElevator: request.departureElevator,
+        arrivalFloor: request.arrivalFloor,
+        arrivalElevator: request.arrivalElevator,
         budget: request.budget,
         photos: request.photos, // Include photos for viewing
         status: request.status,

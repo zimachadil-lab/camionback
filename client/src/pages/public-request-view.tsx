@@ -27,8 +27,11 @@ interface PublicRequest {
   description: string;
   goodsType: string;
   dateTime: string;
-  dateFlexible: boolean;
-  invoiceRequired: boolean;
+  handlingRequired?: boolean;
+  departureFloor?: number | null;
+  departureElevator?: boolean | null;
+  arrivalFloor?: number | null;
+  arrivalElevator?: boolean | null;
   budget: string | null;
   photos: string[] | null;
   status: string;
@@ -224,9 +227,6 @@ export default function PublicRequestView() {
               </p>
               <p className="font-medium" data-testid="text-date-time">
                 {format(new Date(request.dateTime), "dd MMMM yyyy 'à' HH:mm", { locale: fr })}
-                {request.dateFlexible && (
-                  <Badge variant="outline" className="ml-2">Date flexible</Badge>
-                )}
               </p>
             </div>
             {request.budget && (
@@ -237,11 +237,24 @@ export default function PublicRequestView() {
                 </p>
               </div>
             )}
-            {request.invoiceRequired && (
-              <div>
-                <Badge variant="secondary">Facture TTC requise</Badge>
-              </div>
-            )}
+            <div>
+              <p className="text-sm text-muted-foreground">Manutention</p>
+              {request.handlingRequired ? (
+                <div className="space-y-1">
+                  <p className="font-medium">🏋️ Manutention : Oui</p>
+                  <p className="text-sm">
+                    🏢 Départ : {request.departureFloor === 0 ? 'RDC' : `${request.departureFloor}ᵉ étage`} - 
+                    Ascenseur {request.departureElevator ? '✅' : '❌'}
+                  </p>
+                  <p className="text-sm">
+                    🏠 Arrivée : {request.arrivalFloor === 0 ? 'RDC' : `${request.arrivalFloor}ᵉ étage`} - 
+                    Ascenseur {request.arrivalElevator ? '✅' : '❌'}
+                  </p>
+                </div>
+              ) : (
+                <p className="font-medium">🏋️ Manutention : Non</p>
+              )}
+            </div>
           </CardContent>
         </Card>
 
