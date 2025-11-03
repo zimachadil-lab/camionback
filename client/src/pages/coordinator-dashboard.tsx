@@ -1501,6 +1501,40 @@ export default function CoordinatorDashboard() {
                   WhatsApp Transporteur
                 </DropdownMenuItem>
               )}
+              
+              {/* Masquer/Réafficher */}
+              {showVisibilityToggle && (
+                <DropdownMenuItem
+                  onClick={() => toggleVisibilityMutation.mutate({ 
+                    requestId: request.id, 
+                    isHidden: !request.isHidden 
+                  })}
+                  disabled={toggleVisibilityMutation.isPending}
+                  data-testid={`menu-toggle-visibility-${request.id}`}
+                >
+                  {request.isHidden ? (
+                    <>
+                      <Eye className="h-4 w-4 mr-2 text-green-600" />
+                      <span className="text-green-600">Réafficher</span>
+                    </>
+                  ) : (
+                    <>
+                      <EyeOff className="h-4 w-4 mr-2 text-red-600" />
+                      <span className="text-red-600">Masquer</span>
+                    </>
+                  )}
+                </DropdownMenuItem>
+              )}
+              
+              {/* Supprimer */}
+              <DropdownMenuItem
+                onClick={() => setDeleteRequestId(request.id)}
+                data-testid={`menu-delete-request-${request.id}`}
+                className="text-red-600 focus:text-red-600"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Supprimer
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -1753,24 +1787,6 @@ export default function CoordinatorDashboard() {
             </Button>
           )}
 
-          {/* Masquer/Réafficher */}
-          {showVisibilityToggle && (
-            <Button
-              size="sm"
-              variant="outline"
-              className={request.isHidden ? "border-green-500 text-green-600 hover:bg-green-50" : "border-red-500 text-red-600 hover:bg-red-50"}
-              onClick={() => toggleVisibilityMutation.mutate({ 
-                requestId: request.id, 
-                isHidden: !request.isHidden 
-              })}
-              disabled={toggleVisibilityMutation.isPending}
-              data-testid={`button-toggle-visibility-${request.id}`}
-            >
-              {request.isHidden ? <Eye className="h-4 w-4 mr-1" /> : <EyeOff className="h-4 w-4 mr-1" />}
-              {request.isHidden ? "Réafficher" : "Masquer"}
-            </Button>
-          )}
-
           {/* Missionner transporteur */}
           {isCoordination && !request.transporter && request.status !== 'accepted' && (
             <Button
@@ -1784,16 +1800,6 @@ export default function CoordinatorDashboard() {
               Missionner
             </Button>
           )}
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setDeleteRequestId(request.id)}
-            data-testid={`button-delete-request-${request.id}`}
-            className="h-8 w-8 text-[#e74c3c] hover:text-[#e74c3c] hover:bg-[#e74c3c]/10"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
         </div>
       </CardContent>
     </Card>
