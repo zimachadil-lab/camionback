@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Upload, MapPin } from "lucide-react";
+import { Calendar, Upload, MapPin, Loader2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
@@ -470,8 +470,21 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
               </div>
             </div>
 
-            <Button type="submit" size="lg" className="w-full" data-testid="button-create-request">
-              Publier la demande
+            <Button 
+              type="submit" 
+              size="lg" 
+              className="w-full" 
+              disabled={form.formState.isSubmitting}
+              data-testid="button-create-request"
+            >
+              {form.formState.isSubmitting ? (
+                <>
+                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                  Création en cours...
+                </>
+              ) : (
+                "Publier la demande"
+              )}
             </Button>
           </form>
         </Form>
