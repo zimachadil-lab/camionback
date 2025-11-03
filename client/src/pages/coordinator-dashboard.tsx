@@ -611,6 +611,7 @@ export default function CoordinatorDashboard() {
   const [selectedTruckPhoto, setSelectedTruckPhoto] = useState<string | null>(null);
   const [assignOrderDialogOpen, setAssignOrderDialogOpen] = useState(false);
   const [selectedEmptyReturn, setSelectedEmptyReturn] = useState<any>(null);
+  const [expandedDescriptions, setExpandedDescriptions] = useState<Record<string, boolean>>({});
   const [coordinationDialogOpen, setCoordinationDialogOpen] = useState(false);
   const [selectedRequestForCoordination, setSelectedRequestForCoordination] = useState<any>(null);
   const [selectedCoordinationStatus, setSelectedCoordinationStatus] = useState("");
@@ -1618,6 +1619,45 @@ export default function CoordinatorDashboard() {
             </div>
           )}
         </div>
+
+        {/* Description/Services */}
+        {request.description && (
+          <div className="space-y-2 border-t pt-3">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <FileText className="w-4 h-4" />
+              <span className="font-medium">Services</span>
+            </div>
+            <p className={`text-sm pl-6 ${expandedDescriptions[request.id] ? '' : 'line-clamp-2'}`}>
+              {request.description}
+            </p>
+            <div className="flex items-center gap-3 pl-6">
+              {request.description.length > 100 && (
+                <button
+                  onClick={() => setExpandedDescriptions(prev => ({
+                    ...prev,
+                    [request.id]: !prev[request.id]
+                  }))}
+                  className="text-xs text-[#17cfcf] hover:underline"
+                  data-testid={`button-toggle-description-${request.id}`}
+                >
+                  {expandedDescriptions[request.id] ? 'Voir moins' : 'Plus de détails'}
+                </button>
+              )}
+              
+              {request.photos && request.photos.length > 0 && (
+                <Button
+                  size="sm"
+                  className="h-6 text-xs gap-1.5 bg-[#17cfcf]/20 hover:bg-[#17cfcf]/30 text-[#17cfcf] border border-[#17cfcf]/40 hover:border-[#17cfcf]/60 transition-all font-medium"
+                  onClick={() => handleViewPhotos(request.photos)}
+                  data-testid={`button-view-photos-inline-${request.id}`}
+                >
+                  <ImageIcon className="w-3.5 h-3.5" />
+                  <span>{request.photos.length} photo{request.photos.length > 1 ? 's' : ''}</span>
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Handling/Manutention Information */}
         {request.handlingRequired !== undefined && request.handlingRequired !== null && (
