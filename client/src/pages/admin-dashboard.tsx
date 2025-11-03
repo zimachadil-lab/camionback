@@ -870,6 +870,30 @@ export default function AdminDashboard() {
     },
   });
 
+  // Migration mutation to fix missing requests in coordinator views
+  const migrateMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", "/api/admin/migrate-coordination-status");
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/qualification-pending"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/matching-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
+      toast({
+        title: "Migration réussie",
+        description: `${data.updated} demandes ont été corrigées et sont maintenant visibles aux coordinateurs.`
+      });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la migration.",
+      });
+    }
+  });
+
   // Update transporter mutation
   const updateTransporterMutation = useMutation({
     mutationFn: async ({ transporterId, formData }: { transporterId: string; formData: FormData }) => {
@@ -2725,6 +2749,43 @@ export default function AdminDashboard() {
                   <p className="text-sm text-muted-foreground">
                     {adminStats?.pendingPaymentsCount || 0} commande(s)
                   </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-orange-500 border-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-orange-600">
+                    <RefreshCw className="w-5 h-5" />
+                    Migration Urgente
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Corriger les demandes invisibles aux coordinateurs (statut de coordination manquant)
+                  </p>
+                  <Button
+                    onClick={() => {
+                      if (confirm("Lancer la migration pour rendre visibles les demandes manquantes dans les vues coordinateur ?")) {
+                        migrateMutation.mutate();
+                      }
+                    }}
+                    variant="outline"
+                    className="w-full border-orange-500 text-orange-600 hover:bg-orange-50"
+                    disabled={migrateMutation.isPending}
+                    data-testid="button-migrate-coordination-status"
+                  >
+                    {migrateMutation.isPending ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        Migration en cours...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Lancer Migration
+                      </>
+                    )}
+                  </Button>
                 </CardContent>
               </Card>
             </div>

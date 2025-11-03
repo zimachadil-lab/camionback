@@ -26,7 +26,7 @@ import {
   clientTransporterContacts,
   transportRequests
 } from "@shared/schema";
-import { desc, eq, sql } from "drizzle-orm";
+import { desc, eq, sql, and } from "drizzle-orm";
 import { sendNewOfferSMS, sendOfferAcceptedSMS, sendTransporterActivatedSMS, sendBulkSMS, sendManualAssignmentSMS, sendTransporterAssignedSMS, sendClientChoseYouSMS, sendTransporterSelectedSMS } from "./infobip-sms";
 import { emailService } from "./email-service";
 import { migrateProductionData } from "./migrate-production-endpoint";
@@ -5973,6 +5973,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Erreur récupération activité coordinateur:", error);
       res.status(500).json({ error: "Erreur lors de la récupération de l'activité" });
+    }
+  });
+
+  // MIGRATION: Fix missing requests in coordinator views
+  app.post("/api/admin/migrate-coordination-status", requireAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      // Find all open requests that have invalid or missing coordinationStatus
+      const openRequests = await db.select()
+        .from(transportRequests)
+        .where(
+          and(
+            eq(transportRequests.status, 'open'),
+            sql`(${transportRequests.coordinationStatus} IS NULL 
+              OR ${transportRequests.coordinationStatus} NOT IN ('qualification_pending', 'qualified', 'matching', 'assigned', 'archived'))`
+          )
+        );
+
+      let updated = 0;
+
+      for (const request of openRequests) {
+        // Determine the correct status based on the request state
+        let newStatus = 'qualification_pending';
+        
+        // If already qualified (has prices set)
+        if (request.transporterAmount && request.platformFee) {
+          newStatus = 'qualified';
+        }
+        
+        // If has interested transporters
+        if (request.transporterInterests && request.transporterInterests.length > 0) {
+          newStatus = 'matching';
+        }
+        
+        // If manually assigned
+        if (request.assignedTransporterId) {
+          newStatus = 'assigned';
+        }
+
+        await db.update(transportRequests)
+          .set({ 
+            coordinationStatus: newStatus,
+            coordinationUpdatedAt: new Date()
+          })
+          .where(eq(transportRequests.id, request.id));
+        
+        updated++;
+      }
+
+      res.json({ 
+        success: true, 
+        message: `Migration réussie : ${updated} demandes mises à jour`,
+        updated
+      });
+    } catch (error) {
+      console.error("Erreur migration coordination status:", error);
+      res.status(500).json({ error: "Erreur lors de la migration" });
     }
   });
 
