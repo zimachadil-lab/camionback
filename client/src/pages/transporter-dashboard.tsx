@@ -521,10 +521,7 @@ export default function TransporterDashboard() {
       const cityMatch: boolean = selectedCity === "Toutes les villes" || 
                        req.fromCity === selectedCity || 
                        req.toCity === selectedCity;
-      const searchMatch: boolean = searchQuery === "" || 
-                         req.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         req.goodsType.toLowerCase().includes(searchQuery.toLowerCase());
-      return notDeclined && notInterested && cityMatch && searchMatch;
+      return notDeclined && notInterested && cityMatch;
     })
     .sort((a: any, b: any) => {
       // Sort by most recent first
@@ -681,11 +678,6 @@ export default function TransporterDashboard() {
       )}
       
       <div className="container mx-auto p-4 md:p-6 max-w-7xl space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Tableau de bord</h1>
-          <p className="text-muted-foreground mt-1">Trouvez des demandes de transport</p>
-        </div>
-
         <Tabs defaultValue="available" className="w-full">
           <TabsList className="grid w-full max-w-3xl grid-cols-3">
             <TabsTrigger value="available" data-testid="tab-available">
@@ -703,19 +695,9 @@ export default function TransporterDashboard() {
           </TabsList>
 
           <TabsContent value="available" className="mt-6 space-y-6">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Rechercher par description..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                  data-testid="input-search-requests"
-                />
-              </div>
+            <div className="flex justify-center">
               <Select value={selectedCity} onValueChange={setSelectedCity}>
-                <SelectTrigger className="w-full sm:w-48" data-testid="select-city-filter">
+                <SelectTrigger className="w-full sm:w-64" data-testid="select-city-filter">
                   <ListFilter className="mr-2 h-4 w-4" />
                   <SelectValue />
                 </SelectTrigger>
