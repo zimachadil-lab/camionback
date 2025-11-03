@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, MessageCircle, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck, Trash2, Share2, Copy, Send, RotateCcw, Info, Users, CreditCard, Calendar, X } from "lucide-react";
+import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, MessageCircle, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck, Trash2, Share2, Copy, Send, RotateCcw, Info, Users, CreditCard, Calendar, X, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, FileText } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -22,6 +22,90 @@ import { ManualAssignmentDialog } from "@/components/coordinator/manual-assignme
 import { QualificationDialog } from "@/components/coordinator/qualification-dialog";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+
+// Configuration des catégories avec icônes et couleurs (même logique que transporteur)
+const getCategoryConfig = (goodsType: string): { icon: LucideIcon; color: string; bgColor: string; borderColor: string; label: string } => {
+  const type = goodsType.toLowerCase();
+  
+  if (type.includes('déménagement')) {
+    return {
+      icon: Home,
+      color: 'text-white',
+      bgColor: 'bg-gradient-to-br from-emerald-500 to-emerald-600',
+      borderColor: 'border-emerald-500',
+      label: 'Électroménager'
+    };
+  }
+  
+  if (type.includes('meuble') || type.includes('mobilier')) {
+    return {
+      icon: Sofa,
+      color: 'text-white',
+      bgColor: 'bg-gradient-to-br from-blue-500 to-blue-600',
+      borderColor: 'border-blue-500',
+      label: 'Meubles'
+    };
+  }
+  
+  if (type.includes('matériau') || type.includes('construction')) {
+    return {
+      icon: Boxes,
+      color: 'text-white',
+      bgColor: 'bg-gradient-to-br from-orange-500 to-orange-600',
+      borderColor: 'border-orange-500',
+      label: 'Matériaux'
+    };
+  }
+  
+  if (type.includes('équipement') || type.includes('machine')) {
+    return {
+      icon: Wrench,
+      color: 'text-white',
+      bgColor: 'bg-gradient-to-br from-purple-500 to-purple-600',
+      borderColor: 'border-purple-500',
+      label: 'Équipements'
+    };
+  }
+  
+  if (type.includes('marchandise') || type.includes('produit')) {
+    return {
+      icon: ShoppingCart,
+      color: 'text-white',
+      bgColor: 'bg-gradient-to-br from-pink-500 to-pink-600',
+      borderColor: 'border-pink-500',
+      label: 'Marchandises'
+    };
+  }
+  
+  if (type.includes('colis')) {
+    return {
+      icon: Package,
+      color: 'text-white',
+      bgColor: 'bg-gradient-to-br from-amber-500 to-amber-600',
+      borderColor: 'border-amber-500',
+      label: 'Colis'
+    };
+  }
+  
+  if (type.includes('matériel')) {
+    return {
+      icon: Wrench,
+      color: 'text-white',
+      bgColor: 'bg-gradient-to-br from-indigo-500 to-indigo-600',
+      borderColor: 'border-indigo-500',
+      label: 'Matériel'
+    };
+  }
+  
+  // Default: Transport général
+  return {
+    icon: Truck,
+    color: 'text-white',
+    bgColor: 'bg-gradient-to-br from-slate-500 to-slate-600',
+    borderColor: 'border-slate-500',
+    label: goodsType
+  };
+};
 
 // Helper function to get client-friendly status with color
 function getClientStatus(request: any, interestedCount: number = 0) {
@@ -1309,43 +1393,67 @@ export default function CoordinatorDashboard() {
       ? allCoordinators.find((c: any) => c.id === request.coordinationUpdatedBy)
       : null;
 
+    // Get category config
+    const categoryConfig = getCategoryConfig(request.goodsType);
+    const CategoryIcon = categoryConfig.icon;
+
     return (
-    <Card key={request.id} className="hover-elevate" data-testid={`card-request-${request.id}`}>
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <CardTitle className="text-base">{request.referenceId}</CardTitle>
-              {request.client && (
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-6 w-6 shrink-0"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleWhatsAppContactClient(request.client.phoneNumber, request.referenceId);
-                  }}
-                  data-testid={`button-whatsapp-client-${request.id}`}
-                  title="Contacter le client via WhatsApp"
-                >
-                  <MessageCircle className="h-4 w-4 text-green-500" />
-                </Button>
-              )}
-              {getRequestStatusBadge(request.status)}
-              {showPaymentControls && getPaymentStatusBadge(request.paymentStatus)}
-              {request.isHidden && <Badge variant="secondary">Masqué</Badge>}
-            </div>
-            <CardDescription className="text-sm mt-1">
-              {request.fromCity} → {request.toCity}
-            </CardDescription>
-            <p className="text-xs text-muted-foreground mt-1">
-              Créée le {format(new Date(request.createdAt), "dd MMM yyyy 'à' HH:mm", { locale: fr })}
-            </p>
+    <Card key={request.id} className="hover-elevate overflow-hidden" data-testid={`card-request-${request.id}`}>
+      {/* En-tête avec catégorie colorée - même style que transporteur */}
+      <div className={`${categoryConfig.bgColor} px-4 py-3 flex items-center justify-between`}>
+        <div className="flex items-center gap-2.5">
+          <div className={`p-2 rounded-lg bg-white/20 ${categoryConfig.color}`}>
+            <CategoryIcon className="w-5 h-5" />
           </div>
+          <span className={`text-base font-semibold ${categoryConfig.color}`}>
+            {categoryConfig.label}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          {request.client && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7 shrink-0 bg-white/20 hover:bg-white/30"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleWhatsAppContactClient(request.client.phoneNumber, request.referenceId);
+              }}
+              data-testid={`button-whatsapp-client-${request.id}`}
+              title="Contacter le client via WhatsApp"
+            >
+              <MessageCircle className="h-4 w-4 text-white" />
+            </Button>
+          )}
+          <Badge className="bg-slate-800/80 text-white hover:bg-slate-800 border-0 font-mono text-xs">
+            {request.referenceId}
+          </Badge>
+        </div>
+      </div>
+
+      <CardHeader className="pb-3 space-y-3">
+        {/* Trajet et date */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-muted-foreground" />
+            <span className="font-semibold text-base">
+              {request.fromCity} → {request.toCity}
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground pl-6">
+            Créée le {format(new Date(request.createdAt), "dd MMM yyyy 'à' HH:mm", { locale: fr })}
+          </p>
+        </div>
+
+        {/* Statut avec badges */}
+        <div className="flex flex-wrap items-center gap-2">
+          {getRequestStatusBadge(request.status)}
+          {showPaymentControls && getPaymentStatusBadge(request.paymentStatus)}
+          {request.isHidden && <Badge variant="secondary">Masqué</Badge>}
         </div>
 
         {/* Statut logistique visible */}
-        <div className="flex items-center gap-2 px-3 py-2 mt-3 bg-gradient-to-r from-[#1abc9c]/10 to-[#16a085]/10 rounded-lg border border-[#1abc9c]/30">
+        <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-[#1abc9c]/10 to-[#16a085]/10 rounded-lg border border-[#1abc9c]/30">
           <StatusIcon className="w-5 h-5 text-[#1abc9c] flex-shrink-0" />
           <span className="text-sm font-medium text-foreground">
             {clientStatus.text}
@@ -1354,12 +1462,6 @@ export default function CoordinatorDashboard() {
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="space-y-2 text-sm">
-          <div className="flex items-center gap-2">
-            <Package className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground">Marchandise:</span>
-            <span className="font-medium">{request.goodsType}</span>
-          </div>
-
           {request.client && (
             <div className="flex items-center gap-2">
               <Phone className="h-4 w-4 text-muted-foreground" />
@@ -1461,6 +1563,41 @@ export default function CoordinatorDashboard() {
           </div>
         )}
 
+        {/* Section Prix - Style modernisé comme transporteur */}
+        {(request.transporterPrice || request.clientTotal || request.acceptedOffer) && (
+          <div className="space-y-2">
+            {request.transporterPrice && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-[#00ff88]/10 via-[#00ff88]/5 to-transparent border-l-4 border-[#00ff88]">
+                <div className="w-7 h-7 rounded-full bg-[#00ff88]/20 flex items-center justify-center flex-shrink-0">
+                  <DollarSign className="w-4 h-4 text-[#00ff88]" />
+                </div>
+                <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Transporteur</span>
+                <span className="text-lg font-bold text-[#00ff88] ml-auto">{Math.floor(request.transporterPrice).toLocaleString()} Dhs</span>
+              </div>
+            )}
+            
+            {request.clientTotal && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-blue-500/10 via-blue-500/5 to-transparent border-l-4 border-blue-500">
+                <div className="w-7 h-7 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                  <DollarSign className="w-4 h-4 text-blue-500" />
+                </div>
+                <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Client Total</span>
+                <span className="text-lg font-bold text-blue-500 ml-auto">{Math.floor(request.clientTotal).toLocaleString()} Dhs</span>
+              </div>
+            )}
+
+            {request.acceptedOffer && !request.transporterPrice && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-[#5BC0EB]/10 via-[#5BC0EB]/5 to-transparent border-l-4 border-[#5BC0EB]">
+                <div className="w-7 h-7 rounded-full bg-[#5BC0EB]/20 flex items-center justify-center flex-shrink-0">
+                  <DollarSign className="w-4 h-4 text-[#5BC0EB]" />
+                </div>
+                <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Montant accepté</span>
+                <span className="text-lg font-bold text-[#5BC0EB] ml-auto">{Math.floor(request.acceptedOffer.amount).toLocaleString()} Dhs</span>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="space-y-2 text-sm">
           {/* Show interested transporters count for qualified workflow */}
           {interestedCount > 0 && request.qualifiedAt && (
@@ -1479,14 +1616,6 @@ export default function CoordinatorDashboard() {
               <CheckCircle className="h-4 w-4 text-muted-foreground" />
               <span className="text-muted-foreground">Offres reçues:</span>
               <Badge variant="outline">{request.offers.length}</Badge>
-            </div>
-          )}
-
-          {request.acceptedOffer && (
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Montant accepté:</span>
-              <span className="font-bold text-[#5BC0EB]">{request.acceptedOffer.amount} DH</span>
             </div>
           )}
         </div>
