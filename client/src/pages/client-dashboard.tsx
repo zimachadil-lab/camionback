@@ -874,20 +874,45 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
       {/* Dialog des offres / transporteurs intéressés */}
       <Dialog open={showOffersDialog} onOpenChange={setShowOffersDialog}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {isQualifiedWorkflow 
-                ? `Transporteurs intéressés - ${request.referenceId}` 
-                : `Offres reçues - ${request.referenceId}`}
-            </DialogTitle>
-            <DialogDescription>
-              {request.fromCity} → {request.toCity}
-              {isQualifiedWorkflow && request.clientTotal && (
-                <span className="block mt-2 text-lg font-semibold text-[#17cfcf]">
-                  Prix total : {parseFloat(request.clientTotal).toFixed(2)} MAD
+          <DialogHeader className="space-y-3 pb-4">
+            {/* Titre avec badge */}
+            <div className="flex items-center justify-between gap-3">
+              <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                <Users className="w-5 h-5 text-[#17cfcf]" />
+                {isQualifiedWorkflow ? 'Transporteurs intéressés' : 'Offres reçues'}
+              </DialogTitle>
+              <Badge className="bg-slate-900 text-white border-0 font-mono text-xs px-3 py-1">
+                {request.referenceId}
+              </Badge>
+            </div>
+
+            {/* Route et Prix */}
+            <div className="space-y-2">
+              {/* Trajet */}
+              <div className="flex items-center gap-2 text-sm">
+                <Truck className="w-4 h-4 text-muted-foreground" />
+                <span className="font-medium text-base">
+                  <span>{request.fromCity}</span>
+                  <span className="text-[#17cfcf] mx-2">→</span>
+                  <span>{request.toCity}</span>
                 </span>
+              </div>
+
+              {/* Prix - Style transporteur */}
+              {isQualifiedWorkflow && request.clientTotal && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-[#00ff88]/10 via-[#00ff88]/5 to-transparent border-l-4 border-[#00ff88]">
+                  <div className="w-7 h-7 rounded-full bg-[#00ff88]/20 flex items-center justify-center flex-shrink-0">
+                    <DollarSign className="w-4 h-4 text-[#00ff88]" />
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-bold text-[#00ff88]">
+                      {parseFloat(request.clientTotal).toFixed(2)}
+                    </span>
+                    <span className="text-sm font-medium text-[#00ff88]/70">MAD</span>
+                  </div>
+                </div>
               )}
-            </DialogDescription>
+            </div>
           </DialogHeader>
 
           <div className="space-y-3 mt-4">
