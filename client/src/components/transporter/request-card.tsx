@@ -320,7 +320,7 @@ export function RequestCard({
               <Button 
                 onClick={handleWithdrawInterest} 
                 disabled={isPendingInterest}
-                className="col-span-2 h-12 font-semibold bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] hover:from-[#17cfcf]/90 hover:to-[#13b3b3]/90 text-white border-0"
+                className="col-span-2 h-12 font-semibold bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] hover:from-[#17cfcf]/90 hover:to-[#13b3b3]/90 text-white border-0 shadow-md hover:shadow-lg transition-shadow"
                 data-testid={`button-withdraw-interest-${request.id}`}
               >
                 <ThumbsUp className="w-5 h-5 mr-2" />
@@ -332,18 +332,17 @@ export function RequestCard({
                   <Button 
                     onClick={() => onDecline(request.id)} 
                     disabled={isPendingInterest}
-                    variant="outline"
-                    className="h-12 font-medium"
+                    className="h-12 font-medium bg-red-500/10 dark:bg-red-500/20 border-2 border-red-500/50 text-red-600 dark:text-red-400 hover:bg-red-500/20 dark:hover:bg-red-500/30 hover:border-red-500 transition-all"
                     data-testid={`button-not-available-${request.id}`}
                   >
-                    <ThumbsDown className="w-4 h-4 mr-2" />
+                    <ThumbsDown className="w-5 h-5 mr-2" />
                     <span>Indisponible</span>
                   </Button>
                 )}
                 <Button 
                   onClick={handleExpressInterest} 
                   disabled={isPendingInterest}
-                  className={`h-12 font-semibold bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] hover:from-[#17cfcf]/90 hover:to-[#13b3b3]/90 text-white border-0 ${!onDecline ? 'col-span-2' : ''}`}
+                  className={`h-12 font-semibold bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] hover:from-[#17cfcf]/90 hover:to-[#13b3b3]/90 text-white border-0 shadow-md hover:shadow-lg transition-shadow ${!onDecline ? 'col-span-2' : ''}`}
                   data-testid={`button-express-interest-${request.id}`}
                 >
                   <ThumbsUp className="w-5 h-5 mr-2" />
@@ -357,17 +356,16 @@ export function RequestCard({
               {onDecline && (
                 <Button 
                   onClick={() => onDecline(request.id)} 
-                  variant="outline"
-                  className="h-12"
+                  className="h-12 font-medium bg-red-500/10 dark:bg-red-500/20 border-2 border-red-500/50 text-red-600 dark:text-red-400 hover:bg-red-500/20 dark:hover:bg-red-500/30 hover:border-red-500"
                   data-testid={`button-decline-${request.id}`}
                 >
-                  <X className="w-4 h-4 mr-2" />
+                  <X className="w-5 h-5 mr-2" />
                   Décliner
                 </Button>
               )}
               <Button 
                 onClick={handleOfferClick} 
-                className={`h-12 ${!onDecline ? 'col-span-2' : ''}`}
+                className={`h-12 font-semibold bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] hover:from-[#17cfcf]/90 hover:to-[#13b3b3]/90 text-white border-0 shadow-md hover:shadow-lg ${!onDecline ? 'col-span-2' : ''}`}
                 variant={!isUserValidated ? "secondary" : "default"}
                 data-testid={`button-make-offer-${request.id}`}
               >
