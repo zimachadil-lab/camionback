@@ -922,7 +922,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                 <div className="space-y-3">
                   {interestedTransporters.map((transporter: any) => (
                     <Card key={transporter.id} className="overflow-hidden hover-elevate">
-                      <div className="flex gap-3 p-3">
+                      <div className="flex gap-3 p-3 relative">
                         {/* Transporter photo - compact */}
                         <div className="w-24 h-24 bg-gradient-to-br from-[#0a2540] via-[#1d3c57] to-[#17cfcf]/20 rounded-lg overflow-hidden flex-shrink-0">
                           {transporter.truckPhotos?.[0] ? (
@@ -937,7 +937,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                         </div>
                         
                         {/* Transporter info - compact */}
-                        <div className="flex-1 space-y-2">
+                        <div className="flex-1 space-y-2 pr-24">
                           <div className="flex items-start justify-between gap-2">
                             <div>
                               <h4 className="font-semibold text-base">{transporter.name || "Transporteur"}</h4>
@@ -967,30 +967,33 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                             </span>
                           </div>
 
-                          {/* Proposed availability date - compact */}
+                          {/* Proposed availability date - improved visibility */}
                           {transporter.availabilityDate && (
-                            <div className="flex items-center gap-2 pt-1">
-                              <Badge 
-                                className={`${
-                                  new Date(transporter.availabilityDate).toDateString() === new Date(request.dateTime).toDateString()
-                                    ? 'bg-green-500 hover:bg-green-600' 
-                                    : 'bg-orange-500 hover:bg-orange-600'
-                                } text-white border-0 text-[10px] font-medium px-2 py-0.5`}
-                              >
-                                📅 {format(new Date(transporter.availabilityDate), "dd MMM", { locale: fr })}
-                              </Badge>
+                            <div className="space-y-1 pt-1">
+                              <p className="text-xs font-semibold text-muted-foreground">Disponibilité proposée</p>
+                              <div className="flex items-center gap-2">
+                                <Badge 
+                                  className={`${
+                                    new Date(transporter.availabilityDate).toDateString() === new Date(request.dateTime).toDateString()
+                                      ? 'bg-green-500 hover:bg-green-600' 
+                                      : 'bg-orange-500 hover:bg-orange-600'
+                                  } text-white border-0 text-sm font-bold px-3 py-1`}
+                                >
+                                  📅 {format(new Date(transporter.availabilityDate), "dd MMMM yyyy", { locale: fr })}
+                                </Badge>
+                              </div>
                               {new Date(transporter.availabilityDate).toDateString() === new Date(request.dateTime).toDateString() ? (
-                                <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">✓ Correspond</span>
+                                <p className="text-xs text-green-600 dark:text-green-400 font-bold">✓ Correspond à la date souhaitée</p>
                               ) : (
-                                <span className="text-[10px] text-orange-600 dark:text-orange-400 font-medium">⚠ Différente</span>
+                                <p className="text-xs text-orange-600 dark:text-orange-400 font-bold">ℹ️ Date alternative proposée</p>
                               )}
                             </div>
                           )}
                         </div>
                         
-                        {/* Action button - compact */}
+                        {/* Action button - top right aligned with image */}
                         <Button
-                          className="bg-[#17cfcf] hover:bg-[#13b3b3] h-fit self-center px-4 py-2"
+                          className="absolute top-3 right-3 bg-[#17cfcf] hover:bg-[#13b3b3] px-4 py-2 font-semibold"
                           onClick={() => onChooseTransporter(request.id, transporter.id)}
                           data-testid={`button-select-transporter-${transporter.id}`}
                         >
