@@ -260,9 +260,8 @@ export function RequestCard({
           
           {request.photos && request.photos.length > 0 && (
             <Button
-              variant="outline"
               size="sm"
-              className="h-7 text-xs gap-1.5 hover-elevate"
+              className="h-7 text-xs gap-1.5 bg-[#17cfcf]/20 hover:bg-[#17cfcf]/30 text-[#17cfcf] border border-[#17cfcf]/40 hover:border-[#17cfcf]/60 transition-all font-medium"
               onClick={handleViewPhotos}
               data-testid={`button-view-photos-${request.id}`}
             >
