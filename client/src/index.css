@@ -366,6 +366,16 @@
     }
   }
 
+  /* Loading progress bar animation */
+  @keyframes progress {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
   /* CamioMatch contact button pulse animation (glow only, no scale) */
   @keyframes pulse-glow {
     0%, 100% {
