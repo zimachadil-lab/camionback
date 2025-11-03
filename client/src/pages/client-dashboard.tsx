@@ -584,6 +584,59 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
             </div>
           )}
 
+          {/* Manutention détaillée */}
+          {request.handlingRequired !== undefined && request.handlingRequired !== null && (
+            <div className="p-3 rounded-lg border bg-muted/30 space-y-2">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <span>🏋️</span>
+                <span>Manutention : {request.handlingRequired ? 'Oui' : 'Non'}</span>
+              </div>
+              {request.handlingRequired && (
+                <div className="grid grid-cols-2 gap-4 pl-6">
+                  {/* Départ */}
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <span>🏢</span>
+                      <span className="font-medium">Départ</span>
+                    </div>
+                    <div className="text-sm">
+                      {request.departureFloor !== undefined && request.departureFloor !== null ? (
+                        <>
+                          <div>{request.departureFloor === 0 ? 'RDC' : `${request.departureFloor}ᵉ étage`}</div>
+                          <div className="text-xs text-muted-foreground">
+                            Ascenseur {request.departureElevator ? '✅' : '❌'}
+                          </div>
+                        </>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Non spécifié</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Arrivée */}
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <span>🏠</span>
+                      <span className="font-medium">Arrivée</span>
+                    </div>
+                    <div className="text-sm">
+                      {request.arrivalFloor !== undefined && request.arrivalFloor !== null ? (
+                        <>
+                          <div>{request.arrivalFloor === 0 ? 'RDC' : `${request.arrivalFloor}ᵉ étage`}</div>
+                          <div className="text-xs text-muted-foreground">
+                            Ascenseur {request.arrivalElevator ? '✅' : '❌'}
+                          </div>
+                        </>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Non spécifié</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Bouton Offres reçues / Transporteurs intéressés */}
           {!isAccepted && (
             <Button
@@ -2089,6 +2142,59 @@ export default function ClientDashboard() {
                           </div>
                         )}
 
+                        {/* Manutention détaillée */}
+                        {request.handlingRequired !== undefined && request.handlingRequired !== null && (
+                          <div className="p-3 rounded-lg border bg-muted/30 space-y-2">
+                            <div className="flex items-center gap-2 text-sm font-medium">
+                              <span>🏋️</span>
+                              <span>Manutention : {request.handlingRequired ? 'Oui' : 'Non'}</span>
+                            </div>
+                            {request.handlingRequired && (
+                              <div className="grid grid-cols-2 gap-4 pl-6">
+                                {/* Départ */}
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                    <span>🏢</span>
+                                    <span className="font-medium">Départ</span>
+                                  </div>
+                                  <div className="text-sm">
+                                    {request.departureFloor !== undefined && request.departureFloor !== null ? (
+                                      <>
+                                        <div>{request.departureFloor === 0 ? 'RDC' : `${request.departureFloor}ᵉ étage`}</div>
+                                        <div className="text-xs text-muted-foreground">
+                                          Ascenseur {request.departureElevator ? '✅' : '❌'}
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <span className="text-xs text-muted-foreground">Non spécifié</span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Arrivée */}
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                    <span>🏠</span>
+                                    <span className="font-medium">Arrivée</span>
+                                  </div>
+                                  <div className="text-sm">
+                                    {request.arrivalFloor !== undefined && request.arrivalFloor !== null ? (
+                                      <>
+                                        <div>{request.arrivalFloor === 0 ? 'RDC' : `${request.arrivalFloor}ᵉ étage`}</div>
+                                        <div className="text-xs text-muted-foreground">
+                                          Ascenseur {request.arrivalElevator ? '✅' : '❌'}
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <span className="text-xs text-muted-foreground">Non spécifié</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
                         <div className="flex items-center gap-2 pt-2 border-t">
                           {request.acceptedOfferId && (
                             <Button
@@ -2162,6 +2268,68 @@ export default function ClientDashboard() {
                             </div>
                           )}
                         </div>
+
+                        {/* Description */}
+                        {request.description && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">Description</p>
+                            <p className="text-sm">{request.description}</p>
+                          </div>
+                        )}
+
+                        {/* Manutention détaillée */}
+                        {request.handlingRequired !== undefined && request.handlingRequired !== null && (
+                          <div className="p-3 rounded-lg border bg-muted/30 space-y-2">
+                            <div className="flex items-center gap-2 text-sm font-medium">
+                              <span>🏋️</span>
+                              <span>Manutention : {request.handlingRequired ? 'Oui' : 'Non'}</span>
+                            </div>
+                            {request.handlingRequired && (
+                              <div className="grid grid-cols-2 gap-4 pl-6">
+                                {/* Départ */}
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                    <span>🏢</span>
+                                    <span className="font-medium">Départ</span>
+                                  </div>
+                                  <div className="text-sm">
+                                    {request.departureFloor !== undefined && request.departureFloor !== null ? (
+                                      <>
+                                        <div>{request.departureFloor === 0 ? 'RDC' : `${request.departureFloor}ᵉ étage`}</div>
+                                        <div className="text-xs text-muted-foreground">
+                                          Ascenseur {request.departureElevator ? '✅' : '❌'}
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <span className="text-xs text-muted-foreground">Non spécifié</span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Arrivée */}
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                    <span>🏠</span>
+                                    <span className="font-medium">Arrivée</span>
+                                  </div>
+                                  <div className="text-sm">
+                                    {request.arrivalFloor !== undefined && request.arrivalFloor !== null ? (
+                                      <>
+                                        <div>{request.arrivalFloor === 0 ? 'RDC' : `${request.arrivalFloor}ᵉ étage`}</div>
+                                        <div className="text-xs text-muted-foreground">
+                                          Ascenseur {request.arrivalElevator ? '✅' : '❌'}
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <span className="text-xs text-muted-foreground">Non spécifié</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
                         <div className="flex items-center gap-2">
                           {request.acceptedOfferId && (
                             <>
