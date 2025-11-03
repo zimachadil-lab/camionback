@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, MessageCircle, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck, Trash2, Share2, Copy, Send, RotateCcw, Info, Users, CreditCard, Calendar, X, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, FileText } from "lucide-react";
+import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, MessageCircle, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck, Trash2, Share2, Copy, Send, RotateCcw, Info, Users, CreditCard, Calendar, X, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, FileText, MoreVertical, Image as ImageIcon } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -411,7 +411,7 @@ function InterestedTransportersView({ request, onAssignTransporter, isPending }:
 }) {
   // Fetch interested transporters from API
   // Query key will be joined with "/" to form: /api/requests/:requestId/interested-transporters
-  const { data: interestedTransporters, isLoading } = useQuery({
+  const { data: interestedTransporters, isLoading } = useQuery<any[]>({
     queryKey: [`/api/requests/${request.id}/interested-transporters`],
     enabled: !!request.id,
   });
@@ -1620,123 +1620,145 @@ export default function CoordinatorDashboard() {
           )}
         </div>
 
-        <div className="flex flex-wrap gap-2 pt-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => handleViewDetails(request)}
-            data-testid={`button-view-details-${request.id}`}
-          >
-            👁️ Détails
-          </Button>
-
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => handleOpenEdit(request)}
-            data-testid={`button-edit-request-${request.id}`}
-          >
-            <Edit className="h-4 w-4 mr-1" />
-            Modifier
-          </Button>
-
-          {request.photos && request.photos.length > 0 && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => handleViewPhotos(request.photos)}
-              data-testid={`button-view-photos-${request.id}`}
-            >
-              📷 Photos ({request.photos.length})
-            </Button>
-          )}
-
-          {request.shareToken && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  data-testid={`button-share-${request.id}`}
-                >
-                  <Share2 className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
+        <div className="flex flex-wrap gap-2 pt-2 border-t">
+          {/* Menu Actions Secondaires */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="sm"
+                variant="outline"
+                data-testid={`button-more-actions-${request.id}`}
+              >
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem
+                onClick={() => handleViewDetails(request)}
+                data-testid={`menu-view-details-${request.id}`}
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                Détails
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleOpenEdit(request)}
+                data-testid={`menu-edit-request-${request.id}`}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Modifier
+              </DropdownMenuItem>
+              {request.photos && request.photos.length > 0 && (
                 <DropdownMenuItem
-                  onClick={() => handleCopyShareLink(request.shareToken)}
-                  data-testid={`menu-copy-link-${request.id}`}
+                  onClick={() => handleViewPhotos(request.photos)}
+                  data-testid={`menu-view-photos-${request.id}`}
                 >
-                  <Copy className="h-4 w-4 mr-2" />
-                  Copier le lien
+                  <ImageIcon className="h-4 w-4 mr-2" />
+                  Photos ({request.photos.length})
                 </DropdownMenuItem>
+              )}
+              {request.shareToken && (
+                <>
+                  <DropdownMenuItem
+                    onClick={() => handleCopyShareLink(request.shareToken)}
+                    data-testid={`menu-copy-link-${request.id}`}
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copier le lien
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleShareViaWhatsApp(request.shareToken, request.referenceId)}
+                    data-testid={`menu-share-whatsapp-${request.id}`}
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    Partager via WhatsApp
+                  </DropdownMenuItem>
+                </>
+              )}
+              {request.client && request.transporter && (
                 <DropdownMenuItem
-                  onClick={() => handleShareViaWhatsApp(request.shareToken, request.referenceId)}
-                  data-testid={`menu-share-whatsapp-${request.id}`}
+                  onClick={() => handleOpenChat(request.client, request.transporter, request.id)}
+                  data-testid={`menu-open-chat-${request.id}`}
                 >
-                  <Send className="h-4 w-4 mr-2" />
-                  Partager via WhatsApp
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Messagerie
                 </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+              )}
+              {request.transporter && (
+                <DropdownMenuItem
+                  onClick={() => handleWhatsAppContact(request.transporter.phoneNumber, request.referenceId)}
+                  data-testid={`menu-whatsapp-transporter-${request.id}`}
+                >
+                  <MessageCircle className="h-4 w-4 mr-2 text-green-500" />
+                  WhatsApp Transporteur
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-          {request.client && request.transporter && (
+          {/* Actions Principales Visibles */}
+          
+          {/* Qualify button - Action principale */}
+          {showQualifyButton && (
             <Button
               size="sm"
-              variant="outline"
-              onClick={() => handleOpenChat(request.client, request.transporter, request.id)}
-              data-testid={`button-open-chat-${request.id}`}
+              variant="default"
+              className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700"
+              onClick={() => handleOpenQualificationDialog(request)}
+              data-testid={`button-qualify-${request.id}`}
             >
-              <MessageSquare className="h-4 w-4 mr-1" />
-              Messagerie
+              <DollarSign className="h-4 w-4 mr-1" />
+              Qualifier
             </Button>
           )}
 
-          {request.transporter && (
+          {/* Requalify button */}
+          {showQualifiedBy && (
             <Button
               size="sm"
-              variant="outline"
-              onClick={() => handleWhatsAppContact(request.transporter.phoneNumber, request.referenceId)}
-              data-testid={`button-whatsapp-transporter-${request.id}`}
+              variant="default"
+              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+              onClick={() => handleOpenQualificationDialog(request)}
+              data-testid={`button-requalify-${request.id}`}
             >
-              🟢 WhatsApp Transporteur
+              <RotateCcw className="h-4 w-4 mr-1" />
+              Requalifier
             </Button>
           )}
 
-          {/* Show interested transporters button for qualified workflow */}
+          {/* Transporteurs intéressés */}
           {interestedCount > 0 && request.qualifiedAt && !request.assignedTransporterId && (
             <Button
               size="sm"
               variant="default"
-              className="bg-[#17cfcf] hover:bg-[#13b3b3]"
+              className="bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] hover:from-[#13b3b3] hover:to-[#0f9999]"
               onClick={() => handleViewInterestedTransporters(request)}
               data-testid={`button-view-interested-${request.id}`}
             >
               <Users className="h-4 w-4 mr-1" />
-              Transporteurs intéressés ({interestedCount})
+              {interestedCount} Intéressé{interestedCount > 1 ? 's' : ''}
             </Button>
           )}
 
-          {/* Show offers button for old workflow */}
+          {/* Offres (old workflow) */}
           {showVisibilityToggle && request.offers && request.offers.length > 0 && (
             <Button
               size="sm"
               variant="default"
-              className="bg-[#5BC0EB] hover:bg-[#4AA8D8]"
+              className="bg-gradient-to-r from-[#5BC0EB] to-[#4AA8D8] hover:from-[#4AA8D8] hover:to-[#3997C5]"
               onClick={() => handleViewOffers(request)}
               data-testid={`button-view-offers-${request.id}`}
             >
               <CheckCircle className="h-4 w-4 mr-1" />
-              Offres ({request.offers.length})
+              {request.offers.length} Offre{request.offers.length > 1 ? 's' : ''}
             </Button>
           )}
 
+          {/* Masquer/Réafficher */}
           {showVisibilityToggle && (
             <Button
               size="sm"
-              variant={request.isHidden ? "default" : "outline"}
-              className={request.isHidden ? "bg-green-600 hover:bg-green-700" : "bg-red-100 hover:bg-red-200 border-red-300 text-red-700"}
+              variant="outline"
+              className={request.isHidden ? "border-green-500 text-green-600 hover:bg-green-50" : "border-red-500 text-red-600 hover:bg-red-50"}
               onClick={() => toggleVisibilityMutation.mutate({ 
                 requestId: request.id, 
                 isHidden: !request.isHidden 
@@ -1749,56 +1771,17 @@ export default function CoordinatorDashboard() {
             </Button>
           )}
 
-          {isCoordination && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="bg-purple-500/10 hover:bg-purple-500/20 border-purple-500/30"
-              onClick={() => handleOpenCoordinationDialog(request)}
-              data-testid={`button-coordination-status-${request.id}`}
-            >
-              📋 Statut de coordination
-            </Button>
-          )}
-
-          {/* NEW: Qualify button for qualification_pending requests */}
-          {showQualifyButton && (
-            <Button
-              size="sm"
-              variant="default"
-              className="bg-yellow-500 hover:bg-yellow-600"
-              onClick={() => handleOpenQualificationDialog(request)}
-              data-testid={`button-qualify-${request.id}`}
-            >
-              <DollarSign className="h-4 w-4 mr-1" />
-              Qualifier
-            </Button>
-          )}
-
-          {/* NEW: Requalify button for qualified requests */}
-          {showQualifiedBy && (
-            <Button
-              size="sm"
-              variant="default"
-              className="bg-blue-500 hover:bg-blue-600"
-              onClick={() => handleOpenQualificationDialog(request)}
-              data-testid={`button-requalify-${request.id}`}
-            >
-              <Edit className="h-4 w-4 mr-1" />
-              Requalifier
-            </Button>
-          )}
-
+          {/* Missionner transporteur */}
           {isCoordination && !request.transporter && request.status !== 'accepted' && (
             <Button
               size="sm"
               variant="default"
-              className="bg-[#5BC0EB] hover:bg-[#4AA8D8]"
+              className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700"
               onClick={() => handleOpenManualAssignment(request)}
               data-testid={`button-manual-assignment-${request.id}`}
             >
               <Truck className="h-4 w-4 mr-1" />
-              Missionner un transporteur
+              Missionner
             </Button>
           )}
 
