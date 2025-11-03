@@ -332,7 +332,7 @@ export function RequestCard({
                   <Button 
                     onClick={() => onDecline(request.id)} 
                     disabled={isPendingInterest}
-                    className="h-12 font-medium bg-red-500/10 dark:bg-red-500/20 border-2 border-red-500/50 text-red-600 dark:text-red-400 hover:bg-red-500/20 dark:hover:bg-red-500/30 hover:border-red-500 transition-all"
+                    className="h-12 font-medium bg-muted/50 hover:bg-muted border-2 border-border hover:border-muted-foreground/30 transition-all"
                     data-testid={`button-not-available-${request.id}`}
                   >
                     <ThumbsDown className="w-5 h-5 mr-2" />
@@ -356,7 +356,7 @@ export function RequestCard({
               {onDecline && (
                 <Button 
                   onClick={() => onDecline(request.id)} 
-                  className="h-12 font-medium bg-red-500/10 dark:bg-red-500/20 border-2 border-red-500/50 text-red-600 dark:text-red-400 hover:bg-red-500/20 dark:hover:bg-red-500/30 hover:border-red-500"
+                  className="h-12 font-medium bg-muted/50 hover:bg-muted border-2 border-border hover:border-muted-foreground/30"
                   data-testid={`button-decline-${request.id}`}
                 >
                   <X className="w-5 h-5 mr-2" />
