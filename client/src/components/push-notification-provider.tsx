@@ -1,15 +1,21 @@
 // Provider pour gérer automatiquement les notifications push pour les utilisateurs connectés
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
 
 export function PushNotificationProvider({ children }: { children: React.ReactNode }) {
+  const [isReady, setIsReady] = useState(false);
   const { user } = useAuth();
 
-  // Enable push notifications for logged-in users
+  // Delay initialization to avoid hook call errors during initial mount
+  useEffect(() => {
+    setIsReady(true);
+  }, []);
+
+  // Enable push notifications for logged-in users only after component is ready
   const { permission } = usePushNotifications({
     userId: user?.id || null,
-    enabled: !!user?.id
+    enabled: isReady && !!user?.id
   });
 
   useEffect(() => {

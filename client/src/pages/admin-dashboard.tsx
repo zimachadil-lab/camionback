@@ -970,6 +970,19 @@ export default function AdminDashboard() {
   // Render loading state while checking auth (without early return to respect Hooks rules)
   const isAuthenticated = user?.id && user?.role === "admin";
 
+  // Calculate unpaid requests (all requests with payment pending or awaiting validation)
+  const unpaidRequests = allRequests.filter(r => 
+    r.paymentStatus === "pending" || 
+    r.paymentStatus === "awaiting_payment" || 
+    r.paymentStatus === "pending_admin_validation"
+  );
+
+  // Alias for pending transporters (same as pending drivers)
+  const pendingTransporters = pendingDrivers;
+  
+  // Alias for reports (same as allReports)
+  const reports = allReports;
+
   // Prepare counts for sidebar badges
   const sidebarCounts = {
     pendingRequests: allRequests.filter(r => r.status === "en_attente" || r.status === "à_traiter").length,
