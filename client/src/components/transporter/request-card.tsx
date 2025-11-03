@@ -237,39 +237,41 @@ export function RequestCard({
             <p className={`text-sm pl-6 ${showFullDescription ? '' : 'line-clamp-2'}`}>
               {request.description}
             </p>
-            {request.description.length > 100 && (
-              <button
-                onClick={() => setShowFullDescription(!showFullDescription)}
-                className="text-xs text-[#17cfcf] hover:underline pl-6 flex items-center gap-1"
-                data-testid={`button-toggle-description-${request.id}`}
-              >
-                {showFullDescription ? 'Voir moins' : 'Plus de détails'}
-              </button>
-            )}
+            <div className="flex items-center gap-3 pl-6">
+              {request.description.length > 100 && (
+                <button
+                  onClick={() => setShowFullDescription(!showFullDescription)}
+                  className="text-xs text-[#17cfcf] hover:underline"
+                  data-testid={`button-toggle-description-${request.id}`}
+                >
+                  {showFullDescription ? 'Voir moins' : 'Plus de détails'}
+                </button>
+              )}
+              
+              {request.photos && request.photos.length > 0 && (
+                <Button
+                  size="sm"
+                  className="h-6 text-xs gap-1.5 bg-[#17cfcf]/20 hover:bg-[#17cfcf]/30 text-[#17cfcf] border border-[#17cfcf]/40 hover:border-[#17cfcf]/60 transition-all font-medium"
+                  onClick={handleViewPhotos}
+                  data-testid={`button-view-photos-${request.id}`}
+                >
+                  <ImageIcon className="w-3.5 h-3.5" />
+                  <span>{request.photos.length} photo{request.photos.length > 1 ? 's' : ''}</span>
+                </Button>
+              )}
+            </div>
           </div>
         )}
 
-        {/* Informations complémentaires */}
-        <div className="flex flex-wrap items-center gap-2 pt-2 border-t">
-          {request.estimatedWeight && (
+        {/* Poids si disponible */}
+        {request.estimatedWeight && (
+          <div className="flex items-center gap-2 pt-2 border-t">
             <Badge variant="outline" className="text-xs">
               <Package className="w-3 h-3 mr-1" />
               {request.estimatedWeight}
             </Badge>
-          )}
-          
-          {request.photos && request.photos.length > 0 && (
-            <Button
-              size="sm"
-              className="h-7 text-xs gap-1.5 bg-[#17cfcf]/20 hover:bg-[#17cfcf]/30 text-[#17cfcf] border border-[#17cfcf]/40 hover:border-[#17cfcf]/60 transition-all font-medium"
-              onClick={handleViewPhotos}
-              data-testid={`button-view-photos-${request.id}`}
-            >
-              <ImageIcon className="w-4 h-4" />
-              <span>{request.photos.length} photo{request.photos.length > 1 ? 's' : ''}</span>
-            </Button>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Manutention détaillée */}
         {request.handlingRequired && (
