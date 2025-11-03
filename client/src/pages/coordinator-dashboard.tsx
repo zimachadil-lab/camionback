@@ -1399,7 +1399,7 @@ export default function CoordinatorDashboard() {
     const CategoryIcon = categoryConfig.icon;
 
     return (
-    <Card key={request.id} className="hover-elevate overflow-hidden" data-testid={`card-request-${request.id}`}>
+    <Card key={request.id} className={`hover-elevate overflow-hidden border-2 ${categoryConfig.borderColor}`} data-testid={`card-request-${request.id}`}>
       {/* En-tête avec catégorie colorée - même style que transporteur */}
       <div className={`${categoryConfig.bgColor} px-4 py-3 flex items-center justify-between`}>
         <div className="flex items-center gap-2.5">
