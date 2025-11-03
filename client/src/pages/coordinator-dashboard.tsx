@@ -1522,7 +1522,6 @@ export default function CoordinatorDashboard() {
 
         {/* Statut avec badges */}
         <div className="flex flex-wrap items-center gap-2">
-          {getRequestStatusBadge(request.status)}
           {showPaymentControls && getPaymentStatusBadge(request.paymentStatus)}
           {request.isHidden && <Badge variant="secondary">Masqué</Badge>}
         </div>
