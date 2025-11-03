@@ -57,12 +57,30 @@ const getCategoryConfig = (goodsType: string): { icon: LucideIcon; color: string
     };
   }
   
+  if (type.includes('colis')) {
+    return {
+      icon: Package,
+      color: 'text-white',
+      bgColor: 'bg-gradient-to-br from-amber-500 to-amber-600',
+      borderColor: 'border-amber-500'
+    };
+  }
+  
+  if (type.includes('matériel')) {
+    return {
+      icon: Wrench,
+      color: 'text-white',
+      bgColor: 'bg-gradient-to-br from-indigo-500 to-indigo-600',
+      borderColor: 'border-indigo-500'
+    };
+  }
+  
   // Default: Transport général
   return {
     icon: Truck,
     color: 'text-white',
-    bgColor: 'bg-gradient-to-br from-[#17cfcf] to-[#13b3b3]',
-    borderColor: 'border-[#17cfcf]'
+    bgColor: 'bg-gradient-to-br from-slate-500 to-slate-600',
+    borderColor: 'border-slate-500'
   };
 };
 
