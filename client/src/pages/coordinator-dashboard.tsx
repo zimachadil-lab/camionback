@@ -1981,25 +1981,25 @@ export default function CoordinatorDashboard() {
             <TabsTrigger value="nouveau" data-testid="tab-nouveau" className="gap-1 px-2">
               <span className="text-xs sm:text-sm">Nouveau</span>
               <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white text-xs px-1.5 py-0">
-                {filterRequests(nouveauRequests).length}
+                {nouveauLoading ? "..." : filterRequests(nouveauRequests).length}
               </Badge>
             </TabsTrigger>
             <TabsTrigger value="qualifies" data-testid="tab-qualifies" className="gap-1 px-2">
               <span className="text-xs sm:text-sm">Qualifiés</span>
               <Badge className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-1.5 py-0">
-                {filterRequests(matchingRequests).length}
+                {matchingLoading ? "..." : filterRequests(matchingRequests).length}
               </Badge>
             </TabsTrigger>
             <TabsTrigger value="production" data-testid="tab-production" className="gap-1 px-2">
               <span className="text-xs sm:text-sm">En Production</span>
               <Badge className="bg-green-500 hover:bg-green-600 text-white text-xs px-1.5 py-0">
-                {filterRequests([...activeRequests, ...paymentRequests]).length}
+                {(activeLoading || paymentLoading) ? "..." : filterRequests([...activeRequests, ...paymentRequests]).length}
               </Badge>
             </TabsTrigger>
             <TabsTrigger value="archives" data-testid="tab-archives" className="gap-1 px-2">
               <span className="text-xs sm:text-sm">Archives</span>
               <Badge className="bg-gray-500 hover:bg-gray-600 text-white text-xs px-1.5 py-0">
-                {filterRequests(archivesRequests).length}
+                {archivesLoading ? "..." : filterRequests(archivesRequests).length}
               </Badge>
             </TabsTrigger>
           </TabsList>
