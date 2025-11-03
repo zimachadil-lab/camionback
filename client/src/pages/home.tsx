@@ -5,6 +5,7 @@ import { PhoneAuth } from "@/components/auth/phone-auth";
 import ClientDashboard from "./client-dashboard";
 import TransporterDashboard from "./transporter-dashboard";
 import AdminDashboard from "./admin-dashboard";
+import CoordinatorDashboard from "./coordinator-dashboard";
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -38,11 +39,7 @@ export default function Home() {
   }
 
   if (user.role === "coordinateur") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#0A2540] to-[#163049]">
-        <div className="text-white text-xl">Redirection...</div>
-      </div>
-    );
+    return <CoordinatorDashboard />;
   }
 
   if (user.role === "transporteur") {
