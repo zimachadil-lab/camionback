@@ -2101,19 +2101,19 @@ export default function CoordinatorDashboard() {
                     </div>
                     
                     {/* Prix qualifiés */}
-                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 rounded-lg p-4">
-                      <div className="grid grid-cols-3 gap-4 text-center">
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">Transporteur</p>
-                          <p className="text-lg font-bold">{request.transporterAmount || 0} DH</p>
+                    <div className="bg-gradient-to-br from-slate-800 to-slate-900 dark:from-slate-900 dark:to-black rounded-lg p-5 border border-slate-700 shadow-lg">
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="text-center p-3 rounded-md bg-slate-700/30 border border-slate-600/50">
+                          <p className="text-xs font-medium text-slate-300 mb-2">Transporteur</p>
+                          <p className="text-2xl font-bold text-white">{request.transporterAmount || 0} DH</p>
                         </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">Commission</p>
-                          <p className="text-lg font-bold text-orange-600">+{request.platformFee || 0} DH</p>
+                        <div className="text-center p-3 rounded-md bg-orange-500/20 border border-orange-500/50">
+                          <p className="text-xs font-medium text-orange-200 mb-2">Commission</p>
+                          <p className="text-2xl font-bold text-orange-400">+{request.platformFee || 0} DH</p>
                         </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">Total client</p>
-                          <p className="text-xl font-bold text-[#17cfcf]">{request.clientTotal || 0} DH</p>
+                        <div className="text-center p-3 rounded-md bg-[#17cfcf]/20 border border-[#17cfcf]/50">
+                          <p className="text-xs font-medium text-cyan-200 mb-2">Total client</p>
+                          <p className="text-2xl font-bold text-[#17cfcf]">{request.clientTotal || 0} DH</p>
                         </div>
                       </div>
                     </div>
