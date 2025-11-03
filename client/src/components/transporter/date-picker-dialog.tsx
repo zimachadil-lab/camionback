@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
+import { format, isSameDay } from "date-fns";
 import { fr } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 
@@ -70,14 +70,14 @@ export function DatePickerDialog({
               <p className="text-sm font-medium">
                 Date sélectionnée : {format(selectedDate, "dd MMMM yyyy", { locale: fr })}
               </p>
-              {requestDate && selectedDate.getTime() === requestDate.getTime() && (
+              {requestDate && isSameDay(selectedDate, requestDate) && (
                 <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">
-                  ✓ Correspond à la date du client
+                  ✓ Correspond à la date souhaitée par le client
                 </p>
               )}
-              {requestDate && selectedDate.getTime() !== requestDate.getTime() && (
+              {requestDate && !isSameDay(selectedDate, requestDate) && (
                 <p className="text-xs text-orange-600 dark:text-orange-400 mt-1 font-medium">
-                  ⚠ Différente de la date demandée
+                  ℹ️ Date alternative proposée (acceptable)
                 </p>
               )}
             </div>

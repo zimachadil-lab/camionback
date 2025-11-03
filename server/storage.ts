@@ -161,7 +161,7 @@ export interface IStorage {
   getPublishedRequestsForTransporter(): Promise<any[]>;
   expressInterest(requestId: string, transporterId: string, availabilityDate?: Date): Promise<TransportRequest | undefined>;
   withdrawInterest(requestId: string, transporterId: string): Promise<TransportRequest | undefined>;
-  getInterestedTransportersForRequest(requestId: string): Promise<User[]>;
+  getInterestedTransportersForRequest(requestId: string): Promise<any[]>;
   getTransporterInterests(transporterId: string): Promise<any[]>;
   archiveRequestWithReason(requestId: string, reason: string, coordinatorId: string): Promise<TransportRequest | undefined>;
   
@@ -1246,7 +1246,7 @@ export class MemStorage implements IStorage {
   async withdrawInterest(requestId: string, transporterId: string): Promise<TransportRequest | undefined> {
     return undefined;
   }
-  async getInterestedTransportersForRequest(requestId: string): Promise<User[]> {
+  async getInterestedTransportersForRequest(requestId: string): Promise<any[]> {
     return [];
   }
   async getTransporterInterests(transporterId: string): Promise<any[]> {
@@ -3328,7 +3328,7 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
-  async getInterestedTransportersForRequest(requestId: string): Promise<User[]> {
+  async getInterestedTransportersForRequest(requestId: string): Promise<any[]> {
     const request = await db.select()
       .from(transportRequests)
       .where(eq(transportRequests.id, requestId))
@@ -3338,9 +3338,30 @@ export class DbStorage implements IStorage {
       return [];
     }
 
-    // Get all interested transporters (only validated ones)
-    // Use inArray instead of ANY for better PostgreSQL array handling
-    const transporters = await db.select().from(users)
+    // Get all interested transporters with their proposed availability dates
+    // Join with transporter_interests to get the availability_date
+    const transportersWithDates = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        phoneNumber: users.phoneNumber,
+        role: users.role,
+        status: users.status,
+        city: users.city,
+        rating: users.rating,
+        totalTrips: users.totalTrips,
+        truckPhotos: users.truckPhotos,
+        isVerified: users.isVerified,
+        availabilityDate: transporterInterests.availabilityDate,
+      })
+      .from(users)
+      .leftJoin(
+        transporterInterests,
+        and(
+          eq(transporterInterests.transporterId, users.id),
+          eq(transporterInterests.requestId, requestId)
+        )
+      )
       .where(
         and(
           inArray(users.id, request[0].transporterInterests),
@@ -3349,7 +3370,7 @@ export class DbStorage implements IStorage {
         )
       );
 
-    return transporters;
+    return transportersWithDates;
   }
 
   async getTransporterInterests(transporterId: string): Promise<any[]> {

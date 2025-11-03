@@ -941,6 +941,29 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                               {parseFloat(transporter.rating || "0").toFixed(1)} ({transporter.totalTrips || 0} trajets)
                             </span>
                           </div>
+
+                          {/* Proposed availability date */}
+                          {transporter.availabilityDate && (
+                            <div className="pt-2 border-t space-y-1">
+                              <p className="text-xs font-medium text-muted-foreground">📅 Disponibilité proposée</p>
+                              <div className="flex items-center gap-2">
+                                <Badge 
+                                  className={`${
+                                    new Date(transporter.availabilityDate).toDateString() === new Date(request.dateTime).toDateString()
+                                      ? 'bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700' 
+                                      : 'bg-orange-500 hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700'
+                                  } text-white border-0 text-xs font-medium`}
+                                >
+                                  {format(new Date(transporter.availabilityDate), "dd MMMM yyyy", { locale: fr })}
+                                </Badge>
+                                {new Date(transporter.availabilityDate).toDateString() === new Date(request.dateTime).toDateString() ? (
+                                  <span className="text-xs text-green-600 dark:text-green-400 font-medium">✓ Correspond</span>
+                                ) : (
+                                  <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">⚠ Différente</span>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
                         
                         {/* Action button */}
