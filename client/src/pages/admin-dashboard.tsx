@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
-// REMOVED: Tabs navigation replaced with card-based navigation
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +10,8 @@ import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCir
 import { LoadingTruck } from "@/components/ui/loading-truck";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -969,6 +970,24 @@ export default function AdminDashboard() {
   // Render loading state while checking auth (without early return to respect Hooks rules)
   const isAuthenticated = user?.id && user?.role === "admin";
 
+  // Prepare counts for sidebar badges
+  const sidebarCounts = {
+    pendingRequests: allRequests.filter(r => r.status === "en_attente" || r.status === "à_traiter").length,
+    pendingOffers: 0, // Removed offer system
+    activeContracts: contracts.length,
+    totalMessages: conversations.length,
+    unpaidRequests: unpaidRequests.length,
+    pendingTransporters: pendingTransporters.length,
+    emptyReturns: emptyReturns.length,
+    totalReports: reports.length,
+  };
+
+  // Sidebar width configuration
+  const sidebarStyle = {
+    "--sidebar-width": "16rem",
+    "--sidebar-width-icon": "3rem",
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {!isAuthenticated ? (
@@ -976,377 +995,63 @@ export default function AdminDashboard() {
           <LoadingTruck />
         </div>
       ) : (
-        <>
-          <Header
-            user={user as { id: string; name?: string; role: string; clientId?: string }}
-            onLogout={handleLogout}
-          />
-          
-          <div className="container mx-auto p-4 md:p-6 max-w-7xl space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Administration</h1>
-            <p className="text-muted-foreground mt-1">Gérez la plateforme CamionBack</p>
-          </div>
-          <div className="flex gap-2">
-            <Button 
-              variant="outline"
-              onClick={() => {
-                // Invalider toutes les queries pour rafraîchir les données
-                queryClient.invalidateQueries();
-                toast({
-                  title: "✅ Données actualisées",
-                  description: "Toutes les données ont été rafraîchies avec succès",
-                });
-              }}
-              data-testid="button-refresh-dashboard"
-              className="hover:text-[#17cfcf] hover:border-[#17cfcf]"
-            >
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Actualiser
-            </Button>
-            <Button 
-              onClick={() => setAddClientOpen(true)}
-              variant="secondary"
-              data-testid="button-add-client"
-            >
-              <Plus className="mr-2 h-5 w-5" />
-              Ajouter client
-            </Button>
-            <Button 
-              onClick={() => setAddTransporterOpen(true)}
-              data-testid="button-add-transporter"
-            >
-              <Plus className="mr-2 h-5 w-5" />
-              Ajouter transporteur
-            </Button>
-          </div>
-        </div>
+        <SidebarProvider style={sidebarStyle as React.CSSProperties}>
+          <div className="flex h-screen w-full">
+            <AdminSidebar
+              activeSection={activeSection}
+              onSectionChange={setActiveSection}
+              counts={sidebarCounts}
+              onLogout={handleLogout}
+            />
+            
+            <div className="flex flex-col flex-1">
+              {/* Header with sidebar trigger */}
+              <header className="flex items-center justify-between gap-4 p-4 border-b">
+                <div className="flex items-center gap-4">
+                  <SidebarTrigger data-testid="button-sidebar-toggle" />
+                  <div>
+                    <h1 className="text-2xl font-bold">Administration</h1>
+                    <p className="text-sm text-muted-foreground">Gérez la plateforme CamionBack</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      queryClient.invalidateQueries();
+                      toast({
+                        title: "✅ Données actualisées",
+                        description: "Toutes les données ont été rafraîchies avec succès",
+                      });
+                    }}
+                    data-testid="button-refresh-dashboard"
+                    className="hover:text-[#17cfcf] hover:border-[#17cfcf]"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    onClick={() => setAddClientOpen(true)}
+                    variant="secondary"
+                    size="sm"
+                    data-testid="button-add-client"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Client
+                  </Button>
+                  <Button 
+                    onClick={() => setAddTransporterOpen(true)}
+                    size="sm"
+                    data-testid="button-add-transporter"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Transporteur
+                  </Button>
+                </div>
+              </header>
 
-        {/* Navigation par cartes - 3 sections */}
-        <div className="space-y-8">
-          {/* Section 1: OPÉRATIONS */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 px-1">
-              <TruckIcon className="w-5 h-5 text-[#17cfcf]" />
-              <h2 className="text-lg font-bold">Opérations</h2>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {/* Demandes */}
-              <Card 
-                className={`cursor-pointer hover-elevate transition-all ${activeSection === 'requests' ? 'ring-2 ring-[#17cfcf]' : ''}`}
-                onClick={() => setActiveSection('requests')}
-                data-testid="card-requests"
-              >
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4" />
-                      Demandes
-                    </div>
-                  </CardTitle>
-                </CardHeader>
-              </Card>
-
-              {/* Contrats */}
-              <Card 
-                className={`cursor-pointer hover-elevate transition-all ${activeSection === 'contracts' ? 'ring-2 ring-[#17cfcf]' : ''}`}
-                onClick={() => setActiveSection('contracts')}
-                data-testid="card-contracts"
-              >
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4" />
-                      Contrats
-                    </div>
-                    {contracts.length > 0 && (
-                      <Badge className="relative">
-                        <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#17cfcf] opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-3 w-3 bg-[#17cfcf]"></span>
-                        </span>
-                        {contracts.length}
-                      </Badge>
-                    )}
-                  </CardTitle>
-                </CardHeader>
-              </Card>
-
-              {/* Messages */}
-              <Card 
-                className={`cursor-pointer hover-elevate transition-all ${activeSection === 'messages' ? 'ring-2 ring-[#17cfcf]' : ''}`}
-                onClick={() => setActiveSection('messages')}
-                data-testid="card-messages"
-              >
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <MessageSquare className="w-4 h-4" />
-                      Messages
-                    </div>
-                    {conversations.length > 0 && (
-                      <Badge className="relative">
-                        <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#17cfcf] opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-3 w-3 bg-[#17cfcf] animate-pulse"></span>
-                        </span>
-                        {conversations.length}
-                      </Badge>
-                    )}
-                  </CardTitle>
-                </CardHeader>
-              </Card>
-
-              {/* À payer */}
-              <Card 
-                className={`cursor-pointer hover-elevate transition-all ${activeSection === 'to-pay' ? 'ring-2 ring-[#17cfcf]' : ''}`}
-                onClick={() => setActiveSection('to-pay')}
-                data-testid="card-to-pay"
-              >
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="w-4 h-4" />
-                      À payer
-                    </div>
-                    {pendingPayments.length > 0 && (
-                      <Badge variant="destructive" className="relative">
-                        <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 animate-pulse"></span>
-                        </span>
-                        {pendingPayments.length}
-                      </Badge>
-                    )}
-                  </CardTitle>
-                </CardHeader>
-              </Card>
-
-              {/* Validation */}
-              <Card 
-                className={`cursor-pointer hover-elevate transition-all ${activeSection === 'validation' ? 'ring-2 ring-[#17cfcf]' : ''}`}
-                onClick={() => setActiveSection('validation')}
-                data-testid="card-validation"
-              >
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <UserCheck className="w-4 h-4" />
-                      Validation
-                    </div>
-                    {pendingDrivers.length > 0 && (
-                      <Badge variant="destructive" className="relative">
-                        <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 animate-pulse"></span>
-                        </span>
-                        {pendingDrivers.length}
-                      </Badge>
-                    )}
-                  </CardTitle>
-                </CardHeader>
-              </Card>
-
-              {/* Retours */}
-              <Card 
-                className={`cursor-pointer hover-elevate transition-all ${activeSection === 'empty-returns' ? 'ring-2 ring-[#17cfcf]' : ''}`}
-                onClick={() => setActiveSection('empty-returns')}
-                data-testid="card-empty-returns"
-              >
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <TruckIcon className="w-4 h-4" />
-                      Retours
-                    </div>
-                    {emptyReturns.length > 0 && (
-                      <Badge className="bg-[#00d4b2] relative">
-                        <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00d4b2] opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-3 w-3 bg-[#00d4b2]"></span>
-                        </span>
-                        {emptyReturns.length}
-                      </Badge>
-                    )}
-                  </CardTitle>
-                </CardHeader>
-              </Card>
-            </div>
-          </div>
-
-          {/* Section 2: GESTION */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 px-1">
-              <Settings className="w-5 h-5 text-[#17cfcf]" />
-              <h2 className="text-lg font-bold">Gestion</h2>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {/* Transporteurs */}
-              <Card 
-                className={`cursor-pointer hover-elevate transition-all ${activeSection === 'drivers' ? 'ring-2 ring-[#17cfcf]' : ''}`}
-                onClick={() => setActiveSection('drivers')}
-                data-testid="card-drivers"
-              >
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Users className="w-4 h-4" />
-                    Transporteurs
-                  </CardTitle>
-                </CardHeader>
-              </Card>
-
-              {/* Clients */}
-              <Card 
-                className={`cursor-pointer hover-elevate transition-all ${activeSection === 'clients' ? 'ring-2 ring-[#17cfcf]' : ''}`}
-                onClick={() => setActiveSection('clients')}
-                data-testid="card-clients"
-              >
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Users className="w-4 h-4" />
-                    Clients
-                  </CardTitle>
-                </CardHeader>
-              </Card>
-
-              {/* Coordinateurs */}
-              <Card 
-                className={`cursor-pointer hover-elevate transition-all ${activeSection === 'coordinators' ? 'ring-2 ring-[#17cfcf]' : ''}`}
-                onClick={() => setActiveSection('coordinators')}
-                data-testid="card-coordinators"
-              >
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Compass className="w-4 h-4" />
-                    Coordinateurs
-                  </CardTitle>
-                </CardHeader>
-              </Card>
-
-              {/* Statuts Coordination */}
-              <Card 
-                className={`cursor-pointer hover-elevate transition-all ${activeSection === 'coordination-statuses' ? 'ring-2 ring-[#17cfcf]' : ''}`}
-                onClick={() => setActiveSection('coordination-statuses')}
-                data-testid="card-coordination-statuses"
-              >
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Settings className="w-4 h-4" />
-                    Statuts Coordination
-                  </CardTitle>
-                </CardHeader>
-              </Card>
-
-              {/* Signalements */}
-              <Card 
-                className={`cursor-pointer hover-elevate transition-all ${activeSection === 'reports' ? 'ring-2 ring-[#17cfcf]' : ''}`}
-                onClick={() => setActiveSection('reports')}
-                data-testid="card-reports"
-              >
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Flag className="w-4 h-4" />
-                      Signalements
-                    </div>
-                    {allReports.filter((r: any) => r.status === "pending").length > 0 && (
-                      <Badge variant="destructive" className="relative">
-                        <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 animate-pulse"></span>
-                        </span>
-                        {allReports.filter((r: any) => r.status === "pending").length}
-                      </Badge>
-                    )}
-                  </CardTitle>
-                </CardHeader>
-              </Card>
-
-              {/* Communications */}
-              <Card 
-                className={`cursor-pointer hover-elevate transition-all ${activeSection === 'communications' ? 'ring-2 ring-[#17cfcf]' : ''}`}
-                onClick={() => setActiveSection('communications')}
-                data-testid="card-communications"
-              >
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Send className="w-4 h-4" />
-                    Communications
-                  </CardTitle>
-                </CardHeader>
-              </Card>
-
-              {/* Facturation */}
-              <Card 
-                className={`cursor-pointer hover-elevate transition-all ${activeSection === 'facturation' ? 'ring-2 ring-[#17cfcf]' : ''}`}
-                onClick={() => setActiveSection('facturation')}
-                data-testid="card-facturation"
-              >
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <DollarSign className="w-4 h-4" />
-                    Facturation
-                  </CardTitle>
-                </CardHeader>
-              </Card>
-            </div>
-          </div>
-
-          {/* Section 3: CONFIGURATION */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 px-1">
-              <Building2 className="w-5 h-5 text-[#17cfcf]" />
-              <h2 className="text-lg font-bold">Configuration</h2>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {/* Villes */}
-              <Card 
-                className={`cursor-pointer hover-elevate transition-all ${activeSection === 'cities' ? 'ring-2 ring-[#17cfcf]' : ''}`}
-                onClick={() => setActiveSection('cities')}
-                data-testid="card-cities"
-              >
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <MapPin className="w-4 h-4" />
-                    Villes
-                  </CardTitle>
-                </CardHeader>
-              </Card>
-
-              {/* Stories */}
-              <Card 
-                className={`cursor-pointer hover-elevate transition-all ${activeSection === 'stories' ? 'ring-2 ring-[#17cfcf]' : ''}`}
-                onClick={() => setActiveSection('stories')}
-                data-testid="card-stories"
-              >
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Camera className="w-4 h-4" />
-                    Stories
-                  </CardTitle>
-                </CardHeader>
-              </Card>
-
-              {/* Statistiques */}
-              <Card 
-                className={`cursor-pointer hover-elevate transition-all ${activeSection === 'stats' ? 'ring-2 ring-[#17cfcf]' : ''}`}
-                onClick={() => setActiveSection('stats')}
-                data-testid="card-stats"
-              >
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4" />
-                    Statistiques
-                  </CardTitle>
-                </CardHeader>
-              </Card>
-            </div>
-          </div>
-        </div>
-
-        {/* Contenu de la section active */}
-        <div className="mt-8">
+              {/* Main content area */}
+              <main className="flex-1 overflow-auto p-4 md:p-6">
           {activeSection === 'requests' && (
             <Card>
               <CardHeader>
@@ -3409,8 +3114,6 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           )}
-        </div>
-      </div>
 
       <AddTransporterForm
         open={addTransporterOpen}
@@ -5058,7 +4761,10 @@ export default function AdminDashboard() {
           </div>
         </DialogContent>
       </Dialog>
-        </>
+              </main>
+            </div>
+          </div>
+        </SidebarProvider>
       )}
     </div>
   );
