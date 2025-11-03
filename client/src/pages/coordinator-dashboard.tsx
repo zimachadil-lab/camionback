@@ -2100,6 +2100,31 @@ export default function CoordinatorDashboard() {
                       </Button>
                     </div>
                     
+                    {/* Contact Client */}
+                    {request.client && request.client.phoneNumber && (
+                      <div className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/50 dark:to-cyan-950/50 rounded-lg p-3 border border-blue-200 dark:border-blue-800 mb-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="bg-blue-500 text-white p-2 rounded-full">
+                              <Phone className="h-4 w-4" />
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground font-medium">Client</p>
+                              <p className="font-semibold text-sm">{request.client.name || 'Client'}</p>
+                            </div>
+                          </div>
+                          <a
+                            href={`tel:${request.client.phoneNumber}`}
+                            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium text-sm transition-colors"
+                            data-testid={`link-call-client-${request.id}`}
+                          >
+                            <Phone className="h-4 w-4" />
+                            {request.client.phoneNumber}
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                    
                     {/* Prix qualifiés */}
                     <div className="bg-gradient-to-br from-slate-800 to-slate-900 dark:from-slate-900 dark:to-black rounded-lg p-5 border border-slate-700 shadow-lg">
                       <div className="grid grid-cols-3 gap-4">
