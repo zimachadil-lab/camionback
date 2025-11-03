@@ -3,10 +3,68 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { MapPin, Package, Calendar, DollarSign, Image as ImageIcon, AlertCircle, Eye, FileText, X, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown } from "lucide-react";
+import { MapPin, Package, Calendar, DollarSign, Image as ImageIcon, AlertCircle, Eye, FileText, X, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown, Home, Sofa, Boxes, Truck, Wrench, ShoppingCart, LucideIcon } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { PhotoGalleryDialog } from "./photo-gallery-dialog";
+
+// Configuration des catégories avec icônes et couleurs
+const getCategoryConfig = (goodsType: string): { icon: LucideIcon; color: string; bgColor: string; borderColor: string } => {
+  const type = goodsType.toLowerCase();
+  
+  if (type.includes('déménagement')) {
+    return {
+      icon: Home,
+      color: 'text-white',
+      bgColor: 'bg-gradient-to-br from-emerald-500 to-emerald-600',
+      borderColor: 'border-emerald-500'
+    };
+  }
+  
+  if (type.includes('meuble') || type.includes('mobilier')) {
+    return {
+      icon: Sofa,
+      color: 'text-white',
+      bgColor: 'bg-gradient-to-br from-blue-500 to-blue-600',
+      borderColor: 'border-blue-500'
+    };
+  }
+  
+  if (type.includes('matériau') || type.includes('construction')) {
+    return {
+      icon: Boxes,
+      color: 'text-white',
+      bgColor: 'bg-gradient-to-br from-orange-500 to-orange-600',
+      borderColor: 'border-orange-500'
+    };
+  }
+  
+  if (type.includes('équipement') || type.includes('machine')) {
+    return {
+      icon: Wrench,
+      color: 'text-white',
+      bgColor: 'bg-gradient-to-br from-purple-500 to-purple-600',
+      borderColor: 'border-purple-500'
+    };
+  }
+  
+  if (type.includes('marchandise') || type.includes('produit')) {
+    return {
+      icon: ShoppingCart,
+      color: 'text-white',
+      bgColor: 'bg-gradient-to-br from-pink-500 to-pink-600',
+      borderColor: 'border-pink-500'
+    };
+  }
+  
+  // Default: Transport général
+  return {
+    icon: Truck,
+    color: 'text-white',
+    bgColor: 'bg-gradient-to-br from-[#17cfcf] to-[#13b3b3]',
+    borderColor: 'border-[#17cfcf]'
+  };
+};
 
 interface RequestCardProps {
   request: {
@@ -107,110 +165,91 @@ export function RequestCard({
     }
   }, [request.id, onTrackView]);
 
+  const categoryConfig = getCategoryConfig(request.goodsType);
+  const CategoryIcon = categoryConfig.icon;
+
   return (
     <>
-    <Card className="overflow-hidden hover-elevate border border-border/50">
-      <CardContent className="p-4 space-y-3">
-        {/* En-tête: Type et référence */}
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="font-semibold text-lg">{request.goodsType}</h3>
-          <Badge variant="outline" className="text-xs font-mono" data-testid={`text-reference-${request.id}`}>
-            {request.referenceId}
-          </Badge>
+    <Card className="overflow-hidden hover-elevate border border-border">
+      {/* En-tête coloré avec icône de catégorie */}
+      <div className={`${categoryConfig.bgColor} p-4 flex items-center justify-between`}>
+        <div className="flex items-center gap-3">
+          <div className="bg-white/20 rounded-lg p-2 backdrop-blur-sm">
+            <CategoryIcon className={`w-6 h-6 ${categoryConfig.color}`} />
+          </div>
+          <h3 className="font-semibold text-white text-lg">{request.goodsType}</h3>
         </div>
+        <Badge variant="secondary" className="bg-white/90 text-foreground font-mono text-xs" data-testid={`text-reference-${request.id}`}>
+          {request.referenceId}
+        </Badge>
+      </div>
 
-        {/* Trajet - Mise en avant moderne */}
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-gradient-to-r from-[#17cfcf]/10 to-[#13b3b3]/10 border border-[#17cfcf]/20">
-          <MapPin className="w-5 h-5 text-[#17cfcf] flex-shrink-0" />
-          <div className="flex items-center gap-2 font-semibold text-base">
+      <CardContent className="p-4 space-y-4">
+        {/* Trajet */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <MapPin className="w-4 h-4" />
+            <span className="font-medium">Trajet</span>
+          </div>
+          <div className="flex items-center gap-2 text-base font-semibold pl-6">
             <span className="truncate">{request.fromCity}</span>
             <span className="text-[#17cfcf]">→</span>
             <span className="truncate">{request.toCity}</span>
           </div>
         </div>
 
-        {/* Date et poids */}
-        <div className="grid grid-cols-2 gap-2">
-          <div className="flex items-center gap-2 p-2 rounded-md bg-[#17cfcf]/10 border border-[#17cfcf]/30">
-            <Calendar className="w-4 h-4 text-[#17cfcf]" />
-            <span className="text-sm font-semibold">
-              {format(dateTime, "d MMM yyyy", { locale: fr })}
-            </span>
+        {/* Date de mission */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Calendar className="w-4 h-4" />
+            <span className="font-medium">Disponibilité</span>
           </div>
-          {request.estimatedWeight && (
-            <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50 border border-border">
-              <Package className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm font-medium">{request.estimatedWeight}</span>
-            </div>
-          )}
+          <div className="pl-6 font-semibold">
+            {format(dateTime, "dd MMMM yyyy", { locale: fr })}
+          </div>
         </div>
 
-        {/* Prix - Design moderne et clean */}
-        {request.transporterPrice && (
-          <div className="p-3 rounded-lg bg-gradient-to-br from-[#00ff88]/15 to-[#00cc88]/15 border-2 border-[#00ff88]/30">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-foreground">Montant Fixé :</span>
-              <span className="text-2xl font-bold text-[#00ff88]">{request.transporterPrice.toLocaleString()} MAD</span>
-            </div>
-          </div>
-        )}
-
-        {/* Show client budget if no qualified price (old workflow) */}
-        {request.budget && !request.transporterPrice && (
-          <div className="p-3 rounded-lg bg-gradient-to-br from-[#00ff88]/15 to-[#00cc88]/15 border-2 border-[#00ff88]/30">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Budget :</span>
-              <span className="text-2xl font-bold text-[#00ff88]">{request.budget}</span>
-            </div>
-          </div>
-        )}
-
-        {/* Description */}
+        {/* Services requis */}
         {request.description && (
-          <div>
-            <p className={`text-sm text-muted-foreground ${showFullDescription ? '' : 'line-clamp-2'}`}>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <FileText className="w-4 h-4" />
+              <span className="font-medium">Services</span>
+            </div>
+            <p className={`text-sm pl-6 ${showFullDescription ? '' : 'line-clamp-2'}`}>
               {request.description}
             </p>
             {request.description.length > 100 && (
               <button
                 onClick={() => setShowFullDescription(!showFullDescription)}
-                className="text-xs text-[#17cfcf] hover:underline mt-1 flex items-center gap-1"
+                className="text-xs text-[#17cfcf] hover:underline pl-6 flex items-center gap-1"
                 data-testid={`button-toggle-description-${request.id}`}
               >
-                {showFullDescription ? (
-                  <>
-                    <ChevronUp className="w-3 h-3" />
-                    Voir moins
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="w-3 h-3" />
-                    Voir plus
-                  </>
-                )}
+                {showFullDescription ? 'Voir moins' : 'Plus de détails'}
               </button>
             )}
           </div>
         )}
 
-        {/* Infos secondaires - badges modernes */}
-        <div className="flex flex-wrap gap-2">
-          {/* Manutention */}
+        {/* Informations complémentaires */}
+        <div className="flex flex-wrap gap-2 pt-2 border-t">
+          {request.estimatedWeight && (
+            <Badge variant="outline" className="text-xs">
+              <Package className="w-3 h-3 mr-1" />
+              {request.estimatedWeight}
+            </Badge>
+          )}
+          
           {request.handlingRequired !== undefined && request.handlingRequired !== null && (
-            <Badge 
-              variant="outline" 
-              className="text-xs bg-background/50"
-            >
-              <span className="mr-1">🏋️</span>
+            <Badge variant="outline" className="text-xs">
               Manutention : {request.handlingRequired ? 'Oui' : 'Non'}
             </Badge>
           )}
           
-          {/* Photos */}
           {request.photos && request.photos.length > 0 && (
             <Badge 
               variant="outline" 
-              className="text-xs cursor-pointer hover-elevate bg-background/50"
+              className="text-xs cursor-pointer hover-elevate"
               onClick={handleViewPhotos}
               data-testid={`button-view-photos-${request.id}`}
             >
@@ -219,6 +258,25 @@ export function RequestCard({
             </Badge>
           )}
         </div>
+
+        {/* Prix - Zone mise en avant */}
+        {request.transporterPrice && (
+          <div className="p-4 rounded-lg bg-gradient-to-br from-[#00ff88]/15 to-[#00cc88]/15 border-2 border-[#00ff88]/30">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-foreground">Montant Fixé</span>
+              <span className="text-2xl font-bold text-[#00ff88]">{request.transporterPrice.toLocaleString()} MAD</span>
+            </div>
+          </div>
+        )}
+
+        {request.budget && !request.transporterPrice && (
+          <div className="p-4 rounded-lg bg-gradient-to-br from-[#00ff88]/15 to-[#00cc88]/15 border-2 border-[#00ff88]/30">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Budget</span>
+              <span className="text-2xl font-bold text-[#00ff88]">{request.budget}</span>
+            </div>
+          </div>
+        )}
 
         {showValidationWarning && !isUserValidated && (
           <Alert variant="destructive">
@@ -231,14 +289,14 @@ export function RequestCard({
       </CardContent>
 
       {showOfferButton && (request.status === "open" || request.status === "published_for_matching") && (
-        <CardFooter className="p-4 pt-0 flex flex-row gap-2">
+        <CardFooter className="p-4 pt-0 grid grid-cols-2 gap-3">
           {/* New interest-based workflow */}
           {onExpressInterest && onWithdrawInterest ? (
             isInterested ? (
               <Button 
                 onClick={handleWithdrawInterest} 
                 disabled={isPendingInterest}
-                className="flex-1 h-12 font-semibold bg-gradient-to-r from-[#00ff88] to-[#00cc88] hover:from-[#00ff88]/90 hover:to-[#00cc88]/90 text-white border-0 shadow-md hover:shadow-lg transition-all"
+                className="col-span-2 h-12 font-semibold bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] hover:from-[#17cfcf]/90 hover:to-[#13b3b3]/90 text-white border-0"
                 data-testid={`button-withdraw-interest-${request.id}`}
               >
                 <ThumbsUp className="w-5 h-5 mr-2" />
@@ -251,7 +309,7 @@ export function RequestCard({
                     onClick={() => onDecline(request.id)} 
                     disabled={isPendingInterest}
                     variant="outline"
-                    className="flex-1 h-12 font-semibold hover:bg-muted/50"
+                    className="h-12 font-medium"
                     data-testid={`button-not-available-${request.id}`}
                   >
                     <ThumbsDown className="w-4 h-4 mr-2" />
@@ -261,7 +319,7 @@ export function RequestCard({
                 <Button 
                   onClick={handleExpressInterest} 
                   disabled={isPendingInterest}
-                  className="flex-1 h-12 font-semibold bg-gradient-to-r from-[#00ff88] to-[#00cc88] hover:from-[#00ff88]/90 hover:to-[#00cc88]/90 text-white border-0 shadow-md hover:shadow-lg transition-all"
+                  className={`h-12 font-semibold bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] hover:from-[#17cfcf]/90 hover:to-[#13b3b3]/90 text-white border-0 ${!onDecline ? 'col-span-2' : ''}`}
                   data-testid={`button-express-interest-${request.id}`}
                 >
                   <ThumbsUp className="w-5 h-5 mr-2" />
@@ -276,7 +334,7 @@ export function RequestCard({
                 <Button 
                   onClick={() => onDecline(request.id)} 
                   variant="outline"
-                  className="flex-1 h-12"
+                  className="h-12"
                   data-testid={`button-decline-${request.id}`}
                 >
                   <X className="w-4 h-4 mr-2" />
@@ -285,7 +343,7 @@ export function RequestCard({
               )}
               <Button 
                 onClick={handleOfferClick} 
-                className="flex-1 h-12"
+                className={`h-12 ${!onDecline ? 'col-span-2' : ''}`}
                 variant={!isUserValidated ? "secondary" : "default"}
                 data-testid={`button-make-offer-${request.id}`}
               >
