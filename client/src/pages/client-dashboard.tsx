@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star, CreditCard, Upload, Eye, Edit, MessageSquare, Calendar, Flag, Truck, Users, Zap, X, ChevronLeft, ChevronRight, Target, ArrowDown, Camera, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, DollarSign, ImageIcon, LayoutGrid, Table } from "lucide-react";
+import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star, CreditCard, Upload, Eye, Edit, MessageSquare, Calendar, Flag, Truck, Users, Zap, X, ChevronLeft, ChevronRight, Target, ArrowDown, Camera, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, DollarSign, ImageIcon } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { NewRequestForm } from "@/components/client/new-request-form";
 import { OfferCard } from "@/components/client/offer-card";
@@ -278,7 +278,6 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [editPhotos, setEditPhotos] = useState<File[]>([]);
   const [editedExistingPhotos, setEditedExistingPhotos] = useState<string[]>([]);
-  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
   const isAccepted = request.status === "accepted";
   const hasTransporter = isAccepted || !!request.assignedTransporterId;
   const { toast } = useToast();
@@ -874,7 +873,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
 
       {/* Dialog des offres / transporteurs intéressés */}
       <Dialog open={showOffersDialog} onOpenChange={setShowOffersDialog}>
-        <DialogContent className="max-w-6xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {isQualifiedWorkflow 
@@ -891,48 +890,16 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
             </DialogDescription>
           </DialogHeader>
 
-          {/* View Toggle - For qualified workflow */}
-          {isQualifiedWorkflow && interestedTransporters.length > 0 && (
-            <div className="flex items-center justify-between gap-4 pb-3 border-b">
-              <div className="text-sm text-muted-foreground">
-                {interestedTransporters.length} transporteur{interestedTransporters.length > 1 ? 's' : ''} disponible{interestedTransporters.length > 1 ? 's' : ''}
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant={viewMode === 'cards' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setViewMode('cards')}
-                  className={viewMode === 'cards' ? 'bg-[#17cfcf] hover:bg-[#13b3b3]' : ''}
-                  data-testid="button-view-cards"
-                >
-                  <LayoutGrid className="w-4 h-4 mr-2" />
-                  Cartes
-                </Button>
-                <Button
-                  variant={viewMode === 'table' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setViewMode('table')}
-                  className={viewMode === 'table' ? 'bg-[#17cfcf] hover:bg-[#13b3b3]' : ''}
-                  data-testid="button-view-table"
-                >
-                  <Table className="w-4 h-4 mr-2" />
-                  Comparaison
-                </Button>
-              </div>
-            </div>
-          )}
-
-          <div className="space-y-4 mt-4">
+          <div className="space-y-3 mt-4">
             {isQualifiedWorkflow ? (
               // New workflow: Display interested transporters
               interestedTransporters.length > 0 ? (
-                viewMode === 'cards' ? (
-                  <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-3">
                   {interestedTransporters.map((transporter: any) => (
-                    <Card key={transporter.id} className="overflow-hidden">
-                      <CardContent className="p-4 space-y-3">
-                        {/* Transporter photo */}
-                        <div className="w-full aspect-video bg-gradient-to-br from-[#0a2540] via-[#1d3c57] to-[#17cfcf]/20 rounded-lg overflow-hidden flex items-center justify-center">
+                    <Card key={transporter.id} className="overflow-hidden hover-elevate">
+                      <div className="flex gap-3 p-3">
+                        {/* Transporter photo - compact */}
+                        <div className="w-24 h-24 bg-gradient-to-br from-[#0a2540] via-[#1d3c57] to-[#17cfcf]/20 rounded-lg overflow-hidden flex-shrink-0">
                           {transporter.truckPhotos?.[0] ? (
                             <img
                               src={transporter.truckPhotos[0]}
@@ -940,201 +907,74 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <Truck className="w-16 h-16 text-[#17cfcf] opacity-40" />
+                            <Truck className="w-12 h-12 text-[#17cfcf] opacity-40 m-auto mt-6" />
                           )}
                         </div>
                         
-                        {/* Transporter info */}
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-semibold">{transporter.name || "Transporteur"}</h4>
+                        {/* Transporter info - compact */}
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <h4 className="font-semibold text-base">{transporter.name || "Transporteur"}</h4>
+                              {transporter.city && (
+                                <p className="text-xs text-muted-foreground">{transporter.city}</p>
+                              )}
+                            </div>
                             {transporter.isVerified && (
-                              <Badge className="bg-[#17cfcf]">Vérifié</Badge>
+                              <Badge className="bg-[#17cfcf] text-[10px] px-2 py-0">Vérifié</Badge>
                             )}
                           </div>
                           
-                          {transporter.city && (
-                            <p className="text-sm text-muted-foreground">{transporter.city}</p>
-                          )}
-                          
-                          {/* Rating */}
-                          <div className="flex items-center gap-2">
-                            <div className="flex items-center">
-                              {[...Array(5)].map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={`w-4 h-4 ${
-                                    i < Math.round(parseFloat(transporter.rating || "0"))
-                                      ? 'fill-yellow-400 text-yellow-400'
-                                      : 'text-gray-300'
-                                  }`}
-                                />
-                              ))}
-                            </div>
-                            <span className="text-sm">
-                              {parseFloat(transporter.rating || "0").toFixed(1)} ({transporter.totalTrips || 0} trajets)
+                          {/* Rating - compact */}
+                          <div className="flex items-center gap-1.5">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`w-3.5 h-3.5 ${
+                                  i < Math.round(parseFloat(transporter.rating || "0"))
+                                    ? 'fill-yellow-400 text-yellow-400'
+                                    : 'text-gray-300'
+                                }`}
+                              />
+                            ))}
+                            <span className="text-xs text-muted-foreground ml-1">
+                              {parseFloat(transporter.rating || "0").toFixed(1)} ({transporter.totalTrips || 0})
                             </span>
                           </div>
 
-                          {/* Proposed availability date */}
+                          {/* Proposed availability date - compact */}
                           {transporter.availabilityDate && (
-                            <div className="pt-2 border-t space-y-1">
-                              <p className="text-xs font-medium text-muted-foreground">📅 Disponibilité proposée</p>
-                              <div className="flex items-center gap-2">
-                                <Badge 
-                                  className={`${
-                                    new Date(transporter.availabilityDate).toDateString() === new Date(request.dateTime).toDateString()
-                                      ? 'bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700' 
-                                      : 'bg-orange-500 hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700'
-                                  } text-white border-0 text-xs font-medium`}
-                                >
-                                  {format(new Date(transporter.availabilityDate), "dd MMMM yyyy", { locale: fr })}
-                                </Badge>
-                                {new Date(transporter.availabilityDate).toDateString() === new Date(request.dateTime).toDateString() ? (
-                                  <span className="text-xs text-green-600 dark:text-green-400 font-medium">✓ Correspond</span>
-                                ) : (
-                                  <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">⚠ Différente</span>
-                                )}
-                              </div>
+                            <div className="flex items-center gap-2 pt-1">
+                              <Badge 
+                                className={`${
+                                  new Date(transporter.availabilityDate).toDateString() === new Date(request.dateTime).toDateString()
+                                    ? 'bg-green-500 hover:bg-green-600' 
+                                    : 'bg-orange-500 hover:bg-orange-600'
+                                } text-white border-0 text-[10px] font-medium px-2 py-0.5`}
+                              >
+                                📅 {format(new Date(transporter.availabilityDate), "dd MMM", { locale: fr })}
+                              </Badge>
+                              {new Date(transporter.availabilityDate).toDateString() === new Date(request.dateTime).toDateString() ? (
+                                <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">✓ Correspond</span>
+                              ) : (
+                                <span className="text-[10px] text-orange-600 dark:text-orange-400 font-medium">⚠ Différente</span>
+                              )}
                             </div>
                           )}
                         </div>
                         
-                        {/* Action button */}
+                        {/* Action button - compact */}
                         <Button
-                          className="w-full bg-[#17cfcf] hover:bg-[#13b3b3]"
+                          className="bg-[#17cfcf] hover:bg-[#13b3b3] h-fit self-center px-4 py-2"
                           onClick={() => onChooseTransporter(request.id, transporter.id)}
                           data-testid={`button-select-transporter-${transporter.id}`}
                         >
-                          Choisir ce transporteur
+                          Choisir
                         </Button>
-                      </CardContent>
+                      </div>
                     </Card>
                   ))}
                 </div>
-                ) : (
-                  // Table view for comparison
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b bg-muted/50">
-                          <th className="text-left p-3 font-semibold text-sm">Transporteur</th>
-                          <th className="text-left p-3 font-semibold text-sm">Ville</th>
-                          <th className="text-left p-3 font-semibold text-sm">Note</th>
-                          <th className="text-left p-3 font-semibold text-sm">Disponibilité</th>
-                          <th className="text-center p-3 font-semibold text-sm">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {interestedTransporters.map((transporter: any) => {
-                          const dateMatches = transporter.availabilityDate && 
-                            new Date(transporter.availabilityDate).toDateString() === new Date(request.dateTime).toDateString();
-                          
-                          return (
-                            <tr key={transporter.id} className="border-b hover:bg-muted/30 transition-colors">
-                              {/* Transporteur info */}
-                              <td className="p-3">
-                                <div className="flex items-center gap-3">
-                                  {/* Mini photo */}
-                                  <div className="w-16 h-16 bg-gradient-to-br from-[#0a2540] via-[#1d3c57] to-[#17cfcf]/20 rounded overflow-hidden flex-shrink-0">
-                                    {transporter.truckPhotos?.[0] ? (
-                                      <img
-                                        src={transporter.truckPhotos[0]}
-                                        alt="Camion"
-                                        className="w-full h-full object-cover"
-                                      />
-                                    ) : (
-                                      <div className="w-full h-full flex items-center justify-center">
-                                        <Truck className="w-6 h-6 text-[#17cfcf] opacity-40" />
-                                      </div>
-                                    )}
-                                  </div>
-                                  {/* Name and verified */}
-                                  <div>
-                                    <div className="font-semibold text-sm flex items-center gap-2">
-                                      {transporter.name || "Transporteur"}
-                                      {transporter.isVerified && (
-                                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-[#17cfcf]/10 text-[#17cfcf] border-0">
-                                          Vérifié
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              </td>
-
-                              {/* City */}
-                              <td className="p-3">
-                                <span className="text-sm text-muted-foreground">
-                                  {transporter.city || '-'}
-                                </span>
-                              </td>
-
-                              {/* Rating */}
-                              <td className="p-3">
-                                <div className="flex items-center gap-1.5">
-                                  <div className="flex items-center">
-                                    {[...Array(5)].map((_, i) => (
-                                      <Star
-                                        key={i}
-                                        className={`w-3.5 h-3.5 ${
-                                          i < Math.round(parseFloat(transporter.rating || "0"))
-                                            ? 'fill-yellow-400 text-yellow-400'
-                                            : 'text-gray-300'
-                                        }`}
-                                      />
-                                    ))}
-                                  </div>
-                                  <span className="text-xs text-muted-foreground ml-1">
-                                    {parseFloat(transporter.rating || "0").toFixed(1)} ({transporter.totalTrips || 0})
-                                  </span>
-                                </div>
-                              </td>
-
-                              {/* Availability date */}
-                              <td className="p-3">
-                                {transporter.availabilityDate ? (
-                                  <div className="space-y-1">
-                                    <Badge 
-                                      className={`${
-                                        dateMatches
-                                          ? 'bg-green-500 hover:bg-green-600' 
-                                          : 'bg-orange-500 hover:bg-orange-600'
-                                      } text-white border-0 text-xs font-medium`}
-                                    >
-                                      {format(new Date(transporter.availabilityDate), "dd MMM yyyy", { locale: fr })}
-                                    </Badge>
-                                    <div className="text-[10px] text-muted-foreground">
-                                      {dateMatches ? (
-                                        <span className="text-green-600 dark:text-green-400">✓ Date souhaitée</span>
-                                      ) : (
-                                        <span className="text-orange-600 dark:text-orange-400">Date alternative</span>
-                                      )}
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <span className="text-xs text-muted-foreground">Non spécifiée</span>
-                                )}
-                              </td>
-
-                              {/* Action */}
-                              <td className="p-3">
-                                <Button
-                                  size="sm"
-                                  className="bg-[#17cfcf] hover:bg-[#13b3b3] w-full"
-                                  onClick={() => onChooseTransporter(request.id, transporter.id)}
-                                  data-testid={`button-select-transporter-table-${transporter.id}`}
-                                >
-                                  Choisir
-                                </Button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-8">
                   Aucun transporteur intéressé pour le moment
