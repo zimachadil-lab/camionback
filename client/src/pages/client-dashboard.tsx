@@ -637,6 +637,22 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
             </div>
           )}
 
+          {/* Prix qualifié */}
+          {request.clientTotal && request.qualifiedAt && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-[#00ff88]/10 via-[#00ff88]/5 to-transparent border-l-4 border-[#00ff88]">
+                <div className="w-7 h-7 rounded-full bg-[#00ff88]/20 flex items-center justify-center flex-shrink-0">
+                  <DollarSign className="w-4 h-4 text-[#00ff88]" />
+                </div>
+                <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Prix Qualifié</span>
+                <span className="text-lg font-bold text-[#00ff88] ml-auto">{Math.floor(request.clientTotal).toLocaleString()} Dhs</span>
+              </div>
+              <p className="text-xs text-muted-foreground px-1">
+                Qualifié le {format(new Date(request.qualifiedAt), "dd MMM yyyy 'à' HH:mm", { locale: fr })}
+              </p>
+            </div>
+          )}
+
           {/* Bouton Offres reçues / Transporteurs intéressés */}
           {!isAccepted && (
             <Button
@@ -2195,6 +2211,22 @@ export default function ClientDashboard() {
                           </div>
                         )}
 
+                        {/* Prix qualifié */}
+                        {request.clientTotal && request.qualifiedAt && (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-[#00ff88]/10 via-[#00ff88]/5 to-transparent border-l-4 border-[#00ff88]">
+                              <div className="w-7 h-7 rounded-full bg-[#00ff88]/20 flex items-center justify-center flex-shrink-0">
+                                <DollarSign className="w-4 h-4 text-[#00ff88]" />
+                              </div>
+                              <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Prix Qualifié</span>
+                              <span className="text-lg font-bold text-[#00ff88] ml-auto">{Math.floor(request.clientTotal).toLocaleString()} Dhs</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground px-1">
+                              Qualifié le {format(new Date(request.qualifiedAt), "dd MMM yyyy 'à' HH:mm", { locale: fr })}
+                            </p>
+                          </div>
+                        )}
+
                         <div className="flex items-center gap-2 pt-2 border-t">
                           {request.acceptedOfferId && (
                             <Button
@@ -2327,6 +2359,22 @@ export default function ClientDashboard() {
                                 </div>
                               </div>
                             )}
+                          </div>
+                        )}
+
+                        {/* Prix qualifié */}
+                        {request.clientTotal && request.qualifiedAt && (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-[#00ff88]/10 via-[#00ff88]/5 to-transparent border-l-4 border-[#00ff88]">
+                              <div className="w-7 h-7 rounded-full bg-[#00ff88]/20 flex items-center justify-center flex-shrink-0">
+                                <DollarSign className="w-4 h-4 text-[#00ff88]" />
+                              </div>
+                              <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Prix Qualifié</span>
+                              <span className="text-lg font-bold text-[#00ff88] ml-auto">{Math.floor(request.clientTotal).toLocaleString()} Dhs</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground px-1">
+                              Qualifié le {format(new Date(request.qualifiedAt), "dd MMM yyyy 'à' HH:mm", { locale: fr })}
+                            </p>
                           </div>
                         )}
 
