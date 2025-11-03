@@ -1574,10 +1574,9 @@ export default function CoordinatorDashboard() {
             <div className="flex items-center gap-2">
               <Phone className="h-4 w-4 text-muted-foreground" />
               <span className="text-muted-foreground">Client:</span>
-              <span className="font-medium">{request.client.name || "Non défini"}</span>
               <a 
                 href={`tel:${request.client.phoneNumber}`}
-                className="text-[#5BC0EB] hover:underline"
+                className="text-[#5BC0EB] hover:underline font-medium"
                 data-testid={`link-call-client-${request.id}`}
               >
                 {request.client.phoneNumber}
@@ -1609,10 +1608,9 @@ export default function CoordinatorDashboard() {
             <div className="flex items-center gap-2">
               <Phone className="h-4 w-4 text-muted-foreground" />
               <span className="text-muted-foreground">Transporteur:</span>
-              <span className="font-medium">{request.transporter.name || "Non défini"}</span>
               <a 
                 href={`tel:${request.transporter.phoneNumber}`}
-                className="text-[#5BC0EB] hover:underline"
+                className="text-[#5BC0EB] hover:underline font-medium"
                 data-testid={`link-call-transporter-${request.id}`}
               >
                 {request.transporter.phoneNumber}
@@ -2119,7 +2117,6 @@ export default function CoordinatorDashboard() {
                 <div className="border-t pt-4">
                   <p className="font-semibold mb-2">Client</p>
                   <div className="space-y-1">
-                    <p><span className="text-muted-foreground">Nom:</span> {selectedRequest.client.name || "Non défini"}</p>
                     <p><span className="text-muted-foreground">Téléphone:</span> {selectedRequest.client.phoneNumber}</p>
                     {selectedRequest.client.clientId && (
                       <p><span className="text-muted-foreground">ID Client:</span> {selectedRequest.client.clientId}</p>
@@ -2132,7 +2129,6 @@ export default function CoordinatorDashboard() {
                 <div className="border-t pt-4">
                   <p className="font-semibold mb-2">Transporteur</p>
                   <div className="space-y-1">
-                    <p><span className="text-muted-foreground">Nom:</span> {selectedRequest.transporter.name || "Non défini"}</p>
                     <p><span className="text-muted-foreground">Téléphone:</span> {selectedRequest.transporter.phoneNumber}</p>
                     {selectedRequest.transporter.city && (
                       <p><span className="text-muted-foreground">Ville:</span> {selectedRequest.transporter.city}</p>
