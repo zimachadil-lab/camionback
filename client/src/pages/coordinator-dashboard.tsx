@@ -2102,20 +2102,20 @@ export default function CoordinatorDashboard() {
                     
                     {/* Contact Client */}
                     {request.client && request.client.phoneNumber && (
-                      <div className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/50 dark:to-cyan-950/50 rounded-lg p-3 border border-blue-200 dark:border-blue-800 mb-4">
+                      <div className="bg-gradient-to-r from-blue-600 to-cyan-600 dark:from-blue-700 dark:to-cyan-700 rounded-lg p-3 border border-blue-500 shadow-md mb-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <div className="bg-blue-500 text-white p-2 rounded-full">
+                            <div className="bg-white/20 backdrop-blur-sm text-white p-2 rounded-full">
                               <Phone className="h-4 w-4" />
                             </div>
                             <div>
-                              <p className="text-xs text-muted-foreground font-medium">Client</p>
-                              <p className="font-semibold text-sm">{request.client.name || 'Client'}</p>
+                              <p className="text-xs text-white/80 font-medium uppercase tracking-wide">Client</p>
+                              <p className="font-bold text-base text-white">{request.client.name || 'Client'}</p>
                             </div>
                           </div>
                           <a
                             href={`tel:${request.client.phoneNumber}`}
-                            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium text-sm transition-colors"
+                            className="flex items-center gap-2 bg-white hover:bg-blue-50 text-blue-700 px-4 py-2 rounded-md font-bold text-sm transition-colors shadow-sm"
                             data-testid={`link-call-client-${request.id}`}
                           >
                             <Phone className="h-4 w-4" />
