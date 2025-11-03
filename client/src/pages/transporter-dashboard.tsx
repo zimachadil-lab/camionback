@@ -133,6 +133,19 @@ export default function TransporterDashboard() {
     },
   });
 
+  // Fetch transporter's interests with availability dates
+  const { data: myInterests = [], isLoading: interestsLoading } = useQuery({
+    queryKey: ["/api/transporter/my-interests", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const response = await fetch(`/api/transporter/my-interests`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch interests');
+      }
+      return response.json();
+    },
+  });
+
   // Note: myOffers query removed - new workflow uses interest-based matching instead
 
   const { data: acceptedRequests = [], isLoading: acceptedLoading } = useQuery({
@@ -335,6 +348,10 @@ export default function TransporterDashboard() {
         queryKey: ["/api/requests"], 
         exact: false 
       });
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/transporter/my-interests"], 
+        exact: false 
+      });
     },
     onError: () => {
       toast({
@@ -364,6 +381,10 @@ export default function TransporterDashboard() {
       });
       queryClient.invalidateQueries({ 
         queryKey: ["/api/requests"], 
+        exact: false 
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/transporter/my-interests"], 
         exact: false 
       });
     },
@@ -639,27 +660,83 @@ export default function TransporterDashboard() {
           </TabsContent>
 
           <TabsContent value="interested" className="mt-6 space-y-6">
-            {requests.filter((r: any) => r.transporterInterests?.includes(user?.id)).length > 0 ? (
+            {interestsLoading ? (
+              <div className="flex justify-center py-12">
+                <LoadingTruck />
+              </div>
+            ) : myInterests.length > 0 ? (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {requests
-                  .filter((r: any) => r.transporterInterests?.includes(user?.id))
-                  .map((request: any) => {
-                    const isPending = expressInterestMutation.isPending || withdrawInterestMutation.isPending;
-                    
-                    return (
-                      <RequestCard
-                        key={request.id}
-                        request={request}
-                        userStatus={user.status}
-                        onTrackView={() => trackViewMutation.mutate(request.id)}
-                        // Interest-based props - already interested, can withdraw
-                        isInterested={true}
-                        onExpressInterest={(id, date) => expressInterestMutation.mutate({ requestId: id, availabilityDate: date })}
-                        onWithdrawInterest={(id) => withdrawInterestMutation.mutate(id)}
-                        isPendingInterest={isPending}
-                      />
-                    );
-                  })}
+                {myInterests.map((interest: any) => {
+                  const requestDate = interest.requestDate ? new Date(interest.requestDate) : null;
+                  const availabilityDate = interest.availabilityDate ? new Date(interest.availabilityDate) : null;
+                  const datesMatch = requestDate && availabilityDate && 
+                    requestDate.toDateString() === availabilityDate.toDateString();
+
+                  return (
+                    <Card key={interest.interestId} className="overflow-hidden hover-elevate border-2">
+                      <div className="bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] p-3">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-semibold text-white text-sm">{interest.goodsType}</h3>
+                          <Badge className="bg-slate-900/90 text-white border-0 font-mono text-xs">
+                            {interest.referenceId}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      <CardContent className="p-4 space-y-3">
+                        {/* Trajet */}
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm font-semibold">
+                            {interest.fromCity} → {interest.toCity}
+                          </span>
+                        </div>
+
+                        {/* Date proposée avec badge de couleur */}
+                        <div className="space-y-2 pt-2 border-t">
+                          <p className="text-xs font-medium text-muted-foreground">📅 Date proposée</p>
+                          <div className="flex items-center gap-2">
+                            <Badge 
+                              className={`${datesMatch 
+                                ? 'bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700' 
+                                : 'bg-orange-500 hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700'
+                              } text-white border-0 text-xs font-medium`}
+                            >
+                              {availabilityDate ? format(availabilityDate, "dd MMMM yyyy", { locale: fr }) : 'Non spécifiée'}
+                            </Badge>
+                            {datesMatch ? (
+                              <span className="text-xs text-green-600 dark:text-green-400 font-medium">✓ Correspond</span>
+                            ) : (
+                              <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">⚠ Différente</span>
+                            )}
+                          </div>
+                          {requestDate && (
+                            <p className="text-xs text-muted-foreground">
+                              Date client : {format(requestDate, "dd MMMM yyyy", { locale: fr })}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Prix si disponible */}
+                        {interest.transporterAmount && (
+                          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-[#00ff88]/10 to-transparent border-l-4 border-[#00ff88]">
+                            <span className="text-xs font-medium text-muted-foreground">Montant</span>
+                            <span className="text-lg font-bold text-[#00ff88] ml-auto">
+                              {Math.floor(interest.transporterAmount).toLocaleString()} Dhs
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Client */}
+                        {interest.client && (
+                          <div className="pt-2 border-t">
+                            <p className="text-xs text-muted-foreground">Client : {interest.client.name}</p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-12">

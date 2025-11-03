@@ -162,6 +162,7 @@ export interface IStorage {
   expressInterest(requestId: string, transporterId: string, availabilityDate?: Date): Promise<TransportRequest | undefined>;
   withdrawInterest(requestId: string, transporterId: string): Promise<TransportRequest | undefined>;
   getInterestedTransportersForRequest(requestId: string): Promise<User[]>;
+  getTransporterInterests(transporterId: string): Promise<any[]>;
   archiveRequestWithReason(requestId: string, reason: string, coordinatorId: string): Promise<TransportRequest | undefined>;
   
   // Coordinator manual assignment
@@ -1246,6 +1247,9 @@ export class MemStorage implements IStorage {
     return undefined;
   }
   async getInterestedTransportersForRequest(requestId: string): Promise<User[]> {
+    return [];
+  }
+  async getTransporterInterests(transporterId: string): Promise<any[]> {
     return [];
   }
   async archiveRequestWithReason(requestId: string, reason: string, coordinatorId: string): Promise<TransportRequest | undefined> {
@@ -3346,6 +3350,41 @@ export class DbStorage implements IStorage {
       );
 
     return transporters;
+  }
+
+  async getTransporterInterests(transporterId: string): Promise<any[]> {
+    // Get all interests for this transporter with request details
+    const interests = await db.select({
+      interest: transporterInterests,
+      request: transportRequests,
+      client: users,
+    })
+      .from(transporterInterests)
+      .leftJoin(transportRequests, eq(transporterInterests.requestId, transportRequests.id))
+      .leftJoin(users, eq(transportRequests.clientId, users.id))
+      .where(eq(transporterInterests.transporterId, transporterId))
+      .orderBy(desc(transporterInterests.createdAt));
+
+    return interests.map(({ interest, request, client }) => ({
+      interestId: interest.id,
+      requestId: request?.id,
+      referenceId: request?.referenceId,
+      availabilityDate: interest.availabilityDate,
+      requestDate: request?.dateTime,
+      fromCity: request?.fromCity,
+      toCity: request?.toCity,
+      goodsType: request?.goodsType,
+      description: request?.description,
+      transporterAmount: request?.transporterAmount,
+      status: request?.status,
+      coordinationStatus: request?.coordinationStatus,
+      client: client ? {
+        id: client.id,
+        name: client.name,
+        phoneNumber: client.phoneNumber,
+      } : null,
+      createdAt: interest.createdAt,
+    }));
   }
 
   async archiveRequestWithReason(requestId: string, reason: string, coordinatorId: string): Promise<TransportRequest | undefined> {

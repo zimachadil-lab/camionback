@@ -4978,6 +4978,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get transporter's interests with availability dates
+  app.get("/api/transporter/my-interests", requireAuth, requireRole(['transporteur']), async (req, res) => {
+    try {
+      const transporterId = req.user!.id;
+      const interests = await storage.getTransporterInterests(transporterId);
+      res.json(interests);
+    } catch (error) {
+      console.error("Erreur récupération intérêts transporteur:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération des intérêts" });
+    }
+  });
+
   // Transporter withdraws interest from a request
   app.post("/api/transporter/withdraw-interest", requireAuth, requireRole(['transporteur']), async (req, res) => {
     try {
