@@ -179,12 +179,11 @@ export default function TransporterDashboard() {
   };
 
   const handleViewClientDetails = (request: any) => {
-    // Client info should come from request object in new workflow
+    // Client info now comes from enriched request.client object
     setSelectedClientDetails({
       ...request,
-      clientId: request.clientId || "Non défini",
-      clientPhone: request.clientPhone || "Non disponible",
-      clientCity: request.clientCity || "Non disponible",
+      clientPhone: request.client?.phoneNumber || "Non disponible",
+      clientName: request.client?.name || "Client",
     });
     setClientDetailsOpen(true);
   };
@@ -1001,18 +1000,6 @@ export default function TransporterDashboard() {
                 <p className="text-sm text-muted-foreground">Commande</p>
                 <p className="font-semibold text-lg">{selectedClientDetails.referenceId}</p>
               </div>
-              
-              <div>
-                <p className="text-sm text-muted-foreground">Identifiant</p>
-                <p className="font-medium">Client {selectedClientDetails.clientId || "Non défini"}</p>
-              </div>
-
-              {selectedClientDetails.clientCity && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Ville</p>
-                  <p className="font-medium">{selectedClientDetails.clientCity}</p>
-                </div>
-              )}
               
               <div>
                 <p className="text-sm text-muted-foreground">Téléphone</p>

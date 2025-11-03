@@ -1629,6 +1629,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Get all unique client IDs from requests for transporter view
+      const clientIds = Array.from(new Set(
+        requests
+          .filter(r => r.clientId && transporterId) // Only for transporter-specific requests
+          .map(r => r.clientId)
+      ));
+      
+      // Fetch client info for transporters to contact clients
+      const clientsInfo: Record<string, any> = {};
+      if (clientIds.length > 0) {
+        const clientPromises = clientIds.map(async (id) => {
+          const client = await storage.getUser(id!);
+          return { id, client };
+        });
+        const clientResults = await Promise.all(clientPromises);
+        clientResults.forEach(({ id, client }) => {
+          if (client && id) {
+            clientsInfo[id] = {
+              id: client.id,
+              name: client.name,
+              phoneNumber: client.phoneNumber,
+            };
+          }
+        });
+      }
+      
       // Enrichir les demandes SANS requêtes supplémentaires (synchrone, pas de Promise.all)
       const enrichedRequests = requests.map((request) => {
         const offers = offersByRequestId[request.id] || [];
@@ -1659,6 +1685,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // For manually assigned transporters, add basic transporter info
         if (request.assignedTransporterId && assignedTransporters[request.assignedTransporterId]) {
           enrichedRequest.transporter = assignedTransporters[request.assignedTransporterId];
+        }
+        
+        // For transporter view, add client contact info
+        if (transporterId && request.clientId && clientsInfo[request.clientId]) {
+          enrichedRequest.client = clientsInfo[request.clientId];
         }
         
         return enrichedRequest;
