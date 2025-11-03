@@ -109,159 +109,119 @@ export function RequestCard({
 
   return (
     <>
-    <Card className="overflow-hidden hover-elevate">
-      <CardContent className="p-4 space-y-3">
-        <div className="space-y-2">
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <Badge variant="outline" className="mb-2" data-testid={`text-reference-${request.id}`}>
-                {request.referenceId}
-              </Badge>
-              <h3 className="font-semibold text-lg mb-1">{request.goodsType}</h3>
-            </div>
+    <Card className="overflow-hidden hover-elevate border-2">
+      <CardContent className="p-5 space-y-4">
+        {/* En-tête: Référence discrète en haut à droite */}
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="text-base font-medium text-muted-foreground">{request.goodsType}</h3>
+          <Badge variant="outline" className="text-xs" data-testid={`text-reference-${request.id}`}>
+            {request.referenceId}
+          </Badge>
+        </div>
+
+        {/* TRAJET - Information principale en très grand */}
+        <div className="flex items-center gap-3 py-2">
+          <MapPin className="w-6 h-6 text-[#17cfcf] flex-shrink-0" />
+          <div className="flex items-center gap-2 text-xl font-bold">
+            <span className="truncate">{request.fromCity}</span>
+            <span className="text-[#17cfcf]">→</span>
+            <span className="truncate">{request.toCity}</span>
           </div>
-          {createdAt && (
-            <div className="text-sm font-medium text-green-600 dark:text-green-400">
-              Disponible depuis le {format(createdAt, "d MMMM yyyy", { locale: fr })}
-            </div>
-          )}
         </div>
 
-        <div className="flex items-center gap-2 text-sm">
-          <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
-          <span className="font-medium truncate">{request.fromCity}</span>
-          <span className="text-muted-foreground">→</span>
-          <span className="font-medium truncate">{request.toCity}</span>
-        </div>
-
-        <div>
-          <p className={`text-sm text-muted-foreground ${showFullDescription ? '' : 'line-clamp-2'}`}>
-            {request.description}
-          </p>
-          {request.description && request.description.length > 100 && (
-            <button
-              onClick={() => setShowFullDescription(!showFullDescription)}
-              className="text-xs text-primary hover:underline mt-1 flex items-center gap-1"
-              data-testid={`button-toggle-description-${request.id}`}
-            >
-              {showFullDescription ? (
-                <>
-                  <ChevronUp className="w-3 h-3" />
-                  Voir moins
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="w-3 h-3" />
-                  Voir plus
-                </>
-              )}
-            </button>
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-muted-foreground" />
-            <span className="truncate">
-              {format(dateTime, "d MMM yyyy", { locale: fr })}
-            </span>
-          </div>
+        {/* DATE DE MISSION - Badge coloré imposant */}
+        <div className="flex items-center gap-2">
+          <Badge className="bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] text-white border-0 px-4 py-2 text-base font-bold">
+            <Calendar className="w-5 h-5 mr-2" />
+            {format(dateTime, "d MMM yyyy", { locale: fr }).toUpperCase()}
+          </Badge>
           {request.estimatedWeight && (
-            <div className="flex items-center gap-2">
-              <Package className="w-4 h-4 text-muted-foreground" />
-              <span className="truncate">{request.estimatedWeight}</span>
-            </div>
+            <Badge variant="outline" className="px-3 py-2 text-sm font-medium">
+              <Package className="w-4 h-4 mr-1.5" />
+              {request.estimatedWeight}
+            </Badge>
           )}
         </div>
 
-        {/* Show qualified price if available (new workflow) */}
+        {/* PRIX - Bloc très visible et coloré */}
         {request.transporterPrice && (
-          <div className="p-3 bg-green-600/10 dark:bg-green-500/20 rounded-md border border-green-600/30 dark:border-green-500/30">
+          <div className="bg-gradient-to-br from-[#00ff88]/20 to-[#00cc88]/20 dark:from-[#00ff88]/30 dark:to-[#00cc88]/30 rounded-xl p-4 border-2 border-[#00ff88]/40">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-foreground">Montant Fixé :</span>
-              <span className="text-xl font-bold text-green-600 dark:text-green-400">{request.transporterPrice} MAD</span>
+              <span className="text-base font-semibold text-foreground">Montant Fixé</span>
+              <span className="text-3xl font-bold text-[#00ff88]">{request.transporterPrice.toLocaleString()} MAD</span>
             </div>
           </div>
         )}
 
         {/* Show client budget if no qualified price (old workflow) */}
         {request.budget && !request.transporterPrice && (
-          <div className="flex items-center gap-2 text-primary font-semibold">
-            <DollarSign className="w-4 h-4" />
-            <span>Budget: {request.budget}</span>
+          <div className="bg-gradient-to-br from-[#00ff88]/20 to-[#00cc88]/20 rounded-xl p-4 border-2 border-[#00ff88]/40">
+            <div className="flex items-center justify-between">
+              <span className="text-base font-semibold text-foreground">Budget</span>
+              <span className="text-3xl font-bold text-[#00ff88]">{request.budget}</span>
+            </div>
           </div>
         )}
 
-        {/* Handling/Manutention Information */}
-        {request.handlingRequired !== undefined && request.handlingRequired !== null && (
-          <div className="p-3 rounded-lg border bg-muted/30 space-y-2">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <span>🏋️</span>
-              <span>Manutention : {request.handlingRequired ? 'Oui' : 'Non'}</span>
-            </div>
-            {request.handlingRequired && (
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <span>🏢</span>
-                    <span className="font-medium">Départ</span>
-                  </div>
-                  <div className="pl-4">
-                    {request.departureFloor !== undefined && request.departureFloor !== null ? (
-                      <>
-                        <div>{request.departureFloor === 0 ? 'RDC' : `${request.departureFloor}ᵉ étage`}</div>
-                        <div className="text-muted-foreground">
-                          Ascenseur {request.departureElevator ? '✅' : '❌'}
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-muted-foreground">Non spécifié</div>
-                    )}
-                  </div>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <span>🏠</span>
-                    <span className="font-medium">Arrivée</span>
-                  </div>
-                  <div className="pl-4">
-                    {request.arrivalFloor !== undefined && request.arrivalFloor !== null ? (
-                      <>
-                        <div>{request.arrivalFloor === 0 ? 'RDC' : `${request.arrivalFloor}ᵉ étage`}</div>
-                        <div className="text-muted-foreground">
-                          Ascenseur {request.arrivalElevator ? '✅' : '❌'}
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-muted-foreground">Non spécifié</div>
-                    )}
-                  </div>
-                </div>
-              </div>
+        {/* Description - Collapsible, moins proéminente */}
+        {request.description && (
+          <div className="border-t pt-3">
+            <p className={`text-xs text-muted-foreground ${showFullDescription ? '' : 'line-clamp-2'}`}>
+              {request.description}
+            </p>
+            {request.description.length > 100 && (
+              <button
+                onClick={() => setShowFullDescription(!showFullDescription)}
+                className="text-xs text-[#17cfcf] hover:underline mt-1 flex items-center gap-1"
+                data-testid={`button-toggle-description-${request.id}`}
+              >
+                {showFullDescription ? (
+                  <>
+                    <ChevronUp className="w-3 h-3" />
+                    Voir moins
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="w-3 h-3" />
+                    Voir plus
+                  </>
+                )}
+              </button>
             )}
           </div>
         )}
 
-        {/* Statistics */}
-        {request.viewCount !== undefined && (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Eye className="w-3 h-3" />
-            <span>{request.viewCount} vue{request.viewCount > 1 ? 's' : ''}</span>
-          </div>
-        )}
-
-        {request.photos && request.photos.length > 0 && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleViewPhotos}
-            className="w-full gap-2"
-            data-testid={`button-view-photos-${request.id}`}
-          >
-            <ImageIcon className="w-4 h-4" />
-            Voir les photos ({request.photos.length})
-          </Button>
-        )}
+        {/* Infos secondaires regroupées */}
+        <div className="flex flex-wrap gap-2 pt-2 border-t">
+          {/* Manutention - Version simplifiée */}
+          {request.handlingRequired !== undefined && request.handlingRequired !== null && (
+            <Badge variant={request.handlingRequired ? "default" : "secondary"} className="text-xs">
+              <span className="mr-1">🏋️</span>
+              Manutention : {request.handlingRequired ? 'Oui' : 'Non'}
+            </Badge>
+          )}
+          
+          {/* Vues */}
+          {request.viewCount !== undefined && request.viewCount > 0 && (
+            <Badge variant="outline" className="text-xs">
+              <Eye className="w-3 h-3 mr-1" />
+              {request.viewCount} vue{request.viewCount > 1 ? 's' : ''}
+            </Badge>
+          )}
+          
+          {/* Photos */}
+          {request.photos && request.photos.length > 0 && (
+            <Badge 
+              variant="outline" 
+              className="text-xs cursor-pointer hover-elevate"
+              onClick={handleViewPhotos}
+              data-testid={`button-view-photos-${request.id}`}
+            >
+              <ImageIcon className="w-3 h-3 mr-1" />
+              {request.photos.length} photo{request.photos.length > 1 ? 's' : ''}
+            </Badge>
+          )}
+        </div>
 
         {showValidationWarning && !isUserValidated && (
           <Alert variant="destructive">
@@ -274,66 +234,66 @@ export function RequestCard({
       </CardContent>
 
       {showOfferButton && (request.status === "open" || request.status === "published_for_matching") && (
-        <CardFooter className="p-4 pt-0 flex flex-row gap-2">
+        <CardFooter className="p-5 pt-0 flex flex-col gap-3">
           {/* New interest-based workflow */}
           {onExpressInterest && onWithdrawInterest ? (
             isInterested ? (
               <Button 
                 onClick={handleWithdrawInterest} 
                 disabled={isPendingInterest}
-                className="flex-1 bg-green-600 hover:bg-green-700"
+                className="w-full h-14 text-lg font-bold bg-gradient-to-r from-[#00ff88] to-[#00cc88] hover:from-[#00ff88]/90 hover:to-[#00cc88]/90 text-white border-0 shadow-lg hover:shadow-xl hover:shadow-[#00ff88]/30 transition-all duration-300"
                 data-testid={`button-withdraw-interest-${request.id}`}
               >
-                <ThumbsUp className="w-4 h-4 mr-2" />
+                <ThumbsUp className="w-6 h-6 mr-2" />
                 {isPendingInterest ? "Retrait..." : "Intéressé ✓"}
               </Button>
             ) : (
               <>
+                <Button 
+                  onClick={handleExpressInterest} 
+                  disabled={isPendingInterest}
+                  className="w-full h-14 text-lg font-bold bg-gradient-to-r from-[#00ff88] to-[#00cc88] hover:from-[#00ff88]/90 hover:to-[#00cc88]/90 text-white border-0 shadow-lg hover:shadow-xl hover:shadow-[#00ff88]/30 transition-all duration-300"
+                  data-testid={`button-express-interest-${request.id}`}
+                >
+                  <ThumbsUp className="w-6 h-6 mr-2" />
+                  <span>{isPendingInterest ? "Envoi..." : "Intéressé"}</span>
+                </Button>
                 {onDecline && (
                   <Button 
                     onClick={() => onDecline(request.id)} 
                     disabled={isPendingInterest}
-                    className="flex-1 bg-gray-600 hover:bg-gray-700 min-w-0"
-                    variant="secondary"
+                    variant="ghost"
+                    className="w-full h-10 text-sm text-muted-foreground hover:text-foreground"
                     data-testid={`button-not-available-${request.id}`}
                   >
-                    <ThumbsDown className="w-4 h-4 mr-1 flex-shrink-0" />
-                    <span className="truncate">Indisponible</span>
+                    <ThumbsDown className="w-4 h-4 mr-1.5" />
+                    <span>Marquer indisponible</span>
                   </Button>
                 )}
-                <Button 
-                  onClick={handleExpressInterest} 
-                  disabled={isPendingInterest}
-                  className="flex-1 bg-green-600 hover:bg-green-700 min-w-0"
-                  data-testid={`button-express-interest-${request.id}`}
-                >
-                  <ThumbsUp className="w-4 h-4 mr-1 flex-shrink-0" />
-                  <span className="truncate">{isPendingInterest ? "Envoi..." : "Intéressé"}</span>
-                </Button>
               </>
             )
           ) : (
             /* Old offer-based workflow (backward compatibility) */
             <>
+              <Button 
+                onClick={handleOfferClick} 
+                className="w-full h-14 text-lg font-bold"
+                variant={!isUserValidated ? "secondary" : "default"}
+                data-testid={`button-make-offer-${request.id}`}
+              >
+                Faire une offre
+              </Button>
               {onDecline && (
                 <Button 
                   onClick={() => onDecline(request.id)} 
-                  className="flex-1 bg-red-600 hover:bg-red-700"
-                  variant="destructive"
+                  variant="ghost"
+                  className="w-full h-10 text-sm text-muted-foreground"
                   data-testid={`button-decline-${request.id}`}
                 >
                   <X className="w-4 h-4 mr-1" />
                   Décliner
                 </Button>
               )}
-              <Button 
-                onClick={handleOfferClick} 
-                className="flex-1"
-                variant={!isUserValidated ? "secondary" : "default"}
-                data-testid={`button-make-offer-${request.id}`}
-              >
-                Faire une offre
-              </Button>
             </>
           )}
         </CardFooter>
