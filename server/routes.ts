@@ -5979,52 +5979,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // MIGRATION: Fix missing requests in coordinator views
   app.post("/api/admin/migrate-coordination-status", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
-      // Find all open requests that have invalid or missing coordinationStatus
-      const openRequests = await db.select()
-        .from(transportRequests)
-        .where(
-          and(
-            eq(transportRequests.status, 'open'),
-            sql`(${transportRequests.coordinationStatus} IS NULL 
-              OR ${transportRequests.coordinationStatus} NOT IN ('qualification_pending', 'qualified', 'matching', 'assigned', 'archived'))`
-          )
-        );
+      // Find ALL requests (not just open) with inconsistent status
+      const allRequests = await db.select().from(transportRequests);
 
       let updated = 0;
+      const corrections: any[] = [];
 
-      for (const request of openRequests) {
-        // Determine the correct status based on the request state
-        let newStatus = 'qualification_pending';
-        
-        // If already qualified (has prices set)
-        if (request.transporterAmount && request.platformFee) {
-          newStatus = 'qualified';
-        }
-        
-        // If has interested transporters
-        if (request.transporterInterests && request.transporterInterests.length > 0) {
-          newStatus = 'matching';
-        }
-        
-        // If manually assigned
-        if (request.assignedTransporterId) {
-          newStatus = 'assigned';
+      for (const request of allRequests) {
+        let expectedCoordinationStatus: string | null = null;
+
+        // Determine expected coordinationStatus based on main status
+        switch (request.status) {
+          case 'open':
+            // Open requests should be qualification_pending (unless qualified/matching)
+            if (request.transporterAmount && request.platformFee && (request.transporterInterests?.length || 0) > 0) {
+              expectedCoordinationStatus = 'matching';
+            } else if (request.transporterAmount && request.platformFee) {
+              expectedCoordinationStatus = 'qualified';
+            } else {
+              expectedCoordinationStatus = 'qualification_pending';
+            }
+            break;
+
+          case 'published_for_matching':
+            // Published requests should be matching or qualified
+            expectedCoordinationStatus = 'matching';
+            break;
+
+          case 'accepted':
+          case 'completed':
+            // Accepted/completed requests should be assigned
+            expectedCoordinationStatus = 'assigned';
+            break;
+
+          case 'expired':
+          case 'cancelled':
+            // Expired/cancelled requests should be archived
+            expectedCoordinationStatus = 'archive';
+            break;
+
+          default:
+            // For other statuses, keep current coordinationStatus if valid
+            if (['qualification_pending', 'qualified', 'matching', 'assigned', 'archive'].includes(request.coordinationStatus || '')) {
+              expectedCoordinationStatus = request.coordinationStatus;
+            } else {
+              expectedCoordinationStatus = 'archive';
+            }
         }
 
-        await db.update(transportRequests)
-          .set({ 
-            coordinationStatus: newStatus,
-            coordinationUpdatedAt: new Date()
-          })
-          .where(eq(transportRequests.id, request.id));
-        
-        updated++;
+        // Update if there's a mismatch
+        if (request.coordinationStatus !== expectedCoordinationStatus) {
+          await db.update(transportRequests)
+            .set({ 
+              coordinationStatus: expectedCoordinationStatus,
+              coordinationUpdatedAt: new Date()
+            })
+            .where(eq(transportRequests.id, request.id));
+          
+          corrections.push({
+            referenceId: request.referenceId,
+            oldStatus: request.coordinationStatus,
+            newStatus: expectedCoordinationStatus,
+            mainStatus: request.status
+          });
+          updated++;
+        }
       }
 
       res.json({ 
         success: true, 
-        message: `Migration réussie : ${updated} demandes mises à jour`,
-        updated
+        message: `Migration réussie : ${updated} demandes corrigées`,
+        updated,
+        corrections
       });
     } catch (error) {
       console.error("Erreur migration coordination status:", error);
