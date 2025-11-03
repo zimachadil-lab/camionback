@@ -277,22 +277,28 @@ export function RequestCard({
           )}
         </div>
 
-        {/* Prix - Zone mise en avant */}
+        {/* Prix - Zone mise en avant compacte et moderne */}
         {request.transporterPrice && (
-          <div className="p-4 rounded-lg bg-gradient-to-br from-[#00ff88]/15 to-[#00cc88]/15 border-2 border-[#00ff88]/30">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-foreground">Montant Fixé</span>
-              <span className="text-2xl font-bold text-[#00ff88]">{request.transporterPrice.toLocaleString()} MAD</span>
+          <div className="flex items-center justify-between px-4 py-2.5 rounded-lg bg-gradient-to-r from-[#00ff88]/10 via-[#00ff88]/5 to-transparent border-l-4 border-[#00ff88]">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-[#00ff88]/20 flex items-center justify-center">
+                <DollarSign className="w-4 h-4 text-[#00ff88]" />
+              </div>
+              <span className="text-sm font-medium text-muted-foreground">Montant Fixé</span>
             </div>
+            <span className="text-xl font-bold text-[#00ff88]">{request.transporterPrice.toLocaleString()} MAD</span>
           </div>
         )}
 
         {request.budget && !request.transporterPrice && (
-          <div className="p-4 rounded-lg bg-gradient-to-br from-[#00ff88]/15 to-[#00cc88]/15 border-2 border-[#00ff88]/30">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Budget</span>
-              <span className="text-2xl font-bold text-[#00ff88]">{request.budget}</span>
+          <div className="flex items-center justify-between px-4 py-2.5 rounded-lg bg-gradient-to-r from-[#00ff88]/10 via-[#00ff88]/5 to-transparent border-l-4 border-[#00ff88]">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-[#00ff88]/20 flex items-center justify-center">
+                <DollarSign className="w-4 h-4 text-[#00ff88]" />
+              </div>
+              <span className="text-sm font-medium text-muted-foreground">Budget</span>
             </div>
+            <span className="text-xl font-bold text-[#00ff88]">{request.budget}</span>
           </div>
         )}
 
