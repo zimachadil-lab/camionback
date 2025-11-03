@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star, CreditCard, Upload, Eye, Edit, MessageSquare, Calendar, Flag, Truck, Users, Zap, X, ChevronLeft, ChevronRight, Target, ArrowDown, Camera, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, DollarSign } from "lucide-react";
+import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star, CreditCard, Upload, Eye, Edit, MessageSquare, Calendar, Flag, Truck, Users, Zap, X, ChevronLeft, ChevronRight, Target, ArrowDown, Camera, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, DollarSign, ImageIcon } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { NewRequestForm } from "@/components/client/new-request-form";
 import { OfferCard } from "@/components/client/offer-card";
@@ -270,7 +270,7 @@ function getClientStatus(request: any, interestedCount: number = 0) {
   };
 }
 
-function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onDelete, onViewTransporter, onUpdateStatus, onReport, onChooseTransporter, users, cities, citiesLoading, currentUserId }: any) {
+function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onDelete, onViewTransporter, onUpdateStatus, onReport, onChooseTransporter, onOpenPhotosDialog, users, cities, citiesLoading, currentUserId }: any) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showOffersDialog, setShowOffersDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -526,6 +526,18 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                   className="h-8 w-8 text-[#1abc9c] hover:text-[#1abc9c] hover:bg-[#1abc9c]/10"
                 >
                   <Edit className="h-4 w-4" />
+                </Button>
+              )}
+              {request.photos && request.photos.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onOpenPhotosDialog(request.photos)}
+                  data-testid={`button-view-photos-${request.id}`}
+                  className="h-8 px-2 gap-1.5 text-[#3498db] hover:text-[#3498db] hover:bg-[#3498db]/10"
+                >
+                  <Camera className="h-4 w-4" />
+                  <span className="text-xs font-medium">{request.photos.length}</span>
                 </Button>
               )}
               <Button
@@ -1583,9 +1595,16 @@ export default function ClientDashboard() {
   const [paymentReceipt, setPaymentReceipt] = useState<string>("");
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [reportRequestId, setReportRequestId] = useState<string>("");
+  const [showPhotosDialog, setShowPhotosDialog] = useState(false);
+  const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
 
   const handleLogout = () => {
     logout();
+  };
+
+  const handleOpenPhotosDialog = (photos: string[]) => {
+    setSelectedPhotos(photos);
+    setShowPhotosDialog(true);
   };
 
   const { data: requests = [], isLoading } = useQuery({
@@ -2084,6 +2103,7 @@ export default function ClientDashboard() {
                     onUpdateStatus={handleUpdateStatus}
                     onReport={handleOpenReportDialog}
                     onChooseTransporter={handleChooseTransporter}
+                    onOpenPhotosDialog={handleOpenPhotosDialog}
                   />
                 ))
               ) : (
@@ -2783,6 +2803,41 @@ export default function ClientDashboard() {
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog d'affichage des photos */}
+      <Dialog open={showPhotosDialog} onOpenChange={setShowPhotosDialog}>
+        <DialogContent className="max-w-[90vw] sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Photos de la demande ({selectedPhotos.length})</DialogTitle>
+            <DialogDescription>
+              Consultez les photos téléversées pour cette demande
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto p-2">
+            {selectedPhotos.map((photo: string, index: number) => (
+              <div key={index} className="relative group">
+                <img
+                  src={photo}
+                  alt={`Photo ${index + 1}`}
+                  className="w-full h-auto rounded-lg border-2 border-border hover:border-primary transition-colors"
+                />
+                <div className="absolute top-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
+                  {index + 1}/{selectedPhotos.length}
+                </div>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowPhotosDialog(false)}
+              data-testid="button-close-photos"
+            >
+              Fermer
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
