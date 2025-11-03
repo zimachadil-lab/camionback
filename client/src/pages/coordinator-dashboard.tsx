@@ -1977,7 +1977,7 @@ export default function CoordinatorDashboard() {
         </div>
 
         <Tabs defaultValue="nouveau" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
+          <TabsList className="grid w-full grid-cols-5 mb-6">
             <TabsTrigger value="nouveau" data-testid="tab-nouveau" className="gap-1 px-2">
               <span className="text-xs sm:text-sm">Nouveau</span>
               <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white text-xs px-1.5 py-0">
@@ -1988,6 +1988,12 @@ export default function CoordinatorDashboard() {
               <span className="text-xs sm:text-sm">Qualifiés</span>
               <Badge className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-1.5 py-0">
                 {matchingLoading ? "..." : filterRequests(matchingRequests).length}
+              </Badge>
+            </TabsTrigger>
+            <TabsTrigger value="interesses" data-testid="tab-interesses" className="gap-1 px-2">
+              <span className="text-xs sm:text-sm">Intéressés</span>
+              <Badge className="bg-purple-500 hover:bg-purple-600 text-white text-xs px-1.5 py-0">
+                {matchingLoading ? "..." : filterRequests(matchingRequests.filter((r: any) => r.transporterInterests && r.transporterInterests.length > 0)).length}
               </Badge>
             </TabsTrigger>
             <TabsTrigger value="production" data-testid="tab-production" className="gap-1 px-2">
@@ -2040,7 +2046,90 @@ export default function CoordinatorDashboard() {
             )}
           </TabsContent>
 
-          {/* ONGLET 3: EN PRODUCTION - Commandes actives et en paiement */}
+          {/* ONGLET 3: INTÉRESSÉS - Demandes avec transporteurs intéressés */}
+          <TabsContent value="interesses" className="space-y-4">
+            {matchingLoading ? (
+              <div className="flex justify-center py-12">
+                <LoadingTruck />
+              </div>
+            ) : filterRequests(matchingRequests.filter((r: any) => r.transporterInterests && r.transporterInterests.length > 0)).length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>Aucun transporteur intéressé pour le moment</p>
+                </CardContent>
+              </Card>
+            ) : (
+              filterRequests(matchingRequests.filter((r: any) => r.transporterInterests && r.transporterInterests.length > 0)).map((request) => (
+                <Card key={request.id} className="overflow-hidden border-l-4 border-purple-500" data-testid={`card-interested-request-${request.id}`}>
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between gap-4 mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge className="bg-purple-500 text-white">
+                            {request.transporterInterests.length} intéressé{request.transporterInterests.length > 1 ? 's' : ''}
+                          </Badge>
+                          <h3 className="text-lg font-bold" data-testid={`text-ref-${request.id}`}>
+                            {request.referenceId}
+                          </h3>
+                        </div>
+                        <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                          <MapPin className="h-4 w-4" />
+                          <span className="font-medium">{request.fromCity}</span>
+                          <span>→</span>
+                          <span className="font-medium">{request.toCity}</span>
+                        </div>
+                        {request.dateTime && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Calendar className="h-4 w-4" />
+                            {format(new Date(request.dateTime), "dd MMMM yyyy 'à' HH:mm", { locale: fr })}
+                          </div>
+                        )}
+                      </div>
+                      <Button
+                        size="lg"
+                        className="bg-purple-600 hover:bg-purple-700"
+                        onClick={() => {
+                          setSelectedRequestForInterested(request);
+                          setInterestedTransportersDialogOpen(true);
+                        }}
+                        data-testid={`button-view-interested-${request.id}`}
+                      >
+                        <Eye className="h-5 w-5 mr-2" />
+                        Voir détails & Assigner
+                      </Button>
+                    </div>
+                    
+                    {/* Prix qualifiés */}
+                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 rounded-lg p-4">
+                      <div className="grid grid-cols-3 gap-4 text-center">
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Transporteur</p>
+                          <p className="text-lg font-bold">{request.transporterAmount || 0} DH</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Commission</p>
+                          <p className="text-lg font-bold text-orange-600">+{request.platformFee || 0} DH</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Total client</p>
+                          <p className="text-xl font-bold text-[#17cfcf]">{request.clientTotal || 0} DH</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {request.description && (
+                      <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+                        <p className="text-sm text-muted-foreground">{request.description}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </TabsContent>
+
+          {/* ONGLET 4: EN PRODUCTION - Commandes actives et en paiement */}
           <TabsContent value="production" className="space-y-4">
             {(activeLoading || paymentLoading) ? (
               <div className="flex justify-center py-12">
