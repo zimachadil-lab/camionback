@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, MessageCircle, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck, Trash2, Share2, Copy, Send, RotateCcw, Info, Users, CreditCard, Calendar, X, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, FileText, MoreVertical, Image as ImageIcon } from "lucide-react";
+import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, MessageCircle, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck, Trash2, Share2, Copy, Send, RotateCcw, Info, Users, CreditCard, Calendar, X, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, FileText, MoreVertical, Image as ImageIcon, ClipboardCheck, Award } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -1734,27 +1734,27 @@ export default function CoordinatorDashboard() {
           {/* Qualify button - Action principale */}
           {showQualifyButton && (
             <Button
-              size="sm"
+              size="default"
               variant="default"
-              className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700"
+              className="bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] hover:from-[#13b3b3] hover:to-[#0f9999] text-white font-semibold shadow-lg hover:shadow-xl transition-all"
               onClick={() => handleOpenQualificationDialog(request)}
               data-testid={`button-qualify-${request.id}`}
             >
-              <DollarSign className="h-4 w-4 mr-1" />
-              Qualifier
+              <ClipboardCheck className="h-5 w-5 mr-2" />
+              Qualifier cette demande
             </Button>
           )}
 
           {/* Requalify button */}
           {showQualifiedBy && (
             <Button
-              size="sm"
+              size="default"
               variant="default"
-              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
               onClick={() => handleOpenQualificationDialog(request)}
               data-testid={`button-requalify-${request.id}`}
             >
-              <RotateCcw className="h-4 w-4 mr-1" />
+              <RotateCcw className="h-5 w-5 mr-2" />
               Requalifier
             </Button>
           )}
@@ -1762,13 +1762,13 @@ export default function CoordinatorDashboard() {
           {/* Transporteurs intéressés */}
           {interestedCount > 0 && request.qualifiedAt && !request.assignedTransporterId && (
             <Button
-              size="sm"
+              size="default"
               variant="default"
-              className="bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] hover:from-[#13b3b3] hover:to-[#0f9999]"
+              className="bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] hover:from-[#13b3b3] hover:to-[#0f9999] text-white font-semibold shadow-lg hover:shadow-xl transition-all"
               onClick={() => handleViewInterestedTransporters(request)}
               data-testid={`button-view-interested-${request.id}`}
             >
-              <Users className="h-4 w-4 mr-1" />
+              <Users className="h-5 w-5 mr-2" />
               {interestedCount} Intéressé{interestedCount > 1 ? 's' : ''}
             </Button>
           )}
@@ -1776,13 +1776,13 @@ export default function CoordinatorDashboard() {
           {/* Offres (old workflow) */}
           {showVisibilityToggle && request.offers && request.offers.length > 0 && (
             <Button
-              size="sm"
+              size="default"
               variant="default"
-              className="bg-gradient-to-r from-[#5BC0EB] to-[#4AA8D8] hover:from-[#4AA8D8] hover:to-[#3997C5]"
+              className="bg-gradient-to-r from-[#5BC0EB] to-[#4AA8D8] hover:from-[#4AA8D8] hover:to-[#3997C5] text-white font-semibold shadow-lg hover:shadow-xl transition-all"
               onClick={() => handleViewOffers(request)}
               data-testid={`button-view-offers-${request.id}`}
             >
-              <CheckCircle className="h-4 w-4 mr-1" />
+              <CheckCircle className="h-5 w-5 mr-2" />
               {request.offers.length} Offre{request.offers.length > 1 ? 's' : ''}
             </Button>
           )}
@@ -1790,13 +1790,13 @@ export default function CoordinatorDashboard() {
           {/* Missionner transporteur */}
           {isCoordination && !request.transporter && request.status !== 'accepted' && (
             <Button
-              size="sm"
+              size="default"
               variant="default"
-              className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700"
+              className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
               onClick={() => handleOpenManualAssignment(request)}
               data-testid={`button-manual-assignment-${request.id}`}
             >
-              <Truck className="h-4 w-4 mr-1" />
+              <Truck className="h-5 w-5 mr-2" />
               Missionner
             </Button>
           )}
