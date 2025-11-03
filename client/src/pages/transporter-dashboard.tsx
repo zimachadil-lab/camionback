@@ -41,13 +41,14 @@ const editOfferSchema = z.object({
   }),
 });
 
-const referenceSchema = z.object({
-  referenceName: z.string().min(2, "Nom complet requis (min. 2 caractères)"),
-  referencePhone: z.string().regex(/^\+212[0-9]{9}$/, "Format: +212XXXXXXXXX"),
-  referenceRelation: z.enum(["Client", "Transporteur", "Autre"], {
-    required_error: "Type de relation requis",
-  }),
-});
+// REMOVED: Referent system no longer used - transporter validation is now done directly by admin
+// const referenceSchema = z.object({
+//   referenceName: z.string().min(2, "Nom complet requis (min. 2 caractères)"),
+//   referencePhone: z.string().regex(/^\+212[0-9]{9}$/, "Format: +212XXXXXXXXX"),
+//   referenceRelation: z.enum(["Client", "Transporteur", "Autre"], {
+//     required_error: "Type de relation requis",
+//   }),
+// });
 
 export default function TransporterDashboard() {
   const [, setLocation] = useLocation();
@@ -197,47 +198,47 @@ export default function TransporterDashboard() {
     },
   });
 
-  // Fetch transporter reference
-  const { data: transporterReference, isLoading: referenceLoading } = useQuery<{
-    id: string;
-    transporterId: string;
-    referenceName: string;
-    referencePhone: string;
-    referenceRelation: string;
-    status: string;
-    rejectionReason?: string | null;
-    validatedBy?: string | null;
-    validatedAt?: string | null;
-    createdAt: string;
-  } | null>({
-    queryKey: [`/api/transporter-references/${user?.id}`],
-    enabled: !!user && user.role === "transporteur",
-  });
+  // REMOVED: Referent system no longer used - transporter validation is now done directly by admin
+  // const { data: transporterReference, isLoading: referenceLoading } = useQuery<{
+  //   id: string;
+  //   transporterId: string;
+  //   referenceName: string;
+  //   referencePhone: string;
+  //   referenceRelation: string;
+  //   status: string;
+  //   rejectionReason?: string | null;
+  //   validatedBy?: string | null;
+  //   validatedAt?: string | null;
+  //   createdAt: string;
+  // } | null>({
+  //   queryKey: [`/api/transporter-references/${user?.id}`],
+  //   enabled: !!user && user.role === "transporteur",
+  // });
 
-  // Submit transporter reference
-  const submitReferenceMutation = useMutation({
-    mutationFn: async (data: { referenceName: string; referencePhone: string; referenceRelation: string }) => {
-      return await apiRequest("POST", "/api/transporter-references", {
-        transporterId: user!.id,
-        ...data,
-      });
-    },
-    onSuccess: () => {
-      toast({
-        title: "Succès",
-        description: "Votre référence a été enregistrée. Notre équipe vous contactera pour validation.",
-      });
-      queryClient.invalidateQueries({ queryKey: [`/api/transporter-references/${user!.id}`] });
-      referenceForm.reset();
-    },
-    onError: (error: any) => {
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: error.message || "Échec de l'enregistrement de la référence",
-      });
-    },
-  });
+  // REMOVED: Referent system no longer used
+  // const submitReferenceMutation = useMutation({
+  //   mutationFn: async (data: { referenceName: string; referencePhone: string; referenceRelation: string }) => {
+  //     return await apiRequest("POST", "/api/transporter-references", {
+  //       transporterId: user!.id,
+  //       ...data,
+  //     });
+  //   },
+  //   onSuccess: () => {
+  //     toast({
+  //       title: "Succès",
+  //       description: "Votre référence a été enregistrée. Notre équipe vous contactera pour validation.",
+  //     });
+  //     queryClient.invalidateQueries({ queryKey: [`/api/transporter-references/${user!.id}`] });
+  //     referenceForm.reset();
+  //   },
+  //   onError: (error: any) => {
+  //     toast({
+  //       variant: "destructive",
+  //       title: "Erreur",
+  //       description: error.message || "Échec de l'enregistrement de la référence",
+  //     });
+  //   },
+  // });
 
   const markForBillingMutation = useMutation({
     mutationFn: async (requestId: string) => {
@@ -418,14 +419,15 @@ export default function TransporterDashboard() {
     },
   });
 
-  const referenceForm = useForm({
-    resolver: zodResolver(referenceSchema),
-    defaultValues: {
-      referenceName: "",
-      referencePhone: "+212",
-      referenceRelation: "Client" as const,
-    },
-  });
+  // REMOVED: Referent system no longer used
+  // const referenceForm = useForm({
+  //   resolver: zodResolver(referenceSchema),
+  //   defaultValues: {
+  //     referenceName: "",
+  //     referencePhone: "+212",
+  //     referenceRelation: "Client" as const,
+  //   },
+  // });
 
   const updateOfferMutation = useMutation({
     mutationFn: async (data: { offerId: string; amount: number; pickupDate: string; loadType: string }) => {
@@ -548,129 +550,17 @@ export default function TransporterDashboard() {
       
       <StoriesBar userRole="transporter" />
       
-      {/* Reference request banner - Only show if pending and no reference submitted */}
-      {user.status === "pending" && !transporterReference && !referenceLoading && (
-        <Card className="mx-4 mt-4 border-l-4 border-primary">
-          <CardContent className="p-6">
-            <div className="flex items-start gap-3 mb-4">
-              <TruckIcon className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
-              <div>
-                <h3 className="text-xl font-semibold text-foreground">
-                  🚛 Pour activer votre compte CamionBack, ajoutez un référent professionnel
-                </h3>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Afin d'assurer la qualité du réseau, chaque transporteur doit fournir une personne de confiance 
-                  (client, partenaire ou autre transporteur) que notre équipe contactera pour confirmer son sérieux.
-                </p>
-              </div>
-            </div>
-
-            <Form {...referenceForm}>
-              <form 
-                onSubmit={referenceForm.handleSubmit((data) => submitReferenceMutation.mutate(data))} 
-                className="space-y-4"
-              >
-                <FormField
-                  control={referenceForm.control}
-                  name="referenceName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nom complet du référent <span className="text-destructive">*</span></FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Ex: Ahmed Benjelloun"
-                          data-testid="input-reference-name"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={referenceForm.control}
-                  name="referencePhone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Numéro de téléphone du référent <span className="text-destructive">*</span></FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="+212612345678"
-                          data-testid="input-reference-phone"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={referenceForm.control}
-                  name="referenceRelation"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Relation professionnelle <span className="text-destructive">*</span></FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger data-testid="select-reference-relation">
-                            <SelectValue placeholder="Sélectionnez la relation" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Client">Client</SelectItem>
-                          <SelectItem value="Transporteur">Transporteur</SelectItem>
-                          <SelectItem value="Autre">Autre</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <Button
-                  type="submit"
-                  disabled={submitReferenceMutation.isPending}
-                  className="w-full sm:w-auto"
-                  data-testid="button-submit-reference"
-                >
-                  {submitReferenceMutation.isPending ? "Soumission..." : "Soumettre ma référence"}
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Reference pending validation message */}
-      {user.status === "pending" && transporterReference && transporterReference.status === "pending" && (
+      {/* Account pending validation message - Simplified without referent system */}
+      {user.status === "pending" && (
         <div className="bg-blue-50 dark:bg-blue-950/30 border-l-4 border-blue-500 p-4 mx-4 mt-4">
           <div className="flex items-start gap-3">
             <Clock className="w-5 h-5 text-blue-600 dark:text-blue-500 mt-0.5 flex-shrink-0" />
             <div>
               <h3 className="font-semibold text-blue-900 dark:text-blue-100">
-                ✅ Votre référence a été enregistrée
+                ⏳ Compte en cours de validation
               </h3>
               <p className="text-sm text-blue-800 dark:text-blue-200 mt-1">
-                Notre équipe vous informera une fois votre profil validé. Merci de votre patience !
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Reference rejected message */}
-      {user.status === "pending" && transporterReference && transporterReference.status === "rejected" && (
-        <div className="bg-red-50 dark:bg-red-950/30 border-l-4 border-red-500 p-4 mx-4 mt-4">
-          <div className="flex items-start gap-3">
-            <Flag className="w-5 h-5 text-red-600 dark:text-red-500 mt-0.5 flex-shrink-0" />
-            <div>
-              <h3 className="font-semibold text-red-900 dark:text-red-100">
-                ❌ Votre référence n'a pas été validée
-              </h3>
-              <p className="text-sm text-red-800 dark:text-red-200 mt-1">
-                {transporterReference.rejectionReason || "Merci d'en fournir une autre personne à contacter."}
+                Votre compte est en cours de validation par l'équipe CamionBack. Vous pourrez accéder à toutes les fonctionnalités une fois votre compte activé. Merci de votre patience !
               </p>
             </div>
           </div>
