@@ -700,18 +700,21 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
           {/* Nouveaux boutons: CamioMatch et Coordinateur */}
           {!hasTransporter && (
             <div className="flex flex-wrap gap-2.5">
-              <Button
-                onClick={() => setShowCamioMatchDialog(true)}
-                data-testid={`button-camiomatch-${request.id}`}
-                className="flex-1 min-w-[135px] gap-2 rounded-xl font-semibold text-white bg-gradient-to-br from-[#17cfcf] to-[#13b3b3] border-0 shadow-md hover:shadow-lg hover:shadow-[#17cfcf]/30 transition-shadow duration-300 hover-elevate"
-              >
-                <Zap className="w-5 h-5" />
-                CamioMatch
-              </Button>
+              {/* CamioMatch - Masqué pour raisons stratégiques, gardé en système */}
+              {false && (
+                <Button
+                  onClick={() => setShowCamioMatchDialog(true)}
+                  data-testid={`button-camiomatch-${request.id}`}
+                  className="flex-1 min-w-[135px] gap-2 rounded-xl font-semibold text-white bg-gradient-to-br from-[#17cfcf] to-[#13b3b3] border-0 shadow-md hover:shadow-lg hover:shadow-[#17cfcf]/30 transition-shadow duration-300 hover-elevate"
+                >
+                  <Zap className="w-5 h-5" />
+                  CamioMatch
+                </Button>
+              )}
               <Button
                 onClick={handleWhatsAppContact}
                 data-testid={`button-coordinator-${request.id}`}
-                className="flex-1 min-w-[135px] gap-2 rounded-xl font-semibold text-white bg-gradient-to-br from-[#17cfcf] to-[#13b3b3] border-0 shadow-md hover:shadow-lg hover:shadow-[#17cfcf]/25 transition-shadow duration-300 hover-elevate"
+                className="w-full gap-2 rounded-xl font-semibold text-white bg-gradient-to-br from-[#17cfcf] to-[#13b3b3] border-0 shadow-md hover:shadow-lg hover:shadow-[#17cfcf]/25 transition-shadow duration-300 hover-elevate"
               >
                 <Phone className="w-5 h-5" />
                 Coordinateur
