@@ -922,22 +922,34 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                 <div className="space-y-3">
                   {interestedTransporters.map((transporter: any) => (
                     <Card key={transporter.id} className="overflow-hidden hover-elevate">
-                      <div className="flex gap-3 p-3 relative">
-                        {/* Transporter photo - compact */}
-                        <div className="w-24 h-24 bg-gradient-to-br from-[#0a2540] via-[#1d3c57] to-[#17cfcf]/20 rounded-lg overflow-hidden flex-shrink-0">
-                          {transporter.truckPhotos?.[0] ? (
-                            <img
-                              src={transporter.truckPhotos[0]}
-                              alt="Camion"
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <Truck className="w-12 h-12 text-[#17cfcf] opacity-40 m-auto mt-6" />
-                          )}
+                      <div className="flex gap-3 p-3">
+                        {/* Left column: Photo + Action button */}
+                        <div className="flex flex-col gap-2 flex-shrink-0">
+                          {/* Transporter photo */}
+                          <div className="w-24 h-24 bg-gradient-to-br from-[#0a2540] via-[#1d3c57] to-[#17cfcf]/20 rounded-lg overflow-hidden">
+                            {transporter.truckPhotos?.[0] ? (
+                              <img
+                                src={transporter.truckPhotos[0]}
+                                alt="Camion"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <Truck className="w-12 h-12 text-[#17cfcf] opacity-40 m-auto mt-6" />
+                            )}
+                          </div>
+                          
+                          {/* Action button with animation */}
+                          <Button
+                            className="bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] hover:from-[#13b3b3] hover:to-[#0f9999] text-white font-bold px-3 py-2 text-sm shadow-lg animate-pulse hover:animate-none w-24"
+                            onClick={() => onChooseTransporter(request.id, transporter.id)}
+                            data-testid={`button-select-transporter-${transporter.id}`}
+                          >
+                            ✓ Choisir
+                          </Button>
                         </div>
                         
-                        {/* Transporter info - compact */}
-                        <div className="flex-1 space-y-2 pr-24">
+                        {/* Transporter info */}
+                        <div className="flex-1 space-y-2">
                           <div className="flex items-start justify-between gap-2">
                             <div>
                               <h4 className="font-semibold text-base">{transporter.name || "Transporteur"}</h4>
@@ -950,7 +962,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                             )}
                           </div>
                           
-                          {/* Rating - compact */}
+                          {/* Rating */}
                           <div className="flex items-center gap-1.5">
                             {[...Array(5)].map((_, i) => (
                               <Star
@@ -990,15 +1002,6 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                             </div>
                           )}
                         </div>
-                        
-                        {/* Action button - top right aligned with image */}
-                        <Button
-                          className="absolute top-3 right-3 bg-[#17cfcf] hover:bg-[#13b3b3] px-4 py-2 font-semibold"
-                          onClick={() => onChooseTransporter(request.id, transporter.id)}
-                          data-testid={`button-select-transporter-${transporter.id}`}
-                        >
-                          Choisir
-                        </Button>
                       </div>
                     </Card>
                   ))}
