@@ -678,19 +678,66 @@ export default function TransporterDashboard() {
       )}
       
       <div className="container mx-auto p-4 md:p-6 max-w-7xl space-y-6">
+        {/* KPI Cards - Vue d'ensemble rapide */}
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className="overflow-hidden border-l-4 border-l-[#00ff99] bg-gradient-to-br from-background to-muted/20 hover-elevate">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Disponibles</p>
+                  <p className="text-3xl font-bold text-[#00ff99]">{filteredRequests.length}</p>
+                </div>
+                <div className="w-12 h-12 rounded-full bg-[#00ff99]/10 flex items-center justify-center">
+                  <Search className="w-6 h-6 text-[#00ff99]" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="overflow-hidden border-l-4 border-l-blue-500 bg-gradient-to-br from-background to-muted/20 hover-elevate">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Intéressé</p>
+                  <p className="text-3xl font-bold text-blue-500">
+                    {requests.filter((r: any) => r.transporterInterests?.includes(user?.id)).length}
+                  </p>
+                </div>
+                <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center">
+                  <Package className="w-6 h-6 text-blue-500" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="overflow-hidden border-l-4 border-l-green-500 bg-gradient-to-br from-background to-muted/20 hover-elevate">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">À traiter</p>
+                  <p className="text-3xl font-bold text-green-500">{acceptedRequests.length}</p>
+                </div>
+                <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-green-500" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         <Tabs defaultValue="available" className="w-full">
           <TabsList className="grid w-full max-w-3xl grid-cols-3">
             <TabsTrigger value="available" data-testid="tab-available">
               <Search className="mr-2 h-4 w-4" />
-              Disponibles (<span className="text-[#00ff99]">{filteredRequests.length}</span>)
+              Disponibles
             </TabsTrigger>
             <TabsTrigger value="interested" data-testid="tab-interested">
               <Package className="mr-2 h-4 w-4" />
-              Intéressé ({requests.filter((r: any) => r.transporterInterests?.includes(user?.id)).length})
+              Intéressé
             </TabsTrigger>
             <TabsTrigger value="to-process" data-testid="tab-to-process">
               <CheckCircle className="mr-2 h-4 w-4" />
-              À traiter ({acceptedRequests.length})
+              À traiter
             </TabsTrigger>
           </TabsList>
 
