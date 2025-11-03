@@ -109,64 +109,66 @@ export function RequestCard({
 
   return (
     <>
-    <Card className="overflow-hidden hover-elevate border-2">
-      <CardContent className="p-5 space-y-4">
-        {/* En-tête: Référence discrète en haut à droite */}
+    <Card className="overflow-hidden hover-elevate border border-border/50">
+      <CardContent className="p-4 space-y-3">
+        {/* En-tête: Type et référence */}
         <div className="flex items-start justify-between gap-2">
-          <h3 className="text-base font-medium text-muted-foreground">{request.goodsType}</h3>
-          <Badge variant="outline" className="text-xs" data-testid={`text-reference-${request.id}`}>
+          <h3 className="font-semibold text-lg">{request.goodsType}</h3>
+          <Badge variant="outline" className="text-xs font-mono" data-testid={`text-reference-${request.id}`}>
             {request.referenceId}
           </Badge>
         </div>
 
-        {/* TRAJET - Information principale en très grand */}
-        <div className="flex items-center gap-3 py-2">
-          <MapPin className="w-6 h-6 text-[#17cfcf] flex-shrink-0" />
-          <div className="flex items-center gap-2 text-xl font-bold">
+        {/* Trajet - Mise en avant moderne */}
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-gradient-to-r from-[#17cfcf]/10 to-[#13b3b3]/10 border border-[#17cfcf]/20">
+          <MapPin className="w-5 h-5 text-[#17cfcf] flex-shrink-0" />
+          <div className="flex items-center gap-2 font-semibold text-base">
             <span className="truncate">{request.fromCity}</span>
             <span className="text-[#17cfcf]">→</span>
             <span className="truncate">{request.toCity}</span>
           </div>
         </div>
 
-        {/* DATE DE MISSION - Badge coloré imposant */}
-        <div className="flex items-center gap-2">
-          <Badge className="bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] text-white border-0 px-4 py-2 text-base font-bold">
-            <Calendar className="w-5 h-5 mr-2" />
-            {format(dateTime, "d MMM yyyy", { locale: fr }).toUpperCase()}
-          </Badge>
+        {/* Date et poids */}
+        <div className="grid grid-cols-2 gap-2">
+          <div className="flex items-center gap-2 p-2 rounded-md bg-[#17cfcf]/10 border border-[#17cfcf]/30">
+            <Calendar className="w-4 h-4 text-[#17cfcf]" />
+            <span className="text-sm font-semibold">
+              {format(dateTime, "d MMM yyyy", { locale: fr })}
+            </span>
+          </div>
           {request.estimatedWeight && (
-            <Badge variant="outline" className="px-3 py-2 text-sm font-medium">
-              <Package className="w-4 h-4 mr-1.5" />
-              {request.estimatedWeight}
-            </Badge>
+            <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50 border border-border">
+              <Package className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-medium">{request.estimatedWeight}</span>
+            </div>
           )}
         </div>
 
-        {/* PRIX - Bloc très visible et coloré */}
+        {/* Prix - Design moderne et clean */}
         {request.transporterPrice && (
-          <div className="bg-gradient-to-br from-[#00ff88]/20 to-[#00cc88]/20 dark:from-[#00ff88]/30 dark:to-[#00cc88]/30 rounded-xl p-4 border-2 border-[#00ff88]/40">
+          <div className="p-3 rounded-lg bg-gradient-to-br from-[#00ff88]/15 to-[#00cc88]/15 border-2 border-[#00ff88]/30">
             <div className="flex items-center justify-between">
-              <span className="text-base font-semibold text-foreground">Montant Fixé</span>
-              <span className="text-3xl font-bold text-[#00ff88]">{request.transporterPrice.toLocaleString()} MAD</span>
+              <span className="text-sm font-medium text-foreground">Montant Fixé :</span>
+              <span className="text-2xl font-bold text-[#00ff88]">{request.transporterPrice.toLocaleString()} MAD</span>
             </div>
           </div>
         )}
 
         {/* Show client budget if no qualified price (old workflow) */}
         {request.budget && !request.transporterPrice && (
-          <div className="bg-gradient-to-br from-[#00ff88]/20 to-[#00cc88]/20 rounded-xl p-4 border-2 border-[#00ff88]/40">
+          <div className="p-3 rounded-lg bg-gradient-to-br from-[#00ff88]/15 to-[#00cc88]/15 border-2 border-[#00ff88]/30">
             <div className="flex items-center justify-between">
-              <span className="text-base font-semibold text-foreground">Budget</span>
-              <span className="text-3xl font-bold text-[#00ff88]">{request.budget}</span>
+              <span className="text-sm font-medium">Budget :</span>
+              <span className="text-2xl font-bold text-[#00ff88]">{request.budget}</span>
             </div>
           </div>
         )}
 
-        {/* Description - Collapsible, moins proéminente */}
+        {/* Description */}
         {request.description && (
-          <div className="border-t pt-3">
-            <p className={`text-xs text-muted-foreground ${showFullDescription ? '' : 'line-clamp-2'}`}>
+          <div>
+            <p className={`text-sm text-muted-foreground ${showFullDescription ? '' : 'line-clamp-2'}`}>
               {request.description}
             </p>
             {request.description.length > 100 && (
@@ -191,21 +193,16 @@ export function RequestCard({
           </div>
         )}
 
-        {/* Infos secondaires regroupées */}
-        <div className="flex flex-wrap gap-2 pt-2 border-t">
-          {/* Manutention - Version simplifiée */}
+        {/* Infos secondaires - badges modernes */}
+        <div className="flex flex-wrap gap-2">
+          {/* Manutention */}
           {request.handlingRequired !== undefined && request.handlingRequired !== null && (
-            <Badge variant={request.handlingRequired ? "default" : "secondary"} className="text-xs">
+            <Badge 
+              variant="outline" 
+              className="text-xs bg-background/50"
+            >
               <span className="mr-1">🏋️</span>
               Manutention : {request.handlingRequired ? 'Oui' : 'Non'}
-            </Badge>
-          )}
-          
-          {/* Vues */}
-          {request.viewCount !== undefined && request.viewCount > 0 && (
-            <Badge variant="outline" className="text-xs">
-              <Eye className="w-3 h-3 mr-1" />
-              {request.viewCount} vue{request.viewCount > 1 ? 's' : ''}
             </Badge>
           )}
           
@@ -213,7 +210,7 @@ export function RequestCard({
           {request.photos && request.photos.length > 0 && (
             <Badge 
               variant="outline" 
-              className="text-xs cursor-pointer hover-elevate"
+              className="text-xs cursor-pointer hover-elevate bg-background/50"
               onClick={handleViewPhotos}
               data-testid={`button-view-photos-${request.id}`}
             >
@@ -234,66 +231,66 @@ export function RequestCard({
       </CardContent>
 
       {showOfferButton && (request.status === "open" || request.status === "published_for_matching") && (
-        <CardFooter className="p-5 pt-0 flex flex-col gap-3">
+        <CardFooter className="p-4 pt-0 flex flex-row gap-2">
           {/* New interest-based workflow */}
           {onExpressInterest && onWithdrawInterest ? (
             isInterested ? (
               <Button 
                 onClick={handleWithdrawInterest} 
                 disabled={isPendingInterest}
-                className="w-full h-14 text-lg font-bold bg-gradient-to-r from-[#00ff88] to-[#00cc88] hover:from-[#00ff88]/90 hover:to-[#00cc88]/90 text-white border-0 shadow-lg hover:shadow-xl hover:shadow-[#00ff88]/30 transition-all duration-300"
+                className="flex-1 h-12 font-semibold bg-gradient-to-r from-[#00ff88] to-[#00cc88] hover:from-[#00ff88]/90 hover:to-[#00cc88]/90 text-white border-0 shadow-md hover:shadow-lg transition-all"
                 data-testid={`button-withdraw-interest-${request.id}`}
               >
-                <ThumbsUp className="w-6 h-6 mr-2" />
-                {isPendingInterest ? "Retrait..." : "Intéressé ✓"}
+                <ThumbsUp className="w-5 h-5 mr-2" />
+                {isPendingInterest ? "Retrait..." : "Intéressé"}
               </Button>
             ) : (
               <>
-                <Button 
-                  onClick={handleExpressInterest} 
-                  disabled={isPendingInterest}
-                  className="w-full h-14 text-lg font-bold bg-gradient-to-r from-[#00ff88] to-[#00cc88] hover:from-[#00ff88]/90 hover:to-[#00cc88]/90 text-white border-0 shadow-lg hover:shadow-xl hover:shadow-[#00ff88]/30 transition-all duration-300"
-                  data-testid={`button-express-interest-${request.id}`}
-                >
-                  <ThumbsUp className="w-6 h-6 mr-2" />
-                  <span>{isPendingInterest ? "Envoi..." : "Intéressé"}</span>
-                </Button>
                 {onDecline && (
                   <Button 
                     onClick={() => onDecline(request.id)} 
                     disabled={isPendingInterest}
-                    variant="ghost"
-                    className="w-full h-10 text-sm text-muted-foreground hover:text-foreground"
+                    variant="outline"
+                    className="flex-1 h-12 font-semibold hover:bg-muted/50"
                     data-testid={`button-not-available-${request.id}`}
                   >
-                    <ThumbsDown className="w-4 h-4 mr-1.5" />
-                    <span>Marquer indisponible</span>
+                    <ThumbsDown className="w-4 h-4 mr-2" />
+                    <span>Indisponible</span>
                   </Button>
                 )}
+                <Button 
+                  onClick={handleExpressInterest} 
+                  disabled={isPendingInterest}
+                  className="flex-1 h-12 font-semibold bg-gradient-to-r from-[#00ff88] to-[#00cc88] hover:from-[#00ff88]/90 hover:to-[#00cc88]/90 text-white border-0 shadow-md hover:shadow-lg transition-all"
+                  data-testid={`button-express-interest-${request.id}`}
+                >
+                  <ThumbsUp className="w-5 h-5 mr-2" />
+                  <span>{isPendingInterest ? "Envoi..." : "Intéressé"}</span>
+                </Button>
               </>
             )
           ) : (
             /* Old offer-based workflow (backward compatibility) */
             <>
+              {onDecline && (
+                <Button 
+                  onClick={() => onDecline(request.id)} 
+                  variant="outline"
+                  className="flex-1 h-12"
+                  data-testid={`button-decline-${request.id}`}
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Décliner
+                </Button>
+              )}
               <Button 
                 onClick={handleOfferClick} 
-                className="w-full h-14 text-lg font-bold"
+                className="flex-1 h-12"
                 variant={!isUserValidated ? "secondary" : "default"}
                 data-testid={`button-make-offer-${request.id}`}
               >
                 Faire une offre
               </Button>
-              {onDecline && (
-                <Button 
-                  onClick={() => onDecline(request.id)} 
-                  variant="ghost"
-                  className="w-full h-10 text-sm text-muted-foreground"
-                  data-testid={`button-decline-${request.id}`}
-                >
-                  <X className="w-4 h-4 mr-1" />
-                  Décliner
-                </Button>
-              )}
             </>
           )}
         </CardFooter>
