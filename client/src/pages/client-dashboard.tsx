@@ -891,8 +891,8 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
             </DialogDescription>
           </DialogHeader>
 
-          {/* View Toggle - Only for qualified workflow with multiple transporters */}
-          {isQualifiedWorkflow && interestedTransporters.length > 1 && (
+          {/* View Toggle - For qualified workflow */}
+          {isQualifiedWorkflow && interestedTransporters.length > 0 && (
             <div className="flex items-center justify-between gap-4 pb-3 border-b">
               <div className="text-sm text-muted-foreground">
                 {interestedTransporters.length} transporteur{interestedTransporters.length > 1 ? 's' : ''} disponible{interestedTransporters.length > 1 ? 's' : ''}
