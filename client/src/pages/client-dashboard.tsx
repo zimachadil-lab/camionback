@@ -920,8 +920,22 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
               // New workflow: Display interested transporters
               interestedTransporters.length > 0 ? (
                 <div className="space-y-3">
-                  {interestedTransporters.map((transporter: any) => (
-                    <Card key={transporter.id} className="overflow-hidden hover-elevate">
+                  {interestedTransporters.map((transporter: any, index: number) => {
+                    // Array of vibrant border colors
+                    const borderColors = [
+                      'border-[#17cfcf] border-2',  // Cyan
+                      'border-purple-500 border-2',  // Purple
+                      'border-orange-500 border-2',  // Orange
+                      'border-pink-500 border-2',    // Pink
+                      'border-green-500 border-2',   // Green
+                      'border-blue-500 border-2',    // Blue
+                      'border-yellow-500 border-2',  // Yellow
+                      'border-red-500 border-2',     // Red
+                    ];
+                    const borderColor = borderColors[index % borderColors.length];
+                    
+                    return (
+                    <Card key={transporter.id} className={`overflow-hidden hover-elevate ${borderColor}`}>
                       <div className="flex gap-3 p-3">
                         {/* Left column: Photo + Action button */}
                         <div className="flex flex-col gap-2 flex-shrink-0">
@@ -1004,7 +1018,8 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                         </div>
                       </div>
                     </Card>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-8">
