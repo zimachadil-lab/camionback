@@ -1428,6 +1428,81 @@ export default function CoordinatorDashboard() {
           <Badge className="bg-slate-800/80 text-white hover:bg-slate-800 border-0 font-mono text-xs">
             {request.referenceId}
           </Badge>
+          
+          {/* Menu Actions Secondaires - En haut à droite */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7 shrink-0 bg-white/20 hover:bg-white/30"
+                data-testid={`button-more-actions-${request.id}`}
+              >
+                <MoreVertical className="h-4 w-4 text-white" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() => handleViewDetails(request)}
+                data-testid={`menu-view-details-${request.id}`}
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                Détails
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleOpenEdit(request)}
+                data-testid={`menu-edit-request-${request.id}`}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Modifier
+              </DropdownMenuItem>
+              {request.photos && request.photos.length > 0 && (
+                <DropdownMenuItem
+                  onClick={() => handleViewPhotos(request.photos)}
+                  data-testid={`menu-view-photos-${request.id}`}
+                >
+                  <ImageIcon className="h-4 w-4 mr-2" />
+                  Photos ({request.photos.length})
+                </DropdownMenuItem>
+              )}
+              {request.shareToken && (
+                <>
+                  <DropdownMenuItem
+                    onClick={() => handleCopyShareLink(request.shareToken)}
+                    data-testid={`menu-copy-link-${request.id}`}
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copier le lien
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleShareViaWhatsApp(request.shareToken, request.referenceId)}
+                    data-testid={`menu-share-whatsapp-${request.id}`}
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    Partager via WhatsApp
+                  </DropdownMenuItem>
+                </>
+              )}
+              {request.client && request.transporter && (
+                <DropdownMenuItem
+                  onClick={() => handleOpenChat(request.client, request.transporter, request.id)}
+                  data-testid={`menu-open-chat-${request.id}`}
+                >
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Messagerie
+                </DropdownMenuItem>
+              )}
+              {request.transporter && (
+                <DropdownMenuItem
+                  onClick={() => handleWhatsAppContact(request.transporter.phoneNumber, request.referenceId)}
+                  data-testid={`menu-whatsapp-transporter-${request.id}`}
+                >
+                  <MessageCircle className="h-4 w-4 mr-2 text-green-500" />
+                  WhatsApp Transporteur
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -1621,80 +1696,6 @@ export default function CoordinatorDashboard() {
         </div>
 
         <div className="flex flex-wrap gap-2 pt-2 border-t">
-          {/* Menu Actions Secondaires */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                size="sm"
-                variant="outline"
-                data-testid={`button-more-actions-${request.id}`}
-              >
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuItem
-                onClick={() => handleViewDetails(request)}
-                data-testid={`menu-view-details-${request.id}`}
-              >
-                <Eye className="h-4 w-4 mr-2" />
-                Détails
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => handleOpenEdit(request)}
-                data-testid={`menu-edit-request-${request.id}`}
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Modifier
-              </DropdownMenuItem>
-              {request.photos && request.photos.length > 0 && (
-                <DropdownMenuItem
-                  onClick={() => handleViewPhotos(request.photos)}
-                  data-testid={`menu-view-photos-${request.id}`}
-                >
-                  <ImageIcon className="h-4 w-4 mr-2" />
-                  Photos ({request.photos.length})
-                </DropdownMenuItem>
-              )}
-              {request.shareToken && (
-                <>
-                  <DropdownMenuItem
-                    onClick={() => handleCopyShareLink(request.shareToken)}
-                    data-testid={`menu-copy-link-${request.id}`}
-                  >
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copier le lien
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleShareViaWhatsApp(request.shareToken, request.referenceId)}
-                    data-testid={`menu-share-whatsapp-${request.id}`}
-                  >
-                    <Send className="h-4 w-4 mr-2" />
-                    Partager via WhatsApp
-                  </DropdownMenuItem>
-                </>
-              )}
-              {request.client && request.transporter && (
-                <DropdownMenuItem
-                  onClick={() => handleOpenChat(request.client, request.transporter, request.id)}
-                  data-testid={`menu-open-chat-${request.id}`}
-                >
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Messagerie
-                </DropdownMenuItem>
-              )}
-              {request.transporter && (
-                <DropdownMenuItem
-                  onClick={() => handleWhatsAppContact(request.transporter.phoneNumber, request.referenceId)}
-                  data-testid={`menu-whatsapp-transporter-${request.id}`}
-                >
-                  <MessageCircle className="h-4 w-4 mr-2 text-green-500" />
-                  WhatsApp Transporteur
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
           {/* Actions Principales Visibles */}
           
           {/* Qualify button - Action principale */}
