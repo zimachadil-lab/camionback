@@ -232,7 +232,7 @@ export function RequestCard({
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <FileText className="w-4 h-4" />
-              <span className="font-medium">Services</span>
+              <span className="font-medium">Descriptif</span>
             </div>
             <p className={`text-sm pl-6 ${showFullDescription ? '' : 'line-clamp-2'}`}>
               {request.description}
