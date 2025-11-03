@@ -1023,37 +1023,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <KpiCard
-            title="Clients actifs"
-            value={adminStats?.activeClients || 0}
-            icon={Users}
-            trend={adminStats?.activeClientsTrend !== undefined ? formatTrend(adminStats.activeClientsTrend) : "..."}
-            trendUp={adminStats?.activeClientsTrend ? adminStats.activeClientsTrend > 0 : undefined}
-          />
-          <KpiCard
-            title="Transporteurs actifs"
-            value={adminStats?.activeDrivers || 0}
-            icon={Users}
-            trend={adminStats?.activeDriversTrend !== undefined ? formatTrend(adminStats.activeDriversTrend) : "..."}
-            trendUp={adminStats?.activeDriversTrend ? adminStats.activeDriversTrend > 0 : undefined}
-          />
-          <KpiCard
-            title="Demandes totales"
-            value={adminStats?.totalRequests || 0}
-            icon={Package}
-            trend=""
-            trendUp={undefined}
-          />
-          <KpiCard
-            title="Commissions totales"
-            value={`${adminStats?.totalCommissions?.toLocaleString("fr-MA") || 0} MAD`}
-            icon={DollarSign}
-            trend={adminStats?.commissionsTrend !== undefined ? formatTrend(adminStats.commissionsTrend) : "..."}
-            trendUp={adminStats?.commissionsTrend ? adminStats.commissionsTrend > 0 : undefined}
-          />
-        </div>
-
         {/* Navigation par cartes - 3 sections */}
         <div className="space-y-8">
           {/* Section 1: OPÉRATIONS */}
@@ -2827,8 +2796,42 @@ export default function AdminDashboard() {
           )}
 
           {activeSection === 'stats' && (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <Card>
+            <div className="space-y-6">
+              {/* KPI Principaux */}
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <KpiCard
+                  title="Clients actifs"
+                  value={adminStats?.activeClients || 0}
+                  icon={Users}
+                  trend={adminStats?.activeClientsTrend !== undefined ? formatTrend(adminStats.activeClientsTrend) : "..."}
+                  trendUp={adminStats?.activeClientsTrend ? adminStats.activeClientsTrend > 0 : undefined}
+                />
+                <KpiCard
+                  title="Transporteurs actifs"
+                  value={adminStats?.activeDrivers || 0}
+                  icon={Users}
+                  trend={adminStats?.activeDriversTrend !== undefined ? formatTrend(adminStats.activeDriversTrend) : "..."}
+                  trendUp={adminStats?.activeDriversTrend ? adminStats.activeDriversTrend > 0 : undefined}
+                />
+                <KpiCard
+                  title="Demandes totales"
+                  value={adminStats?.totalRequests || 0}
+                  icon={Package}
+                  trend=""
+                  trendUp={undefined}
+                />
+                <KpiCard
+                  title="Commissions totales"
+                  value={`${adminStats?.totalCommissions?.toLocaleString("fr-MA") || 0} MAD`}
+                  icon={DollarSign}
+                  trend={adminStats?.commissionsTrend !== undefined ? formatTrend(adminStats.commissionsTrend) : "..."}
+                  trendUp={adminStats?.commissionsTrend ? adminStats.commissionsTrend > 0 : undefined}
+                />
+              </div>
+
+              {/* Statistiques détaillées */}
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <Card>
                 <CardHeader>
                   <CardTitle>Taux de conversion</CardTitle>
                 </CardHeader>
@@ -2948,6 +2951,7 @@ export default function AdminDashboard() {
                   </Button>
                 </CardContent>
               </Card>
+              </div>
             </div>
           )}
 
