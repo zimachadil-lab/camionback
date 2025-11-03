@@ -100,6 +100,15 @@ export const offers = pgTable("offers", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Transporter Interests - Track transporters who expressed interest with their availability dates
+export const transporterInterests = pgTable("transporter_interests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  requestId: varchar("request_id").notNull().references(() => transportRequests.id),
+  transporterId: varchar("transporter_id").notNull().references(() => users.id),
+  availabilityDate: timestamp("availability_date").notNull(), // Date when transporter is available
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Chat messages
 export const chatMessages = pgTable("chat_messages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -270,6 +279,9 @@ export const insertOfferSchema = createInsertSchema(offers).omit({ id: true, cre
   pickupDate: z.coerce.date(), // Accept ISO string and coerce to Date
   loadType: z.enum(["return", "shared"]), // Only allow 'return' or 'shared'
 });
+export const insertTransporterInterestSchema = createInsertSchema(transporterInterests).omit({ id: true, createdAt: true }).extend({
+  availabilityDate: z.coerce.date(), // Accept ISO string and coerce to Date
+});
 export const insertChatMessageSchema = createInsertSchema(chatMessages)
   .omit({ id: true, createdAt: true, filteredMessage: true, isRead: true })
   .extend({
@@ -358,6 +370,8 @@ export type InsertTransportRequest = z.infer<typeof insertTransportRequestSchema
 export type TransportRequest = typeof transportRequests.$inferSelect;
 export type InsertOffer = z.infer<typeof insertOfferSchema>;
 export type Offer = typeof offers.$inferSelect;
+export type InsertTransporterInterest = z.infer<typeof insertTransporterInterestSchema>;
+export type TransporterInterest = typeof transporterInterests.$inferSelect;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type InsertAdminSettings = z.infer<typeof insertAdminSettingsSchema>;
@@ -510,6 +524,7 @@ export const qualifyRequestSchema = z.object({
 export const expressInterestSchema = z.object({
   requestId: z.string(),
   interested: z.boolean(), // true = "Intéressé", false = "Pas disponible"
+  availabilityDate: z.coerce.date().optional(), // Date when transporter is available (optional for backward compatibility)
 });
 
 export type UpdateCoordinationStatus = z.infer<typeof updateCoordinationStatusSchema>;

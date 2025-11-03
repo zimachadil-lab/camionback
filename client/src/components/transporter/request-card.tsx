@@ -7,6 +7,7 @@ import { MapPin, Package, Calendar, DollarSign, Image as ImageIcon, AlertCircle,
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { PhotoGalleryDialog } from "./photo-gallery-dialog";
+import { DatePickerDialog } from "./date-picker-dialog";
 
 // Configuration des catégories avec icônes et couleurs
 const getCategoryConfig = (goodsType: string): { icon: LucideIcon; color: string; bgColor: string; borderColor: string } => {
@@ -117,7 +118,7 @@ interface RequestCardProps {
   onTrackView?: () => void;
   // New props for interest-based workflow
   isInterested?: boolean;
-  onExpressInterest?: (requestId: string) => void;
+  onExpressInterest?: (requestId: string, availabilityDate?: Date) => void;
   onWithdrawInterest?: (requestId: string) => void;
   isPendingInterest?: boolean;
 }
@@ -135,6 +136,7 @@ export function RequestCard({
   isPendingInterest = false,
 }: RequestCardProps) {
   const [photoGalleryOpen, setPhotoGalleryOpen] = useState(false);
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [showValidationWarning, setShowValidationWarning] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
   const hasTrackedView = useRef(false);
@@ -160,9 +162,16 @@ export function RequestCard({
   const handleExpressInterest = () => {
     if (!isUserValidated) {
       setShowValidationWarning(true);
-    } else if (onExpressInterest) {
-      onExpressInterest(request.id);
+    } else {
+      setDatePickerOpen(true);
     }
+  };
+
+  const handleDateConfirm = (date: Date) => {
+    if (onExpressInterest) {
+      onExpressInterest(request.id, date);
+    }
+    setDatePickerOpen(false);
   };
 
   const handleWithdrawInterest = () => {
@@ -433,6 +442,14 @@ export function RequestCard({
       onClose={() => setPhotoGalleryOpen(false)}
       photos={request.photos || []}
       referenceId={request.referenceId}
+    />
+
+    <DatePickerDialog
+      open={datePickerOpen}
+      onOpenChange={setDatePickerOpen}
+      onConfirm={handleDateConfirm}
+      requestDate={dateTime}
+      isPending={isPendingInterest}
     />
     </>
   );

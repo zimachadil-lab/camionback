@@ -3,6 +3,7 @@ import {
   type OtpCode, type InsertOtpCode,
   type TransportRequest, type InsertTransportRequest,
   type Offer, type InsertOffer,
+  type TransporterInterest, type InsertTransporterInterest,
   type ChatMessage, type InsertChatMessage,
   type AdminSettings, type InsertAdminSettings,
   type Notification, type InsertNotification,
@@ -21,7 +22,7 @@ import {
 import { randomUUID } from "crypto";
 import { db } from './db.js';
 import { 
-  users, otpCodes, transportRequests, offers, chatMessages,
+  users, otpCodes, transportRequests, offers, transporterInterests, chatMessages,
   adminSettings, notifications, ratings, emptyReturns, contracts, reports, cities, smsHistory,
   clientTransporterContacts, stories, coordinatorLogs, transporterReferences, coordinationStatuses
 } from '@shared/schema';
@@ -158,7 +159,7 @@ export interface IStorage {
   publishForMatching(requestId: string, coordinatorId: string): Promise<TransportRequest | undefined>;
   getMatchingRequests(filters?: { assignedToId?: string; searchQuery?: string }): Promise<any[]>;
   getPublishedRequestsForTransporter(): Promise<any[]>;
-  expressInterest(requestId: string, transporterId: string): Promise<TransportRequest | undefined>;
+  expressInterest(requestId: string, transporterId: string, availabilityDate?: Date): Promise<TransportRequest | undefined>;
   withdrawInterest(requestId: string, transporterId: string): Promise<TransportRequest | undefined>;
   getInterestedTransportersForRequest(requestId: string): Promise<User[]>;
   archiveRequestWithReason(requestId: string, reason: string, coordinatorId: string): Promise<TransportRequest | undefined>;
@@ -1238,7 +1239,7 @@ export class MemStorage implements IStorage {
   async getPublishedRequestsForTransporter(): Promise<any[]> {
     return [];
   }
-  async expressInterest(requestId: string, transporterId: string): Promise<TransportRequest | undefined> {
+  async expressInterest(requestId: string, transporterId: string, availabilityDate?: Date): Promise<TransportRequest | undefined> {
     return undefined;
   }
   async withdrawInterest(requestId: string, transporterId: string): Promise<TransportRequest | undefined> {
@@ -3246,31 +3247,62 @@ export class DbStorage implements IStorage {
     return enrichedRequests;
   }
 
-  async expressInterest(requestId: string, transporterId: string): Promise<TransportRequest | undefined> {
-    // Atomic operation: only add if not already present
-    // COALESCE handles NULL case (legacy data), NOT ANY ensures idempotency
-    const result = await db.update(transportRequests)
+  async expressInterest(requestId: string, transporterId: string, availabilityDate?: Date): Promise<TransportRequest | undefined> {
+    // Get request to check if it exists and get its date if no availability date provided
+    const request = await db.select()
+      .from(transportRequests)
+      .where(eq(transportRequests.id, requestId))
+      .limit(1);
+    
+    if (!request[0]) {
+      return undefined; // Request doesn't exist
+    }
+    
+    // Use provided date or default to request date
+    const effectiveDate = availabilityDate || request[0].dateTime;
+    
+    // Check if interest already exists
+    const existingInterest = await db.select()
+      .from(transporterInterests)
+      .where(
+        and(
+          eq(transporterInterests.requestId, requestId),
+          eq(transporterInterests.transporterId, transporterId)
+        )
+      )
+      .limit(1);
+    
+    if (existingInterest.length > 0) {
+      // Update availability date if different
+      if (availabilityDate) {
+        await db.update(transporterInterests)
+          .set({ availabilityDate: effectiveDate })
+          .where(eq(transporterInterests.id, existingInterest[0].id));
+      }
+      return request[0]; // Return current state
+    }
+    
+    // Create new interest record
+    await db.insert(transporterInterests).values({
+      requestId,
+      transporterId,
+      availabilityDate: effectiveDate,
+    });
+    
+    // Also update array for backward compatibility
+    await db.update(transportRequests)
       .set({
         transporterInterests: sql`array_append(COALESCE(${transportRequests.transporterInterests}, ARRAY[]::TEXT[]), ${transporterId})`,
       })
-      .where(
-        and(
-          eq(transportRequests.id, requestId),
-          sql`NOT (${transporterId} = ANY(COALESCE(${transportRequests.transporterInterests}, ARRAY[]::TEXT[])))`
-        )
-      )
-      .returning();
+      .where(eq(transportRequests.id, requestId));
     
-    // If no rows updated, either request doesn't exist OR transporter was already interested
-    if (result.length === 0) {
-      const current = await db.select()
-        .from(transportRequests)
-        .where(eq(transportRequests.id, requestId))
-        .limit(1);
-      return current[0]; // undefined if request doesn't exist, current state otherwise
-    }
+    // Return updated request
+    const updated = await db.select()
+      .from(transportRequests)
+      .where(eq(transportRequests.id, requestId))
+      .limit(1);
     
-    return result[0];
+    return updated[0];
   }
 
   async withdrawInterest(requestId: string, transporterId: string): Promise<TransportRequest | undefined> {

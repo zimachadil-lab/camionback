@@ -1,0 +1,72 @@
+Nous devons améliorer l’interaction « Intéressé » côté transporteurs 👇👇
+
+🎯 Objectif
+
+Lorsqu’un transporteur clique sur « Intéressé », il doit pouvoir :
+✅ indiquer pour quelle date(s) il est disponible
+✅ confirmer son intérêt uniquement après avoir choisi une date
+
+📌 Aujourd’hui c’est bloquant car le transporteur ne peut pas proposer une autre date que celle du client → Cela réduit fortement les matchings possibles 🚫
+
+✅ Fonctionnalité à développer
+
+📌 Lors du clic sur “Intéressé” :
+→ Ouvrir une popup affichant un calendrier
+→ Le transporteur doit choisir une date de disponibilité
+→ Bouton CTA : Confirmer mon intérêt
+
+✅ Enregistrer cette date dans la base comme :
+availabilityDate dans le modèle d’"Offer/Interest"
+
+🖥️ Affichages nécessaires
+
+📌 Transporteur – Tableau de bord / Mes intérêts
+
+Afficher : « 📅 Date proposée : 25 février 2025 »
+
+S’il a proposé plus tard → badge couleur (Orange)
+
+📌 Client – Carte des transporteurs intéressés
+
+Afficher pour chaque transporteur :
+« 📅 Date proposée par le transporteur : XX/XX/2025 »
+
+Si différente de celle du client → avertissement visuel (⚠️ à confirmer)
+
+📌 Coordinateur – Vue des intéressés pour une commande
+
+Afficher la liste triée par date la plus proche ✅
+
+Option complémentaire : “📞 Appeler” ou “💬 WhatsApp”
+
+📌 Une fois une offre validée
+→ Cette information doit apparaître sur la commande à traiter pour :
+✅ le transporteur choisi
+✅ le client
+✅ le coordinateur
+(juste sous la date demandée par le client)
+
+🧠 Logique métier
+
+Si le transporteur choisit la même date que le client → badge vert
+
+Si différente → badge orange « Proposée »
+
+Le coordinateur peut aider à ajuster la date avec le client en DM
+
+🧪 Points à vérifier
+
+Notifications push adaptées :
+
+Client : « Un nouveau transporteur est intéressé (date disponible : XX/XX) »
+
+Coordinateur : idem
+
+Historique mis à jour
+
+📌 Résultat attendu
+
+✅ Plus de transporteurs qui postulent (flexibilité)
+✅ Le client voit facilement qui peut réellement le servir
+✅ Le coordinateur est mieux équipé pour accélérer la conclusion
+✅ UX beaucoup plus professionnelle 🚀

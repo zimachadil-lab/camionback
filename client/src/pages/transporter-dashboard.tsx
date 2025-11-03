@@ -314,10 +314,11 @@ export default function TransporterDashboard() {
   });
 
   const expressInterestMutation = useMutation({
-    mutationFn: async (requestId: string) => {
+    mutationFn: async ({ requestId, availabilityDate }: { requestId: string; availabilityDate?: Date }) => {
       return await apiRequest("POST", "/api/transporter/express-interest", { 
         requestId,
-        interested: true 
+        interested: true,
+        availabilityDate: availabilityDate?.toISOString()
       });
     },
     onSuccess: () => {
@@ -620,7 +621,7 @@ export default function TransporterDashboard() {
                       onTrackView={() => trackViewMutation.mutate(request.id)}
                       // New interest-based props
                       isInterested={isInterested}
-                      onExpressInterest={(id) => expressInterestMutation.mutate(id)}
+                      onExpressInterest={(id, date) => expressInterestMutation.mutate({ requestId: id, availabilityDate: date })}
                       onWithdrawInterest={(id) => withdrawInterestMutation.mutate(id)}
                       isPendingInterest={isPending}
                     />
@@ -653,7 +654,7 @@ export default function TransporterDashboard() {
                         onTrackView={() => trackViewMutation.mutate(request.id)}
                         // Interest-based props - already interested, can withdraw
                         isInterested={true}
-                        onExpressInterest={(id) => expressInterestMutation.mutate(id)}
+                        onExpressInterest={(id, date) => expressInterestMutation.mutate({ requestId: id, availabilityDate: date })}
                         onWithdrawInterest={(id) => withdrawInterestMutation.mutate(id)}
                         isPendingInterest={isPending}
                       />

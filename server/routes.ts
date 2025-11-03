@@ -4885,12 +4885,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: validation.error.errors[0].message });
       }
 
-      const { requestId, interested } = validation.data;
+      const { requestId, interested, availabilityDate } = validation.data;
       const transporterId = req.user!.id;
 
       let updated;
       if (interested) {
-        updated = await storage.expressInterest(requestId, transporterId);
+        updated = await storage.expressInterest(requestId, transporterId, availabilityDate);
       } else {
         updated = await storage.withdrawInterest(requestId, transporterId);
       }
