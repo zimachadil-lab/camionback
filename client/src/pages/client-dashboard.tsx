@@ -667,17 +667,34 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
 
           {/* Bouton Offres reçues / Transporteurs intéressés */}
           {!isAccepted && (
-            <Button
-              variant="secondary"
-              className="w-full gap-2 bg-[#1d3c57] hover:bg-[#1d3c57]/80"
-              onClick={() => setShowOffersDialog(true)}
-              data-testid={`button-view-offers-${request.id}`}
-            >
-              <Users className="w-4 h-4" />
-              {isQualifiedWorkflow 
-                ? `Transporteurs intéressés (${displayCount})` 
-                : `Offres reçues (${displayCount})`}
-            </Button>
+            <div className="relative">
+              <Button
+                variant="outline"
+                className="w-full gap-3 h-14 border-2 border-blue-500 bg-gradient-to-r from-blue-500/10 to-blue-600/10 hover:from-blue-500/20 hover:to-blue-600/20 text-foreground font-semibold shadow-md hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300"
+                onClick={() => setShowOffersDialog(true)}
+                data-testid={`button-view-offers-${request.id}`}
+              >
+                <div className="flex items-center gap-3 w-full">
+                  <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+                    <Users className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-sm font-semibold leading-tight">
+                      {isQualifiedWorkflow ? "Transporteurs intéressés" : "Offres reçues"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Cliquez pour voir les {displayCount} {displayCount > 1 ? 'propositions' : 'proposition'}
+                    </p>
+                  </div>
+                  <Badge 
+                    variant="default" 
+                    className="text-lg font-bold px-3 py-1 bg-blue-500 hover:bg-blue-500"
+                  >
+                    {displayCount}
+                  </Badge>
+                </div>
+              </Button>
+            </div>
           )}
 
           {/* Nouveaux boutons: CamioMatch et Coordinateur */}
