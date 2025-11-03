@@ -250,7 +250,7 @@ export function RequestCard({
         )}
 
         {/* Informations complémentaires */}
-        <div className="flex flex-wrap gap-2 pt-2 border-t">
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t">
           {request.estimatedWeight && (
             <Badge variant="outline" className="text-xs">
               <Package className="w-3 h-3 mr-1" />
@@ -258,24 +258,78 @@ export function RequestCard({
             </Badge>
           )}
           
-          {request.handlingRequired !== undefined && request.handlingRequired !== null && (
-            <Badge variant="outline" className="text-xs">
-              Manutention : {request.handlingRequired ? 'Oui' : 'Non'}
-            </Badge>
-          )}
-          
           {request.photos && request.photos.length > 0 && (
-            <Badge 
-              variant="outline" 
-              className="text-xs cursor-pointer hover-elevate"
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1.5 hover-elevate"
               onClick={handleViewPhotos}
               data-testid={`button-view-photos-${request.id}`}
             >
-              <ImageIcon className="w-3 h-3 mr-1" />
-              {request.photos.length} photo{request.photos.length > 1 ? 's' : ''}
-            </Badge>
+              <ImageIcon className="w-4 h-4" />
+              <span>{request.photos.length} photo{request.photos.length > 1 ? 's' : ''}</span>
+            </Button>
           )}
         </div>
+
+        {/* Manutention détaillée */}
+        {request.handlingRequired && (
+          <div className="space-y-3 pt-3 border-t">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <span>🏋️</span>
+              <span>Manutention : Oui</span>
+            </div>
+            <div className="grid grid-cols-2 gap-4 pl-6">
+              {/* Départ */}
+              <div className="space-y-1">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span>🏢</span>
+                  <span className="font-medium">Départ</span>
+                </div>
+                <div className="text-sm">
+                  {request.departureFloor !== undefined && request.departureFloor !== null ? (
+                    <>
+                      <div>{request.departureFloor === 0 ? 'RDC' : `${request.departureFloor}ᵉ étage`}</div>
+                      <div className="text-xs text-muted-foreground">
+                        Ascenseur {request.departureElevator ? '✅' : '❌'}
+                      </div>
+                    </>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">Non spécifié</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Arrivée */}
+              <div className="space-y-1">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span>🏠</span>
+                  <span className="font-medium">Arrivée</span>
+                </div>
+                <div className="text-sm">
+                  {request.arrivalFloor !== undefined && request.arrivalFloor !== null ? (
+                    <>
+                      <div>{request.arrivalFloor === 0 ? 'RDC' : `${request.arrivalFloor}ᵉ étage`}</div>
+                      <div className="text-xs text-muted-foreground">
+                        Ascenseur {request.arrivalElevator ? '✅' : '❌'}
+                      </div>
+                    </>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">Non spécifié</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {request.handlingRequired === false && (
+          <div className="pt-2 border-t">
+            <Badge variant="outline" className="text-xs">
+              Manutention : Non
+            </Badge>
+          </div>
+        )}
 
         {/* Prix - Zone mise en avant compacte et moderne */}
         {request.transporterPrice && (
