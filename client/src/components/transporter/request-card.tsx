@@ -332,28 +332,24 @@ export function RequestCard({
           </div>
         )}
 
-        {/* Prix - Zone mise en avant compacte et moderne */}
+        {/* Prix - Zone compacte */}
         {request.transporterPrice && (
-          <div className="flex items-center justify-between px-4 py-2.5 rounded-lg bg-gradient-to-r from-[#00ff88]/10 via-[#00ff88]/5 to-transparent border-l-4 border-[#00ff88]">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-[#00ff88]/20 flex items-center justify-center">
-                <DollarSign className="w-4 h-4 text-[#00ff88]" />
-              </div>
-              <span className="text-sm font-medium text-muted-foreground">Montant Fixé</span>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-[#00ff88]/10 via-[#00ff88]/5 to-transparent border-l-4 border-[#00ff88]">
+            <div className="w-7 h-7 rounded-full bg-[#00ff88]/20 flex items-center justify-center flex-shrink-0">
+              <DollarSign className="w-4 h-4 text-[#00ff88]" />
             </div>
-            <span className="text-xl font-bold text-[#00ff88]">{request.transporterPrice.toLocaleString()} MAD</span>
+            <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Montant Fixé</span>
+            <span className="text-lg font-bold text-[#00ff88] ml-auto">{Math.floor(request.transporterPrice).toLocaleString()} Dhs</span>
           </div>
         )}
 
         {request.budget && !request.transporterPrice && (
-          <div className="flex items-center justify-between px-4 py-2.5 rounded-lg bg-gradient-to-r from-[#00ff88]/10 via-[#00ff88]/5 to-transparent border-l-4 border-[#00ff88]">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-[#00ff88]/20 flex items-center justify-center">
-                <DollarSign className="w-4 h-4 text-[#00ff88]" />
-              </div>
-              <span className="text-sm font-medium text-muted-foreground">Budget</span>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-[#00ff88]/10 via-[#00ff88]/5 to-transparent border-l-4 border-[#00ff88]">
+            <div className="w-7 h-7 rounded-full bg-[#00ff88]/20 flex items-center justify-center flex-shrink-0">
+              <DollarSign className="w-4 h-4 text-[#00ff88]" />
             </div>
-            <span className="text-xl font-bold text-[#00ff88]">{request.budget}</span>
+            <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Budget</span>
+            <span className="text-lg font-bold text-[#00ff88] ml-auto">{request.budget.replace('.00', '').replace('MAD', 'Dhs')}</span>
           </div>
         )}
 
