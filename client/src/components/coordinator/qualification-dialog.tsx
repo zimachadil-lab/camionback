@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { ARCHIVE_REASONS_OPTIONS, ARCHIVE_REASONS_LABELS } from "@shared/schema";
-import { CheckCircle, Send, UserPlus, Archive, DollarSign, Calculator, TrendingUp, Truck } from "lucide-react";
+import { CheckCircle, Send, UserPlus, Archive, DollarSign, Calculator, TrendingUp, Truck, Loader2 } from "lucide-react";
 import { ManualAssignmentDialog } from "./manual-assignment-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -369,8 +369,17 @@ export function QualificationDialog({ open, onOpenChange, request, onSuccess }: 
                   className="w-full sm:w-auto"
                   data-testid="button-confirm-archive"
                 >
-                  <Archive className="h-4 w-4 mr-2" />
-                  Confirmer archivage
+                  {archiveMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Archivage en cours...
+                    </>
+                  ) : (
+                    <>
+                      <Archive className="h-4 w-4 mr-2" />
+                      Confirmer archivage
+                    </>
+                  )}
                 </Button>
               </>
             )}
@@ -385,8 +394,17 @@ export function QualificationDialog({ open, onOpenChange, request, onSuccess }: 
                   className="w-full sm:w-auto"
                   data-testid="button-manual-assignment"
                 >
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Assigner manuellement
+                  {qualifyForManualAssignmentMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Qualification en cours...
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Assigner manuellement
+                    </>
+                  )}
                 </Button>
                 <Button
                   onClick={() => publishMutation.mutate()}
@@ -394,8 +412,17 @@ export function QualificationDialog({ open, onOpenChange, request, onSuccess }: 
                   className="w-full sm:w-auto bg-[#5BC0EB] hover:bg-[#5BC0EB]/90"
                   data-testid="button-publish-matching"
                 >
-                  <Send className="h-4 w-4 mr-2" />
-                  Publier pour matching
+                  {publishMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Publication en cours...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4 mr-2" />
+                      Publier pour matching
+                    </>
+                  )}
                 </Button>
               </>
             )}
