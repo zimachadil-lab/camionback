@@ -1411,6 +1411,17 @@ export default function CoordinatorDashboard() {
           </span>
         </div>
         <div className="flex items-center gap-2">
+          {request.photos && request.photos.length > 0 && (
+            <Button
+              size="sm"
+              className="h-6 text-xs gap-1.5 bg-white/20 hover:bg-white/30 text-white border border-white/40 hover:border-white/60 transition-all font-medium"
+              onClick={() => handleViewPhotos(request.photos)}
+              data-testid={`button-view-photos-header-${request.id}`}
+            >
+              <ImageIcon className="w-3.5 h-3.5" />
+              <span>{request.photos.length}</span>
+            </Button>
+          )}
           {request.client && (
             <Button
               size="icon"
