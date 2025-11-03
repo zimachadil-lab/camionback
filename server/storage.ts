@@ -3368,6 +3368,7 @@ export class DbStorage implements IStorage {
         assignedManually: true,
         assignedAt: new Date(),
         status: 'accepted',
+        paymentStatus: 'not_required', // Reset payment status so request appears in transporter "à traiter" view
         coordinationStatus: 'assigned',
         coordinationUpdatedAt: new Date(),
         coordinationUpdatedBy: coordinatorId,

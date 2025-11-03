@@ -542,12 +542,12 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                 onClick={() => {
                   // Handle manual assignment
                   if (request.assignedTransporterId && request.transporter) {
-                    onChat(request.transporter.id, request.transporter.name, request.id);
+                    onChat(request.transporter.id, request.transporter.name || 'Transporteur', request.id);
                   } else {
                     // Handle accepted offer
                     const acceptedOffer = offersWithTransporters.find((o: any) => o.id === request.acceptedOfferId);
                     if (acceptedOffer) {
-                      onChat(acceptedOffer.transporterId, acceptedOffer.transporterName, request.id);
+                      onChat(acceptedOffer.transporterId, acceptedOffer.transporterName || 'Transporteur', request.id);
                     }
                   }
                 }}
@@ -1488,12 +1488,12 @@ export default function ClientDashboard() {
       
       toast({
         title: "Transporteur sélectionné !",
-        description: `Vous avez choisi ${data.transporter.name}. Vous pouvez maintenant le contacter.`,
+        description: `Vous avez choisi ${data.transporter?.name || 'le transporteur'}. Vous pouvez maintenant le contacter.`,
       });
 
       setContactInfo({
-        transporterPhone: data.transporter.phoneNumber,
-        transporterName: data.transporter.name,
+        transporterPhone: data.transporter?.phoneNumber || '',
+        transporterName: data.transporter?.name || 'Transporteur',
         commission: 0,
         total: data.request.clientTotal || 0
       });
