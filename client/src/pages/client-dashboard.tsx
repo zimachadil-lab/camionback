@@ -2050,9 +2050,11 @@ export default function ClientDashboard() {
                           return u.role === "transporteur";
                         })
                       : null;
+                    
+                    const categoryConfig = getCategoryConfig(request.goodsType);
 
                     return (
-                      <div key={request.id} className="p-4 rounded-lg border space-y-4">
+                      <div key={request.id} className={`p-4 rounded-lg border-2 ${categoryConfig.borderColor} space-y-4`}>
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -2129,8 +2131,11 @@ export default function ClientDashboard() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {completedRequests.map((request: any) => (
-                    <div key={request.id} className="p-4 rounded-lg border space-y-3">
+                  {completedRequests.map((request: any) => {
+                    const categoryConfig = getCategoryConfig(request.goodsType);
+                    
+                    return (
+                    <div key={request.id} className={`p-4 rounded-lg border-2 ${categoryConfig.borderColor} space-y-3`}>
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -2205,7 +2210,8 @@ export default function ClientDashboard() {
                         </div>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </TabsContent>
