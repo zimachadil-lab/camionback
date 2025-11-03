@@ -565,9 +565,14 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
           </div>
 
           {/* Statut logistique visible */}
-          <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-[#1abc9c]/10 to-[#16a085]/10 rounded-lg border border-[#1abc9c]/30">
-            <StatusIcon className="w-5 h-5 text-[#1abc9c] flex-shrink-0" />
-            <span className="text-sm font-medium text-foreground">
+          <div className="relative flex items-center gap-3 px-4 py-2.5 bg-gradient-to-r from-[#1abc9c]/20 via-[#16a085]/15 to-[#1abc9c]/20 rounded-lg border-2 border-[#1abc9c]/40 shadow-sm">
+            <div className="relative">
+              <div className="absolute inset-0 bg-[#1abc9c]/30 rounded-full animate-ping"></div>
+              <div className="relative w-8 h-8 rounded-full bg-[#1abc9c]/20 flex items-center justify-center border-2 border-[#1abc9c]/50">
+                <StatusIcon className="w-4 h-4 text-[#1abc9c] animate-pulse" />
+              </div>
+            </div>
+            <span className="text-sm font-semibold text-foreground">
               {clientStatus.text}
             </span>
           </div>
