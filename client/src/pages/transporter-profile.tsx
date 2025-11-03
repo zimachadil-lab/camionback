@@ -200,7 +200,7 @@ export default function TransporterProfile() {
   if (isLoading || !currentUser) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <LoadingTruck message="Chargement du profil..." size="lg" />
+        <LoadingTruck size="lg" />
       </div>
     );
   }

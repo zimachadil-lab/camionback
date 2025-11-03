@@ -40,7 +40,7 @@ export default function TransporterPayments() {
   if (authLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <LoadingTruck message="Chargement..." size="lg" />
+        <LoadingTruck size="lg" />
       </div>
     );
   }
@@ -48,7 +48,7 @@ export default function TransporterPayments() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <LoadingTruck message="Chargement de vos paiements..." size="lg" />
+        <LoadingTruck size="lg" />
       </div>
     );
   }

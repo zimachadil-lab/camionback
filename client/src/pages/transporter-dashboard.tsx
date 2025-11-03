@@ -557,7 +557,7 @@ export default function TransporterDashboard() {
   if (requestsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <LoadingTruck message="Chargement de votre tableau de bord..." size="lg" />
+        <LoadingTruck size="lg" />
       </div>
     );
   }

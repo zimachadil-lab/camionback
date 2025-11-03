@@ -2115,7 +2115,7 @@ export default function ClientDashboard() {
   if (authLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <LoadingTruck message="Vérification de votre session..." size="lg" />
+        <LoadingTruck size="lg" />
       </div>
     );
   }
@@ -2123,7 +2123,7 @@ export default function ClientDashboard() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <LoadingTruck message="Chargement de votre tableau de bord..." size="lg" />
+        <LoadingTruck size="lg" />
       </div>
     );
   }
