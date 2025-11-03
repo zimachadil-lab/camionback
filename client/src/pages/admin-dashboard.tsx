@@ -1031,11 +1031,34 @@ export default function AdminDashboard() {
                   <Button 
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      queryClient.invalidateQueries();
+                    onClick={async () => {
+                      // Invalider TOUTES les queries du dashboard admin
+                      await Promise.all([
+                        queryClient.invalidateQueries({ queryKey: ["/api/requests"] }),
+                        queryClient.invalidateQueries({ queryKey: ["/api/admin/pending-drivers"] }),
+                        queryClient.invalidateQueries({ queryKey: ["/api/admin/transporters"] }),
+                        queryClient.invalidateQueries({ queryKey: ["/api/contracts"] }),
+                        queryClient.invalidateQueries({ queryKey: ["/api/conversations"] }),
+                        queryClient.invalidateQueries({ queryKey: ["/api/offers"] }),
+                        queryClient.invalidateQueries({ queryKey: ["/api/empty-returns"] }),
+                        queryClient.invalidateQueries({ queryKey: ["/api/reports"] }),
+                        queryClient.invalidateQueries({ queryKey: ["/api/cities"] }),
+                        queryClient.invalidateQueries({ queryKey: ["/api/stories"] }),
+                        queryClient.invalidateQueries({ queryKey: ["/api/admin/coordinators"] }),
+                        queryClient.invalidateQueries({ queryKey: ["/api/admin/coordination-statuses"] }),
+                        queryClient.invalidateQueries({ queryKey: ["/api/admin/settings"] }),
+                        queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] }),
+                        queryClient.invalidateQueries({ queryKey: ["/api/clients"] }),
+                        queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/nouveau"] }),
+                        queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/en-action"] }),
+                        queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/prioritaires"] }),
+                        queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/archives"] }),
+                        queryClient.invalidateQueries({ queryKey: ["/api/coordinator/matching-requests"] }),
+                      ]);
+                      
                       toast({
                         title: "✅ Données actualisées",
-                        description: "Toutes les données ont été rafraîchies avec succès",
+                        description: "Toutes les données de tous les onglets ont été rafraîchies",
                       });
                     }}
                     data-testid="button-refresh-dashboard"
