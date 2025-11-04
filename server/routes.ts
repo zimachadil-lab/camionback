@@ -4877,6 +4877,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Republish archived request
+  app.post("/api/coordinator/requests/:requestId/republish", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
+    try {
+      const { requestId } = req.params;
+      if (!requestId) {
+        return res.status(400).json({ error: "requestId requis" });
+      }
+
+      const coordinatorId = req.user!.id;
+      const updated = await storage.republishRequest(requestId, coordinatorId);
+      
+      if (!updated) {
+        return res.status(404).json({ error: "Demande introuvable" });
+      }
+
+      // Notify client about republication
+      const client = await storage.getUser(updated.clientId);
+      
+      if (client) {
+        // In-app notification
+        await storage.createNotification({
+          userId: client.id,
+          type: "request_updated",
+          title: "Demande republiée",
+          message: `Votre demande ${updated.referenceId} a été republiée et sera traitée à nouveau par nos équipes`,
+          relatedId: updated.id,
+        });
+
+        // Push notification
+        try {
+          if (client.deviceToken) {
+            const { sendNotificationToUser, NotificationTemplates } = await import('./push-notifications');
+            const notification = NotificationTemplates.requestUpdated(updated.referenceId);
+            await sendNotificationToUser(client.id, notification, storage);
+            console.log(`📨 Notification push envoyée au client pour republication`);
+          }
+        } catch (pushError) {
+          console.error('❌ Erreur notification push republication:', pushError);
+        }
+      }
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Erreur republication demande:", error);
+      res.status(500).json({ error: "Erreur lors de la republication" });
+    }
+  });
+
   // Transporter expresses interest in a request
   app.post("/api/transporter/express-interest", requireAuth, requireRole(['transporteur']), async (req, res) => {
     try {

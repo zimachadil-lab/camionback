@@ -3438,6 +3438,23 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
+  async republishRequest(requestId: string, coordinatorId: string): Promise<TransportRequest | undefined> {
+    const result = await db.update(transportRequests)
+      .set({
+        coordinationStatus: 'qualification_pending',
+        coordinationReason: null,
+        status: 'pending',
+        archiveReason: null,
+        archiveComment: null,
+        coordinationUpdatedAt: new Date(),
+        coordinationUpdatedBy: coordinatorId,
+      })
+      .where(eq(transportRequests.id, requestId))
+      .returning();
+    
+    return result[0];
+  }
+
   // Coordinator manual assignment
   async searchTransporters(query: string): Promise<User[]> {
     const searchTerm = `%${query}%`;
