@@ -970,6 +970,8 @@ export default function CoordinatorDashboard() {
       // Invalider toutes les queries de coordination
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/qualification-pending"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/matching-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/available-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/active-requests"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/en-action"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/prioritaires"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/archives"] });
@@ -996,6 +998,8 @@ export default function CoordinatorDashboard() {
       // Invalider toutes les queries de coordination
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/qualification-pending"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/matching-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/available-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/active-requests"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/en-action"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/prioritaires"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/archives"] });
