@@ -5599,6 +5599,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Self-assign coordinator to a request
+  app.post("/api/coordinator/assign-to-me/:requestId", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
+    try {
+      const coordinatorId = req.user!.id;
+      const { requestId } = req.params;
+      
+      // Get request
+      const request = await storage.getTransportRequest(requestId);
+      if (!request) {
+        return res.status(404).json({ error: "Commande introuvable" });
+      }
+      
+      // Update assignedToId
+      await db.update(transportRequests)
+        .set({ assignedToId: coordinatorId })
+        .where(eq(transportRequests.id, requestId));
+      
+      // Create coordinator log
+      await storage.createCoordinatorLog({
+        coordinatorId,
+        action: "self_assignment",
+        targetType: "request",
+        targetId: requestId,
+        details: JSON.stringify({
+          referenceId: request.referenceId,
+          timestamp: new Date().toISOString(),
+        }),
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Erreur auto-assignation coordinateur:", error);
+      res.status(500).json({ error: "Erreur lors de l'auto-assignation" });
+    }
+  });
+
+  // Unassign coordinator from a request
+  app.delete("/api/coordinator/unassign-from-me/:requestId", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
+    try {
+      const coordinatorId = req.user!.id;
+      const { requestId } = req.params;
+      
+      // Get request
+      const request = await storage.getTransportRequest(requestId);
+      if (!request) {
+        return res.status(404).json({ error: "Commande introuvable" });
+      }
+      
+      // Check if current user is assigned
+      if (request.assignedToId !== coordinatorId) {
+        return res.status(403).json({ error: "Vous n'êtes pas assigné à cette commande" });
+      }
+      
+      // Remove assignment
+      await db.update(transportRequests)
+        .set({ assignedToId: null })
+        .where(eq(transportRequests.id, requestId));
+      
+      // Create coordinator log
+      await storage.createCoordinatorLog({
+        coordinatorId,
+        action: "self_unassignment",
+        targetType: "request",
+        targetId: requestId,
+        details: JSON.stringify({
+          referenceId: request.referenceId,
+          timestamp: new Date().toISOString(),
+        }),
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Erreur désassignation coordinateur:", error);
+      res.status(500).json({ error: "Erreur lors de la désassignation" });
+    }
+  });
+
   // ===== Coordinator Notifications & Messaging Routes =====
   
   // Get all notifications for coordinator (grouped by request)

@@ -961,6 +961,58 @@ export default function CoordinatorDashboard() {
     },
   });
 
+  // Self-assign coordinator mutation
+  const assignToMeMutation = useMutation({
+    mutationFn: async (requestId: string) => {
+      return apiRequest("POST", `/api/coordinator/assign-to-me/${requestId}`, {});
+    },
+    onSuccess: () => {
+      // Invalider toutes les queries de coordination
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/qualification-pending"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/matching-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/en-action"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/prioritaires"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/archives"] });
+      toast({
+        title: "Succès",
+        description: "Commande assignée à vous",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: error.message || "Impossible de s'assigner à cette commande",
+      });
+    },
+  });
+
+  // Unassign coordinator mutation
+  const unassignFromMeMutation = useMutation({
+    mutationFn: async (requestId: string) => {
+      return apiRequest("DELETE", `/api/coordinator/unassign-from-me/${requestId}`, {});
+    },
+    onSuccess: () => {
+      // Invalider toutes les queries de coordination
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/qualification-pending"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/matching-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/en-action"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/prioritaires"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/archives"] });
+      toast({
+        title: "Succès",
+        description: "Désassignation effectuée",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: error.message || "Impossible de se désassigner",
+      });
+    },
+  });
+
   // Update request details mutation (coordinator complete edit)
   const updateRequestMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -1411,11 +1463,15 @@ export default function CoordinatorDashboard() {
         }
       })();
 
-      // Coordinator filtering (for qualified requests)
+      // Coordinator filtering (for qualified requests or assigned coordinators)
       const matchesCoordinator = selectedCoordinator === "Tous les coordinateurs" || 
         (request.coordinationUpdatedBy && (
           request.coordinationUpdatedBy.name === selectedCoordinator ||
           request.coordinationUpdatedBy.phoneNumber === selectedCoordinator
+        )) ||
+        (request.assignedTo && (
+          request.assignedTo.name === selectedCoordinator ||
+          request.assignedTo.phoneNumber === selectedCoordinator
         ));
       
       return matchesCity && matchesStatus && matchesSearch && matchesDate && matchesCoordinator;
@@ -1666,13 +1722,48 @@ export default function CoordinatorDashboard() {
       </div>
 
       <CardHeader className="pb-3 space-y-3">
-        {/* Trajet et date */}
+        {/* Trajet et date avec bouton d'assignation */}
         <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-muted-foreground" />
-            <span className="font-semibold text-base">
-              {request.fromCity} → {request.toCity}
-            </span>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-muted-foreground" />
+              <span className="font-semibold text-base">
+                {request.fromCity} → {request.toCity}
+              </span>
+            </div>
+            {/* Bouton d'assignation coordinateur */}
+            {request.assignedTo ? (
+              request.assignedTo.id === user?.id ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 text-xs gap-1.5"
+                  onClick={() => unassignFromMeMutation.mutate(request.id)}
+                  disabled={unassignFromMeMutation.isPending}
+                  data-testid={`button-unassign-${request.id}`}
+                >
+                  <X className="h-3.5 w-3.5" />
+                  Se désassigner
+                </Button>
+              ) : (
+                <Badge variant="secondary" className="text-xs">
+                  <Compass className="h-3 w-3 mr-1" />
+                  {request.assignedTo.name || request.assignedTo.phoneNumber}
+                </Badge>
+              )
+            ) : (
+              <Button
+                size="sm"
+                variant="default"
+                className="h-8 text-xs gap-1.5 bg-[#17cfcf] hover:bg-[#14b8b8] text-white"
+                onClick={() => assignToMeMutation.mutate(request.id)}
+                disabled={assignToMeMutation.isPending}
+                data-testid={`button-assign-to-me-${request.id}`}
+              >
+                <Compass className="h-3.5 w-3.5" />
+                Me l'affecter
+              </Button>
+            )}
           </div>
           <p className="text-xs text-muted-foreground pl-6">
             Créée le {format(new Date(request.createdAt), "dd MMM yyyy 'à' HH:mm", { locale: fr })}
