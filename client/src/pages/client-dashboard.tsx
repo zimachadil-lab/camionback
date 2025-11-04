@@ -290,14 +290,14 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
     },
   });
 
-  // Fetch interested transporters for qualified requests (new workflow)
-  const { data: interestedTransporters = [] } = useQuery({
+  // Fetch interested transporters ONLY when dialog is opened (lazy loading for better performance)
+  const { data: interestedTransporters = [], refetch: refetchInterestedTransporters } = useQuery({
     queryKey: ["/api/requests", request.id, "interested-transporters"],
     queryFn: async () => {
       const response = await fetch(`/api/requests/${request.id}/interested-transporters`);
       return response.json();
     },
-    enabled: !!request.qualifiedAt, // Only fetch if request has been qualified
+    enabled: false, // Disabled by default - only fetch when needed (dialog opens)
   });
 
   const offersWithTransporters = offers.map((offer: any) => {
@@ -315,7 +315,12 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
 
   // Determine which workflow to use
   const isQualifiedWorkflow = !!request.qualifiedAt;
-  const displayCount = isQualifiedWorkflow ? interestedTransporters.length : offersWithTransporters.length;
+  
+  // OPTIMISATION: Utiliser le count pré-calculé du backend pour éviter une requête API
+  // Au lieu de charger tous les transporteurs intéressés, on utilise juste le nombre
+  const displayCount = isQualifiedWorkflow 
+    ? (request.interestedTransportersCount ?? 0) 
+    : offersWithTransporters.length;
 
   // Get client-friendly status
   const clientStatus = getClientStatus(request, displayCount);
@@ -676,7 +681,13 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
               <Button
                 variant="outline"
                 className="w-full gap-2 sm:gap-3 h-auto sm:h-14 py-3 sm:py-0 border-2 border-blue-500 bg-gradient-to-r from-blue-500/10 to-blue-600/10 hover:from-blue-500/20 hover:to-blue-600/20 text-foreground font-semibold shadow-md hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300"
-                onClick={() => setShowOffersDialog(true)}
+                onClick={() => {
+                  setShowOffersDialog(true);
+                  // Charger les transporteurs intéressés seulement quand le dialog s'ouvre
+                  if (isQualifiedWorkflow) {
+                    refetchInterestedTransporters();
+                  }
+                }}
                 data-testid={`button-view-offers-${request.id}`}
               >
                 <div className="flex items-center gap-2 sm:gap-3 w-full">

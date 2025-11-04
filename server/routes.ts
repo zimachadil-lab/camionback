@@ -1603,6 +1603,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`📋 Grouped offers by requestId, starting enrichment...`);
       
+      // OPTIMISATION: Récupérer TOUS les transporters intéressés pour le nouveau workflow
+      const allInterests = await storage.getAllTransporterInterests();
+      console.log(`👥 Retrieved ${allInterests.length} total transporter interests`);
+      
+      // Grouper les intérêts par requestId
+      const interestsByRequestId = allInterests.reduce((acc: Record<string, any[]>, interest) => {
+        if (!acc[interest.requestId]) {
+          acc[interest.requestId] = [];
+        }
+        acc[interest.requestId].push(interest);
+        return acc;
+      }, {});
+      
+      console.log(`📋 Grouped interests by requestId`);
+      
       // Get all unique transporter IDs from assigned transporters
       const assignedTransporterIds = Array.from(new Set(
         requests
@@ -1658,6 +1673,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Enrichir les demandes SANS requêtes supplémentaires (synchrone, pas de Promise.all)
       const enrichedRequests = requests.map((request) => {
         const offers = offersByRequestId[request.id] || [];
+        const interests = interestsByRequestId[request.id] || [];
         
         // Exclure les photos en base64 de la liste pour éviter une réponse de 34MB+
         // Les photos seront chargées uniquement lors de la consultation d'une demande spécifique
@@ -1666,6 +1682,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let enrichedRequest: any = {
           ...requestWithoutPhotos,
           offersCount: offers.length,
+          interestedTransportersCount: interests.length,
           // Indiquer seulement le NOMBRE de photos, pas leur contenu
           photosCount: Array.isArray(photos) ? photos.length : 0,
         };

@@ -164,6 +164,7 @@ export interface IStorage {
   withdrawInterest(requestId: string, transporterId: string): Promise<TransportRequest | undefined>;
   getInterestedTransportersForRequest(requestId: string): Promise<any[]>;
   getTransporterInterests(transporterId: string): Promise<any[]>;
+  getAllTransporterInterests(): Promise<any[]>;
   toggleTransporterVisibility(interestId: string, hidden: boolean): Promise<any | undefined>;
   archiveRequestWithReason(requestId: string, reason: string, coordinatorId: string): Promise<TransportRequest | undefined>;
   
@@ -1256,6 +1257,9 @@ export class MemStorage implements IStorage {
     return [];
   }
   async getTransporterInterests(transporterId: string): Promise<any[]> {
+    return [];
+  }
+  async getAllTransporterInterests(): Promise<any[]> {
     return [];
   }
   async toggleTransporterVisibility(interestId: string, hidden: boolean): Promise<any | undefined> {
@@ -3466,6 +3470,11 @@ export class DbStorage implements IStorage {
       } : null,
       createdAt: interest.createdAt,
     }));
+  }
+
+  async getAllTransporterInterests(): Promise<any[]> {
+    // Get all transporter interests for optimization
+    return await db.select().from(transporterInterests);
   }
 
   async toggleTransporterVisibility(interestId: string, hidden: boolean): Promise<any | undefined> {

@@ -24,6 +24,7 @@ The backend is an Express.js and TypeScript application providing RESTful JSON A
 - **File Management:** Supports Base64 encoding for client photos, Multer for transporter truck photos, and multimedia messaging.
 - **Security:** Comprehensive backend security with 72 protected endpoints, session-based authentication, role-based access control, masked phone numbers, and unique tokens for public sharing links. Transporter endpoints prevent coordinator pricing data leakage.
 - **PWA Installation:** Dedicated `/app` route for direct PWA installation with platform detection.
+- **Performance Optimizations:** Client dashboard displays offer counts instantly using pre-calculated `interestedTransportersCount` and `offersCount` from `/api/requests`, eliminating delays from separate API calls. Interested transporters are loaded lazily only when the dialog opens, improving perceived performance.
 
 ### System Design Choices
 **Data Storage:** PostgreSQL with Neon serverless and Drizzle ORM.
