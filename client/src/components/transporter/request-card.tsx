@@ -197,21 +197,7 @@ export function RequestCard({
 
   return (
     <>
-    <Card className={`overflow-hidden hover-elevate border-2 ${categoryConfig.borderColor} relative`}>
-      {/* Badge "Disponible" animé en haut à droite */}
-      <div className="absolute top-2 right-2 z-10">
-        <Badge 
-          className="bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold px-3 py-1.5 shadow-lg animate-pulse border-0"
-          data-testid={`badge-available-${request.id}`}
-        >
-          <span className="relative flex items-center gap-1.5">
-            <span className="absolute -left-1 h-2 w-2 rounded-full bg-white opacity-75 animate-ping"></span>
-            <span className="relative h-2 w-2 rounded-full bg-white"></span>
-            Disponible
-          </span>
-        </Badge>
-      </div>
-
+    <Card className={`overflow-hidden hover-elevate border-2 ${categoryConfig.borderColor}`}>
       {/* En-tête coloré avec icône de catégorie */}
       <div className={`${categoryConfig.bgColor} p-3 flex items-center justify-between`}>
         <div className="flex items-center gap-2">
@@ -226,11 +212,24 @@ export function RequestCard({
       </div>
 
       <CardContent className="p-4 space-y-4">
-        {/* Trajet */}
+        {/* Trajet avec badge Disponible aligné */}
         <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <MapPin className="w-4 h-4" />
-            <span className="font-medium">Trajet</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <MapPin className="w-4 h-4" />
+              <span className="font-medium">Trajet</span>
+            </div>
+            {/* Badge "Disponible" animé aligné avec Trajet */}
+            <Badge 
+              className="bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold px-3 py-1 shadow-lg animate-pulse border-0"
+              data-testid={`badge-available-${request.id}`}
+            >
+              <span className="relative flex items-center gap-1.5">
+                <span className="absolute -left-1 h-2 w-2 rounded-full bg-white opacity-75 animate-ping"></span>
+                <span className="relative h-2 w-2 rounded-full bg-white"></span>
+                Disponible
+              </span>
+            </Badge>
           </div>
           <div className="flex items-center gap-2 text-base font-semibold pl-6">
             <span className="truncate">{request.fromCity}</span>
