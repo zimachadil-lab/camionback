@@ -1750,6 +1750,10 @@ export default function CoordinatorDashboard() {
               <MessageCircle className="h-4 w-4 text-white" />
             </Button>
           )}
+          <Badge className="bg-white/20 text-white hover:bg-white/25 border border-white/40 text-xs gap-1.5 font-medium" data-testid={`badge-client-date-${request.id}`}>
+            <Calendar className="w-3.5 h-3.5" />
+            {format(new Date(request.dateTime), "dd MMM yyyy", { locale: fr })}
+          </Badge>
           <Badge className="bg-slate-800/80 text-white hover:bg-slate-800 border-0 font-mono text-xs">
             {request.referenceId}
           </Badge>
