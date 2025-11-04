@@ -17,14 +17,15 @@ import {
   type Story, type InsertStory,
   type CoordinatorLog, type InsertCoordinatorLog,
   type TransporterReference, type InsertTransporterReference,
-  type CoordinationStatus, type InsertCoordinationStatus
+  type CoordinationStatus, type InsertCoordinationStatus,
+  type RequestNote, type InsertRequestNote
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from './db.js';
 import { 
   users, otpCodes, transportRequests, offers, transporterInterests, chatMessages,
   adminSettings, notifications, ratings, emptyReturns, contracts, reports, cities, smsHistory,
-  clientTransporterContacts, stories, coordinatorLogs, transporterReferences, coordinationStatuses
+  clientTransporterContacts, stories, coordinatorLogs, transporterReferences, coordinationStatuses, requestNotes
 } from '@shared/schema';
 import { eq, and, or, desc, asc, lte, gte, sql, inArray, isNull, isNotNull } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
@@ -197,6 +198,10 @@ export interface IStorage {
   updateCoordinationStatusConfig(id: string, updates: Partial<CoordinationStatus>): Promise<CoordinationStatus | undefined>;
   deleteCoordinationStatusConfig(id: string): Promise<void>;
   getCoordinationStatusUsage(): Promise<{ coordination_status: string; usage_count: number }[]>;
+  
+  // Request Notes operations (coordinator internal notes)
+  createRequestNote(requestId: string, coordinatorId: string, content: string): Promise<any>;
+  getRequestNotes(requestId: string): Promise<any[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -1285,6 +1290,15 @@ export class MemStorage implements IStorage {
     return;
   }
   async getCoordinationStatusUsage(): Promise<{ coordination_status: string; usage_count: number }[]> {
+    return [];
+  }
+
+  // Request Notes operations (coordinator internal notes)
+  async createRequestNote(requestId: string, coordinatorId: string, content: string): Promise<any> {
+    return {};
+  }
+
+  async getRequestNotes(requestId: string): Promise<any[]> {
     return [];
   }
 }
@@ -3759,6 +3773,53 @@ export class DbStorage implements IStorage {
       coordination_status: row.coordination_status,
       usage_count: row.usage_count,
     }));
+  }
+
+  // Request Notes operations
+  async createRequestNote(requestId: string, coordinatorId: string, content: string): Promise<any> {
+    const noteData = {
+      requestId,
+      coordinatorId,
+      content,
+    };
+    
+    const [note] = await db.insert(requestNotes).values(noteData).returning();
+    
+    // Fetch coordinator info to return with note
+    const coordinator = await this.getUser(coordinatorId);
+    
+    return {
+      ...note,
+      coordinator: coordinator ? {
+        id: coordinator.id,
+        name: coordinator.name,
+        phoneNumber: coordinator.phoneNumber,
+      } : null,
+    };
+  }
+
+  async getRequestNotes(requestId: string): Promise<any[]> {
+    const notes = await db.select()
+      .from(requestNotes)
+      .where(eq(requestNotes.requestId, requestId))
+      .orderBy(desc(requestNotes.createdAt));
+    
+    // Enrich with coordinator info
+    const enrichedNotes = await Promise.all(
+      notes.map(async (note) => {
+        const coordinator = await this.getUser(note.coordinatorId);
+        return {
+          ...note,
+          coordinator: coordinator ? {
+            id: coordinator.id,
+            name: coordinator.name,
+            phoneNumber: coordinator.phoneNumber,
+          } : null,
+        };
+      })
+    );
+    
+    return enrichedNotes;
   }
 }
 
