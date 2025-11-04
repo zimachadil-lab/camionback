@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, MessageCircle, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck, Trash2, Share2, Copy, Send, RotateCcw, Info, Users, CreditCard, Calendar, X, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, FileText, MoreVertical, Image as ImageIcon, ClipboardCheck, Award, StickyNote, Plus } from "lucide-react";
+import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, MessageCircle, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck, Trash2, Share2, Copy, Send, RotateCcw, Info, Users, CreditCard, Calendar, X, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, FileText, MoreVertical, Image as ImageIcon, ClipboardCheck, Award, StickyNote, Plus, ChevronDown, ChevronUp } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -1606,17 +1606,33 @@ export default function CoordinatorDashboard() {
     };
     
     return (
-      <div className="border-t pt-3 space-y-3">
-        <Button
-          variant="ghost"
-          size="sm"
+      <div className="border-t pt-4 space-y-3">
+        <button
           onClick={() => setShowNotes(!showNotes)}
-          className="w-full justify-start text-muted-foreground hover:text-foreground"
+          className="w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg hover-elevate active-elevate-2 transition-all group bg-gradient-to-r from-amber-50/50 to-orange-50/50 dark:from-amber-950/20 dark:to-orange-950/20 border border-amber-200/50 dark:border-amber-800/30"
           data-testid={`button-toggle-notes-${requestId}`}
         >
-          <StickyNote className="h-4 w-4 mr-2" />
-          Notes internes {notes && notes.length > 0 && `(${notes.length})`}
-        </Button>
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 shadow-sm">
+              <StickyNote className="h-4 w-4 text-white" />
+            </div>
+            <span className="font-medium text-sm text-foreground">
+              Notes internes
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            {notes && notes.length > 0 && (
+              <Badge variant="secondary" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 font-semibold">
+                {notes.length}
+              </Badge>
+            )}
+            {showNotes ? (
+              <ChevronUp className="h-4 w-4 text-muted-foreground transition-transform" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform" />
+            )}
+          </div>
+        </button>
         
         {showNotes && (
           <div className="space-y-3 pl-6">
