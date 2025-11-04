@@ -1622,7 +1622,7 @@ export default function CoordinatorDashboard() {
           </div>
           <div className="flex items-center gap-2">
             {notes && notes.length > 0 && (
-              <Badge variant="secondary" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 font-semibold">
+              <Badge className="bg-gradient-to-br from-amber-500 to-orange-500 text-white border-0 font-semibold shadow-sm px-2.5 py-0.5">
                 {notes.length}
               </Badge>
             )}
