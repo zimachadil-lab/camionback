@@ -2457,19 +2457,25 @@ export class DbStorage implements IStorage {
       isHidden: transportRequests.isHidden,
       paymentStatus: transportRequests.paymentStatus,
       shareToken: transportRequests.shareToken,
+      assignedToId: transportRequests.assignedToId,
       createdAt: transportRequests.createdAt,
     })
     .from(transportRequests)
     .where(eq(transportRequests.status, 'open'))
     .orderBy(desc(transportRequests.createdAt));
 
-    // Enrich each request with client, offers, and transporter data
+    // Enrich each request with client, assigned coordinator, offers, and transporter data
     const enrichedRequests = await Promise.all(
       requests.map(async (request) => {
         // Get client data
         const clientData = await db.select().from(users)
           .where(eq(users.id, request.clientId))
           .limit(1);
+        
+        // Get assigned coordinator data if exists
+        const assignedToData = request.assignedToId 
+          ? await db.select().from(users).where(eq(users.id, request.assignedToId)).limit(1)
+          : [];
         
         // Get offers for this request
         const requestOffers = await db.select().from(offers)
@@ -2478,6 +2484,11 @@ export class DbStorage implements IStorage {
         return {
           ...request,
           client: clientData[0] || null,
+          assignedTo: assignedToData[0] ? {
+            id: assignedToData[0].id,
+            name: assignedToData[0].name,
+            phoneNumber: assignedToData[0].phoneNumber,
+          } : null,
           offers: requestOffers,
         };
       })
@@ -2503,6 +2514,7 @@ export class DbStorage implements IStorage {
       paymentStatus: transportRequests.paymentStatus,
       acceptedOfferId: transportRequests.acceptedOfferId,
       assignedTransporterId: transportRequests.assignedTransporterId,
+      assignedToId: transportRequests.assignedToId,
       transporterAmount: transportRequests.transporterAmount,
       platformFee: transportRequests.platformFee,
       clientTotal: transportRequests.clientTotal,
@@ -2518,7 +2530,7 @@ export class DbStorage implements IStorage {
     )
     .orderBy(desc(transportRequests.createdAt));
 
-    // Enrich with client, transporter, and accepted offer
+    // Enrich with client, transporter, assigned coordinator, and accepted offer
     const enrichedRequests = await Promise.all(
       requests.map(async (request) => {
         // Get client data  
@@ -2527,6 +2539,11 @@ export class DbStorage implements IStorage {
           .where(eq(transportRequests.id, request.id))
           .limit(1);
         const client = clientResult[0]?.users || null;
+
+        // Get assigned coordinator data if exists
+        const assignedToData = request.assignedToId 
+          ? await db.select().from(users).where(eq(users.id, request.assignedToId)).limit(1)
+          : [];
 
         // Get transporter and accepted offer
         let acceptedOffer = null;
@@ -2557,6 +2574,11 @@ export class DbStorage implements IStorage {
         return {
           ...request,
           client,
+          assignedTo: assignedToData[0] ? {
+            id: assignedToData[0].id,
+            name: assignedToData[0].name,
+            phoneNumber: assignedToData[0].phoneNumber,
+          } : null,
           transporter,
           acceptedOffer,
         };
@@ -3087,21 +3109,31 @@ export class DbStorage implements IStorage {
       whereConditions.push(eq(transportRequests.assignedToId, filters.assignedToId));
     }
 
+    const clientAlias = alias(users, 'client');
+    const assignedToAlias = alias(users, 'assignedTo');
+
     const requests = await db.select({
       request: transportRequests,
-      client: users,
+      client: clientAlias,
+      assignedTo: assignedToAlias,
     }).from(transportRequests)
-      .leftJoin(users, eq(transportRequests.clientId, users.id))
+      .leftJoin(clientAlias, eq(transportRequests.clientId, clientAlias.id))
+      .leftJoin(assignedToAlias, eq(transportRequests.assignedToId, assignedToAlias.id))
       .where(and(...whereConditions))
       .orderBy(desc(transportRequests.createdAt));
 
-    const enrichedRequests = requests.map(({ request, client }) => ({
+    const enrichedRequests = requests.map(({ request, client, assignedTo }) => ({
       ...request,
       client: client ? {
         id: client.id,
         name: client.name,
         phoneNumber: client.phoneNumber,
         clientId: client.clientId,
+      } : null,
+      assignedTo: assignedTo ? {
+        id: assignedTo.id,
+        name: assignedTo.name,
+        phoneNumber: assignedTo.phoneNumber,
       } : null,
     }));
 
@@ -3211,21 +3243,24 @@ export class DbStorage implements IStorage {
       whereConditions.push(eq(transportRequests.assignedToId, filters.assignedToId));
     }
 
-    // Create aliases for the two user joins
+    // Create aliases for the three user joins
     const clientUser = alias(users, 'client_user');
     const coordinatorUser = alias(users, 'coordinator_user');
+    const assignedToUser = alias(users, 'assigned_to_user');
 
     const requests = await db.select({
       request: transportRequests,
       client: clientUser,
       coordinator: coordinatorUser,
+      assignedTo: assignedToUser,
     }).from(transportRequests)
       .leftJoin(clientUser, eq(transportRequests.clientId, clientUser.id))
       .leftJoin(coordinatorUser, eq(transportRequests.coordinationUpdatedBy, coordinatorUser.id))
+      .leftJoin(assignedToUser, eq(transportRequests.assignedToId, assignedToUser.id))
       .where(and(...whereConditions))
       .orderBy(desc(transportRequests.publishedForMatchingAt));
 
-    const enrichedRequests = requests.map(({ request, client, coordinator }) => ({
+    const enrichedRequests = requests.map(({ request, client, coordinator, assignedTo }) => ({
       ...request,
       client: client ? {
         id: client.id,
@@ -3237,6 +3272,11 @@ export class DbStorage implements IStorage {
         id: coordinator.id,
         name: coordinator.name,
         phoneNumber: coordinator.phoneNumber,
+      } : null,
+      assignedTo: assignedTo ? {
+        id: assignedTo.id,
+        name: assignedTo.name,
+        phoneNumber: assignedTo.phoneNumber,
       } : null,
       interestedCount: request.transporterInterests?.length || 0,
     }));
