@@ -348,8 +348,18 @@ export const coordinationStatuses = pgTable("coordination_statuses", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Request Notes - Internal notes added by coordinators on transport requests
+export const requestNotes = pgTable("request_notes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  requestId: varchar("request_id").notNull().references(() => transportRequests.id),
+  coordinatorId: varchar("coordinator_id").notNull().references(() => users.id),
+  content: text("content").notNull(), // Free-text note content
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const insertCoordinatorLogSchema = createInsertSchema(coordinatorLogs).omit({ id: true, createdAt: true });
 export const insertCoordinationStatusSchema = createInsertSchema(coordinationStatuses).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertRequestNoteSchema = createInsertSchema(requestNotes).omit({ id: true, createdAt: true });
 
 // Coordinator-specific schemas for admin management
 export const createCoordinatorSchema = z.object({
@@ -409,6 +419,8 @@ export type InsertCoordinatorLog = z.infer<typeof insertCoordinatorLogSchema>;
 export type CoordinatorLog = typeof coordinatorLogs.$inferSelect;
 export type InsertCoordinationStatus = z.infer<typeof insertCoordinationStatusSchema>;
 export type CoordinationStatus = typeof coordinationStatuses.$inferSelect;
+export type InsertRequestNote = z.infer<typeof insertRequestNoteSchema>;
+export type RequestNote = typeof requestNotes.$inferSelect;
 export type CreateCoordinator = z.infer<typeof createCoordinatorSchema>;
 export type ResetCoordinatorPin = z.infer<typeof resetCoordinatorPinSchema>;
 
