@@ -3444,8 +3444,6 @@ export class DbStorage implements IStorage {
         coordinationStatus: 'qualification_pending',
         coordinationReason: null,
         status: 'pending',
-        archiveReason: null,
-        archiveComment: null,
         coordinationUpdatedAt: new Date(),
         coordinationUpdatedBy: coordinatorId,
       })

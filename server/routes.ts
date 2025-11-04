@@ -4908,8 +4908,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Push notification
         try {
           if (client.deviceToken) {
-            const { sendNotificationToUser, NotificationTemplates } = await import('./push-notifications');
-            const notification = NotificationTemplates.requestUpdated(updated.referenceId);
+            const { sendNotificationToUser } = await import('./push-notifications');
+            const notification = {
+              title: "Demande republiée",
+              body: `Votre demande ${updated.referenceId} a été republiée`,
+              url: "/client-dashboard"
+            };
             await sendNotificationToUser(client.id, notification, storage);
             console.log(`📨 Notification push envoyée au client pour republication`);
           }
