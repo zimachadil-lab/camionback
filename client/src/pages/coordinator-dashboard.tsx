@@ -1119,6 +1119,30 @@ export default function CoordinatorDashboard() {
     },
   });
 
+  // Republish request mutation
+  const republishRequestMutation = useMutation({
+    mutationFn: async (requestId: string) => {
+      return apiRequest("POST", `/api/coordinator/requests/${requestId}/republish`, {});
+    },
+    onSuccess: () => {
+      toast({
+        title: "Commande republiée",
+        description: "La commande a été republiée avec succès et apparaîtra dans l'onglet Nouveau",
+      });
+      // Invalidate all coordinator queries to refresh the views
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/qualification-pending"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/archives"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/available-requests"] });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Échec de la republication de la commande",
+      });
+    },
+  });
+
   // Assign transporter mutation for interested transporters
   const assignMutation = useMutation({
     mutationFn: async (data: { requestId: string; transporterId: string; transporterAmount: number; platformFee: number }) => {
@@ -1281,6 +1305,10 @@ export default function CoordinatorDashboard() {
       archiveReason: archiveRequestData.archiveReason,
       archiveComment: archiveRequestData.archiveComment,
     });
+  };
+
+  const handleRepublishRequest = (requestId: string) => {
+    republishRequestMutation.mutate(requestId);
   };
 
   const getPaymentStatusBadge = (status: string) => {
@@ -1467,7 +1495,7 @@ export default function CoordinatorDashboard() {
     queryClient.invalidateQueries({ queryKey: ["/api/coordinator/matching-requests"] });
   };
 
-  const renderRequestCard = (request: any, showVisibilityToggle = false, showPaymentControls = false, isCoordination = false, showQualifyButton = false, showQualifiedBy = false) => {
+  const renderRequestCard = (request: any, showVisibilityToggle = false, showPaymentControls = false, isCoordination = false, showQualifyButton = false, showQualifiedBy = false, showRepublishButton = false) => {
     // Calculate interested count
     const interestedCount = request.transporterInterests?.length || 0;
     // Get client-friendly status
@@ -1939,6 +1967,20 @@ export default function CoordinatorDashboard() {
               Missionner
             </Button>
           )}
+
+          {/* Republier - Pour les demandes archivées */}
+          {showRepublishButton && (
+            <Button
+              size="default"
+              variant="default"
+              className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
+              onClick={() => handleRepublishRequest(request.id)}
+              data-testid={`button-republish-${request.id}`}
+            >
+              <RotateCcw className="h-5 w-5 mr-2" />
+              Republier
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -2273,7 +2315,7 @@ export default function CoordinatorDashboard() {
                 </CardContent>
               </Card>
             ) : (
-              filterRequests(archivesRequests).map((request) => renderRequestCard(request, false, false, false, false))
+              filterRequests(archivesRequests).map((request) => renderRequestCard(request, false, false, false, false, false, true))
             )}
           </TabsContent>
         </Tabs>
