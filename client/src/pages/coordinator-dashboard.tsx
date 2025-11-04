@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, MessageCircle, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck, Trash2, Share2, Copy, Send, RotateCcw, Info, Users, CreditCard, Calendar, X, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, FileText, MoreVertical, Image as ImageIcon, ClipboardCheck, Award } from "lucide-react";
+import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, MessageCircle, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck, Trash2, Share2, Copy, Send, RotateCcw, Info, Users, CreditCard, Calendar, X, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, FileText, MoreVertical, Image as ImageIcon, ClipboardCheck, Award, StickyNote, Plus } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -1555,6 +1556,129 @@ export default function CoordinatorDashboard() {
     queryClient.invalidateQueries({ queryKey: ["/api/coordinator/matching-requests"] });
   };
 
+  // Request Notes Component - Internal coordinator notes
+  const RequestNotes = ({ requestId }: { requestId: string }) => {
+    const [noteContent, setNoteContent] = useState("");
+    const [showNotes, setShowNotes] = useState(false);
+    
+    // Fetch notes for this request
+    const { data: notes = [], isLoading } = useQuery<any[]>({
+      queryKey: ["/api/coordinator/requests", requestId, "notes"],
+      enabled: showNotes,
+    });
+    
+    // Create note mutation
+    const createNoteMutation = useMutation({
+      mutationFn: async (content: string) => {
+        const response = await fetch(`/api/coordinator/requests/${requestId}/notes`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ content }),
+        });
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Erreur lors de l'ajout de la note");
+        }
+        return response.json();
+      },
+      onSuccess: () => {
+        setNoteContent("");
+        queryClient.invalidateQueries({ queryKey: ["/api/coordinator/requests", requestId, "notes"] });
+        toast({
+          title: "Note ajoutée",
+          description: "La note interne a été enregistrée avec succès.",
+        });
+      },
+      onError: (error: any) => {
+        toast({
+          title: "Erreur",
+          description: error.message || "Impossible d'ajouter la note",
+          variant: "destructive",
+        });
+      },
+    });
+    
+    const handleAddNote = () => {
+      if (noteContent.trim()) {
+        createNoteMutation.mutate(noteContent.trim());
+      }
+    };
+    
+    return (
+      <div className="border-t pt-3 space-y-3">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowNotes(!showNotes)}
+          className="w-full justify-start text-muted-foreground hover:text-foreground"
+          data-testid={`button-toggle-notes-${requestId}`}
+        >
+          <StickyNote className="h-4 w-4 mr-2" />
+          Notes internes {notes && notes.length > 0 && `(${notes.length})`}
+        </Button>
+        
+        {showNotes && (
+          <div className="space-y-3 pl-6">
+            {/* Add note form */}
+            <div className="space-y-2">
+              <Textarea
+                placeholder="Ajouter une note interne (visible uniquement par les coordinateurs)..."
+                value={noteContent}
+                onChange={(e) => setNoteContent(e.target.value)}
+                className="resize-none text-sm"
+                rows={3}
+                data-testid={`textarea-note-${requestId}`}
+              />
+              <Button
+                size="sm"
+                onClick={handleAddNote}
+                disabled={!noteContent.trim() || createNoteMutation.isPending}
+                className="bg-[#17cfcf] hover:bg-[#14b8b8] text-white"
+                data-testid={`button-add-note-${requestId}`}
+              >
+                <Plus className="h-3.5 w-3.5 mr-1" />
+                Ajouter la note
+              </Button>
+            </div>
+            
+            {/* Notes history */}
+            {isLoading && (
+              <div className="text-sm text-muted-foreground">Chargement des notes...</div>
+            )}
+            
+            {notes && notes.length > 0 && (
+              <div className="space-y-2">
+                {notes.map((note: any) => (
+                  <div
+                    key={note.id}
+                    className="p-3 rounded-lg bg-muted/50 border text-sm space-y-1"
+                    data-testid={`note-${note.id}`}
+                  >
+                    <p className="whitespace-pre-wrap">{note.content}</p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1 border-t">
+                      <span className="font-medium">
+                        {note.coordinator?.name || note.coordinator?.phoneNumber || "Coordinateur"}
+                      </span>
+                      <span>•</span>
+                      <span>
+                        {format(new Date(note.createdAt), "dd MMM yyyy 'à' HH:mm", { locale: fr })}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {notes && notes.length === 0 && !isLoading && (
+              <p className="text-sm text-muted-foreground">Aucune note pour cette demande</p>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderRequestCard = (request: any, showVisibilityToggle = false, showPaymentControls = false, isCoordination = false, showQualifyButton = false, showQualifiedBy = false, showRepublishButton = false) => {
     // Calculate interested count
     const interestedCount = request.transporterInterests?.length || 0;
@@ -2077,6 +2201,9 @@ export default function CoordinatorDashboard() {
             </Button>
           )}
         </div>
+
+        {/* Notes internes coordinateur */}
+        <RequestNotes requestId={request.id} />
       </CardContent>
     </Card>
     );
