@@ -3443,7 +3443,7 @@ export class DbStorage implements IStorage {
       .set({
         coordinationStatus: 'qualification_pending',
         coordinationReason: null,
-        status: 'pending',
+        status: 'open',
         coordinationUpdatedAt: new Date(),
         coordinationUpdatedBy: coordinatorId,
       })
