@@ -5676,6 +5676,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== Request Notes Routes (Internal Coordinator Notes) =====
+  
+  // Create a new note on a request
+  app.post("/api/coordinator/requests/:requestId/notes", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
+    try {
+      const coordinatorId = req.user!.id;
+      const { requestId } = req.params;
+      const { content } = req.body;
+      
+      // Validation
+      if (!content || content.trim().length === 0) {
+        return res.status(400).json({ error: "Le contenu de la note est requis" });
+      }
+      
+      // Verify request exists
+      const request = await storage.getTransportRequest(requestId);
+      if (!request) {
+        return res.status(404).json({ error: "Commande introuvable" });
+      }
+      
+      // Create note
+      const note = await storage.createRequestNote(requestId, coordinatorId, content.trim());
+      
+      // Create coordinator log
+      await storage.createCoordinatorLog({
+        coordinatorId,
+        action: "add_note",
+        targetType: "request",
+        targetId: requestId,
+        details: JSON.stringify({
+          referenceId: request.referenceId,
+          notePreview: content.substring(0, 50),
+          timestamp: new Date().toISOString(),
+        }),
+      });
+      
+      res.json(note);
+    } catch (error) {
+      console.error("Erreur création note:", error);
+      res.status(500).json({ error: "Erreur lors de la création de la note" });
+    }
+  });
+
+  // Get all notes for a request
+  app.get("/api/coordinator/requests/:requestId/notes", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
+    try {
+      const { requestId } = req.params;
+      
+      // Verify request exists
+      const request = await storage.getTransportRequest(requestId);
+      if (!request) {
+        return res.status(404).json({ error: "Commande introuvable" });
+      }
+      
+      // Get all notes for this request
+      const notes = await storage.getRequestNotes(requestId);
+      
+      res.json(notes);
+    } catch (error) {
+      console.error("Erreur récupération notes:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération des notes" });
+    }
+  });
+
   // ===== Coordinator Notifications & Messaging Routes =====
   
   // Get all notifications for coordinator (grouped by request)
