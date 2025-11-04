@@ -5024,6 +5024,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Toggle transporter visibility for client (coordinator only)
+  app.patch("/api/coordinator/toggle-transporter-visibility", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
+    try {
+      const { interestId, hidden } = req.body;
+      if (!interestId || typeof hidden !== 'boolean') {
+        return res.status(400).json({ error: "interestId et hidden requis" });
+      }
+
+      const result = await storage.toggleTransporterVisibility(interestId, hidden);
+      if (!result) {
+        return res.status(404).json({ error: "Intérêt transporteur introuvable" });
+      }
+
+      res.json({ success: true, hiddenFromClient: result.hiddenFromClient });
+    } catch (error) {
+      console.error("Erreur basculement visibilité transporteur:", error);
+      res.status(500).json({ error: "Erreur lors du basculement de visibilité" });
+    }
+  });
+
   // ===== Coordinator Coordination Views Routes =====
   
   // Get "Nouveau" requests (newly created requests without coordination)

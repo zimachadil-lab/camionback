@@ -20,7 +20,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ManualAssignmentDialog } from "@/components/coordinator/manual-assignment-dialog";
 import { QualificationDialog } from "@/components/coordinator/qualification-dialog";
-import { format } from "date-fns";
+import { format, isSameDay } from "date-fns";
 import { fr } from "date-fns/locale";
 
 // Configuration des catégories avec icônes et couleurs (même logique que transporteur)
@@ -409,6 +409,8 @@ function InterestedTransportersView({ request, onAssignTransporter, isPending }:
   onAssignTransporter: (transporterId: string) => void;
   isPending: boolean;
 }) {
+  const { toast } = useToast();
+  
   // Fetch interested transporters from API
   // Query key will be joined with "/" to form: /api/requests/:requestId/interested-transporters
   const { data: interestedTransporters, isLoading } = useQuery<any[]>({
@@ -421,6 +423,34 @@ function InterestedTransportersView({ request, onAssignTransporter, isPending }:
   // State for managing truck photo viewing
   const [selectedTruckPhoto, setSelectedTruckPhoto] = useState<string | null>(null);
   const [photoDialogOpen, setPhotoDialogOpen] = useState(false);
+
+  // Mutation to toggle transporter visibility for client
+  const toggleVisibilityMutation = useMutation({
+    mutationFn: async ({ interestId, hidden }: { interestId: string; hidden: boolean }) => {
+      const response = await fetch('/api/coordinator/toggle-transporter-visibility', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ interestId, hidden }),
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Erreur lors du basculement de visibilité');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/requests/${request.id}/interested-transporters`] });
+      toast({
+        title: "Visibilité mise à jour",
+        description: "La visibilité du transporteur a été modifiée avec succès",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur",
+        description: error.message || "Impossible de modifier la visibilité",
+        variant: "destructive",
+      });
+    },
+  });
 
   if (isLoading) {
     return (
@@ -490,10 +520,36 @@ function InterestedTransportersView({ request, onAssignTransporter, isPending }:
                     </div>
                   )}
                 </div>
-                <Badge className="bg-[#17cfcf]/10 text-[#17cfcf] border-[#17cfcf]/30">
-                  Intéressé
-                </Badge>
+                <div className="flex flex-col gap-1 items-end">
+                  <Badge className="bg-[#17cfcf]/10 text-[#17cfcf] border-[#17cfcf]/30">
+                    Intéressé
+                  </Badge>
+                  {transporter.hiddenFromClient && (
+                    <Badge variant="outline" className="text-xs">
+                      <EyeOff className="h-3 w-3 mr-1" />
+                      Masqué
+                    </Badge>
+                  )}
+                </div>
               </div>
+
+              {/* Availability Date Badge */}
+              {transporter.availabilityDate && request.dateTime && (
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex-1">
+                    {isSameDay(new Date(transporter.availabilityDate), new Date(request.dateTime)) ? (
+                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
+                        ✓ {format(new Date(transporter.availabilityDate), "d MMM yyyy", { locale: fr })} - Correspond à la date souhaitée
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-300">
+                        ℹ️ {format(new Date(transporter.availabilityDate), "d MMM yyyy", { locale: fr })} - Date alternative
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              )}
 
             {/* Contact Info - Visible for Coordinator */}
             <div className="bg-muted/50 rounded-lg p-3 space-y-2">
@@ -543,6 +599,35 @@ function InterestedTransportersView({ request, onAssignTransporter, isPending }:
                 <span className="text-lg font-bold text-[#17cfcf]">{request.clientTotal || 0} DH</span>
               </div>
             </div>
+
+            {/* Toggle Visibility Button */}
+            {transporter.interestId && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => {
+                  toggleVisibilityMutation.mutate({
+                    interestId: transporter.interestId,
+                    hidden: !transporter.hiddenFromClient,
+                  });
+                }}
+                disabled={toggleVisibilityMutation.isPending}
+                data-testid={`button-toggle-visibility-${transporter.id}`}
+              >
+                {transporter.hiddenFromClient ? (
+                  <>
+                    <Eye className="h-4 w-4 mr-2" />
+                    Afficher au client
+                  </>
+                ) : (
+                  <>
+                    <EyeOff className="h-4 w-4 mr-2" />
+                    Masquer au client
+                  </>
+                )}
+              </Button>
+            )}
 
             <Button
               className="w-full bg-[#17cfcf] hover:bg-[#13b3b3]"

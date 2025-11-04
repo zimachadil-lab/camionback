@@ -163,6 +163,7 @@ export interface IStorage {
   withdrawInterest(requestId: string, transporterId: string): Promise<TransportRequest | undefined>;
   getInterestedTransportersForRequest(requestId: string): Promise<any[]>;
   getTransporterInterests(transporterId: string): Promise<any[]>;
+  toggleTransporterVisibility(interestId: string, hidden: boolean): Promise<any | undefined>;
   archiveRequestWithReason(requestId: string, reason: string, coordinatorId: string): Promise<TransportRequest | undefined>;
   
   // Coordinator manual assignment
@@ -1251,6 +1252,9 @@ export class MemStorage implements IStorage {
   }
   async getTransporterInterests(transporterId: string): Promise<any[]> {
     return [];
+  }
+  async toggleTransporterVisibility(interestId: string, hidden: boolean): Promise<any | undefined> {
+    return undefined;
   }
   async archiveRequestWithReason(requestId: string, reason: string, coordinatorId: string): Promise<TransportRequest | undefined> {
     return undefined;
@@ -3339,7 +3343,7 @@ export class DbStorage implements IStorage {
     }
 
     // Get all interested transporters with their proposed availability dates
-    // Join with transporter_interests to get the availability_date
+    // Join with transporter_interests to get the availability_date and hiddenFromClient status
     const transportersWithDates = await db
       .select({
         id: users.id,
@@ -3353,6 +3357,8 @@ export class DbStorage implements IStorage {
         truckPhotos: users.truckPhotos,
         isVerified: users.isVerified,
         availabilityDate: transporterInterests.availabilityDate,
+        hiddenFromClient: transporterInterests.hiddenFromClient,
+        interestId: transporterInterests.id, // Include interest ID for updating visibility
       })
       .from(users)
       .leftJoin(
@@ -3406,6 +3412,15 @@ export class DbStorage implements IStorage {
       } : null,
       createdAt: interest.createdAt,
     }));
+  }
+
+  async toggleTransporterVisibility(interestId: string, hidden: boolean): Promise<any | undefined> {
+    const result = await db.update(transporterInterests)
+      .set({ hiddenFromClient: hidden })
+      .where(eq(transporterInterests.id, interestId))
+      .returning();
+    
+    return result[0];
   }
 
   async archiveRequestWithReason(requestId: string, reason: string, coordinatorId: string): Promise<TransportRequest | undefined> {

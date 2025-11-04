@@ -106,6 +106,7 @@ export const transporterInterests = pgTable("transporter_interests", {
   requestId: varchar("request_id").notNull().references(() => transportRequests.id),
   transporterId: varchar("transporter_id").notNull().references(() => users.id),
   availabilityDate: timestamp("availability_date").notNull(), // Date when transporter is available
+  hiddenFromClient: boolean("hidden_from_client").default(false), // Coordinator can hide transporter from client view
   createdAt: timestamp("created_at").defaultNow(),
 });
 
