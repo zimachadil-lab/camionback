@@ -2815,6 +2815,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateTransportRequest(offer.requestId, {
         status: "accepted",
         acceptedOfferId: req.params.id,
+        acceptedAt: new Date(),
         coordinationStatus: "assigned",
         coordinationUpdatedAt: new Date(),
       });
@@ -5492,6 +5493,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateTransportRequest(offer.requestId, {
         status: "accepted",
         acceptedOfferId: offerId,
+        acceptedAt: new Date(),
         coordinationStatus: "assigned",
         coordinationUpdatedAt: new Date(),
         coordinationUpdatedBy: coordinatorId,

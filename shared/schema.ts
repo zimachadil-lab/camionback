@@ -56,6 +56,7 @@ export const transportRequests = pgTable("transport_requests", {
   arrivalElevator: boolean("arrival_elevator"), // Ascenseur à l'arrivée
   status: text("status").default("open"), // open, accepted, completed, cancelled
   acceptedOfferId: varchar("accepted_offer_id"),
+  acceptedAt: timestamp("accepted_at"), // When client or coordinator accepted the offer
   paymentStatus: text("payment_status").default("pending"), // pending, awaiting_payment, pending_admin_validation, paid_by_client, paid_by_camionback
   paymentReceipt: text("payment_receipt"), // Client's payment receipt photo (base64)
   paymentDate: timestamp("payment_date"),
