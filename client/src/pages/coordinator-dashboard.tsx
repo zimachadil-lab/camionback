@@ -2018,6 +2018,16 @@ export default function CoordinatorDashboard() {
               </a>
             </div>
           )}
+
+          {showPaymentControls && request.acceptedAt && (
+            <div className="flex items-center gap-2 bg-green-50 dark:bg-green-950 p-2 rounded-md border border-green-200 dark:border-green-800">
+              <Calendar className="h-4 w-4 text-green-600 dark:text-green-400" />
+              <span className="text-muted-foreground">Date d'acceptation:</span>
+              <span className="font-semibold text-green-700 dark:text-green-300" data-testid={`text-accepted-date-${request.id}`}>
+                {format(new Date(request.acceptedAt), "dd MMM yyyy 'à' HH:mm", { locale: fr })}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Description/Services */}
