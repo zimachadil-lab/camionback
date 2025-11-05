@@ -2262,6 +2262,22 @@ export default function CoordinatorDashboard() {
               Republier
             </Button>
           )}
+
+          {/* Annuler la commande - Pour les commandes en production */}
+          {showPaymentControls && (
+            <Button
+              size="default"
+              variant="destructive"
+              onClick={() => {
+                setCancelRequestData(request);
+                setCancelDialogOpen(true);
+              }}
+              data-testid={`button-cancel-production-${request.id}`}
+            >
+              <X className="h-5 w-5 mr-2" />
+              Annuler la commande
+            </Button>
+          )}
         </div>
 
         {/* Notes internes coordinateur */}

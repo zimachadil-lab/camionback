@@ -5021,6 +5021,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           relatedId: updatedRequest.id,
         });
 
+        // Create client note with cancellation reason
+        await storage.createRequestNote(
+          requestId,
+          coordinatorId,
+          `⚠️ ANNULATION DE COMMANDE ⚠️\n\nRaison: ${cancellationReason}\n\nLa commande a été annulée par le coordinateur.`
+        );
+
         // Push notification
         try {
           if (client.deviceToken) {
@@ -5035,6 +5042,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         } catch (pushError) {
           console.error('❌ Erreur notification push annulation:', pushError);
+        }
+      }
+
+      // Notify transporter about cancellation via SMS
+      if (request.assignedTransporterId) {
+        const transporter = await storage.getUser(request.assignedTransporterId);
+        if (transporter) {
+          try {
+            const { sendOrderCancelledSMS } = await import('./infobip-sms');
+            await sendOrderCancelledSMS(transporter.phoneNumber, updatedRequest.referenceId);
+            console.log(`📱 SMS d'annulation envoyé au transporteur ${transporter.phoneNumber}`);
+          } catch (smsError) {
+            console.error('❌ Erreur SMS annulation transporteur:', smsError);
+          }
         }
       }
 

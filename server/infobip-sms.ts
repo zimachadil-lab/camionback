@@ -344,6 +344,20 @@ export async function sendTransporterSelectedSMS(clientPhone: string, referenceI
   return true;
 }
 
+/**
+ * Send SMS to transporter when order is cancelled
+ */
+export async function sendOrderCancelledSMS(transporterPhone: string, referenceId: string): Promise<boolean> {
+  const message = `La commande ${referenceId} a ete annulee par le client sur CamionBack. Consultez votre tableau de bord pour plus d'informations.`;
+  
+  // Fire and forget - don't block the main process
+  sendSMS(transporterPhone, message).catch(err => {
+    console.error('[Infobip] Erreur SMS annulation commande:', err);
+  });
+  
+  return true;
+}
+
 // Log configuration status on startup
 if (isInfobipConfigured()) {
   console.log("[Infobip] Service SMS Infobip configure avec succes");
