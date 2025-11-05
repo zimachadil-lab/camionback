@@ -362,6 +362,18 @@ From: ${this.fromEmail}
   ): Promise<void> {
     const subject = `[Commande #${request.referenceId}] Commande validée`;
 
+    // Defensive validation and formatting for financial amounts
+    const formatAmount = (amount: number | null | undefined): string => {
+      if (amount === null || amount === undefined || typeof amount !== 'number' || isNaN(amount)) {
+        return 'Non communiqué';
+      }
+      return `${amount.toFixed(2)} MAD`;
+    };
+
+    const transporterAmountDisplay = formatAmount(transporterAmount);
+    const commissionDisplay = formatAmount(commission);
+    const clientTotalDisplay = formatAmount(clientTotal);
+
     const content = `
       <h2 style="color: #0a2540; margin-top: 0;">✅ Commande validée et acceptée</h2>
       <div class="status-badge status-validated">Commande validée</div>
@@ -428,16 +440,16 @@ From: ${this.fromEmail}
         <h3 style="margin-top: 0; color: #0a2540;">💰 Détails financiers</h3>
         <div class="info-row">
           <span class="label">Montant transporteur:</span>
-          <span class="value"><strong style="font-size: 18px; color: #0a2540;">${transporterAmount.toFixed(2)} MAD</strong></span>
+          <span class="value"><strong style="font-size: 18px; color: #0a2540;">${transporterAmountDisplay}</strong></span>
         </div>
         <div class="info-row">
           <span class="label">Commission CamionBack:</span>
-          <span class="value"><strong style="font-size: 18px; color: #0a2540;">${commission.toFixed(2)} MAD</strong></span>
+          <span class="value"><strong style="font-size: 18px; color: #0a2540;">${commissionDisplay}</strong></span>
         </div>
         <div class="divider"></div>
         <div class="info-row">
           <span class="label">Montant total client:</span>
-          <span class="value"><strong style="font-size: 20px; color: #0a2540;">${clientTotal.toFixed(2)} MAD</strong></span>
+          <span class="value"><strong style="font-size: 20px; color: #0a2540;">${clientTotalDisplay}</strong></span>
         </div>
         <div class="info-row">
           <span class="label">Type de chargement:</span>
