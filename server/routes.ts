@@ -2865,7 +2865,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Send email notification to admin about order validation (non-blocking)
       if (request && transporter && client) {
-        emailService.sendOrderValidatedEmail(request, offer, client, transporter).catch(emailError => {
+        emailService.sendOrderValidatedEmail(
+          request, 
+          offer, 
+          client, 
+          transporter,
+          offerAmount,
+          commissionAmount,
+          totalWithCommission
+        ).catch(emailError => {
           console.error("Failed to send order validated email:", emailError);
         });
       }
@@ -5537,6 +5545,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } catch (smsError) {
         console.error('❌ Erreur lors de l\'envoi du SMS:', smsError);
+      }
+
+      // Send email notification to admin about order validation (non-blocking)
+      if (request && transporter && client) {
+        emailService.sendOrderValidatedEmail(
+          request, 
+          offer, 
+          client, 
+          transporter,
+          offerAmount,
+          commissionAmount,
+          totalWithCommission
+        ).catch(emailError => {
+          console.error("Failed to send order validated email:", emailError);
+        });
       }
 
       res.json({ 
