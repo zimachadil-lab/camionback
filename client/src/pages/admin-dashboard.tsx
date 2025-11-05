@@ -359,9 +359,9 @@ export default function AdminDashboard() {
     (c: any) => c.status === "completed"
   ).length;
 
-  // Filter requests pending admin validation
-  const pendingPayments = allRequests.filter(
-    (req: any) => req.paymentStatus === "pending_admin_validation"
+  // Filter requests in production (accepted status) - Admin can manage all payment statuses
+  const productionRequests = allRequests.filter(
+    (req: any) => req.status === "accepted"
   );
 
   // Filter and sort requests for the Demandes view
@@ -524,6 +524,33 @@ export default function AdminDashboard() {
         variant: "destructive",
         title: "Erreur",
         description: "Échec du refus du reçu",
+      });
+    }
+  };
+
+  const handleUpdatePaymentStatus = async (requestId: string, paymentStatus: string) => {
+    try {
+      const response = await fetch(`/api/coordinator/requests/${requestId}/payment-status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paymentStatus }),
+      });
+
+      if (!response.ok) throw new Error();
+
+      toast({
+        title: "Statut de paiement mis à jour",
+        description: paymentStatus === 'paid_by_client' 
+          ? "La commande a été marquée comme payée par le client"
+          : "La commande a été marquée comme payée par CamionBack",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Échec de la mise à jour du statut de paiement",
       });
     }
   };
@@ -1657,14 +1684,17 @@ export default function AdminDashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CreditCard className="w-5 h-5" />
-                  Paiements en attente de validation
+                  Gestion des paiements - Commandes en production
+                  <Badge className="ml-2" data-testid="badge-production-count">
+                    {productionRequests.length}
+                  </Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {pendingPayments.length === 0 ? (
+                {productionRequests.length === 0 ? (
                   <div className="text-center py-8">
                     <CreditCard className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">Aucun paiement en attente de validation</p>
+                    <p className="text-muted-foreground">Aucune commande en production</p>
                   </div>
                 ) : (
                   <Table>
@@ -1676,12 +1706,12 @@ export default function AdminDashboard() {
                         <TableHead>Montant net</TableHead>
                         <TableHead>Total client</TableHead>
                         <TableHead>Commission</TableHead>
-                        <TableHead>Reçu</TableHead>
+                        <TableHead>Statut paiement</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {pendingPayments.map((request: any) => {
+                      {productionRequests.map((request: any) => {
                         const client = allUsers.find((u: any) => u.id === request.clientId);
                         
                         // Get accepted offer details
@@ -1736,43 +1766,40 @@ export default function AdminDashboard() {
                               <span className="font-semibold text-green-600">{commissionAmount.toFixed(2)} MAD</span>
                             </TableCell>
                             <TableCell>
-                              {request.paymentReceipt ? (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => {
-                                    setSelectedReceipt(request.paymentReceipt);
-                                    setShowReceiptDialog(true);
-                                  }}
-                                  className="gap-1"
-                                  data-testid={`button-view-receipt-${request.id}`}
-                                >
-                                  <Eye className="w-4 h-4" />
-                                  Voir
-                                </Button>
-                              ) : (
-                                <span className="text-muted-foreground text-sm">Aucun reçu</span>
+                              {request.paymentStatus === 'paid_by_client' && (
+                                <Badge className="bg-blue-600 text-white">Payé par client</Badge>
+                              )}
+                              {request.paymentStatus === 'paid_by_camionback' && (
+                                <Badge className="bg-purple-600 text-white">Payé CamionBack</Badge>
+                              )}
+                              {(request.paymentStatus === 'pending' || request.paymentStatus === 'awaiting_payment' || request.paymentStatus === 'pending_admin_validation') && (
+                                <Badge variant="secondary">En attente</Badge>
+                              )}
+                              {!request.paymentStatus && (
+                                <Badge variant="outline">Non défini</Badge>
                               )}
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex gap-2 justify-end flex-wrap">
                                 <Button
                                   size="sm"
-                                  variant="default"
-                                  onClick={() => handleValidatePayment(request.id)}
-                                  data-testid={`button-validate-payment-${request.id}`}
+                                  variant={request.paymentStatus === 'paid_by_client' ? 'default' : 'outline'}
+                                  onClick={() => handleUpdatePaymentStatus(request.id, 'paid_by_client')}
+                                  data-testid={`button-paid-by-client-${request.id}`}
+                                  disabled={request.paymentStatus === 'paid_by_client'}
                                 >
                                   <CheckCircle className="w-4 h-4 mr-1" />
-                                  Marquer comme payé
+                                  Payé par client
                                 </Button>
                                 <Button
                                   size="sm"
-                                  variant="destructive"
-                                  onClick={() => handleRejectReceipt(request.id)}
-                                  data-testid={`button-reject-receipt-${request.id}`}
+                                  variant={request.paymentStatus === 'paid_by_camionback' ? 'default' : 'outline'}
+                                  onClick={() => handleUpdatePaymentStatus(request.id, 'paid_by_camionback')}
+                                  data-testid={`button-paid-by-camionback-${request.id}`}
+                                  disabled={request.paymentStatus === 'paid_by_camionback'}
                                 >
-                                  <XCircle className="w-4 h-4 mr-1" />
-                                  Refuser le reçu
+                                  <CheckCircle className="w-4 h-4 mr-1" />
+                                  Payé CamionBack
                                 </Button>
                               </div>
                             </TableCell>
