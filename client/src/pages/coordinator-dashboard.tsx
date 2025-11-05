@@ -712,6 +712,9 @@ export default function CoordinatorDashboard() {
   const [archiveRequestData, setArchiveRequestData] = useState<any>(null);
   const [truckPhotosDialogOpen, setTruckPhotosDialogOpen] = useState(false);
   const [selectedTruckPhotos, setSelectedTruckPhotos] = useState<any[]>([]);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [cancelRequestData, setCancelRequestData] = useState<any>(null);
+  const [cancellationReason, setCancellationReason] = useState("");
   const { toast} = useToast();
 
   const handleLogout = () => {
@@ -1196,6 +1199,35 @@ export default function CoordinatorDashboard() {
         variant: "destructive",
         title: "Erreur",
         description: "Échec de la republication de la commande",
+      });
+    },
+  });
+
+  // Cancel request mutation
+  const cancelRequestMutation = useMutation({
+    mutationFn: async ({ requestId, cancellationReason }: { requestId: string; cancellationReason: string }) => {
+      return apiRequest("PATCH", `/api/coordinator/requests/${requestId}/cancel`, {
+        cancellationReason,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Commande annulée",
+        description: "La commande a été annulée avec succès et retirée des vues transporteurs",
+      });
+      setCancelDialogOpen(false);
+      setCancelRequestData(null);
+      setCancellationReason("");
+      // Invalidate all queries
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/matching-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/available-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Échec de l'annulation de la commande",
       });
     },
   });
@@ -2455,18 +2487,32 @@ export default function CoordinatorDashboard() {
                           </div>
                         )}
                       </div>
-                      <Button
-                        size="lg"
-                        className="bg-purple-600 hover:bg-purple-700"
-                        onClick={() => {
-                          setSelectedRequestForInterested(request);
-                          setInterestedTransportersDialogOpen(true);
-                        }}
-                        data-testid={`button-view-interested-${request.id}`}
-                      >
-                        <Eye className="h-5 w-5 mr-2" />
-                        Voir détails & Assigner
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          size="lg"
+                          className="bg-purple-600 hover:bg-purple-700"
+                          onClick={() => {
+                            setSelectedRequestForInterested(request);
+                            setInterestedTransportersDialogOpen(true);
+                          }}
+                          data-testid={`button-view-interested-${request.id}`}
+                        >
+                          <Eye className="h-5 w-5 mr-2" />
+                          Voir détails & Assigner
+                        </Button>
+                        <Button
+                          size="lg"
+                          variant="destructive"
+                          onClick={() => {
+                            setCancelRequestData(request);
+                            setCancelDialogOpen(true);
+                          }}
+                          data-testid={`button-cancel-request-${request.id}`}
+                        >
+                          <X className="h-5 w-5 mr-2" />
+                          Annuler la commande
+                        </Button>
+                      </div>
                     </div>
                     
                     {/* Contact Client */}
@@ -3125,6 +3171,67 @@ export default function CoordinatorDashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Cancel Request Dialog */}
+      {cancelRequestData && (
+        <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+          <DialogContent data-testid="dialog-cancel-request">
+            <DialogHeader>
+              <DialogTitle>Annuler la commande</DialogTitle>
+              <DialogDescription>
+                Commande {cancelRequestData.referenceId} - Cette action marquera la commande comme annulée côté client et la retirera de toutes les vues transporteurs.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">
+                  Raison de l'annulation <span className="text-red-500">*</span>
+                </label>
+                <Textarea
+                  value={cancellationReason}
+                  onChange={(e) => setCancellationReason(e.target.value)}
+                  placeholder="Ex: Client injoignable, Client a trouvé un transporteur ailleurs, etc."
+                  rows={4}
+                  data-testid="textarea-cancellation-reason"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Cette raison sera visible par le client
+                </p>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setCancelDialogOpen(false);
+                  setCancellationReason("");
+                }}
+                disabled={cancelRequestMutation.isPending}
+                data-testid="button-cancel-dialog"
+              >
+                Retour
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (cancellationReason.trim()) {
+                    cancelRequestMutation.mutate({
+                      requestId: cancelRequestData.id,
+                      cancellationReason: cancellationReason.trim(),
+                    });
+                  }
+                }}
+                disabled={cancelRequestMutation.isPending || !cancellationReason.trim()}
+                data-testid="button-confirm-cancel"
+              >
+                {cancelRequestMutation.isPending ? "Annulation..." : "Annuler la commande"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

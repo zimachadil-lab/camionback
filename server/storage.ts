@@ -27,7 +27,7 @@ import {
   adminSettings, notifications, ratings, emptyReturns, contracts, reports, cities, smsHistory,
   clientTransporterContacts, stories, coordinatorLogs, transporterReferences, coordinationStatuses, requestNotes
 } from '@shared/schema';
-import { eq, and, or, desc, asc, lte, gte, sql, inArray, isNull, isNotNull } from 'drizzle-orm';
+import { eq, and, or, desc, asc, lte, gte, sql, inArray, isNull, isNotNull, ne } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 
 export interface IStorage {
@@ -3439,6 +3439,7 @@ export class DbStorage implements IStorage {
 
   async getTransporterInterests(transporterId: string): Promise<any[]> {
     // Get all interests for this transporter with request details
+    // Filter out cancelled requests to avoid showing them in "Mes intérêts"
     const interests = await db.select({
       interest: transporterInterests,
       request: transportRequests,
@@ -3447,7 +3448,12 @@ export class DbStorage implements IStorage {
       .from(transporterInterests)
       .leftJoin(transportRequests, eq(transporterInterests.requestId, transportRequests.id))
       .leftJoin(users, eq(transportRequests.clientId, users.id))
-      .where(eq(transporterInterests.transporterId, transporterId))
+      .where(
+        and(
+          eq(transporterInterests.transporterId, transporterId),
+          ne(transportRequests.status, 'cancelled')
+        )
+      )
       .orderBy(desc(transporterInterests.createdAt));
 
     return interests.map(({ interest, request, client }) => ({

@@ -4946,6 +4946,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Cancel request with reason (for coordinators)
+  app.patch("/api/coordinator/requests/:requestId/cancel", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
+    try {
+      const { requestId } = req.params;
+      const { cancellationReason } = req.body;
+      
+      if (!requestId || !cancellationReason) {
+        return res.status(400).json({ error: "requestId et cancellationReason requis" });
+      }
+
+      const coordinatorId = req.user!.id;
+      
+      // Get request
+      const request = await storage.getTransportRequest(requestId);
+      if (!request) {
+        return res.status(404).json({ error: "Demande introuvable" });
+      }
+
+      // Update request status to cancelled and store reason
+      const updated = await db
+        .update(transportRequests)
+        .set({
+          status: "cancelled",
+          coordinationReason: cancellationReason,
+          coordinationUpdatedAt: new Date(),
+          coordinationUpdatedBy: coordinatorId,
+        })
+        .where(eq(transportRequests.id, requestId))
+        .returning();
+
+      if (!updated || updated.length === 0) {
+        return res.status(500).json({ error: "Échec de l'annulation" });
+      }
+
+      const updatedRequest = updated[0];
+
+      // Notify client about cancellation
+      const client = await storage.getUser(request.clientId);
+      
+      if (client) {
+        // In-app notification
+        await storage.createNotification({
+          userId: client.id,
+          type: "request_cancelled",
+          title: "Commande annulée",
+          message: `Votre demande ${updatedRequest.referenceId} a été annulée. Raison: ${cancellationReason}`,
+          relatedId: updatedRequest.id,
+        });
+
+        // Push notification
+        try {
+          if (client.deviceToken) {
+            const { sendNotificationToUser } = await import('./push-notifications');
+            const notification = {
+              title: "Commande annulée",
+              body: `Votre demande ${updatedRequest.referenceId} a été annulée`,
+              url: "/client-dashboard"
+            };
+            await sendNotificationToUser(client.id, notification, storage);
+            console.log(`📨 Notification push envoyée au client pour annulation`);
+          }
+        } catch (pushError) {
+          console.error('❌ Erreur notification push annulation:', pushError);
+        }
+      }
+
+      // Create coordinator log
+      await storage.createCoordinatorLog({
+        coordinatorId,
+        action: "cancel_request",
+        targetType: "request",
+        targetId: requestId,
+        details: JSON.stringify({
+          referenceId: updatedRequest.referenceId,
+          reason: cancellationReason,
+          timestamp: new Date().toISOString(),
+        }),
+      });
+
+      res.json(updatedRequest);
+    } catch (error) {
+      console.error("Erreur annulation demande:", error);
+      res.status(500).json({ error: "Erreur lors de l'annulation" });
+    }
+  });
+
   // Transporter expresses interest in a request
   app.post("/api/transporter/express-interest", requireAuth, requireRole(['transporteur']), async (req, res) => {
     try {
