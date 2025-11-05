@@ -5045,17 +5045,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Notify transporter about cancellation via SMS
+      // Notify transporter about cancellation via SMS (fire-and-forget)
       if (request.assignedTransporterId) {
         const transporter = await storage.getUser(request.assignedTransporterId);
         if (transporter) {
-          try {
-            const { sendOrderCancelledSMS } = await import('./infobip-sms');
-            await sendOrderCancelledSMS(transporter.phoneNumber, updatedRequest.referenceId);
-            console.log(`📱 SMS d'annulation envoyé au transporteur ${transporter.phoneNumber}`);
-          } catch (smsError) {
-            console.error('❌ Erreur SMS annulation transporteur:', smsError);
-          }
+          // Fire-and-forget pattern to avoid blocking cancellation flow
+          void (async () => {
+            try {
+              const { sendOrderCancelledSMS } = await import('./infobip-sms');
+              await sendOrderCancelledSMS(transporter.phoneNumber, updatedRequest.referenceId);
+              console.log(`📱 SMS d'annulation envoyé au transporteur ${transporter.phoneNumber}`);
+            } catch (smsError) {
+              console.error('❌ Erreur SMS annulation transporteur:', smsError);
+            }
+          })();
         }
       }
 
