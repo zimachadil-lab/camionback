@@ -44,7 +44,7 @@ The backend is an Express.js and TypeScript application providing RESTful JSON A
 ### Backend Services
 - **Infobip API**: SMS notifications.
 - **Neon Database**: Serverless PostgreSQL hosting.
-- **Nodemailer**: Automated email notifications.
+- **Nodemailer**: Automated email notifications (nouvelle commande → camionback@gmail.com, commande validée → commande.camionback@gmail.com).
 - **Web Push**: Browser push notifications.
 
 ### Data Management
