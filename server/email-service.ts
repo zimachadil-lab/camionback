@@ -14,7 +14,7 @@ interface EmailConfig {
 class EmailService {
   private transporter: nodemailer.Transporter | null = null;
   private fromEmail = "noreply@camionback.com";
-  private toEmail = "camionback@gmail.com";
+  private toEmail = "commande.camionback@gmail.com";
   private isConfigured = false;
 
   constructor() {
@@ -355,7 +355,10 @@ From: ${this.fromEmail}
     request: TransportRequest,
     offer: Offer,
     client: User,
-    transporter: User
+    transporter: User,
+    transporterAmount: number,
+    commission: number,
+    clientTotal: number
   ): Promise<void> {
     const subject = `[Commande #${request.referenceId}] Commande validée`;
 
@@ -374,8 +377,16 @@ From: ${this.fromEmail}
           <span class="value">${request.fromCity} → ${request.toCity}</span>
         </div>
         <div class="info-row">
+          <span class="label">Description:</span>
+          <span class="value">${request.description || 'Non spécifiée'}</span>
+        </div>
+        <div class="info-row">
           <span class="label">Date de validation:</span>
           <span class="value">${new Date().toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' })}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Date convenue:</span>
+          <span class="value"><strong>${offer.pickupDate ? new Date(offer.pickupDate).toLocaleDateString('fr-FR') : 'N/A'}</strong></span>
         </div>
       </div>
 
@@ -391,7 +402,7 @@ From: ${this.fromEmail}
         </div>
         <div class="info-row">
           <span class="label">Téléphone:</span>
-          <span class="value">${client.phoneNumber}</span>
+          <span class="value"><strong>${client.phoneNumber}</strong></span>
         </div>
       </div>
 
@@ -403,7 +414,7 @@ From: ${this.fromEmail}
         </div>
         <div class="info-row">
           <span class="label">Téléphone:</span>
-          <span class="value">${transporter.phoneNumber}</span>
+          <span class="value"><strong>${transporter.phoneNumber}</strong></span>
         </div>
         ${transporter.rating ? `
         <div class="info-row">
@@ -416,12 +427,17 @@ From: ${this.fromEmail}
       <div class="info-section">
         <h3 style="margin-top: 0; color: #0a2540;">💰 Détails financiers</h3>
         <div class="info-row">
-          <span class="label">Montant final convenu:</span>
-          <span class="value"><strong style="font-size: 20px; color: #0a2540;">${offer.amount} MAD</strong></span>
+          <span class="label">Montant transporteur:</span>
+          <span class="value"><strong style="font-size: 18px; color: #0a2540;">${transporterAmount.toFixed(2)} MAD</strong></span>
         </div>
         <div class="info-row">
-          <span class="label">Date prévue de livraison:</span>
-          <span class="value">${offer.pickupDate ? new Date(offer.pickupDate).toLocaleDateString('fr-FR') : 'N/A'}</span>
+          <span class="label">Commission CamionBack:</span>
+          <span class="value"><strong style="font-size: 18px; color: #0a2540;">${commission.toFixed(2)} MAD</strong></span>
+        </div>
+        <div class="divider"></div>
+        <div class="info-row">
+          <span class="label">Montant total client:</span>
+          <span class="value"><strong style="font-size: 20px; color: #0a2540;">${clientTotal.toFixed(2)} MAD</strong></span>
         </div>
         <div class="info-row">
           <span class="label">Type de chargement:</span>
