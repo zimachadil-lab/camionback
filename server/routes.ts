@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
-import { storage } from "./storage";
+import { storage, type IStorage } from "./storage";
 import { db } from "./db";
 import multer from "multer";
 import { z } from "zod";
@@ -4757,58 +4757,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Demande introuvable" });
       }
 
-      // Notify active validated transporters about new mission
-      try {
-        const allUsers = await storage.getAllUsers();
-        const activeTransporters = allUsers.filter(u => 
-          u.role === 'transporteur' && 
-          u.status === 'validated' && 
-          u.isActive === true &&
-          u.accountStatus !== 'blocked'
-        );
-        
-        for (const transporter of activeTransporters) {
-          // In-app notification
-          await storage.createNotification({
-            userId: transporter.id,
-            type: "new_mission_available",
-            title: "Nouvelle mission disponible",
-            message: `Mission ${updated.referenceId} : ${updated.fromCity} → ${updated.toCity}`,
-            relatedId: updated.id,
-          });
-
-          // Push notification
-          if (transporter.deviceToken) {
-            try {
-              const { sendNotificationToUser, NotificationTemplates } = await import('./push-notifications');
-              const notification = NotificationTemplates.requestPublished(updated.referenceId);
-              await sendNotificationToUser(transporter.id, notification, storage);
-            } catch (pushError) {
-              console.error(`❌ Erreur push pour transporteur ${transporter.id}:`, pushError);
-            }
-          }
-
-          // SMS notification (optional, can be disabled to reduce costs)
-          // Uncomment if you want SMS for every new mission
-          // try {
-          //   const { sendNewMissionAvailableSMS } = await import('./infobip-sms');
-          //   await sendNewMissionAvailableSMS(transporter.phoneNumber, updated.referenceId);
-          // } catch (smsError) {
-          //   console.error(`❌ Erreur SMS pour transporteur ${transporter.id}:`, smsError);
-          // }
-        }
-
-        console.log(`📨 ${activeTransporters.length} transporteurs notifiés pour ${updated.referenceId}`);
-      } catch (notifError) {
-        console.error('❌ Erreur notification transporteurs:', notifError);
-      }
-
+      // Respond immediately and notify transporters in background
       res.json(updated);
+
+      // Fire-and-forget: notify transporters asynchronously without blocking response
+      void notifyTransportersAboutNewMission(updated, storage);
+
     } catch (error) {
       console.error("Erreur publication pour matching:", error);
       res.status(500).json({ error: "Erreur lors de la publication" });
     }
   });
+
+  // Helper function: Notify transporters about new mission (async, non-blocking)
+  async function notifyTransportersAboutNewMission(request: TransportRequest, storageInstance: IStorage) {
+    try {
+      // Get only active validated transporters with minimal fields (optimized query)
+      const activeTransporters = await storageInstance.getActiveValidatedTransporters();
+      
+      if (activeTransporters.length === 0) {
+        console.log(`📨 Aucun transporteur actif à notifier pour ${request.referenceId}`);
+        return;
+      }
+
+      // Notify all transporters in parallel with Promise.allSettled (bounded concurrency)
+      const notificationPromises = activeTransporters.map(async (transporter: { id: string; phoneNumber: string; deviceToken: string | null; name: string | null }) => {
+        try {
+          // In-app notification
+          await storageInstance.createNotification({
+            userId: transporter.id,
+            type: "new_mission_available",
+            title: "Nouvelle mission disponible",
+            message: `Mission ${request.referenceId} : ${request.fromCity} → ${request.toCity}`,
+            relatedId: request.id,
+          });
+
+          // Push notification (if device token exists)
+          if (transporter.deviceToken) {
+            try {
+              const { sendNotificationToUser, NotificationTemplates } = await import('./push-notifications');
+              const notification = NotificationTemplates.requestPublished(request.referenceId);
+              await sendNotificationToUser(transporter.id, notification, storageInstance);
+            } catch (pushError) {
+              console.error(`❌ Erreur push pour transporteur ${transporter.id}:`, pushError);
+            }
+          }
+
+          // SMS notification (optional, disabled by default to reduce costs)
+          // Uncomment if you want SMS for every new mission
+          // try {
+          //   const { sendNewMissionAvailableSMS } = await import('./infobip-sms');
+          //   await sendNewMissionAvailableSMS(transporter.phoneNumber, request.referenceId);
+          // } catch (smsError) {
+          //   console.error(`❌ Erreur SMS pour transporteur ${transporter.id}:`, smsError);
+          // }
+        } catch (error) {
+          console.error(`❌ Erreur notification transporteur ${transporter.id}:`, error);
+        }
+      });
+
+      // Wait for all notifications to complete (doesn't block HTTP response)
+      const results = await Promise.allSettled(notificationPromises);
+      const successful = results.filter((r: PromiseSettledResult<void>) => r.status === 'fulfilled').length;
+      const failed = results.filter((r: PromiseSettledResult<void>) => r.status === 'rejected').length;
+
+      console.log(`📨 Notifications pour ${request.referenceId}: ${successful}/${activeTransporters.length} réussies${failed > 0 ? `, ${failed} échecs` : ''}`);
+    } catch (error) {
+      console.error('❌ Erreur globale notification transporteurs:', error);
+    }
+  }
 
   // Get matching requests (requests published for transporter interest)
   app.get("/api/coordinator/matching-requests", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
