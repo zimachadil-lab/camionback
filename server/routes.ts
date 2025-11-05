@@ -5139,15 +5139,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.error('❌ Erreur SMS intérêt:', smsError);
           }
 
-          // Email notification to client
-          try {
-            emailService.sendTransporterInterestedEmail(updated, client, transporter).catch(emailError => {
-              console.error('❌ Erreur email intérêt:', emailError);
-            });
-          } catch (emailError) {
-            console.error('❌ Erreur email intérêt:', emailError);
-          }
-
           // Notify coordinator (if assigned)
           if (updated.assignedByCoordinatorId) {
             await storage.createNotification({

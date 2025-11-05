@@ -14,7 +14,8 @@ interface EmailConfig {
 class EmailService {
   private transporter: nodemailer.Transporter | null = null;
   private fromEmail = "noreply@camionback.com";
-  private toEmail = "commande.camionback@gmail.com";
+  private toEmailDefault = "commande.camionback@gmail.com";
+  private toEmailNewRequest = "camionback@gmail.com";
   private isConfigured = false;
 
   constructor() {
@@ -50,11 +51,13 @@ class EmailService {
     }
   }
 
-  private async sendEmail(subject: string, htmlContent: string): Promise<void> {
+  private async sendEmail(subject: string, htmlContent: string, toEmail?: string): Promise<void> {
+    const recipientEmail = toEmail || this.toEmailDefault;
+    
     if (!this.isConfigured || !this.transporter) {
       console.log(`📧 [EMAIL SIMULATION] Would send email:
 Subject: ${subject}
-To: ${this.toEmail}
+To: ${recipientEmail}
 From: ${this.fromEmail}
 (Email service not configured - set SMTP credentials to enable)`);
       return;
@@ -63,13 +66,13 @@ From: ${this.fromEmail}
     try {
       await this.transporter.sendMail({
         from: this.fromEmail,
-        to: this.toEmail,
+        to: recipientEmail,
         subject,
         html: htmlContent,
       });
-      console.log(`✅ Email sent successfully: ${subject}`);
+      console.log(`✅ Email sent successfully to ${recipientEmail}: ${subject}`);
     } catch (error) {
-      console.error(`❌ Failed to send email: ${subject}`, error);
+      console.error(`❌ Failed to send email to ${recipientEmail}: ${subject}`, error);
     }
   }
 
@@ -262,7 +265,7 @@ From: ${this.fromEmail}
       </div>
     `;
 
-    await this.sendEmail(subject, this.getEmailTemplate("Nouvelle demande de transport", content));
+    await this.sendEmail(subject, this.getEmailTemplate("Nouvelle demande de transport", content), this.toEmailNewRequest);
   }
 
   async sendNewOfferEmail(
