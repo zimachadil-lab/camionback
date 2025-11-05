@@ -39,6 +39,7 @@ export interface IStorage {
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
   getPendingDrivers(): Promise<User[]>;
+  getActiveValidatedTransporters(): Promise<Pick<User, 'id' | 'phoneNumber' | 'deviceToken' | 'name'>[]>;
   getNextClientId(): Promise<string>;
   getClientStatistics(): Promise<any[]>;
   blockUser(userId: string): Promise<User | undefined>;
@@ -306,6 +307,22 @@ export class MemStorage implements IStorage {
         const bTime = b.createdAt?.getTime() || 0;
         return bTime - aTime;
       });
+  }
+
+  async getActiveValidatedTransporters(): Promise<Pick<User, 'id' | 'phoneNumber' | 'deviceToken' | 'name'>[]> {
+    return Array.from(this.users.values())
+      .filter((user) => 
+        user.role === "transporteur" && 
+        user.status === "validated" &&
+        user.isActive === true &&
+        user.accountStatus !== 'blocked'
+      )
+      .map(user => ({
+        id: user.id,
+        phoneNumber: user.phoneNumber,
+        deviceToken: user.deviceToken,
+        name: user.name,
+      }));
   }
 
   async getNextClientId(): Promise<string> {
@@ -1382,6 +1399,26 @@ export class DbStorage implements IStorage {
     
     // Cast to User[] - frontend only needs these fields for validation list
     return result as any as User[];
+  }
+
+  async getActiveValidatedTransporters(): Promise<Pick<User, 'id' | 'phoneNumber' | 'deviceToken' | 'name'>[]> {
+    // Get only active validated transporters with minimal fields for notifications
+    const result = await db.select({
+      id: users.id,
+      phoneNumber: users.phoneNumber,
+      deviceToken: users.deviceToken,
+      name: users.name,
+    }).from(users)
+      .where(
+        and(
+          eq(users.role, 'transporteur'),
+          eq(users.status, 'validated'),
+          eq(users.isActive, true),
+          ne(users.accountStatus, 'blocked')
+        )
+      );
+    
+    return result;
   }
 
   async getTransporterPhotos(id: string): Promise<{ truckPhotos: string[] | null } | null> {
