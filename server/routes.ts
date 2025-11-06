@@ -1931,7 +1931,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('❌ Erreur lors de l\'envoi des notifications push:', pushError);
       }
 
-      // Send SMS notifications
+      // SMS DÉSACTIVÉ - Économie de coûts
+      // Les notifications push et email sont suffisantes pour ce cas
+      /*
       try {
         if (transporter.phoneNumber) {
           await sendClientChoseYouSMS(transporter.phoneNumber, request.referenceId);
@@ -1943,6 +1945,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (smsError) {
         console.error('❌ Erreur lors de l\'envoi des SMS:', smsError);
       }
+      */
 
       res.json({
         success: true,
@@ -2662,11 +2665,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error("Failed to get client for email:", err);
         });
 
-        // Send SMS to client for every new offer received
-        const client = await storage.getUser(request.clientId);
-        if (client?.phoneNumber) {
-          await sendNewOfferSMS(client.phoneNumber);
-        }
+        // SMS DÉSACTIVÉ - Économie de coûts (remplacé par notification au premier transporteur intéressé)
+        // const client = await storage.getUser(request.clientId);
+        // if (client?.phoneNumber) {
+        //   await sendNewOfferSMS(client.phoneNumber);
+        // }
         
         // Notify coordinators about new offer
         try {
@@ -2878,10 +2881,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Send SMS to transporter about offer acceptance
-      if (transporter?.phoneNumber) {
-        await sendOfferAcceptedSMS(transporter.phoneNumber);
-      }
+      // SMS DÉSACTIVÉ - Économie de coûts
+      // Les notifications push et email sont suffisantes pour ce cas
+      // if (transporter?.phoneNumber) {
+      //   await sendOfferAcceptedSMS(transporter.phoneNumber);
+      // }
       
       // Notify coordinators about offer acceptance
       try {
@@ -4891,13 +4895,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error('❌ Erreur notification push archivage:', pushError);
         }
 
-        // SMS notification
-        try {
-          const { sendRequestArchivedSMS } = await import('./infobip-sms');
-          await sendRequestArchivedSMS(client.phoneNumber, updated.referenceId, reasonLabel);
-        } catch (smsError) {
-          console.error('❌ Erreur SMS archivage:', smsError);
-        }
+        // SMS DÉSACTIVÉ - Économie de coûts
+        // Les notifications push et email sont suffisantes pour ce cas
+        // try {
+        //   const { sendRequestArchivedSMS } = await import('./infobip-sms');
+        //   await sendRequestArchivedSMS(client.phoneNumber, updated.referenceId, reasonLabel);
+        // } catch (smsError) {
+        //   console.error('❌ Erreur SMS archivage:', smsError);
+        // }
 
         // Email notification
         try {
@@ -5041,22 +5046,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Notify transporter about cancellation via SMS (fire-and-forget)
-      if (request.assignedTransporterId) {
-        const transporter = await storage.getUser(request.assignedTransporterId);
-        if (transporter) {
-          // Fire-and-forget pattern to avoid blocking cancellation flow
-          void (async () => {
-            try {
-              const { sendOrderCancelledSMS } = await import('./infobip-sms');
-              await sendOrderCancelledSMS(transporter.phoneNumber, updatedRequest.referenceId);
-              console.log(`📱 SMS d'annulation envoyé au transporteur ${transporter.phoneNumber}`);
-            } catch (smsError) {
-              console.error('❌ Erreur SMS annulation transporteur:', smsError);
-            }
-          })();
-        }
-      }
+      // SMS DÉSACTIVÉ - Économie de coûts
+      // Les notifications push sont suffisantes pour ce cas
+      // if (request.assignedTransporterId) {
+      //   const transporter = await storage.getUser(request.assignedTransporterId);
+      //   if (transporter) {
+      //     void (async () => {
+      //       try {
+      //         const { sendOrderCancelledSMS } = await import('./infobip-sms');
+      //         await sendOrderCancelledSMS(transporter.phoneNumber, updatedRequest.referenceId);
+      //         console.log(`📱 SMS d'annulation envoyé au transporteur ${transporter.phoneNumber}`);
+      //       } catch (smsError) {
+      //         console.error('❌ Erreur SMS annulation transporteur:', smsError);
+      //       }
+      //     })();
+      //   }
+      // }
 
       // Create coordinator log
       await storage.createCoordinatorLog({
@@ -5565,14 +5570,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('❌ Erreur lors de l\'envoi de la notification push:', pushError);
       }
 
-      // Send SMS notification
-      try {
-        if (transporter && transporter.phoneNumber && request) {
-          await sendOfferAcceptedSMS(transporter.phoneNumber);
-        }
-      } catch (smsError) {
-        console.error('❌ Erreur lors de l\'envoi du SMS:', smsError);
-      }
+      // SMS DÉSACTIVÉ - Économie de coûts
+      // Les notifications push et email sont suffisantes pour ce cas
+      // try {
+      //   if (transporter && transporter.phoneNumber && request) {
+      //     await sendOfferAcceptedSMS(transporter.phoneNumber);
+      //   }
+      // } catch (smsError) {
+      //   console.error('❌ Erreur lors de l\'envoi du SMS:', smsError);
+      // }
 
       // Send email notification to admin about order validation (non-blocking)
       if (request && transporter && client) {

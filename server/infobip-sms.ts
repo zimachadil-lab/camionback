@@ -147,7 +147,7 @@ export async function sendOfferAcceptedSMS(transporterPhone: string): Promise<bo
  * Send SMS to transporter when their account is activated by admin
  */
 export async function sendTransporterActivatedSMS(transporterPhone: string): Promise<boolean> {
-  const message = `Bonjour ! Votre compte CamionBack est maintenant active. Vous pouvez des a present consulter les commandes disponibles et proposer vos offres. - L'equipe CamionBack`;
+  const message = `Felicitations ! Votre compte CamionBack est maintenant active. N'hesitez pas a consulter camionback.com pour voir les missions disponibles. - L'equipe CamionBack`;
   
   // Fire and forget - don't block the main process
   sendSMS(transporterPhone, message).catch(err => {
@@ -264,7 +264,7 @@ export async function sendTransporterAssignedSMS(clientPhone: string, referenceI
  * Send SMS to client when their request is qualified with pricing
  */
 export async function sendRequestQualifiedSMS(clientPhone: string, referenceId: string, clientTotal: number): Promise<boolean> {
-  const message = `Votre demande ${referenceId} a ete qualifiee sur CamionBack. Montant total: ${clientTotal} MAD. Consultez votre tableau de bord.`;
+  const message = `Votre demande ${referenceId} a ete qualifiee. Prix: ${clientTotal} MAD. Nous vous informons des qu'un premier transporteur est interesse. - CamionBack`;
   
   // Fire and forget - don't block the main process
   sendSMS(clientPhone, message).catch(err => {
@@ -292,7 +292,7 @@ export async function sendNewMissionAvailableSMS(transporterPhone: string, refer
  * Send SMS to client when a transporter expresses interest in their request
  */
 export async function sendTransporterInterestedSMS(clientPhone: string, referenceId: string, transporterName: string): Promise<boolean> {
-  const message = `${transporterName} est interesse par votre mission ${referenceId} sur CamionBack. Consultez votre tableau de bord pour le contacter.`;
+  const message = `Bonne nouvelle ! Un transporteur est interesse par votre mission ${referenceId}. Veuillez bloquer votre transporteur rapidement sur camionback.com - CamionBack`;
   
   // Fire and forget - don't block the main process
   sendSMS(clientPhone, message).catch(err => {
