@@ -1729,7 +1729,7 @@ export default function CoordinatorDashboard() {
     );
   };
 
-  const renderRequestCard = (request: any, showVisibilityToggle = false, showPaymentControls = false, isCoordination = false, showQualifyButton = false, showQualifiedBy = false, showRepublishButton = false) => {
+  const renderRequestCard = (request: any, showVisibilityToggle = false, showPaymentControls = false, isCoordination = false, showQualifyButton = false, showQualifiedBy = false, showRepublishButton = false, showPaymentStatusSelector = false) => {
     // Calculate interested count
     const interestedCount = request.transporterInterests?.length || 0;
     // Get client-friendly status
@@ -1947,6 +1947,34 @@ export default function CoordinatorDashboard() {
               </Button>
             )}
           </div>
+          
+          {/* Payment Status Selector - Only on Production tab */}
+          {showPaymentStatusSelector && (
+            <div className="flex items-center gap-3 pl-6">
+              <span className="text-xs text-muted-foreground font-medium">Statut paiement:</span>
+              <Select
+                value={request.paymentStatus || "pending"}
+                onValueChange={(value) => {
+                  updatePaymentStatusMutation.mutate({
+                    requestId: request.id,
+                    paymentStatus: value
+                  });
+                }}
+                disabled={updatePaymentStatusMutation.isPending}
+              >
+                <SelectTrigger className="h-8 w-[200px]" data-testid={`select-payment-status-${request.id}`}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">En attente</SelectItem>
+                  <SelectItem value="a_facturer">À facturer</SelectItem>
+                  <SelectItem value="paid_by_client">Payé par client</SelectItem>
+                  <SelectItem value="paid_by_camionback">Payé par CamionBack</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
           <p className="text-xs text-muted-foreground pl-6">
             Créée le {format(new Date(request.createdAt), "dd MMM yyyy 'à' HH:mm", { locale: fr })}
           </p>
@@ -2612,7 +2640,7 @@ export default function CoordinatorDashboard() {
               </Card>
             ) : (
               filterRequests([...activeRequests, ...paymentRequests]).map((request) => 
-                renderRequestCard(request, false, true, false, false)
+                renderRequestCard(request, false, true, false, false, false, false, true)
               )
             )}
           </TabsContent>
