@@ -4590,7 +4590,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const { paymentStatus } = req.body;
 
+      console.log(`[PATCH /api/coordinator/requests/:id/payment-status] Received request for ${id} with paymentStatus: ${paymentStatus}`);
+
       const updated = await storage.updateRequestPaymentStatus(id, paymentStatus);
+      
+      console.log(`[PATCH /api/coordinator/requests/:id/payment-status] Update completed. Result:`, updated);
+      
       res.json(updated);
     } catch (error) {
       console.error("Erreur modification statut paiement:", error);

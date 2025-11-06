@@ -2726,14 +2726,19 @@ export class DbStorage implements IStorage {
   }
 
   async updateRequestPaymentStatus(requestId: string, paymentStatus: string): Promise<TransportRequest | undefined> {
+    console.log(`[updateRequestPaymentStatus] Starting update for request ${requestId} with paymentStatus: ${paymentStatus}`);
+    
     // First, get the request details
     const request = await db.select().from(transportRequests)
       .where(eq(transportRequests.id, requestId))
       .limit(1);
     
     if (!request[0]) {
+      console.log(`[updateRequestPaymentStatus] Request ${requestId} not found`);
       return undefined;
     }
+
+    console.log(`[updateRequestPaymentStatus] Current request status: ${request[0].status}, current paymentStatus: ${request[0].paymentStatus}`);
 
     // Update the payment status
     const result = await db.update(transportRequests)
@@ -2741,8 +2746,12 @@ export class DbStorage implements IStorage {
       .where(eq(transportRequests.id, requestId))
       .returning();
     
-    // If paymentStatus is "paid_by_camionback", create a contract with status "terminé"
+    console.log(`[updateRequestPaymentStatus] Updated paymentStatus to: ${result[0]?.paymentStatus}`);
+    
+    // If paymentStatus is "paid_by_camionback", create a contract with status "completed"
     if (paymentStatus === "paid_by_camionback" && request[0].status === "accepted") {
+      console.log(`[updateRequestPaymentStatus] Creating/updating contract for paid_by_camionback`);
+
       try {
         // Get the accepted offer details to find the transporter
         let transporterId = request[0].assignedTransporterId;
@@ -2769,6 +2778,7 @@ export class DbStorage implements IStorage {
 
           if (existingContract.length === 0) {
             // Create new contract with "completed" (terminé) status
+            console.log(`[updateRequestPaymentStatus] Creating new contract with status=completed`);
             await db.insert(contracts).values({
               requestId: requestId,
               offerId: offerId,
@@ -2778,17 +2788,24 @@ export class DbStorage implements IStorage {
               amount: amount,
               status: "completed",
             });
+            console.log(`[updateRequestPaymentStatus] Contract created successfully`);
           } else {
             // Update existing contract to "completed" (terminé) status
+            console.log(`[updateRequestPaymentStatus] Updating existing contract to status=completed`);
             await db.update(contracts)
               .set({ status: "completed" })
               .where(eq(contracts.requestId, requestId));
+            console.log(`[updateRequestPaymentStatus] Contract updated successfully`);
           }
+        } else {
+          console.log(`[updateRequestPaymentStatus] Skipping contract creation - missing required data. transporterId: ${transporterId}, offerId: ${offerId}, clientId: ${request[0].clientId}`);
         }
       } catch (error) {
-        console.error("Error creating/updating contract for paid_by_camionback:", error);
+        console.error("[updateRequestPaymentStatus] Error creating/updating contract for paid_by_camionback:", error);
         // Continue anyway - don't fail the payment status update
       }
+    } else {
+      console.log(`[updateRequestPaymentStatus] Skipping contract creation - paymentStatus: ${paymentStatus}, request.status: ${request[0].status}`);
     }
     
     return result[0];

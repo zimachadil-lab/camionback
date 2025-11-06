@@ -1967,7 +1967,6 @@ export default function CoordinatorDashboard() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="pending">En attente</SelectItem>
                   <SelectItem value="a_facturer">À facturer</SelectItem>
                   <SelectItem value="paid_by_client">Payé par client</SelectItem>
                   <SelectItem value="paid_by_camionback">Payé par CamionBack</SelectItem>
