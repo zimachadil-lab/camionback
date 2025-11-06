@@ -1243,6 +1243,7 @@ export default function CoordinatorDashboard() {
         description: "Le transporteur a été assigné avec succès à cette commande.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/matching-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/active-requests"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/en-action"] });
       setInterestedTransportersDialogOpen(false);
     },
@@ -1573,6 +1574,7 @@ export default function CoordinatorDashboard() {
     });
     queryClient.invalidateQueries({ queryKey: ["/api/coordinator/available-requests"] });
     queryClient.invalidateQueries({ queryKey: ["/api/coordinator/active-requests"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/coordinator/matching-requests"] });
     queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination-requests"] });
   };
 
