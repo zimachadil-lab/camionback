@@ -5371,11 +5371,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const { fromCity, toCity, description, dateTime, photos } = req.body;
 
+      console.log(`[PATCH /api/coordinator/requests/:id] Received update request for ${id}`);
+      console.log(`[PATCH /api/coordinator/requests/:id] Body:`, { fromCity, toCity, description, dateTime, photos: photos?.length });
+
       // Get current request to compare changes
       const currentRequest = await storage.getTransportRequest(id);
       if (!currentRequest) {
+        console.log(`[PATCH /api/coordinator/requests/:id] Request ${id} not found`);
         return res.status(404).json({ error: "Commande non trouvée" });
       }
+      
+      console.log(`[PATCH /api/coordinator/requests/:id] Current request found:`, currentRequest.referenceId);
 
       // Prepare updates object
       const updates: Partial<TransportRequest> = {};
@@ -5406,13 +5412,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Update the request if there are changes
+      console.log(`[PATCH /api/coordinator/requests/:id] Updates to apply:`, updates);
+      console.log(`[PATCH /api/coordinator/requests/:id] Changes detected:`, changes);
+      
       let updated = currentRequest;
       if (Object.keys(updates).length > 0) {
+        console.log(`[PATCH /api/coordinator/requests/:id] Calling updateTransportRequest with updates:`, updates);
         const result = await storage.updateTransportRequest(id, updates);
+        console.log(`[PATCH /api/coordinator/requests/:id] Update result:`, result ? 'success' : 'failed');
         if (!result) {
+          console.error(`[PATCH /api/coordinator/requests/:id] Failed to update request ${id}`);
           return res.status(500).json({ error: "Échec de la mise à jour de la commande" });
         }
         updated = result;
+      } else {
+        console.log(`[PATCH /api/coordinator/requests/:id] No changes detected, skipping update`);
       }
 
       // Log the coordination edit
@@ -5430,9 +5444,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      console.log(`[PATCH /api/coordinator/requests/:id] Successfully updated request ${id}`);
       res.json(updated);
     } catch (error) {
-      console.error("Erreur modification commande:", error);
+      console.error(`[PATCH /api/coordinator/requests/:id] Error updating request:`, error);
+      console.error(`[PATCH /api/coordinator/requests/:id] Error stack:`, (error as Error).stack);
       res.status(500).json({ error: "Erreur lors de la modification de la commande" });
     }
   });

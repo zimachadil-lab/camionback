@@ -1026,10 +1026,7 @@ export default function CoordinatorDashboard() {
   const updateRequestMutation = useMutation({
     mutationFn: async (data: any) => {
       const { requestId, ...updates } = data;
-      return apiRequest("PATCH", `/api/coordinator/requests/${requestId}`, {
-        ...updates,
-        coordinatorId: user!.id,
-      });
+      return apiRequest("PATCH", `/api/coordinator/requests/${requestId}`, updates);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/available-requests"] });
