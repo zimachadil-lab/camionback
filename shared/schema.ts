@@ -57,7 +57,7 @@ export const transportRequests = pgTable("transport_requests", {
   status: text("status").default("open"), // open, accepted, completed, cancelled
   acceptedOfferId: varchar("accepted_offer_id"),
   acceptedAt: timestamp("accepted_at"), // When client or coordinator accepted the offer
-  paymentStatus: text("payment_status").default("pending"), // pending, a_facturer, paid_by_client, paid_by_camionback
+  paymentStatus: text("payment_status").default("a_facturer"), // a_facturer, paid_by_client, paid_by_camionback
   paymentReceipt: text("payment_receipt"), // Client's payment receipt photo (base64)
   paymentDate: timestamp("payment_date"),
   viewCount: integer("view_count").default(0), // Number of times request was viewed
