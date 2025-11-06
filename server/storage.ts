@@ -2768,7 +2768,7 @@ export class DbStorage implements IStorage {
             .limit(1);
 
           if (existingContract.length === 0) {
-            // Create new contract with "terminé" status
+            // Create new contract with "completed" (terminé) status
             await db.insert(contracts).values({
               requestId: requestId,
               offerId: offerId,
@@ -2776,12 +2776,12 @@ export class DbStorage implements IStorage {
               transporterId: transporterId,
               referenceId: request[0].referenceId,
               amount: amount,
-              status: "terminé",
+              status: "completed",
             });
           } else {
-            // Update existing contract to "terminé" status
+            // Update existing contract to "completed" (terminé) status
             await db.update(contracts)
-              .set({ status: "terminé" })
+              .set({ status: "completed" })
               .where(eq(contracts.requestId, requestId));
           }
         }

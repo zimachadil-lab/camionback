@@ -928,6 +928,7 @@ export default function CoordinatorDashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/payment-requests"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/active-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/contracts"] });
       toast({
         title: "Succès",
         description: "Statut de paiement mis à jour",

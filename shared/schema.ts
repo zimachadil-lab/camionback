@@ -178,7 +178,7 @@ export const contracts = pgTable("contracts", {
   transporterId: varchar("transporter_id").notNull().references(() => users.id),
   referenceId: text("reference_id").notNull(), // Copy of request reference for easy display
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(), // Agreed amount
-  status: text("status").default("in_progress"), // in_progress, marked_paid_transporter, marked_paid_client, completed, terminé
+  status: text("status").default("in_progress"), // in_progress, marked_paid_transporter, marked_paid_client, completed
   createdAt: timestamp("created_at").defaultNow(),
 });
 
