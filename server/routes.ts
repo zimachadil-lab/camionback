@@ -4733,15 +4733,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (smsError) {
           console.error('❌ Erreur SMS qualification:', smsError);
         }
-
-        // Email notification
-        try {
-          emailService.sendRequestQualifiedEmail(updated, client, transporterAmount, platformFee, clientTotal).catch(emailError => {
-            console.error('❌ Erreur email qualification:', emailError);
-          });
-        } catch (emailError) {
-          console.error('❌ Erreur email qualification:', emailError);
-        }
       }
 
       res.json(updated);
