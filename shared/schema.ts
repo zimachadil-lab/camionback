@@ -57,7 +57,7 @@ export const transportRequests = pgTable("transport_requests", {
   status: text("status").default("open"), // open, accepted, completed, cancelled
   acceptedOfferId: varchar("accepted_offer_id"),
   acceptedAt: timestamp("accepted_at"), // When client or coordinator accepted the offer
-  paymentStatus: text("payment_status").default("pending"), // pending, awaiting_payment, pending_admin_validation, paid_by_client, paid_by_camionback
+  paymentStatus: text("payment_status").default("pending"), // pending, a_facturer, paid_by_client, paid_by_camionback
   paymentReceipt: text("payment_receipt"), // Client's payment receipt photo (base64)
   paymentDate: timestamp("payment_date"),
   viewCount: integer("view_count").default(0), // Number of times request was viewed
@@ -178,7 +178,7 @@ export const contracts = pgTable("contracts", {
   transporterId: varchar("transporter_id").notNull().references(() => users.id),
   referenceId: text("reference_id").notNull(), // Copy of request reference for easy display
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(), // Agreed amount
-  status: text("status").default("in_progress"), // in_progress, marked_paid_transporter, marked_paid_client, completed
+  status: text("status").default("in_progress"), // in_progress, marked_paid_transporter, marked_paid_client, completed, terminé
   createdAt: timestamp("created_at").defaultNow(),
 });
 
