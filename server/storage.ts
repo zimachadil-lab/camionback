@@ -2553,98 +2553,134 @@ export class DbStorage implements IStorage {
   }
 
   async getCoordinatorActiveRequests(): Promise<any[]> {
-    // Get all accepted requests AND manually assigned requests
+    // OPTIMIZED: Use SQL JOINs to fetch all data in a single query instead of N+1 queries
+    // Get all accepted requests AND manually assigned requests with all related data
     // EXCLUDE requests with paymentStatus = "paid_by_camionback" (migrated to contracts)
-    const requests = await db.select({
-      id: transportRequests.id,
-      referenceId: transportRequests.referenceId,
-      fromCity: transportRequests.fromCity,
-      toCity: transportRequests.toCity,
-      description: transportRequests.description,
-      goodsType: transportRequests.goodsType,
-      dateTime: transportRequests.dateTime,
-      budget: transportRequests.budget,
-      photos: transportRequests.photos,
-      status: transportRequests.status,
-      isHidden: transportRequests.isHidden,
-      paymentStatus: transportRequests.paymentStatus,
-      acceptedOfferId: transportRequests.acceptedOfferId,
-      assignedTransporterId: transportRequests.assignedTransporterId,
-      assignedToId: transportRequests.assignedToId,
-      transporterAmount: transportRequests.transporterAmount,
-      platformFee: transportRequests.platformFee,
-      clientTotal: transportRequests.clientTotal,
-      shareToken: transportRequests.shareToken,
-      createdAt: transportRequests.createdAt,
-    })
-    .from(transportRequests)
-    .where(
-      and(
-        or(
-          eq(transportRequests.status, 'accepted'),
-          isNotNull(transportRequests.assignedTransporterId)
-        ),
-        ne(transportRequests.paymentStatus, 'paid_by_camionback')
-      )
-    )
-    .orderBy(desc(transportRequests.createdAt));
-
-    // Enrich with client, transporter, assigned coordinator, and accepted offer
-    const enrichedRequests = await Promise.all(
-      requests.map(async (request) => {
-        // Get client data  
-        const clientResult = await db.select().from(users)
-          .innerJoin(transportRequests, eq(transportRequests.clientId, users.id))
-          .where(eq(transportRequests.id, request.id))
-          .limit(1);
-        const client = clientResult[0]?.users || null;
-
-        // Get assigned coordinator data if exists
-        const assignedToData = request.assignedToId 
-          ? await db.select().from(users).where(eq(users.id, request.assignedToId)).limit(1)
-          : [];
-
-        // Get transporter and accepted offer
-        let acceptedOffer = null;
-        let transporter = null;
-        
-        // Priority 1: Check for manually assigned transporter
-        if (request.assignedTransporterId) {
-          const transporterResult = await db.select().from(users)
-            .where(eq(users.id, request.assignedTransporterId))
-            .limit(1);
-          transporter = transporterResult[0] || null;
-        }
-        // Priority 2: Check for accepted offer transporter
-        else if (request.acceptedOfferId) {
-          const offerResult = await db.select().from(offers)
-            .where(eq(offers.id, request.acceptedOfferId))
-            .limit(1);
-          acceptedOffer = offerResult[0] || null;
-
-          if (acceptedOffer) {
-            const transporterResult = await db.select().from(users)
-              .where(eq(users.id, acceptedOffer.transporterId))
-              .limit(1);
-            transporter = transporterResult[0] || null;
-          }
-        }
-
-        return {
-          ...request,
-          client,
-          assignedTo: assignedToData[0] ? {
-            id: assignedToData[0].id,
-            name: assignedToData[0].name,
-            phoneNumber: assignedToData[0].phoneNumber,
-          } : null,
-          transporter,
-          acceptedOffer,
-        };
+    
+    const results = await db
+      .select({
+        // Request fields
+        id: transportRequests.id,
+        referenceId: transportRequests.referenceId,
+        fromCity: transportRequests.fromCity,
+        toCity: transportRequests.toCity,
+        description: transportRequests.description,
+        goodsType: transportRequests.goodsType,
+        dateTime: transportRequests.dateTime,
+        budget: transportRequests.budget,
+        photos: transportRequests.photos,
+        status: transportRequests.status,
+        isHidden: transportRequests.isHidden,
+        paymentStatus: transportRequests.paymentStatus,
+        acceptedOfferId: transportRequests.acceptedOfferId,
+        assignedTransporterId: transportRequests.assignedTransporterId,
+        assignedToId: transportRequests.assignedToId,
+        transporterAmount: transportRequests.transporterAmount,
+        platformFee: transportRequests.platformFee,
+        clientTotal: transportRequests.clientTotal,
+        shareToken: transportRequests.shareToken,
+        createdAt: transportRequests.createdAt,
+        clientId: transportRequests.clientId,
+        // Client data
+        clientName: sql<string>`${users.name}`.as('client_name'),
+        clientPhoneNumber: sql<string>`${users.phoneNumber}`.as('client_phone_number'),
+        // Coordinator data
+        coordinatorId: sql<string | null>`coordinator.id`.as('coordinator_id'),
+        coordinatorName: sql<string | null>`coordinator.name`.as('coordinator_name'),
+        coordinatorPhoneNumber: sql<string | null>`coordinator.phone_number`.as('coordinator_phone_number'),
+        // Transporter data (from assigned_transporter_id)
+        assignedTransporterName: sql<string | null>`assigned_transporter.name`.as('assigned_transporter_name'),
+        assignedTransporterPhoneNumber: sql<string | null>`assigned_transporter.phone_number`.as('assigned_transporter_phone_number'),
+        // Offer data
+        offerId: sql<string | null>`${offers.id}`.as('offer_id'),
+        offerAmount: sql<string | null>`${offers.amount}`.as('offer_amount'),
+        offerTransporterId: sql<string | null>`${offers.transporterId}`.as('offer_transporter_id'),
+        // Transporter data (from accepted offer)
+        offerTransporterName: sql<string | null>`offer_transporter.name`.as('offer_transporter_name'),
+        offerTransporterPhoneNumber: sql<string | null>`offer_transporter.phone_number`.as('offer_transporter_phone_number'),
       })
-    );
+      .from(transportRequests)
+      // JOIN client (always required)
+      .innerJoin(users, eq(transportRequests.clientId, users.id))
+      // LEFT JOIN coordinator (optional)
+      .leftJoin(
+        sql`users as coordinator`,
+        eq(transportRequests.assignedToId, sql`coordinator.id`)
+      )
+      // LEFT JOIN assigned transporter (optional - for manually assigned)
+      .leftJoin(
+        sql`users as assigned_transporter`,
+        eq(transportRequests.assignedTransporterId, sql`assigned_transporter.id`)
+      )
+      // LEFT JOIN accepted offer (optional)
+      .leftJoin(offers, eq(transportRequests.acceptedOfferId, offers.id))
+      // LEFT JOIN offer transporter (optional - for offer-based assignments)
+      .leftJoin(
+        sql`users as offer_transporter`,
+        eq(offers.transporterId, sql`offer_transporter.id`)
+      )
+      .where(
+        and(
+          or(
+            eq(transportRequests.status, 'accepted'),
+            isNotNull(transportRequests.assignedTransporterId)
+          ),
+          ne(transportRequests.paymentStatus, 'paid_by_camionback')
+        )
+      )
+      .orderBy(desc(transportRequests.createdAt));
 
-    return enrichedRequests;
+    // Transform the flat results into the expected nested structure
+    return results.map(row => ({
+      id: row.id,
+      referenceId: row.referenceId,
+      fromCity: row.fromCity,
+      toCity: row.toCity,
+      description: row.description,
+      goodsType: row.goodsType,
+      dateTime: row.dateTime,
+      budget: row.budget,
+      photos: row.photos,
+      status: row.status,
+      isHidden: row.isHidden,
+      paymentStatus: row.paymentStatus,
+      acceptedOfferId: row.acceptedOfferId,
+      assignedTransporterId: row.assignedTransporterId,
+      assignedToId: row.assignedToId,
+      transporterAmount: row.transporterAmount,
+      platformFee: row.platformFee,
+      clientTotal: row.clientTotal,
+      shareToken: row.shareToken,
+      createdAt: row.createdAt,
+      // Nested client object
+      client: {
+        id: row.clientId,
+        name: row.clientName,
+        phoneNumber: row.clientPhoneNumber,
+      },
+      // Nested coordinator object (if assigned)
+      assignedTo: row.coordinatorId ? {
+        id: row.coordinatorId,
+        name: row.coordinatorName,
+        phoneNumber: row.coordinatorPhoneNumber,
+      } : null,
+      // Nested transporter object (priority: assigned > offer)
+      transporter: row.assignedTransporterId ? {
+        id: row.assignedTransporterId,
+        name: row.assignedTransporterName,
+        phoneNumber: row.assignedTransporterPhoneNumber,
+      } : (row.offerTransporterId ? {
+        id: row.offerTransporterId,
+        name: row.offerTransporterName,
+        phoneNumber: row.offerTransporterPhoneNumber,
+      } : null),
+      // Nested accepted offer object (if exists)
+      acceptedOffer: row.offerId ? {
+        id: row.offerId,
+        amount: row.offerAmount,
+        transporterId: row.offerTransporterId,
+      } : null,
+    }));
   }
 
   async getCoordinatorPaymentRequests(): Promise<any[]> {
