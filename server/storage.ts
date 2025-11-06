@@ -2554,6 +2554,7 @@ export class DbStorage implements IStorage {
 
   async getCoordinatorActiveRequests(): Promise<any[]> {
     // Get all accepted requests AND manually assigned requests
+    // EXCLUDE requests with paymentStatus = "paid_by_camionback" (migrated to contracts)
     const requests = await db.select({
       id: transportRequests.id,
       referenceId: transportRequests.referenceId,
@@ -2578,9 +2579,12 @@ export class DbStorage implements IStorage {
     })
     .from(transportRequests)
     .where(
-      or(
-        eq(transportRequests.status, 'accepted'),
-        isNotNull(transportRequests.assignedTransporterId)
+      and(
+        or(
+          eq(transportRequests.status, 'accepted'),
+          isNotNull(transportRequests.assignedTransporterId)
+        ),
+        ne(transportRequests.paymentStatus, 'paid_by_camionback')
       )
     )
     .orderBy(desc(transportRequests.createdAt));
@@ -2722,10 +2726,71 @@ export class DbStorage implements IStorage {
   }
 
   async updateRequestPaymentStatus(requestId: string, paymentStatus: string): Promise<TransportRequest | undefined> {
+    // First, get the request details
+    const request = await db.select().from(transportRequests)
+      .where(eq(transportRequests.id, requestId))
+      .limit(1);
+    
+    if (!request[0]) {
+      return undefined;
+    }
+
+    // Update the payment status
     const result = await db.update(transportRequests)
       .set({ paymentStatus })
       .where(eq(transportRequests.id, requestId))
       .returning();
+    
+    // If paymentStatus is "paid_by_camionback", create a contract with status "terminé"
+    if (paymentStatus === "paid_by_camionback" && request[0].status === "accepted") {
+      try {
+        // Get the accepted offer details to find the transporter
+        let transporterId = request[0].assignedTransporterId;
+        let offerId = request[0].acceptedOfferId;
+        let amount = request[0].clientTotal || "0";
+
+        // If no assigned transporter, get from accepted offer
+        if (!transporterId && offerId) {
+          const offer = await db.select().from(offers)
+            .where(eq(offers.id, offerId))
+            .limit(1);
+          if (offer[0]) {
+            transporterId = offer[0].transporterId;
+            amount = offer[0].amount;
+          }
+        }
+
+        // Only create contract if we have all required data
+        if (transporterId && offerId && request[0].clientId) {
+          // Check if contract already exists for this request
+          const existingContract = await db.select().from(contracts)
+            .where(eq(contracts.requestId, requestId))
+            .limit(1);
+
+          if (existingContract.length === 0) {
+            // Create new contract with "terminé" status
+            await db.insert(contracts).values({
+              requestId: requestId,
+              offerId: offerId,
+              clientId: request[0].clientId,
+              transporterId: transporterId,
+              referenceId: request[0].referenceId,
+              amount: amount,
+              status: "terminé",
+            });
+          } else {
+            // Update existing contract to "terminé" status
+            await db.update(contracts)
+              .set({ status: "terminé" })
+              .where(eq(contracts.requestId, requestId));
+          }
+        }
+      } catch (error) {
+        console.error("Error creating/updating contract for paid_by_camionback:", error);
+        // Continue anyway - don't fail the payment status update
+      }
+    }
+    
     return result[0];
   }
 
