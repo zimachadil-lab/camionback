@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth-context";
 import { LoadingTruck } from "@/components/ui/loading-truck";
 import { StoriesBar } from "@/components/ui/stories-bar";
+import { MetaPixelEvents } from "@/lib/meta-pixel";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1708,6 +1709,13 @@ export default function ClientDashboard() {
     setSelectedPhotos(photos);
     setShowPhotosDialog(true);
   };
+
+  // Track client dashboard login with Meta Pixel
+  useEffect(() => {
+    if (user?.role === 'client') {
+      MetaPixelEvents.login('client');
+    }
+  }, [user]);
 
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ["/api/requests", user?.id],
