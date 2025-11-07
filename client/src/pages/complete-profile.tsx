@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Upload, Truck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth-context";
+import { MetaPixelEvents } from "@/lib/meta-pixel";
 
 const MOROCCAN_CITIES = [
   "Casablanca",
@@ -53,6 +54,13 @@ export default function CompleteProfile() {
       city: "",
     },
   });
+
+  // Track page view with Meta Pixel
+  useEffect(() => {
+    if (user?.role === 'transporteur') {
+      MetaPixelEvents.viewCompleteProfile('transporteur');
+    }
+  }, [user]);
 
   // Redirect if not authenticated or not a transporter
   useEffect(() => {
@@ -113,6 +121,13 @@ export default function CompleteProfile() {
       toast({
         title: "Profil complété",
         description: "Votre profil est en cours de validation par notre équipe",
+      });
+
+      // Track transporter registration with Meta Pixel
+      MetaPixelEvents.transporterRegistration({
+        city: data.city,
+        vehicleType: 'camion',
+        capacity: 'N/A',
       });
 
       // CRITICAL: Force full page navigation to ensure user context is fresh
