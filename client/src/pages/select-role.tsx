@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Truck, Package, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth-context";
+import { MetaPixelEvents } from "@/lib/meta-pixel";
 
 export default function SelectRole() {
   const [, setLocation] = useLocation();
@@ -13,6 +14,11 @@ export default function SelectRole() {
   const { toast } = useToast();
   const { user, loading: authLoading, refreshUser } = useAuth();
   
+  // Track page view with Meta Pixel
+  useEffect(() => {
+    MetaPixelEvents.viewSelectRole();
+  }, []);
+
   // Redirect if user already has a role
   useEffect(() => {
     if (!authLoading && user?.role) {
@@ -41,6 +47,10 @@ export default function SelectRole() {
   const handleSelectRole = async (role: "client" | "transporteur") => {
     setSelectedRole(role);
     setLoading(true);
+    
+    // Track role selection with Meta Pixel
+    MetaPixelEvents.selectRole(role);
+    
     try {
       console.log("🔄 [SELECT-ROLE] Sending request:", { role });
       
