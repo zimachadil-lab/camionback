@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { RecommendedTransportersDialog } from "./recommended-transporters-dialog";
 import { useAuth } from "@/lib/auth-context";
+import { MetaPixelEvents } from "@/lib/meta-pixel";
 
 const requestSchema = z.object({
   fromCity: z.string().min(2, "Ville de départ requise"),
@@ -152,6 +153,14 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
       toast({
         title: "Demande créée",
         description: "Votre demande de transport a été publiée avec succès",
+      });
+      
+      // Track transport request creation with Meta Pixel
+      MetaPixelEvents.createTransportRequest({
+        fromCity: data.fromCity,
+        toCity: data.toCity,
+        goodsType: data.goodsType,
+        budget: data.budget,
       });
       
       // Fetch recommended transporters
