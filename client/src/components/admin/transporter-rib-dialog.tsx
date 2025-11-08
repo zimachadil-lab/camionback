@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth-context";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -22,22 +23,19 @@ export function TransporterRibDialog({
   transporterName 
 }: TransporterRibDialogProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [ribName, setRibName] = useState("");
   const [ribNumber, setRibNumber] = useState("");
-
-  // Get current admin user from localStorage
-  const storedUser = localStorage.getItem("camionback_user");
-  const admin = storedUser ? JSON.parse(storedUser) : null;
 
   const { data: ribData, isLoading } = useQuery({
     queryKey: ["/api/admin/users", transporterId, "rib"],
     queryFn: async () => {
-      if (!transporterId || !admin?.id) return null;
-      const response = await fetch(`/api/admin/users/${transporterId}/rib?adminId=${admin.id}`);
+      if (!transporterId) return null;
+      const response = await fetch(`/api/admin/users/${transporterId}/rib`);
       if (!response.ok) throw new Error("Échec de récupération du RIB");
       return response.json();
     },
-    enabled: open && !!transporterId && !!admin?.id,
+    enabled: open && !!transporterId,
   });
 
   useEffect(() => {
@@ -49,11 +47,7 @@ export function TransporterRibDialog({
 
   const updateRibMutation = useMutation({
     mutationFn: async (data: { ribName: string; ribNumber: string }) => {
-      if (!admin?.id) throw new Error("Admin non trouvé");
-      return await apiRequest("PATCH", `/api/admin/users/${transporterId}/rib`, {
-        ...data,
-        adminId: admin.id,
-      });
+      return await apiRequest("PATCH", `/api/admin/users/${transporterId}/rib`, data);
     },
     onSuccess: () => {
       toast({
