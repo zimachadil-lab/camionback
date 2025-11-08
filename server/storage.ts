@@ -2789,12 +2789,12 @@ export class DbStorage implements IStorage {
       console.log(`[updateRequestPaymentStatus] Creating/updating contract for paid_by_camionback`);
 
       try {
-        // Get the accepted offer details to find the transporter
+        // Get the assigned transporter and contract amount
         let transporterId = request[0].assignedTransporterId;
         let offerId = request[0].acceptedOfferId;
         let amount = request[0].clientTotal || "0";
 
-        // If no assigned transporter, get from accepted offer
+        // If no assigned transporter but we have an offer, get from accepted offer
         if (!transporterId && offerId) {
           const offer = await db.select().from(offers)
             .where(eq(offers.id, offerId))
@@ -2805,8 +2805,15 @@ export class DbStorage implements IStorage {
           }
         }
 
-        // Only create contract if we have all required data
-        if (transporterId && offerId && request[0].clientId) {
+        // Calculate amount from qualified pricing if not available from offer
+        if (!amount || amount === "0") {
+          const transporterAmount = Number(request[0].transporterAmount) || 0;
+          const platformFee = Number(request[0].platformFee) || 0;
+          amount = String(transporterAmount + platformFee);
+        }
+
+        // Create contract if we have transporter and client (offerId is optional for coordinator-assigned requests)
+        if (transporterId && request[0].clientId) {
           // Check if contract already exists for this request
           const existingContract = await db.select().from(contracts)
             .where(eq(contracts.requestId, requestId))
@@ -2814,17 +2821,17 @@ export class DbStorage implements IStorage {
 
           if (existingContract.length === 0) {
             // Create new contract with "completed" (terminé) status
-            console.log(`[updateRequestPaymentStatus] Creating new contract with status=completed`);
+            console.log(`[updateRequestPaymentStatus] Creating new contract with status=completed, offerId: ${offerId || 'null (coordinator-assigned)'}`);
             await db.insert(contracts).values({
               requestId: requestId,
-              offerId: offerId,
+              offerId: offerId || null,
               clientId: request[0].clientId,
               transporterId: transporterId,
               referenceId: request[0].referenceId,
               amount: amount,
               status: "completed",
             });
-            console.log(`[updateRequestPaymentStatus] Contract created successfully`);
+            console.log(`[updateRequestPaymentStatus] Contract created successfully with amount: ${amount}`);
           } else {
             // Update existing contract to "completed" (terminé) status
             console.log(`[updateRequestPaymentStatus] Updating existing contract to status=completed`);
@@ -2834,7 +2841,7 @@ export class DbStorage implements IStorage {
             console.log(`[updateRequestPaymentStatus] Contract updated successfully`);
           }
         } else {
-          console.log(`[updateRequestPaymentStatus] Skipping contract creation - missing required data. transporterId: ${transporterId}, offerId: ${offerId}, clientId: ${request[0].clientId}`);
+          console.log(`[updateRequestPaymentStatus] Skipping contract creation - missing required data. transporterId: ${transporterId}, clientId: ${request[0].clientId}`);
         }
       } catch (error) {
         console.error("[updateRequestPaymentStatus] Error creating/updating contract for paid_by_camionback:", error);
