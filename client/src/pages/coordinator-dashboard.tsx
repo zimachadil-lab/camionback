@@ -718,6 +718,16 @@ export default function CoordinatorDashboard() {
   const [requalifyDialogOpen, setRequalifyDialogOpen] = useState(false);
   const [requalifyRequestData, setRequalifyRequestData] = useState<any>(null);
   const [requalificationReason, setRequalificationReason] = useState("");
+  
+  // Payment and rating dialogs for "paid_by_client" workflow
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [paymentRequestId, setPaymentRequestId] = useState<string>("");
+  const [paymentReceipt, setPaymentReceipt] = useState<string>("");
+  const [showRatingDialog, setShowRatingDialog] = useState(false);
+  const [ratingValue, setRatingValue] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [ratingRequestId, setRatingRequestId] = useState<string>("");
+  
   const { toast} = useToast();
 
   const handleLogout = () => {
@@ -942,6 +952,83 @@ export default function CoordinatorDashboard() {
         variant: "destructive",
         title: "Erreur",
         description: "Échec de mise à jour du statut",
+      });
+    },
+  });
+
+  // Mark as paid by client mutation (coordinator workflow)
+  const markAsPaidByClientMutation = useMutation({
+    mutationFn: async ({ requestId, receipt }: { requestId: string; receipt: string }) => {
+      return await apiRequest("POST", `/api/requests/${requestId}/mark-as-paid`, {
+        clientId: user!.id,
+        paymentReceipt: receipt,
+      });
+    },
+    onSuccess: (_, variables) => {
+      toast({
+        title: "Succès",
+        description: "Merci ! Veuillez maintenant évaluer le transporteur",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/active-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/payment-requests"] });
+      
+      // Close payment dialog
+      setShowPaymentDialog(false);
+      setPaymentReceipt("");
+      
+      // Open rating dialog automatically with the same request
+      setRatingRequestId(variables.requestId);
+      setRatingValue(0);
+      setHoverRating(0);
+      setShowRatingDialog(true);
+      
+      // Clear payment request ID after everything is set
+      setPaymentRequestId("");
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Échec de la confirmation du paiement",
+      });
+    },
+  });
+
+  // Complete with rating mutation (coordinator workflow)
+  const completeWithRatingMutation = useMutation({
+    mutationFn: async ({ requestId, rating }: { requestId: string; rating: number }) => {
+      const response = await fetch(`/api/requests/${requestId}/complete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ rating }),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to complete request with rating");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Commande terminée",
+        description: "Merci pour votre évaluation ! La commande est maintenant terminée.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/active-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/payment-requests"] });
+      setShowRatingDialog(false);
+      
+      // Update payment status to "paid_by_client" after rating
+      updatePaymentStatusMutation.mutate({
+        requestId: ratingRequestId,
+        paymentStatus: "paid_by_client"
+      });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Impossible de terminer la commande",
       });
     },
   });
