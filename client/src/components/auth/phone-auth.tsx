@@ -40,8 +40,8 @@ export function PhoneAuth() {
     if (cleanPhone.length !== 9) {
       toast({
         variant: "destructive",
-        title: "Erreur",
-        description: "Le numéro doit contenir exactement 9 chiffres",
+        title: t('auth.error'),
+        description: t('auth.phoneNumberError'),
       });
       return;
     }
@@ -63,8 +63,8 @@ export function PhoneAuth() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Erreur",
-        description: "Échec de la vérification",
+        title: t('auth.error'),
+        description: t('auth.verificationFailed'),
       });
     } finally {
       setLoading(false);
@@ -77,8 +77,8 @@ export function PhoneAuth() {
     if (pin.length !== 6) {
       toast({
         variant: "destructive",
-        title: "Erreur",
-        description: "Le code PIN doit contenir 6 chiffres",
+        title: t('auth.error'),
+        description: t('auth.pinError'),
       });
       return;
     }
@@ -86,8 +86,8 @@ export function PhoneAuth() {
     if (mode === "register" && pin !== confirmPin) {
       toast({
         variant: "destructive",
-        title: "Erreur",
-        description: "Les codes PIN ne correspondent pas",
+        title: t('auth.error'),
+        description: t('auth.pinMismatch'),
       });
       return;
     }
@@ -109,8 +109,8 @@ export function PhoneAuth() {
         const error = await response.json();
         toast({
           variant: "destructive",
-          title: "Erreur",
-          description: error.error || (mode === "login" ? "Numéro ou code PIN incorrect" : "Échec de l'inscription"),
+          title: t('auth.error'),
+          description: error.error || (mode === "login" ? t('auth.invalidCredentials') : t('auth.registerFailed')),
         });
         return;
       }
@@ -133,8 +133,8 @@ export function PhoneAuth() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Erreur",
-        description: mode === "login" ? "Échec de la connexion" : "Échec de l'inscription",
+        title: t('auth.error'),
+        description: mode === "login" ? t('auth.loginFailed') : t('auth.registerFailed'),
       });
     } finally {
       setLoading(false);
@@ -213,24 +213,24 @@ export function PhoneAuth() {
           </div>
           <CardDescription className="text-base">
             {step === "phone" 
-              ? "Entrez votre numéro de téléphone" 
+              ? t('auth.enterPhoneNumber') 
               : mode === "login" 
-                ? "Entrez votre code PIN" 
-                : "Créez votre code PIN à 6 chiffres"}
+                ? t('auth.enterPIN') 
+                : t('auth.createPIN')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {step === "phone" ? (
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Numéro de téléphone</label>
+                <label className="text-sm font-medium">{t('auth.phoneNumber')}</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium pointer-events-none select-none">
                     +212
                   </span>
                   <Input
                     type="tel"
-                    placeholder="6 12 34 56 78"
+                    placeholder={t('auth.phonePlaceholder')}
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
                     onFocus={() => setIsPaused(true)}
@@ -240,7 +240,7 @@ export function PhoneAuth() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Format: 6 12 34 56 78 (9 chiffres)
+                  {t('auth.phoneFormat')}
                 </p>
               </div>
               <Button 
@@ -250,7 +250,7 @@ export function PhoneAuth() {
                 disabled={loading}
                 data-testid="button-continue"
               >
-                {loading ? "Vérification..." : "Continuer"}
+                {loading ? t('auth.verifying') : t('auth.continue')}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </div>
@@ -258,7 +258,7 @@ export function PhoneAuth() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">
-                  {mode === "login" ? "Code PIN" : "Créer un code PIN"}
+                  {mode === "login" ? t('auth.pin') : t('auth.createNewPIN')}
                 </label>
                 <div className="relative">
                   <Input
@@ -285,7 +285,7 @@ export function PhoneAuth() {
 
               {mode === "register" && (
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Confirmer le code PIN</label>
+                  <label className="text-sm font-medium">{t('auth.confirmPIN')}</label>
                   <Input
                     type={showPin ? "text" : "password"}
                     placeholder="••••••"
@@ -308,8 +308,8 @@ export function PhoneAuth() {
                 data-testid="button-submit"
               >
                 {loading 
-                  ? (mode === "login" ? "Connexion..." : "Inscription...") 
-                  : (mode === "login" ? "Se connecter" : "S'inscrire")}
+                  ? (mode === "login" ? t('auth.loggingIn') : t('auth.registering')) 
+                  : (mode === "login" ? t('auth.login') : t('auth.register'))}
               </Button>
 
               {mode === "login" && (
@@ -319,7 +319,7 @@ export function PhoneAuth() {
                   disabled
                   data-testid="button-forgot-pin"
                 >
-                  Mot de passe oublié ?
+                  {t('auth.forgotPassword')}
                 </Button>
               )}
 
@@ -333,7 +333,7 @@ export function PhoneAuth() {
                 className="w-full"
                 data-testid="button-back"
               >
-                Changer de numéro
+                {t('auth.changeNumber')}
               </Button>
             </div>
           )}

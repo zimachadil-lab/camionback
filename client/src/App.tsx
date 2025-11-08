@@ -6,6 +6,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { PushNotificationProvider } from "@/components/push-notification-provider";
 import { PWAInstallToast } from "@/components/pwa-install-toast";
 import { AuthProvider } from "@/lib/auth-context";
+import { useTranslation } from "react-i18next";
+import { useEffect } from "react";
+import "./i18n";
 import Home from "@/pages/home";
 import NotificationsPage from "@/pages/notifications-page";
 import MessagesPage from "@/pages/messages-page";
@@ -59,12 +62,26 @@ function Router() {
   );
 }
 
+// Component to handle RTL support
+function RTLSupport() {
+  const { i18n } = useTranslation();
+
+  useEffect(() => {
+    const isRTL = i18n.language === 'ar';
+    document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
+    document.documentElement.lang = i18n.language;
+  }, [i18n.language]);
+
+  return null;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
           <PushNotificationProvider>
+            <RTLSupport />
             <Toaster />
             <Router />
             <PWAInstallToast />
