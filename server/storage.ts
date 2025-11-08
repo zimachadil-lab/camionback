@@ -1578,16 +1578,54 @@ export class DbStorage implements IStorage {
     // 8. Delete offers
     await db.delete(offers).where(eq(offers.transporterId, userId));
     
-    // 9. Delete transport requests
+    // 9. Clean up transport requests references before deleting user's requests
+    // Set NULL for coordinator/transporter assignments where this user was assigned
+    await db.update(transportRequests)
+      .set({
+        assignedToId: null,
+        coordinationUpdatedBy: null,
+      })
+      .where(
+        or(
+          eq(transportRequests.assignedToId, userId),
+          eq(transportRequests.coordinationUpdatedBy, userId)
+        )
+      );
+    
+    await db.update(transportRequests)
+      .set({
+        assignedTransporterId: null,
+        assignedByCoordinatorId: null,
+      })
+      .where(
+        or(
+          eq(transportRequests.assignedTransporterId, userId),
+          eq(transportRequests.assignedByCoordinatorId, userId)
+        )
+      );
+    
+    // Remove user from transporterInterests arrays
+    const requestsWithInterests = await db.select()
+      .from(transportRequests)
+      .where(sql`${userId} = ANY(${transportRequests.transporterInterests})`);
+    
+    for (const request of requestsWithInterests) {
+      const updatedInterests = (request.transporterInterests || []).filter(id => id !== userId);
+      await db.update(transportRequests)
+        .set({ transporterInterests: updatedInterests })
+        .where(eq(transportRequests.id, request.id));
+    }
+    
+    // 10. Delete transport requests where user is the client
     await db.delete(transportRequests).where(eq(transportRequests.clientId, userId));
     
-    // 10. Delete OTP codes
+    // 11. Delete OTP codes
     const user = await this.getUser(userId);
     if (user) {
       await db.delete(otpCodes).where(eq(otpCodes.phoneNumber, user.phoneNumber));
     }
     
-    // 11. Finally, delete the user
+    // 12. Finally, delete the user
     await db.delete(users).where(eq(users.id, userId));
   }
 
