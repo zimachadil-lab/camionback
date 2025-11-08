@@ -40,7 +40,7 @@ export function PhoneAuth() {
     if (cleanPhone.length !== 9) {
       toast({
         variant: "destructive",
-        title: t('auth.error'),
+        title: t('common.error'),
         description: t('auth.phoneNumberError'),
       });
       return;
@@ -63,7 +63,7 @@ export function PhoneAuth() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: t('auth.error'),
+        title: t('common.error'),
         description: t('auth.verificationFailed'),
       });
     } finally {
@@ -77,7 +77,7 @@ export function PhoneAuth() {
     if (pin.length !== 6) {
       toast({
         variant: "destructive",
-        title: t('auth.error'),
+        title: t('common.error'),
         description: t('auth.pinError'),
       });
       return;
@@ -86,7 +86,7 @@ export function PhoneAuth() {
     if (mode === "register" && pin !== confirmPin) {
       toast({
         variant: "destructive",
-        title: t('auth.error'),
+        title: t('common.error'),
         description: t('auth.pinMismatch'),
       });
       return;
@@ -109,7 +109,7 @@ export function PhoneAuth() {
         const error = await response.json();
         toast({
           variant: "destructive",
-          title: t('auth.error'),
+          title: t('common.error'),
           description: error.error || (mode === "login" ? t('auth.invalidCredentials') : t('auth.registerFailed')),
         });
         return;
@@ -133,7 +133,7 @@ export function PhoneAuth() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: t('auth.error'),
+        title: t('common.error'),
         description: mode === "login" ? t('auth.loginFailed') : t('auth.registerFailed'),
       });
     } finally {
