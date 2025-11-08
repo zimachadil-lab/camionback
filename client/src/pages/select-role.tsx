@@ -6,6 +6,7 @@ import { Truck, Package, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth-context";
 import { MetaPixelEvents } from "@/lib/meta-pixel";
+import { useTranslation } from "react-i18next";
 
 export default function SelectRole() {
   const [, setLocation] = useLocation();
@@ -13,6 +14,7 @@ export default function SelectRole() {
   const [selectedRole, setSelectedRole] = useState<"client" | "transporteur" | null>(null);
   const { toast } = useToast();
   const { user, loading: authLoading, refreshUser } = useAuth();
+  const { t } = useTranslation();
   
   // Track page view with Meta Pixel
   useEffect(() => {
@@ -32,7 +34,7 @@ export default function SelectRole() {
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-[#0A2540] to-[#163049]">
         <div className="text-white text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p>Chargement...</p>
+          <p>{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -88,8 +90,8 @@ export default function SelectRole() {
       console.error("❌ [SELECT-ROLE] Final error:", error);
       toast({
         variant: "destructive",
-        title: "Erreur",
-        description: error.message || "Échec de la sélection du rôle",
+        title: t('common.error'),
+        description: error.message || t('selectRole.selectionFailed'),
       });
       setSelectedRole(null);
     } finally {
@@ -103,10 +105,10 @@ export default function SelectRole() {
         {/* Header Section */}
         <div className="text-center mb-3 md:mb-8">
           <h1 className="text-xl md:text-4xl lg:text-5xl font-bold tracking-tight text-white mb-1 md:mb-3">
-            Bienvenue sur CamionBack 🚛
+            {t('selectRole.welcome')} 🚛
           </h1>
           <p className="text-sm md:text-lg lg:text-xl text-white/80 max-w-2xl mx-auto">
-            Choisissez comment vous souhaitez utiliser la plateforme :
+            {t('selectRole.chooseRole')}
           </p>
         </div>
 
@@ -135,10 +137,10 @@ export default function SelectRole() {
               
               <div className="space-y-1 md:space-y-2">
                 <CardTitle className="text-base md:text-2xl lg:text-3xl font-bold leading-tight">
-                  Je veux envoyer quelque chose
+                  {t('selectRole.clientTitle')}
                 </CardTitle>
                 <CardDescription className="text-xs md:text-base lg:text-lg leading-tight md:leading-relaxed">
-                  Publiez une demande de transport pour vos meubles, colis ou marchandises.
+                  {t('selectRole.clientDescription')}
                 </CardDescription>
               </div>
             </CardHeader>
@@ -153,10 +155,10 @@ export default function SelectRole() {
                 {loading && selectedRole === "client" ? (
                   <span className="flex items-center gap-2">
                     <div className="animate-spin rounded-full h-3 w-3 md:h-4 md:w-4 border-b-2 border-white" />
-                    <span className="text-xs md:text-base">Sélection en cours...</span>
+                    <span className="text-xs md:text-base">{t('selectRole.selecting')}</span>
                   </span>
                 ) : (
-                  "Continuer comme Client"
+                  t('selectRole.continueAsClient')
                 )}
               </Button>
             </CardContent>
@@ -185,10 +187,10 @@ export default function SelectRole() {
               
               <div className="space-y-1 md:space-y-2">
                 <CardTitle className="text-base md:text-2xl lg:text-3xl font-bold leading-tight">
-                  Je suis un transporteur
+                  {t('selectRole.transporterTitle')}
                 </CardTitle>
                 <CardDescription className="text-xs md:text-base lg:text-lg leading-tight md:leading-relaxed">
-                  Recevez des demandes de livraison et proposez vos services.
+                  {t('selectRole.transporterDescription')}
                 </CardDescription>
               </div>
             </CardHeader>
@@ -203,10 +205,10 @@ export default function SelectRole() {
                 {loading && selectedRole === "transporteur" ? (
                   <span className="flex items-center gap-2">
                     <div className="animate-spin rounded-full h-3 w-3 md:h-4 md:w-4 border-b-2 border-white" />
-                    <span className="text-xs md:text-base">Sélection en cours...</span>
+                    <span className="text-xs md:text-base">{t('selectRole.selecting')}</span>
                   </span>
                 ) : (
-                  "Continuer comme Transporteur"
+                  t('selectRole.continueAsTransporter')
                 )}
               </Button>
             </CardContent>
@@ -217,7 +219,7 @@ export default function SelectRole() {
         <div className="absolute bottom-0 left-0 right-0 text-center pb-2 md:pb-4 animate-in fade-in duration-1000 delay-300">
           <div className="inline-flex items-center gap-1 md:gap-2 text-[11px] md:text-sm text-white/70 bg-white/10 px-2 md:px-4 py-1 md:py-2 rounded-full backdrop-blur-sm">
             <Info className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" />
-            <span>Vous pourrez modifier votre rôle plus tard depuis votre profil.</span>
+            <span>{t('selectRole.canChangeRoleLater')}</span>
           </div>
         </div>
       </div>
