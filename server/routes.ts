@@ -4597,6 +4597,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`[PATCH /api/coordinator/requests/:id/payment-status] Received request for ${id} with paymentStatus: ${paymentStatus}`);
 
+      // Validate paymentStatus value
+      const validPaymentStatuses = ['a_facturer', 'paid_by_client', 'paid_by_camionback'];
+      if (!paymentStatus || !validPaymentStatuses.includes(paymentStatus)) {
+        console.error(`[PATCH /api/coordinator/requests/:id/payment-status] Invalid paymentStatus: ${paymentStatus}`);
+        return res.status(400).json({ 
+          error: "Statut de paiement invalide",
+          message: `Le statut de paiement doit être l'un des suivants: ${validPaymentStatuses.join(', ')}`
+        });
+      }
+
       const updated = await storage.updateRequestPaymentStatus(id, paymentStatus);
       
       console.log(`[PATCH /api/coordinator/requests/:id/payment-status] Update completed. Result:`, updated);

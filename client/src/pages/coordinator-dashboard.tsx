@@ -1985,7 +1985,7 @@ export default function CoordinatorDashboard() {
             <div className="flex items-center gap-3 pl-6">
               <span className="text-xs text-muted-foreground font-medium">Statut paiement:</span>
               <Select
-                value={request.paymentStatus || "pending"}
+                value={request.paymentStatus || "a_facturer"}
                 onValueChange={(value) => {
                   updatePaymentStatusMutation.mutate({
                     requestId: request.id,
