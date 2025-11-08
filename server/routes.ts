@@ -24,7 +24,8 @@ import {
   type Offer,
   type TransportRequest,
   clientTransporterContacts,
-  transportRequests
+  transportRequests,
+  transporterInterests
 } from "@shared/schema";
 import { desc, eq, sql, and } from "drizzle-orm";
 import { sendNewOfferSMS, sendOfferAcceptedSMS, sendTransporterActivatedSMS, sendBulkSMS, sendManualAssignmentSMS, sendTransporterAssignedSMS, sendClientChoseYouSMS, sendTransporterSelectedSMS } from "./infobip-sms";
