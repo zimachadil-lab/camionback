@@ -6,10 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ArrowRight, Eye, EyeOff, Truck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth-context";
+import { LanguageSelector } from "@/components/language-selector";
+import { useTranslation } from "react-i18next";
 import camionbackLogo from "@assets/logo camion (14)_1760911574566.png";
 
 export function PhoneAuth() {
   const { login } = useAuth();
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const [step, setStep] = useState<"phone" | "pin">("phone");
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -140,7 +143,13 @@ export function PhoneAuth() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-[#0A2540] to-[#163049]">
-      <Card className="w-full max-w-md">
+      <div className="w-full max-w-md space-y-6">
+        {/* Language Selector - Très visible en haut */}
+        <div className="bg-card/30 backdrop-blur-md rounded-lg p-4 border border-card/50">
+          <LanguageSelector />
+        </div>
+
+        <Card className="w-full">
         <CardHeader className="text-center space-y-3 pb-4">
           {/* Animation des camions aller-retour */}
           <div className="relative mb-4" style={{ height: '90px' }}>
@@ -330,6 +339,7 @@ export function PhoneAuth() {
           )}
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

@@ -21,6 +21,7 @@ export const users = pgTable("users", {
   ribName: text("rib_name"), // Name for RIB (for transporters)
   ribNumber: text("rib_number"), // 24-digit RIB number (for transporters)
   deviceToken: text("device_token"), // Push notification subscription token (JSON)
+  preferredLanguage: text("preferred_language").default("fr"), // 'fr' or 'ar' - user's preferred language
   isActive: boolean("is_active").default(true),
   isVerified: boolean("is_verified").default(false), // Verified by professional reference (transporters only)
   createdAt: timestamp("created_at").defaultNow(),
