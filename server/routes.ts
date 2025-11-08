@@ -2182,14 +2182,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Basic authorization check - verify clientId matches the request owner
-      // TODO PRODUCTION: Replace with server-side session/JWT verification
+      // TODO PRODUCTION: Replace with server-side session/JWT authentication
       const clientId = req.body.clientId;
       if (!clientId || request.clientId !== clientId) {
         return res.status(403).json({ error: "Unauthorized: only the client can mark this request as paid" });
       }
 
-      if (request.paymentStatus !== "awaiting_payment") {
-        return res.status(400).json({ error: "Request must be awaiting payment" });
+      // Accept both "awaiting_payment" (client workflow) and "a_facturer" (coordinator workflow)
+      const validStatuses = ["awaiting_payment", "a_facturer"];
+      if (!validStatuses.includes(request.paymentStatus || "")) {
+        return res.status(400).json({ error: "Request must be awaiting payment or marked for billing" });
       }
 
       const paymentReceipt = req.body.paymentReceipt;
