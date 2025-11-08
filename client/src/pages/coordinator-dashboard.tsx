@@ -1681,6 +1681,56 @@ export default function CoordinatorDashboard() {
     window.open(`https://wa.me/?text=${message}`, "_blank");
   };
 
+  // Handler for payment receipt upload
+  const handleReceiptUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Le fichier doit être une image (JPEG, PNG, WebP)",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "La taille du fichier ne doit pas dépasser 5 Mo",
+      });
+      return;
+    }
+
+    // Convert to base64
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPaymentReceipt(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Handler for confirming payment
+  const handleConfirmPayment = () => {
+    if (!paymentReceipt || !paymentRequestId) return;
+
+    markAsPaidByClientMutation.mutate({
+      requestId: paymentRequestId,
+      receipt: paymentReceipt,
+    });
+  };
+
+  // Handler for submitting rating
+  const handleSubmitRating = () => {
+    if (ratingValue > 0 && ratingRequestId) {
+      completeWithRatingMutation.mutate({ requestId: ratingRequestId, rating: ratingValue });
+    }
+  };
+
   const handleOpenManualAssignment = (request: any) => {
     setSelectedRequestForAssignment(request);
     setManualAssignmentDialogOpen(true);
