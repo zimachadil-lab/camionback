@@ -715,6 +715,9 @@ export default function CoordinatorDashboard() {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [cancelRequestData, setCancelRequestData] = useState<any>(null);
   const [cancellationReason, setCancellationReason] = useState("");
+  const [requalifyDialogOpen, setRequalifyDialogOpen] = useState(false);
+  const [requalifyRequestData, setRequalifyRequestData] = useState<any>(null);
+  const [requalificationReason, setRequalificationReason] = useState("");
   const { toast} = useToast();
 
   const handleLogout = () => {
@@ -1226,6 +1229,37 @@ export default function CoordinatorDashboard() {
         variant: "destructive",
         title: "Erreur",
         description: "Échec de l'annulation de la commande",
+      });
+    },
+  });
+
+  // Requalify request mutation - Cancel and republish for matching
+  const requalifyRequestMutation = useMutation({
+    mutationFn: async ({ requestId, requalificationReason }: { requestId: string; requalificationReason: string }) => {
+      return apiRequest("POST", `/api/coordinator/requests/${requestId}/cancel-and-requalify`, {
+        requalificationReason,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Commande requalifiée",
+        description: "La commande a été annulée et republiée pour matching avec les transporteurs",
+      });
+      setRequalifyDialogOpen(false);
+      setRequalifyRequestData(null);
+      setRequalificationReason("");
+      // Invalidate all queries to refresh views
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/active-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/payment-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/qualified-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/interested-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/matching-requests"] });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Échec de la requalification de la commande",
       });
     },
   });
@@ -2292,18 +2326,35 @@ export default function CoordinatorDashboard() {
 
           {/* Annuler la commande - Pour les commandes en production */}
           {showPaymentControls && (
-            <Button
-              size="default"
-              variant="destructive"
-              onClick={() => {
-                setCancelRequestData(request);
-                setCancelDialogOpen(true);
-              }}
-              data-testid={`button-cancel-production-${request.id}`}
-            >
-              <X className="h-5 w-5 mr-2" />
-              Annuler la commande
-            </Button>
+            <>
+              <Button
+                size="default"
+                variant="destructive"
+                onClick={() => {
+                  setCancelRequestData(request);
+                  setCancelDialogOpen(true);
+                }}
+                data-testid={`button-cancel-production-${request.id}`}
+              >
+                <X className="h-5 w-5 mr-2" />
+                Annuler la commande
+              </Button>
+              
+              {/* Annuler et requalifier - Republier immédiatement pour matching */}
+              <Button
+                size="default"
+                variant="default"
+                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
+                onClick={() => {
+                  setRequalifyRequestData(request);
+                  setRequalifyDialogOpen(true);
+                }}
+                data-testid={`button-cancel-requalify-${request.id}`}
+              >
+                <RotateCcw className="h-5 w-5 mr-2" />
+                Annuler et requalifier
+              </Button>
+            </>
           )}
         </div>
 
@@ -3280,6 +3331,73 @@ export default function CoordinatorDashboard() {
                 data-testid="button-confirm-cancel"
               >
                 {cancelRequestMutation.isPending ? "Annulation..." : "Annuler la commande"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Requalify Request Dialog */}
+      {requalifyRequestData && (
+        <Dialog open={requalifyDialogOpen} onOpenChange={setRequalifyDialogOpen}>
+          <DialogContent data-testid="dialog-requalify-request">
+            <DialogHeader>
+              <DialogTitle>Annuler et requalifier la commande</DialogTitle>
+              <DialogDescription>
+                Commande {requalifyRequestData.referenceId} - Cette action annulera la commande actuelle et la republiera immédiatement pour matching avec les transporteurs.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="p-3 bg-orange-50 dark:bg-orange-950 rounded-lg border border-orange-200 dark:border-orange-800">
+                <p className="text-sm text-orange-800 dark:text-orange-200">
+                  <strong>Action automatique :</strong> La commande sera requalifiée et visible dans l'onglet "Qualifiés", puis "Intéressés" une fois que des transporteurs expriment leur intérêt.
+                </p>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">
+                  Raison de la requalification <span className="text-red-500">*</span>
+                </label>
+                <Textarea
+                  value={requalificationReason}
+                  onChange={(e) => setRequalificationReason(e.target.value)}
+                  placeholder="Ex: Désaccord entre client et transporteur, Changement de conditions, etc."
+                  rows={4}
+                  data-testid="textarea-requalification-reason"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Cette raison sera enregistrée en note interne
+                </p>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setRequalifyDialogOpen(false);
+                  setRequalificationReason("");
+                }}
+                disabled={requalifyRequestMutation.isPending}
+                data-testid="button-cancel-requalify-dialog"
+              >
+                Retour
+              </Button>
+              <Button
+                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700"
+                onClick={() => {
+                  if (requalificationReason.trim()) {
+                    requalifyRequestMutation.mutate({
+                      requestId: requalifyRequestData.id,
+                      requalificationReason: requalificationReason.trim(),
+                    });
+                  }
+                }}
+                disabled={requalifyRequestMutation.isPending || !requalificationReason.trim()}
+                data-testid="button-confirm-requalify"
+              >
+                {requalifyRequestMutation.isPending ? "Requalification..." : "Annuler et requalifier"}
               </Button>
             </DialogFooter>
           </DialogContent>
