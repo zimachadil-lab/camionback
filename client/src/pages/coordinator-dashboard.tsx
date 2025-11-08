@@ -2762,6 +2762,29 @@ export default function CoordinatorDashboard() {
                           <X className="h-5 w-5 mr-2" />
                           Annuler la commande
                         </Button>
+                        
+                        {/* Menu dropdown pour suppression */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              size="lg" 
+                              variant="ghost"
+                              data-testid={`button-menu-${request.id}`}
+                            >
+                              <MoreVertical className="h-5 w-5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" data-testid={`menu-${request.id}`}>
+                            <DropdownMenuItem
+                              onClick={() => setDeleteRequestId(request.id)}
+                              data-testid={`menu-delete-request-${request.id}`}
+                              className="text-red-600 focus:text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Supprimer
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
                     
