@@ -2007,7 +2007,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Mark a request as completed with rating
-  app.post("/api/requests/:id/complete", async (req, res) => {
+  app.post("/api/requests/:id/complete", requireAuth, requireRole(['client', 'coordinateur']), async (req, res) => {
     try {
       const { rating } = req.body;
       const request = await storage.getTransportRequest(req.params.id);
@@ -2016,9 +2016,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Request not found" });
       }
 
+      // Authorization check - verify user is either the client owner or a coordinator
+      const userId = req.user!.id;
+      const userRole = req.user!.role;
+      
+      if (userRole === 'client' && request.clientId !== userId) {
+        return res.status(403).json({ error: "Unauthorized: you can only complete your own requests" });
+      }
+      
+      // Coordinators can complete any request (on behalf of client)
+
       // Accept requests that are either accepted OR already paid
       const validStatuses = ["accepted", "completed"];
-      const validPaymentStatuses = ["awaiting_payment", "pending_admin_validation", "paid"];
+      const validPaymentStatuses = ["awaiting_payment", "pending_admin_validation", "paid", "a_facturer"];
       
       if (request.status !== "accepted" && !validPaymentStatuses.includes(request.paymentStatus || "")) {
         return res.status(400).json({ error: "Only accepted or paid requests can be completed" });
@@ -2173,7 +2183,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Mark a request as paid (client uploads receipt and awaits admin validation)
   // NOTE: In production, this should use session/JWT authentication instead of req.body.clientId
-  app.post("/api/requests/:id/mark-as-paid", async (req, res) => {
+  app.post("/api/requests/:id/mark-as-paid", requireAuth, requireRole(['client', 'coordinateur']), async (req, res) => {
     try {
       const request = await storage.getTransportRequest(req.params.id);
       
@@ -2181,12 +2191,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Request not found" });
       }
 
-      // Basic authorization check - verify clientId matches the request owner
-      // TODO PRODUCTION: Replace with server-side session/JWT authentication
-      const clientId = req.body.clientId;
-      if (!clientId || request.clientId !== clientId) {
-        return res.status(403).json({ error: "Unauthorized: only the client can mark this request as paid" });
+      // Authorization check - verify user is either the client owner or a coordinator
+      const userId = req.user!.id;
+      const userRole = req.user!.role;
+      
+      if (userRole === 'client' && request.clientId !== userId) {
+        return res.status(403).json({ error: "Unauthorized: you can only mark your own requests as paid" });
       }
+      
+      // Coordinators can mark any request as paid (on behalf of client)
 
       // Accept both "awaiting_payment" (client workflow) and "a_facturer" (coordinator workflow)
       const validStatuses = ["awaiting_payment", "a_facturer"];
