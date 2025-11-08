@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, MessageCircle, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck, Trash2, Share2, Copy, Send, RotateCcw, Info, Users, CreditCard, Calendar, X, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, FileText, MoreVertical, Image as ImageIcon, ClipboardCheck, Award, StickyNote, Plus, ChevronDown, ChevronUp } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, MessageCircle, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck, Trash2, Share2, Copy, Send, RotateCcw, Info, Users, CreditCard, Calendar, X, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, FileText, MoreVertical, Image as ImageIcon, ClipboardCheck, Award, StickyNote, Plus, ChevronDown, ChevronUp, Upload } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -3548,6 +3549,149 @@ export default function CoordinatorDashboard() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Payment Dialog - Coordinator workflow for "paid_by_client" */}
+      <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+        <DialogContent className="max-w-[90vw] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmer le paiement</DialogTitle>
+            <DialogDescription className="space-y-4 pt-4">
+              <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800 space-y-3">
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                  Merci d'effectuer le virement sur le compte suivant :
+                </p>
+                <div className="space-y-1">
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    <span className="font-semibold">RIB :</span> 011815000005210001099713
+                  </p>
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    <span className="font-semibold">À l'ordre de :</span> CamionBack
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="receipt-upload" className="text-sm font-medium">
+                  Reçu de paiement <span className="text-destructive">*</span>
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Veuillez téléverser votre reçu de paiement (formats acceptés : JPEG, PNG, WebP - max. 5 Mo).
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => document.getElementById('receipt-upload')?.click()}
+                    className="w-full gap-2"
+                    data-testid="button-upload-receipt"
+                  >
+                    <Upload className="w-4 h-4" />
+                    {paymentReceipt ? "Reçu téléversé" : "Téléverser le reçu"}
+                  </Button>
+                  <input
+                    id="receipt-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleReceiptUpload}
+                    className="hidden"
+                    data-testid="input-receipt-upload"
+                  />
+                </div>
+                {paymentReceipt && (
+                  <div className="mt-2">
+                    <img
+                      src={paymentReceipt}
+                      alt="Reçu de paiement"
+                      className="w-full h-40 object-cover rounded-lg border"
+                    />
+                  </div>
+                )}
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowPaymentDialog(false)}
+              data-testid="button-cancel-payment"
+            >
+              Annuler
+            </Button>
+            <Button
+              type="button"
+              onClick={handleConfirmPayment}
+              disabled={!paymentReceipt || markAsPaidByClientMutation.isPending}
+              data-testid="button-confirm-payment"
+            >
+              {markAsPaidByClientMutation.isPending ? "Envoi en cours..." : "Confirmer le paiement"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rating Dialog - Coordinator workflow for rating transporter */}
+      <AlertDialog open={showRatingDialog} onOpenChange={setShowRatingDialog}>
+        <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-12 h-12 rounded-full bg-yellow-500 flex items-center justify-center">
+                <Star className="w-6 h-6 text-white fill-white" />
+              </div>
+              <AlertDialogTitle className="text-xl">Évaluer le transporteur</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="space-y-6 text-base">
+              <p className="text-foreground text-center">
+                Merci d'évaluer le transporteur pour cette commande.
+              </p>
+              
+              <div className="flex justify-center items-center gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setRatingValue(star)}
+                    onMouseEnter={() => setHoverRating(star)}
+                    onMouseLeave={() => setHoverRating(0)}
+                    className="p-1 hover-elevate active-elevate-2"
+                    data-testid={`button-star-${star}`}
+                  >
+                    <Star
+                      className={`w-10 h-10 ${
+                        star <= (hoverRating || ratingValue)
+                          ? "fill-yellow-400 text-yellow-400"
+                          : "text-gray-300"
+                      } transition-colors`}
+                    />
+                  </button>
+                ))}
+              </div>
+
+              {ratingValue > 0 && (
+                <p className="text-center text-sm text-muted-foreground">
+                  Note sélectionnée : {ratingValue} {ratingValue === 1 ? "étoile" : "étoiles"}
+                </p>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel 
+              onClick={() => setShowRatingDialog(false)}
+              data-testid="button-cancel-rating"
+            >
+              Annuler
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleSubmitRating}
+              disabled={ratingValue === 0 || completeWithRatingMutation.isPending}
+              className="bg-yellow-500 hover:bg-yellow-600 text-white"
+              data-testid="button-submit-rating"
+            >
+              {completeWithRatingMutation.isPending ? "Enregistrement..." : "Valider la note"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
