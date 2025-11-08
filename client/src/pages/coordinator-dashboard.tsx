@@ -2339,6 +2339,16 @@ export default function CoordinatorDashboard() {
               </div>
             )}
             
+            {request.platformFee && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-orange-500/10 via-orange-500/5 to-transparent border-l-4 border-orange-500">
+                <div className="w-7 h-7 rounded-full bg-orange-500/20 flex items-center justify-center flex-shrink-0">
+                  <DollarSign className="w-4 h-4 text-orange-500" />
+                </div>
+                <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Cotisation</span>
+                <span className="text-lg font-bold text-orange-500 ml-auto">+{Math.floor(request.platformFee).toLocaleString()} Dhs</span>
+              </div>
+            )}
+            
             {request.clientTotal && (
               <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-blue-500/10 via-blue-500/5 to-transparent border-l-4 border-blue-500">
                 <div className="w-7 h-7 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
