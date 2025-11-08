@@ -5083,6 +5083,191 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Cancel and requalify request - For production orders with disputes
+  app.post("/api/coordinator/requests/:requestId/cancel-and-requalify", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
+    try {
+      const { requestId } = req.params;
+      const { requalificationReason } = req.body;
+      
+      if (!requestId || !requalificationReason) {
+        return res.status(400).json({ error: "requestId et requalificationReason requis" });
+      }
+
+      const coordinatorId = req.user!.id;
+      
+      // Get request
+      const request = await storage.getTransportRequest(requestId);
+      if (!request) {
+        return res.status(404).json({ error: "Demande introuvable" });
+      }
+
+      // Store transporter ID before clearing assignment (for notification)
+      const previousTransporterId = request.assignedTransporterId;
+      const client = await storage.getUser(request.clientId);
+
+      // Update request: cancel current assignment and requalify for matching
+      const updated = await db
+        .update(transportRequests)
+        .set({
+          status: "open", // Reset to open status
+          coordinationStatus: "qualified", // Keep qualified status with prices
+          assignedTransporterId: null, // Clear transporter assignment
+          acceptedOfferId: null, // Clear accepted offer
+          acceptedAt: null, // Clear acceptance timestamp
+          paymentStatus: "a_facturer", // Reset payment status
+          transporterInterests: [], // Clear all previous interests
+          publishedForMatchingAt: new Date(), // Republish for matching NOW
+          coordinationUpdatedAt: new Date(),
+          coordinationUpdatedBy: coordinatorId,
+        })
+        .where(eq(transportRequests.id, requestId))
+        .returning();
+
+      if (!updated || updated.length === 0) {
+        return res.status(500).json({ error: "Échec de la requalification" });
+      }
+
+      const updatedRequest = updated[0];
+
+      // Delete all existing transporter interests for this request
+      await db
+        .delete(transporterInterests)
+        .where(eq(transporterInterests.requestId, requestId));
+
+      // Create internal note with requalification reason
+      await storage.createRequestNote(
+        requestId,
+        coordinatorId,
+        `🔄 REQUALIFICATION DE COMMANDE 🔄\n\nRaison: ${requalificationReason}\n\nLa commande a été annulée et republiée pour matching avec les transporteurs. Les prix qualifiés sont conservés.`
+      );
+
+      // Notify client about requalification
+      if (client) {
+        await storage.createNotification({
+          userId: client.id,
+          type: "request_updated",
+          title: "Commande requalifiée",
+          message: `Votre demande ${updatedRequest.referenceId} a été requalifiée et republiée. Nos transporteurs vont à nouveau vous proposer leurs services.`,
+          relatedId: updatedRequest.id,
+        });
+
+        // Push notification to client
+        try {
+          if (client.deviceToken) {
+            const { sendNotificationToUser } = await import('./push-notifications');
+            const notification = {
+              title: "Commande requalifiée",
+              body: `Votre demande ${updatedRequest.referenceId} a été republiée`,
+              url: "/client-dashboard"
+            };
+            await sendNotificationToUser(client.id, notification, storage);
+            console.log(`📨 Notification push requalification envoyée au client`);
+          }
+        } catch (pushError) {
+          console.error('❌ Erreur notification push requalification:', pushError);
+        }
+      }
+
+      // Notify previous transporter if exists
+      if (previousTransporterId) {
+        const transporter = await storage.getUser(previousTransporterId);
+        if (transporter) {
+          // In-app notification
+          await storage.createNotification({
+            userId: transporter.id,
+            type: "request_cancelled",
+            title: "Commande annulée",
+            message: `La commande ${updatedRequest.referenceId} a été annulée et republiée pour matching.`,
+            relatedId: updatedRequest.id,
+          });
+
+          // SMS notification to transporter (COST-OPTIMIZED: Only for important changes)
+          void (async () => {
+            try {
+              const { sendOrderCancelledSMS } = await import('./infobip-sms');
+              await sendOrderCancelledSMS(transporter.phoneNumber, updatedRequest.referenceId);
+              console.log(`📱 SMS d'annulation envoyé au transporteur ${transporter.phoneNumber}`);
+            } catch (smsError) {
+              console.error('❌ Erreur SMS annulation transporteur:', smsError);
+            }
+          })();
+
+          // Push notification to transporter
+          try {
+            if (transporter.deviceToken) {
+              const { sendNotificationToUser } = await import('./push-notifications');
+              const notification = {
+                title: "Commande annulée",
+                body: `La commande ${updatedRequest.referenceId} a été annulée`,
+                url: "/transporter-dashboard"
+              };
+              await sendNotificationToUser(transporter.id, notification, storage);
+              console.log(`📨 Notification push annulation envoyée au transporteur`);
+            }
+          } catch (pushError) {
+            console.error('❌ Erreur notification push transporteur:', pushError);
+          }
+        }
+      }
+
+      // Notify all active transporters about new matching opportunity (asynchronous)
+      void (async () => {
+        try {
+          const activeTransporters = await storage.getActiveValidatedTransporters();
+          console.log(`📢 Notification de requalification pour ${activeTransporters.length} transporteurs actifs`);
+          
+          for (const transporter of activeTransporters) {
+            try {
+              // In-app notification
+              await storage.createNotification({
+                userId: transporter.id,
+                type: "new_request",
+                title: "Nouvelle commande qualifiée",
+                message: `Nouvelle demande ${updatedRequest.referenceId}: ${updatedRequest.fromCity} → ${updatedRequest.toCity}`,
+                relatedId: updatedRequest.id,
+              });
+
+              // Push notification
+              if (transporter.deviceToken) {
+                const { sendNotificationToUser } = await import('./push-notifications');
+                const notification = {
+                  title: "Nouvelle commande disponible",
+                  body: `${updatedRequest.fromCity} → ${updatedRequest.toCity}`,
+                  url: "/transporter-dashboard"
+                };
+                await sendNotificationToUser(transporter.id, notification, storage);
+              }
+            } catch (notifError) {
+              console.error(`❌ Erreur notification transporteur ${transporter.id}:`, notifError);
+            }
+          }
+        } catch (error) {
+          console.error('❌ Erreur notifications transporteurs:', error);
+        }
+      })();
+
+      // Create coordinator log
+      await storage.createCoordinatorLog({
+        coordinatorId,
+        action: "requalify_request",
+        targetType: "request",
+        targetId: requestId,
+        details: JSON.stringify({
+          referenceId: updatedRequest.referenceId,
+          reason: requalificationReason,
+          previousTransporterId,
+          timestamp: new Date().toISOString(),
+        }),
+      });
+
+      console.log(`✅ Commande ${updatedRequest.referenceId} requalifiée et republiée pour matching`);
+      res.json(updatedRequest);
+    } catch (error) {
+      console.error("Erreur requalification demande:", error);
+      res.status(500).json({ error: "Erreur lors de la requalification" });
+    }
+  });
+
   // Transporter expresses interest in a request
   app.post("/api/transporter/express-interest", requireAuth, requireRole(['transporteur']), async (req, res) => {
     try {
