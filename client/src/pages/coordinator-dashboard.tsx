@@ -2124,10 +2124,18 @@ export default function CoordinatorDashboard() {
               <Select
                 value={request.paymentStatus || "a_facturer"}
                 onValueChange={(value) => {
-                  updatePaymentStatusMutation.mutate({
-                    requestId: request.id,
-                    paymentStatus: value
-                  });
+                  // If "paid_by_client" is selected, open payment dialog
+                  if (value === "paid_by_client") {
+                    setPaymentRequestId(request.id);
+                    setPaymentReceipt("");
+                    setShowPaymentDialog(true);
+                  } else {
+                    // For other statuses, update directly
+                    updatePaymentStatusMutation.mutate({
+                      requestId: request.id,
+                      paymentStatus: value
+                    });
+                  }
                 }}
                 disabled={updatePaymentStatusMutation.isPending}
               >
