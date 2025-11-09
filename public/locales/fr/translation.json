@@ -15,6 +15,7 @@
     "close": "Fermer",
     "confirm": "Confirmer",
     "loading": "Chargement...",
+    "loadingInfo": "Chargement des informations...",
     "error": "Erreur",
     "success": "Succès",
     "yes": "Oui",
@@ -200,7 +201,8 @@
         "city": "Ville",
         "vehicleType": "Type de véhicule",
         "rating": "Note moyenne",
-        "close": "Fermer"
+        "close": "Fermer",
+        "contactInfo": "Vous pouvez contacter directement le transporteur pour finaliser les détails du transport."
       },
       "report": {
         "title": "Signaler un problème",
@@ -227,7 +229,11 @@
         "tableMode": "Mode tableau",
         "matchesEnd": "Fin des matches",
         "matchesEndDesc": "Vous avez vu tous les transporteurs disponibles",
-        "transporterName": "Transporteur"
+        "transporterName": "Transporteur",
+        "emptyReturn": "Retour à vide",
+        "recentlyActive": "Actif récemment",
+        "topRated": "Bien noté",
+        "city": "Ville"
       }
     },
     "labels": {
@@ -276,8 +282,10 @@
       "invalidFormatDesc": "Veuillez téléverser une image",
       "fileTooLarge": "Fichier trop volumineux",
       "fileTooLargeDesc": "La taille maximale autorisée est de 10 Mo",
-      "readError": "Erreur de lecture",
-      "readErrorDesc": "Impossible de lire le fichier. Veuillez réessayer avec une autre image.",
+      "fileReadError": "Erreur de lecture",
+      "fileReadErrorDesc": "Impossible de lire le fichier. Veuillez réessayer avec une autre image.",
+      "missingReceipt": "Erreur",
+      "missingReceiptDesc": "Veuillez téléverser le reçu de paiement",
       "contactSaved": "Contact enregistré",
       "contactSavedDesc": "Vous pouvez maintenant contacter ce transporteur"
     },
@@ -361,9 +369,10 @@
     },
     "dialogs": {
       "notValidated": {
-        "title": "Profil non validé",
-        "description": "Votre profil doit être validé par notre équipe avant de pouvoir annoncer des retours à vide. Vous recevrez une notification dès que votre profil sera validé.",
-        "close": "Fermer"
+        "title": "Compte non validé",
+        "message1": "Votre compte CamionBack n'est pas encore validé par notre équipe.",
+        "message2": "Vous pourrez annoncer vos retours et bénéficier de toutes les fonctionnalités dès que votre compte sera activé.",
+        "thanks": "Merci pour votre patience."
       },
       "report": {
         "title": "Signaler un problème",
@@ -418,6 +427,10 @@
       "availabilityDate": "Date disponibilité",
       "notSpecified": "Non spécifiée",
       "clientName": "Client",
+      "clientDate": "Date client",
+      "proposedDate": "Date proposée",
+      "matches": "Correspond",
+      "different": "Différente",
       "hideConfirm": "Voulez-vous vraiment masquer cette commande ? Elle ne sera plus visible dans votre liste."
     },
     "toast": {
@@ -482,7 +495,29 @@
       "no": "Non",
       "transporter": "Transporteur",
       "client": "Client",
-      "handling": "Manutention"
+      "handling": "Manutention",
+      "handlingInfo": "Informations de manutention",
+      "departure": "Départ",
+      "arrival": "Arrivée",
+      "amount": "Montant",
+      "route": "Trajet",
+      "order": "Commande",
+      "missionDate": "Date de la mission",
+      "description": "Description",
+      "goodsType": "Type de marchandise",
+      "estimatedWeight": "Poids estimé",
+      "notAvailable": "Non disponible",
+      "existingPhotos": "Photos existantes",
+      "newPhotos": "Nouvelles photos à ajouter",
+      "verified": "Vérifié",
+      "bankTransferInstructions": "Merci d'effectuer le virement sur le compte suivant :",
+      "rib": "RIB",
+      "payableTo": "À l'ordre de",
+      "receiptUploadInstructions": "Veuillez téléverser votre reçu de paiement (formats acceptés : JPEG, PNG, WebP - max. 5 Mo).",
+      "serviceIssue": "Problème de service",
+      "paymentIssue": "Problème de paiement",
+      "communicationIssue": "Problème de communication",
+      "totalToPay": "Total à payer"
     }
   },
   "requestCard": {

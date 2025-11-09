@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star, CreditCard, Upload, Eye, Edit, MessageSquare, Calendar, Flag, Truck, Users, Zap, X, ChevronLeft, ChevronRight, Target, ArrowDown, Camera, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, DollarSign, ImageIcon } from "lucide-react";
+import { getCategoryConfig } from "@/lib/goods-category-config";
 import { Header } from "@/components/layout/header";
 import { NewRequestForm } from "@/components/client/new-request-form";
 import { OfferCard } from "@/components/client/offer-card";
@@ -52,17 +53,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useMemo } from "react";
 
-const goodsTypes = [
-  "Meubles", "Électroménager", "Marchandises", "Déménagement",
-  "Matériaux de construction", "Colis", "Véhicule", "Autre"
-];
-
-const editRequestSchema = z.object({
-  fromCity: z.string().min(2, "Ville de départ requise"),
-  toCity: z.string().min(2, "Ville d'arrivée requise"),
-  description: z.string().min(10, "Description minimale: 10 caractères"),
-  goodsType: z.string().min(1, "Type de marchandise requis"),
+// Zod schema helpers with i18n
+const createEditRequestSchema = (t: any) => z.object({
+  fromCity: z.string().min(2, t('clientDashboard.validation.fromCityRequired')),
+  toCity: z.string().min(2, t('clientDashboard.validation.toCityRequired')),
+  description: z.string().min(10, t('clientDashboard.validation.descriptionMin')),
+  goodsType: z.string().min(1, t('clientDashboard.validation.goodsTypeRequired')),
   dateTime: z.string().optional(),
   budget: z.string().optional(),
   handlingRequired: z.boolean().default(false),
@@ -79,105 +77,21 @@ const editRequestSchema = z.object({
   }
   return true;
 }, {
-  message: "Tous les champs de manutention sont requis si la manutention est demandée",
+  message: t('clientDashboard.validation.handlingFieldsRequired'),
   path: ["handlingRequired"],
 });
 
-const reportSchema = z.object({
-  description: z.string().min(10, "Description minimale: 10 caractères"),
-  type: z.string().min(1, "Type de problème requis"),
+const createReportSchema = (t: any) => z.object({
+  description: z.string().min(10, t('clientDashboard.validation.reportDescriptionMin')),
+  type: z.string().min(1, t('clientDashboard.validation.reportTypeRequired')),
 });
 
-// Configuration des catégories avec icônes et couleurs
-const getCategoryConfig = (goodsType: string): { icon: LucideIcon; color: string; bgColor: string; borderColor: string; label: string } => {
-  const type = goodsType.toLowerCase();
-  
-  if (type.includes('déménagement')) {
-    return {
-      icon: Home,
-      color: 'text-white',
-      bgColor: 'bg-gradient-to-br from-emerald-500 to-emerald-600',
-      borderColor: 'border-emerald-500',
-      label: 'Déménagement'
-    };
-  }
-  
-  if (type.includes('meuble') || type.includes('mobilier')) {
-    return {
-      icon: Sofa,
-      color: 'text-white',
-      bgColor: 'bg-gradient-to-br from-blue-500 to-blue-600',
-      borderColor: 'border-blue-500',
-      label: 'Meubles'
-    };
-  }
-  
-  if (type.includes('matériau') || type.includes('construction')) {
-    return {
-      icon: Boxes,
-      color: 'text-white',
-      bgColor: 'bg-gradient-to-br from-orange-500 to-orange-600',
-      borderColor: 'border-orange-500',
-      label: 'Matériaux'
-    };
-  }
-  
-  if (type.includes('équipement') || type.includes('machine')) {
-    return {
-      icon: Wrench,
-      color: 'text-white',
-      bgColor: 'bg-gradient-to-br from-purple-500 to-purple-600',
-      borderColor: 'border-purple-500',
-      label: 'Équipements'
-    };
-  }
-  
-  if (type.includes('marchandise') || type.includes('produit')) {
-    return {
-      icon: ShoppingCart,
-      color: 'text-white',
-      bgColor: 'bg-gradient-to-br from-pink-500 to-pink-600',
-      borderColor: 'border-pink-500',
-      label: 'Marchandises'
-    };
-  }
-  
-  if (type.includes('colis')) {
-    return {
-      icon: Package,
-      color: 'text-white',
-      bgColor: 'bg-gradient-to-br from-amber-500 to-amber-600',
-      borderColor: 'border-amber-500',
-      label: 'Colis'
-    };
-  }
-  
-  if (type.includes('matériel')) {
-    return {
-      icon: Wrench,
-      color: 'text-white',
-      bgColor: 'bg-gradient-to-br from-indigo-500 to-indigo-600',
-      borderColor: 'border-indigo-500',
-      label: 'Matériel'
-    };
-  }
-  
-  // Default: Transport général
-  return {
-    icon: Truck,
-    color: 'text-white',
-    bgColor: 'bg-gradient-to-br from-slate-500 to-slate-600',
-    borderColor: 'border-slate-500',
-    label: goodsType
-  };
-};
-
 // Helper function to get client-friendly status with color
-function getClientStatus(request: any, interestedCount: number = 0) {
+function getClientStatus(request: any, interestedCount: number = 0, t: any) {
   // 11. Commande terminée - Paiement validé
   if (request.paymentStatus === "paid" || request.paymentStatus === "pending_admin_validation") {
     return {
-      text: "Commande terminée",
+      text: t('clientDashboard.status.orderCompleted'),
       variant: "default" as const,
       icon: CheckCircle,
     };
@@ -186,7 +100,7 @@ function getClientStatus(request: any, interestedCount: number = 0) {
   // 10. En attente de confirmation paiement - Livraison confirmée
   if (request.paymentStatus === "awaiting_payment") {
     return {
-      text: "En attente de confirmation paiement",
+      text: t('clientDashboard.status.awaitingPaymentConfirmation'),
       variant: "secondary" as const,
       icon: CreditCard,
     };
@@ -195,7 +109,7 @@ function getClientStatus(request: any, interestedCount: number = 0) {
   // 9. Livraison effectuée - Marquage "Livré"
   if (request.status === "completed") {
     return {
-      text: "Livraison effectuée ✅ Merci pour votre confiance",
+      text: t('clientDashboard.status.deliveryCompleted'),
       variant: "default" as const,
       icon: CheckCircle,
     };
@@ -204,7 +118,7 @@ function getClientStatus(request: any, interestedCount: number = 0) {
   // 8. Livraison en cours - Transporteur marque "Pris en charge"
   if (request.status === "in_progress") {
     return {
-      text: "Livraison en cours 🚚📦",
+      text: t('clientDashboard.status.deliveryInProgress'),
       variant: "default" as const,
       icon: Truck,
     };
@@ -213,7 +127,7 @@ function getClientStatus(request: any, interestedCount: number = 0) {
   // 7. Offre confirmée - Si client valide un transporteur
   if (request.status === "accepted" && request.acceptedOfferId) {
     return {
-      text: "Transporteur sélectionné ✅ Livraison prévue",
+      text: t('clientDashboard.status.offerConfirmed'),
       variant: "default" as const,
       icon: CheckCircle,
     };
@@ -222,7 +136,7 @@ function getClientStatus(request: any, interestedCount: number = 0) {
   // 6. Transporteur assigné manuellement - Coordinateur
   if (request.assignedTransporterId && !request.acceptedOfferId) {
     return {
-      text: "Transporteur assigné ✅ Suivi en cours",
+      text: t('clientDashboard.status.transporterAssigned'),
       variant: "default" as const,
       icon: Truck,
     };
@@ -231,7 +145,7 @@ function getClientStatus(request: any, interestedCount: number = 0) {
   // 5. En sélection Transporteur - Tant qu'aucune offre n'a été choisie
   if (interestedCount > 0 && !request.acceptedOfferId && !request.assignedTransporterId) {
     return {
-      text: "Choisissez votre transporteur 👇",
+      text: t('clientDashboard.status.chooseTransporter'),
       variant: "outline" as const,
       icon: Users,
     };
@@ -240,7 +154,7 @@ function getClientStatus(request: any, interestedCount: number = 0) {
   // 4. Transporteurs intéressés - Si ≥ 1 intéressé
   if (request.status === "published_for_matching" && interestedCount > 0) {
     return {
-      text: "Des transporteurs ont postulé 🚚 Comparez les profils",
+      text: t('clientDashboard.status.offersReceived'),
       variant: "outline" as const,
       icon: Truck,
     };
@@ -249,7 +163,7 @@ function getClientStatus(request: any, interestedCount: number = 0) {
   // 3. Publication aux transporteurs - Publication matching enclenchée
   if (request.status === "published_for_matching") {
     return {
-      text: "En attente d'offres transporteurs…",
+      text: t('clientDashboard.status.waitingForOffers'),
       variant: "secondary" as const,
       icon: Package,
     };
@@ -258,7 +172,7 @@ function getClientStatus(request: any, interestedCount: number = 0) {
   // 2. Prix vérifié / infos validées - Coordinateur valide détail + prix
   if (request.qualifiedAt && request.status !== "published_for_matching") {
     return {
-      text: "Finalisation de votre demande…",
+      text: t('clientDashboard.status.requestFinalization'),
       variant: "secondary" as const,
       icon: Info,
     };
@@ -266,13 +180,14 @@ function getClientStatus(request: any, interestedCount: number = 0) {
 
   // 1. Création commande - Dès création (default)
   return {
-    text: "Qualification logistique en cours…",
+    text: t('clientDashboard.status.logisticsQualification'),
     variant: "secondary" as const,
     icon: RotateCcw,
   };
 }
 
 function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onDelete, onViewTransporter, onUpdateStatus, onReport, onChooseTransporter, onOpenPhotosDialog, users, cities, citiesLoading, currentUserId }: any) {
+  const { t } = useTranslation();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showOffersDialog, setShowOffersDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -283,6 +198,22 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
   const isAccepted = request.status === "accepted";
   const hasTransporter = isAccepted || !!request.assignedTransporterId;
   const { toast } = useToast();
+  
+  // Create goodsTypes array using translations
+  const goodsTypes = [
+    t('shared.goodsTypes.furniture'),
+    t('shared.goodsTypes.appliances'),
+    t('shared.goodsTypes.goods'),
+    t('shared.goodsTypes.moving'),
+    t('shared.goodsTypes.construction'),
+    t('shared.goodsTypes.parcels'),
+    t('shared.goodsTypes.vehicle'),
+    t('shared.goodsTypes.other')
+  ];
+  
+  // Create schemas with useMemo
+  const editRequestSchema = useMemo(() => createEditRequestSchema(t), [t]);
+  const reportSchema = useMemo(() => createReportSchema(t), [t]);
 
   const { data: offers = [] } = useQuery({
     queryKey: ["/api/offers", request.id],
@@ -325,7 +256,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
     : offersWithTransporters.length;
 
   // Get client-friendly status
-  const clientStatus = getClientStatus(request, displayCount);
+  const clientStatus = getClientStatus(request, displayCount, t);
   const StatusIcon = clientStatus.icon;
 
   const createdAt = request.createdAt 
@@ -333,7 +264,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
     : null;
 
   // Get category config for colored border
-  const categoryConfig = getCategoryConfig(request.goodsType);
+  const categoryConfig = getCategoryConfig(request.goodsType, t);
 
   // Format datetime for input
   const formatDateTimeForInput = (dateStr: string | Date | null) => {
@@ -392,8 +323,8 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
     },
     onSuccess: () => {
       toast({
-        title: "Commande modifiée",
-        description: "Vos modifications ont été enregistrées avec succès",
+        title: t('clientDashboard.toast.requestEdited'),
+        description: t('clientDashboard.toast.requestEditedDesc'),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
       setShowEditDialog(false);
@@ -401,8 +332,8 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
     onError: () => {
       toast({
         variant: "destructive",
-        title: "Erreur",
-        description: "Échec de la modification de la commande",
+        title: t('clientDashboard.toast.editError'),
+        description: t('clientDashboard.toast.editErrorDesc'),
       });
     },
   });
@@ -498,8 +429,8 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
     },
     onSuccess: () => {
       toast({
-        title: "Contact enregistré",
-        description: "Vous pouvez maintenant contacter ce transporteur",
+        title: t('clientDashboard.toast.contactSaved'),
+        description: t('clientDashboard.toast.contactSavedDesc'),
       });
     },
   });
@@ -613,7 +544,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
             <div className="p-3 rounded-lg border bg-muted/30 space-y-2">
               <div className="flex items-center gap-2 text-sm font-medium">
                 <span>🏋️</span>
-                <span>Manutention : {request.handlingRequired ? 'Oui' : 'Non'}</span>
+                <span>{t('clientDashboard.labels.handling')} : {request.handlingRequired ? t('shared.labels.yes') : t('shared.labels.no')}</span>
               </div>
               {request.handlingRequired && (
                 <div className="grid grid-cols-2 gap-4 pl-6">
@@ -698,7 +629,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                   </div>
                   <div className="flex-1 text-left min-w-0">
                     <p className="text-xs sm:text-sm font-semibold leading-tight truncate">
-                      {isQualifiedWorkflow ? "Transporteurs intéressés" : "Offres reçues"}
+                      {isQualifiedWorkflow ? t('clientDashboard.actions.interested') : t('clientDashboard.actions.offersReceived')}
                     </p>
                     <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
                       Voir {displayCount > 1 ? 'les' : 'la'} {displayCount} {displayCount > 1 ? 'propositions' : 'proposition'}
@@ -892,7 +823,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
             <div className="flex items-center justify-between gap-3">
               <DialogTitle className="text-xl font-bold flex items-center gap-2">
                 <Users className="w-5 h-5 text-[#17cfcf]" />
-                {isQualifiedWorkflow ? 'Transporteurs intéressés' : 'Offres reçues'}
+                {isQualifiedWorkflow ? t('clientDashboard.actions.interested') : t('clientDashboard.actions.offersReceived')}
               </DialogTitle>
               <Badge className="bg-slate-900 text-white border-0 font-mono text-xs px-3 py-1">
                 {request.referenceId}
@@ -971,7 +902,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                             onClick={() => onChooseTransporter(request.id, transporter.id)}
                             data-testid={`button-select-transporter-${transporter.id}`}
                           >
-                            ✓ Choisir
+                            ✓ {t('clientDashboard.actions.chooseTransporter')}
                           </Button>
                         </div>
                         
@@ -979,13 +910,13 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                         <div className="flex-1 space-y-2">
                           <div className="flex items-start justify-between gap-2">
                             <div>
-                              <h4 className="font-semibold text-base">{transporter.name || "Transporteur"}</h4>
+                              <h4 className="font-semibold text-base">{transporter.name || t('shared.labels.transporter')}</h4>
                               {transporter.city && (
                                 <p className="text-xs text-muted-foreground">{transporter.city}</p>
                               )}
                             </div>
                             {transporter.isVerified && (
-                              <Badge className="bg-[#17cfcf] text-[10px] px-2 py-0">Vérifié</Badge>
+                              <Badge className="bg-[#17cfcf] text-[10px] px-2 py-0">{t('shared.labels.verified')}</Badge>
                             )}
                           </div>
                           
@@ -1009,7 +940,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                           {/* Proposed availability date - improved visibility */}
                           {transporter.availabilityDate && (
                             <div className="space-y-1 pt-1">
-                              <p className="text-xs font-semibold text-muted-foreground">Disponibilité proposée</p>
+                              <p className="text-xs font-semibold text-muted-foreground">{t('clientDashboard.labels.proposedAvailability')}</p>
                               <div className="flex items-center gap-2">
                                 <Badge 
                                   className={`${
@@ -1022,9 +953,9 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                                 </Badge>
                               </div>
                               {new Date(transporter.availabilityDate).toDateString() === new Date(request.dateTime).toDateString() ? (
-                                <p className="text-xs text-green-600 dark:text-green-400 font-bold">✓ Correspond à la date souhaitée</p>
+                                <p className="text-xs text-green-600 dark:text-green-400 font-bold">✓ {t('clientDashboard.labels.matchesRequestedDate')}</p>
                               ) : (
-                                <p className="text-xs text-orange-600 dark:text-orange-400 font-bold">ℹ️ Date alternative proposée</p>
+                                <p className="text-xs text-orange-600 dark:text-orange-400 font-bold">ℹ️ {t('clientDashboard.labels.alternativeDate')}</p>
                               )}
                             </div>
                           )}
@@ -1128,7 +1059,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                         {matches[currentMatchIndex]?.truckPhoto ? (
                           <img
                             src={matches[currentMatchIndex].truckPhoto}
-                            alt="Camion du transporteur"
+                            alt={t('clientDashboard.labels.transporterTruck')}
                             className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                           />
                         ) : (
@@ -1147,19 +1078,19 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                               {matches[currentMatchIndex].priority === 'empty_return' && (
                                 <>
                                   <Target className="w-3 h-3" />
-                                  Retour à vide
+                                  {t('clientDashboard.dialogs.offers.emptyReturn')}
                                 </>
                               )}
                               {matches[currentMatchIndex].priority === 'active' && (
                                 <>
                                   <Zap className="w-3 h-3" />
-                                  Actif récemment
+                                  {t('clientDashboard.dialogs.offers.recentlyActive')}
                                 </>
                               )}
                               {matches[currentMatchIndex].priority === 'rating' && (
                                 <>
                                   <Star className="w-3 h-3 fill-white" />
-                                  Bien noté
+                                  {t('clientDashboard.dialogs.offers.topRated')}
                                 </>
                               )}
                             </Badge>
@@ -1168,7 +1099,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
 
                         <div className="flex items-center gap-4 text-sm">
                           <span className="flex items-center gap-1">
-                            <span className="text-muted-foreground">Ville:</span>
+                            <span className="text-muted-foreground">{t('clientDashboard.dialogs.offers.city')}:</span>
                             <span className="font-medium">{matches[currentMatchIndex]?.city || 'N/A'}</span>
                           </span>
                         </div>
@@ -1251,8 +1182,8 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                         setCurrentMatchIndex(currentMatchIndex + 1);
                       } else {
                         toast({
-                          title: "Fin des matches",
-                          description: "Vous avez vu tous les transporteurs disponibles",
+                          title: t('clientDashboard.dialogs.offers.matchesEnd'),
+                          description: t('clientDashboard.dialogs.offers.matchesEndDesc'),
                         });
                       }
                     }}
@@ -1292,9 +1223,9 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Modifier la commande</DialogTitle>
+            <DialogTitle>{t('clientDashboard.dialogs.editTitle')}</DialogTitle>
             <DialogDescription>
-              Modifiez les informations de votre commande
+              {t('clientDashboard.dialogs.editDescription')}
             </DialogDescription>
           </DialogHeader>
           <Form {...editForm}>
@@ -1305,16 +1236,16 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                   name="fromCity"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Ville de départ</FormLabel>
+                      <FormLabel>{t('clientDashboard.dialogs.edit.fromCity')}</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="edit-select-from-city">
-                            <SelectValue placeholder="Sélectionner" />
+                            <SelectValue placeholder={t('clientDashboard.dialogs.edit.selectFromCity')} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
                           {citiesLoading ? (
-                            <div className="p-2 text-sm text-muted-foreground">Chargement...</div>
+                            <div className="p-2 text-sm text-muted-foreground">{t('common.loading')}</div>
                           ) : (
                             cities.map((city: any) => (
                               <SelectItem key={city.id} value={city.name}>{city.name}</SelectItem>
@@ -1332,16 +1263,16 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                   name="toCity"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Ville d'arrivée</FormLabel>
+                      <FormLabel>{t('clientDashboard.dialogs.edit.toCity')}</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="edit-select-to-city">
-                            <SelectValue placeholder="Sélectionner" />
+                            <SelectValue placeholder={t('clientDashboard.dialogs.edit.selectToCity')} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
                           {citiesLoading ? (
-                            <div className="p-2 text-sm text-muted-foreground">Chargement...</div>
+                            <div className="p-2 text-sm text-muted-foreground">{t('common.loading')}</div>
                           ) : (
                             cities.map((city: any) => (
                               <SelectItem key={city.id} value={city.name}>{city.name}</SelectItem>
@@ -1360,11 +1291,11 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                 name="goodsType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Type de marchandise</FormLabel>
+                    <FormLabel>{t('clientDashboard.dialogs.edit.goodsType')}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="edit-select-goods-type">
-                          <SelectValue placeholder="Sélectionner" />
+                          <SelectValue placeholder={t('clientDashboard.dialogs.edit.selectGoodsType')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -1383,10 +1314,10 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel>{t('clientDashboard.dialogs.edit.description')}</FormLabel>
                     <FormControl>
                       <Textarea 
-                        placeholder="Décrivez votre demande de transport..."
+                        placeholder={t('clientDashboard.dialogs.edit.descriptionPlaceholder')}
                         className="min-h-24"
                         data-testid="edit-input-description"
                         {...field}
@@ -1402,7 +1333,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                 name="budget"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Budget (optionnel)</FormLabel>
+                    <FormLabel>{t('clientDashboard.dialogs.edit.budget')}</FormLabel>
                     <FormControl>
                       <Input 
                         placeholder="ex: 500 MAD" 
@@ -1420,7 +1351,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                 name="dateTime"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Date et heure souhaitées (optionnel)</FormLabel>
+                    <FormLabel>{t('clientDashboard.dialogs.edit.pickupDate')}</FormLabel>
                     <FormControl>
                       <Input 
                         type="datetime-local" 
@@ -1447,10 +1378,10 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                     </FormControl>
                     <div className="space-y-1 leading-none">
                       <FormLabel className="cursor-pointer">
-                        Besoin de manutention
+                        {t('clientDashboard.dialogs.edit.handlingRequired')}
                       </FormLabel>
                       <p className="text-sm text-muted-foreground">
-                        Si vous avez besoin d'aide pour charger/décharger avec étages
+                        {t('newRequestForm.handlingDescription')}
                       </p>
                     </div>
                   </FormItem>
@@ -1459,17 +1390,17 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
 
               {editForm.watch("handlingRequired") && (
                 <div className="space-y-4 p-4 rounded-lg border bg-muted/50">
-                  <h3 className="font-semibold text-sm">Informations de manutention</h3>
+                  <h3 className="font-semibold text-sm">{t('shared.labels.handlingInfo')}</h3>
                   
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-4">
-                      <h4 className="text-sm font-medium">🏢 Départ</h4>
+                      <h4 className="text-sm font-medium">🏢 {t('shared.labels.departure')}</h4>
                       <FormField
                         control={editForm.control}
                         name="departureFloor"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Étage au départ</FormLabel>
+                            <FormLabel>{t('clientDashboard.dialogs.edit.departureFloor')}</FormLabel>
                             <FormControl>
                               <Input 
                                 type="number" 
@@ -1500,7 +1431,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                             </FormControl>
                             <div className="space-y-1 leading-none">
                               <FormLabel className="cursor-pointer">
-                                Ascenseur disponible
+                                {t('clientDashboard.dialogs.edit.departureElevator')}
                               </FormLabel>
                             </div>
                           </FormItem>
@@ -1509,13 +1440,13 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                     </div>
 
                     <div className="space-y-4">
-                      <h4 className="text-sm font-medium">🏠 Arrivée</h4>
+                      <h4 className="text-sm font-medium">🏠 {t('shared.labels.arrival')}</h4>
                       <FormField
                         control={editForm.control}
                         name="arrivalFloor"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Étage à l'arrivée</FormLabel>
+                            <FormLabel>{t('clientDashboard.dialogs.edit.arrivalFloor')}</FormLabel>
                             <FormControl>
                               <Input 
                                 type="number" 
@@ -1546,7 +1477,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                             </FormControl>
                             <div className="space-y-1 leading-none">
                               <FormLabel className="cursor-pointer">
-                                Ascenseur disponible
+                                {t('clientDashboard.dialogs.edit.arrivalElevator')}
                               </FormLabel>
                             </div>
                           </FormItem>
@@ -1559,12 +1490,12 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
 
               {/* Section Photos */}
               <div className="space-y-3">
-                <label className="text-sm font-medium">Photos</label>
+                <label className="text-sm font-medium">{t('clientDashboard.dialogs.edit.photos')}</label>
                 
                 {/* Photos existantes conservées */}
                 {editedExistingPhotos.length > 0 && (
                   <div className="space-y-2">
-                    <p className="text-xs text-muted-foreground">Photos existantes ({editedExistingPhotos.length})</p>
+                    <p className="text-xs text-muted-foreground">{t('shared.labels.existingPhotos')} ({editedExistingPhotos.length})</p>
                     <div className="grid grid-cols-3 gap-2">
                       {editedExistingPhotos.map((photo: string, index: number) => (
                         <div key={index} className="relative aspect-square rounded-md overflow-hidden bg-muted group">
@@ -1592,7 +1523,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                 {/* Nouvelles photos sélectionnées (aperçu) */}
                 {editPhotos.length > 0 && (
                   <div className="space-y-2">
-                    <p className="text-xs text-muted-foreground">Nouvelles photos à ajouter ({editPhotos.length})</p>
+                    <p className="text-xs text-muted-foreground">{t('shared.labels.newPhotos')} ({editPhotos.length})</p>
                     <div className="grid grid-cols-3 gap-2">
                       {editPhotos.map((photo: File, index: number) => (
                         <div key={index} className="relative aspect-square rounded-md overflow-hidden bg-muted border-2 border-primary">
@@ -1622,8 +1553,8 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                     <Camera className="mx-auto h-10 w-10 text-muted-foreground mb-2" />
                     <p className="text-sm text-muted-foreground">
                       {editPhotos.length > 0 
-                        ? "Cliquez pour choisir d'autres photos" 
-                        : "Cliquez pour ajouter de nouvelles photos"}
+                        ? t('clientDashboard.dialogs.edit.changePhotos')
+                        : t('clientDashboard.dialogs.edit.addMorePhotos')}
                     </p>
                   </label>
                 </div>
@@ -1636,14 +1567,14 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                   onClick={() => setShowEditDialog(false)}
                   data-testid="button-cancel-edit"
                 >
-                  Annuler
+                  {t('common.cancel')}
                 </Button>
                 <Button 
                   type="submit" 
                   disabled={editRequestMutation.isPending}
                   data-testid="button-save-edit"
                 >
-                  {editRequestMutation.isPending ? "Enregistrement..." : "Enregistrer les changements"}
+                  {editRequestMutation.isPending ? t('clientDashboard.dialogs.edit.saving') : t('clientDashboard.dialogs.edit.save')}
                 </Button>
               </DialogFooter>
             </form>
@@ -1655,13 +1586,13 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer la commande</AlertDialogTitle>
+            <AlertDialogTitle>{t('clientDashboard.dialogs.deleteTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Êtes-vous sûr de vouloir supprimer cette commande ? Cette action supprimera également toutes les offres et messages associés. Cette action est irréversible.
+              {t('clientDashboard.dialogs.deleteDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel data-testid="button-cancel-delete">Annuler</AlertDialogCancel>
+            <AlertDialogCancel data-testid="button-cancel-delete">{t('shared.actions.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 onDelete(request.id);
@@ -1670,7 +1601,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
               data-testid="button-confirm-delete"
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Supprimer
+              {t('clientDashboard.actions.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1683,6 +1614,11 @@ export default function ClientDashboard() {
   const [, setLocation] = useLocation();
   const { user, loading: authLoading, logout } = useAuth();
   const { t } = useTranslation();
+  const { toast } = useToast();
+  
+  // Create schemas with useMemo
+  const reportSchema = useMemo(() => createReportSchema(t), [t]);
+  
   const [showNewRequest, setShowNewRequest] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [selectedTransporter, setSelectedTransporter] = useState<any>(null);
@@ -1774,13 +1710,13 @@ export default function ClientDashboard() {
       queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
       
       toast({
-        title: "Transporteur sélectionné !",
-        description: `Vous avez choisi ${data.transporter?.name || 'le transporteur'}. Vous pouvez maintenant le contacter.`,
+        title: t('clientDashboard.toast.transporterSelected'),
+        description: t('clientDashboard.toast.transporterChosenDesc', { transporterName: data.transporter?.name || t('shared.labels.transporter') }),
       });
 
       setContactInfo({
         transporterPhone: data.transporter?.phoneNumber || '',
-        transporterName: data.transporter?.name || 'Transporteur',
+        transporterName: data.transporter?.name || t('shared.labels.transporter'),
         commission: 0,
         total: data.request.clientTotal || 0
       });
@@ -1789,8 +1725,8 @@ export default function ClientDashboard() {
     onError: (error: any) => {
       toast({
         variant: "destructive",
-        title: "Erreur",
-        description: error.message || "Impossible de sélectionner ce transporteur",
+        title: t('clientDashboard.toast.selectError'),
+        description: error.message || t('clientDashboard.toast.selectErrorDesc'),
       });
     }
   });
@@ -1809,15 +1745,15 @@ export default function ClientDashboard() {
       queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
       queryClient.invalidateQueries({ queryKey: ["/api/offers"] });
       toast({
-        title: "Offre déclinée",
-        description: "L'offre a été déclinée et le transporteur a été notifié.",
+        title: t('clientDashboard.toast.offerDeclined'),
+        description: t('clientDashboard.toast.offerDeclinedDesc'),
       });
     },
     onError: () => {
       toast({
         variant: "destructive",
-        title: "Erreur",
-        description: "Impossible de décliner l'offre",
+        title: t('clientDashboard.toast.declineError'),
+        description: t('clientDashboard.toast.declineErrorDesc'),
       });
     },
   });
@@ -1837,15 +1773,15 @@ export default function ClientDashboard() {
       queryClient.invalidateQueries({ queryKey: ["/api/offers"] });
       queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
       toast({
-        title: "Commande supprimée",
-        description: "Votre commande a été supprimée avec succès.",
+        title: t('clientDashboard.toast.requestDeleted'),
+        description: t('clientDashboard.toast.requestDeletedDesc'),
       });
     },
     onError: () => {
       toast({
         variant: "destructive",
-        title: "Erreur",
-        description: "Impossible de supprimer la commande. Veuillez réessayer.",
+        title: t('clientDashboard.toast.deleteError'),
+        description: t('clientDashboard.toast.deleteErrorDesc'),
       });
     },
   });
@@ -1933,8 +1869,8 @@ export default function ClientDashboard() {
     },
     onSuccess: () => {
       toast({
-        title: "Commande terminée",
-        description: "Merci pour votre évaluation ! La commande est maintenant terminée.",
+        title: t('clientDashboard.toast.orderCompleted'),
+        description: t('clientDashboard.toast.orderCompletedDesc'),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
       queryClient.invalidateQueries({ queryKey: ["/api/offers"] });
@@ -1943,13 +1879,11 @@ export default function ClientDashboard() {
     onError: () => {
       toast({
         variant: "destructive",
-        title: "Erreur",
-        description: "Impossible de terminer la commande",
+        title: t('clientDashboard.toast.completeError'),
+        description: t('clientDashboard.toast.completeErrorDesc'),
       });
     },
   });
-
-  const { toast } = useToast();
 
   const markAsPaidMutation = useMutation({
     mutationFn: async ({ requestId, receipt }: { requestId: string; receipt: string }) => {
@@ -1960,8 +1894,8 @@ export default function ClientDashboard() {
     },
     onSuccess: (_, variables) => {
       toast({
-        title: "Succès",
-        description: "Merci ! Veuillez maintenant évaluer le transporteur",
+        title: t('clientDashboard.toast.deliveryConfirmed'),
+        description: t('clientDashboard.toast.deliveryConfirmedDesc'),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
       
@@ -1981,8 +1915,8 @@ export default function ClientDashboard() {
     onError: () => {
       toast({
         variant: "destructive",
-        title: "Erreur",
-        description: "Échec de la confirmation du paiement",
+        title: t('clientDashboard.toast.paymentError'),
+        description: t('clientDashboard.toast.paymentErrorDesc'),
       });
     },
   });
@@ -2024,8 +1958,8 @@ export default function ClientDashboard() {
     },
     onSuccess: () => {
       toast({
-        title: "Signalement envoyé",
-        description: "Votre signalement a été envoyé à l'équipe support",
+        title: t('clientDashboard.toast.reportSent'),
+        description: t('clientDashboard.toast.reportSentDesc'),
       });
       setShowReportDialog(false);
       reportForm.reset();
@@ -2033,8 +1967,8 @@ export default function ClientDashboard() {
     onError: () => {
       toast({
         variant: "destructive",
-        title: "Erreur",
-        description: "Échec de l'envoi du signalement",
+        title: t('clientDashboard.toast.reportError'),
+        description: t('clientDashboard.toast.reportErrorDesc'),
       });
     },
   });
@@ -2075,8 +2009,8 @@ export default function ClientDashboard() {
     if (!file.type.startsWith('image/')) {
       toast({
         variant: "destructive",
-        title: "Format non accepté",
-        description: "Veuillez téléverser une image",
+        title: t('clientDashboard.toast.invalidFormat'),
+        description: t('clientDashboard.toast.invalidFormatDesc'),
       });
       e.target.value = ''; // Reset input
       return;
@@ -2087,8 +2021,8 @@ export default function ClientDashboard() {
     if (file.size > maxSize) {
       toast({
         variant: "destructive",
-        title: "Fichier trop volumineux",
-        description: "La taille maximale autorisée est de 10 Mo",
+        title: t('clientDashboard.toast.fileTooLarge'),
+        description: t('clientDashboard.toast.fileTooLargeDesc'),
       });
       e.target.value = ''; // Reset input
       return;
@@ -2099,16 +2033,16 @@ export default function ClientDashboard() {
     reader.onloadend = () => {
       setPaymentReceipt(reader.result as string);
       toast({
-        title: "Reçu téléversé",
-        description: "Le reçu de paiement a été chargé avec succès",
+        title: t('clientDashboard.toast.receiptUploaded'),
+        description: t('clientDashboard.toast.receiptUploadedDesc'),
       });
     };
     reader.onerror = (error) => {
       console.error("FileReader error:", error);
       toast({
         variant: "destructive",
-        title: "Erreur de lecture",
-        description: "Impossible de lire le fichier. Veuillez réessayer avec une autre image.",
+        title: t('clientDashboard.toast.fileReadError'),
+        description: t('clientDashboard.toast.fileReadErrorDesc'),
       });
       e.target.value = ''; // Reset input
     };
@@ -2119,8 +2053,8 @@ export default function ClientDashboard() {
     if (!paymentReceipt) {
       toast({
         variant: "destructive",
-        title: "Erreur",
-        description: "Veuillez téléverser le reçu de paiement",
+        title: t('clientDashboard.toast.missingReceipt'),
+        description: t('clientDashboard.toast.missingReceiptDesc'),
       });
       return;
     }
@@ -2252,7 +2186,7 @@ export default function ClientDashboard() {
                         })
                       : null;
                     
-                    const categoryConfig = getCategoryConfig(request.goodsType);
+                    const categoryConfig = getCategoryConfig(request.goodsType, t);
 
                     return (
                       <div key={request.id} className={`p-4 rounded-lg border-2 ${categoryConfig.borderColor} space-y-4`}>
@@ -2402,7 +2336,7 @@ export default function ClientDashboard() {
               ) : (
                 <div className="space-y-4">
                   {completedRequests.map((request: any) => {
-                    const categoryConfig = getCategoryConfig(request.goodsType);
+                    const categoryConfig = getCategoryConfig(request.goodsType, t);
                     
                     return (
                     <div key={request.id} className={`p-4 rounded-lg border-2 ${categoryConfig.borderColor} space-y-3`}>
@@ -2585,15 +2519,15 @@ export default function ClientDashboard() {
               <div className="w-12 h-12 rounded-full bg-green-600 flex items-center justify-center">
                 <CheckCircle className="w-6 h-6 text-white" />
               </div>
-              <AlertDialogTitle className="text-xl">Offre acceptée !</AlertDialogTitle>
+              <AlertDialogTitle className="text-xl">{t('clientDashboard.dialogs.offerAccepted')}</AlertDialogTitle>
             </div>
             <AlertDialogDescription className="space-y-4 text-base">
               <p className="text-foreground">
-                Le transporteur <span className="font-semibold">{contactInfo?.transporterName}</span> a été informé que vous avez choisi son offre.
+                {t('clientDashboard.dialogs.transporterInformed', { transporterName: contactInfo?.transporterName })}
               </p>
               
               <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
-                <p className="font-medium text-foreground mb-2">Vous pouvez maintenant le contacter :</p>
+                <p className="font-medium text-foreground mb-2">{t('clientDashboard.dialogs.canContactNow')}</p>
                 <div className="flex items-center gap-2 text-lg font-semibold text-primary">
                   <Phone className="w-5 h-5" />
                   <a href={`tel:${contactInfo?.transporterPhone}`} className="hover:underline">
@@ -2604,7 +2538,7 @@ export default function ClientDashboard() {
 
               {contactInfo?.total && (
                 <div className="text-sm border-t pt-3">
-                  <p className="font-semibold text-foreground">Total à payer : {contactInfo.total.toFixed(2)} MAD</p>
+                  <p className="font-semibold text-foreground">{t('clientDashboard.labels.totalToPay')} : {contactInfo.total.toFixed(2)} MAD</p>
                 </div>
               )}
             </AlertDialogDescription>
@@ -2614,7 +2548,7 @@ export default function ClientDashboard() {
               className="w-full"
               data-testid="button-close-contact-dialog"
             >
-              J'ai compris
+              {t('shared.actions.understood')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -2655,7 +2589,7 @@ export default function ClientDashboard() {
 
                     {transporterInfo.transporterPhone && (
                       <div>
-                        <p className="text-sm text-muted-foreground">Téléphone</p>
+                        <p className="text-sm text-muted-foreground">{t('clientDashboard.dialogs.transporter.phone')}</p>
                         <div className="flex items-center gap-2">
                           <Phone className="w-4 h-4 text-primary" />
                           <a 
@@ -2673,19 +2607,19 @@ export default function ClientDashboard() {
                   {transporterInfo.totalAmount != null && (
                     <div className="border-t pt-3">
                       <div className="flex justify-between">
-                        <span className="font-semibold text-foreground">Total à payer</span>
+                        <span className="font-semibold text-foreground">{t('shared.labels.totalToPay')}</span>
                         <span className="font-bold text-primary text-xl">{Number(transporterInfo.totalAmount).toFixed(2)} MAD</span>
                       </div>
                     </div>
                   )}
 
                   <p className="text-sm text-muted-foreground italic">
-                    Vous pouvez contacter directement le transporteur pour finaliser les détails du transport.
+                    {t('clientDashboard.dialogs.transporter.contactInfo')}
                   </p>
                 </>
               ) : (
                 <div className="text-center py-4">
-                  <p className="text-muted-foreground">Chargement des informations...</p>
+                  <p className="text-muted-foreground">{t('common.loadingInfo')}</p>
                 </div>
               )}
             </AlertDialogDescription>
@@ -2695,7 +2629,7 @@ export default function ClientDashboard() {
               className="w-full"
               data-testid="button-close-transporter-info"
             >
-              Fermer
+              {t('clientDashboard.dialogs.transporter.close')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -2708,11 +2642,11 @@ export default function ClientDashboard() {
               <div className="w-12 h-12 rounded-full bg-yellow-500 flex items-center justify-center">
                 <Star className="w-6 h-6 text-white fill-white" />
               </div>
-              <AlertDialogTitle className="text-xl">Évaluer le transporteur</AlertDialogTitle>
+              <AlertDialogTitle className="text-xl">{t('clientDashboard.dialogs.rating.title')}</AlertDialogTitle>
             </div>
             <AlertDialogDescription className="space-y-6 text-base">
               <p className="text-foreground text-center">
-                Merci d'évaluer le transporteur pour cette commande.
+                {t('clientDashboard.dialogs.rating.description')}
               </p>
               
               <div className="flex justify-center items-center gap-2">
@@ -2739,7 +2673,10 @@ export default function ClientDashboard() {
 
               {ratingValue > 0 && (
                 <p className="text-center text-sm text-muted-foreground">
-                  Note sélectionnée : {ratingValue} {ratingValue === 1 ? "étoile" : "étoiles"}
+                  {t('clientDashboard.dialogs.rating.selectRating', { 
+                    rating: ratingValue, 
+                    stars: ratingValue === 1 ? t('clientDashboard.dialogs.rating.star') : t('clientDashboard.dialogs.rating.stars')
+                  })}
                 </p>
               )}
             </AlertDialogDescription>
@@ -2749,7 +2686,7 @@ export default function ClientDashboard() {
               onClick={() => setShowRatingDialog(false)}
               data-testid="button-cancel-rating"
             >
-              Annuler
+              {t('common.cancel')}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleSubmitRating}
@@ -2757,7 +2694,7 @@ export default function ClientDashboard() {
               className="bg-yellow-500 hover:bg-yellow-600 text-white"
               data-testid="button-submit-rating"
             >
-              {completeWithRatingMutation.isPending ? "Enregistrement..." : "Valider la note"}
+              {completeWithRatingMutation.isPending ? t('clientDashboard.dialogs.rating.submitting') : t('clientDashboard.dialogs.rating.submit')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -2766,28 +2703,28 @@ export default function ClientDashboard() {
       <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
         <DialogContent className="max-w-[90vw] sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Confirmer le paiement</DialogTitle>
+            <DialogTitle>{t('clientDashboard.dialogs.payment.title')}</DialogTitle>
             <DialogDescription className="space-y-4 pt-4">
               <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800 space-y-3">
                 <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                  Merci d'effectuer le virement sur le compte suivant :
+                  {t('shared.labels.bankTransferInstructions')}
                 </p>
                 <div className="space-y-1">
                   <p className="text-sm text-blue-800 dark:text-blue-200">
-                    <span className="font-semibold">RIB :</span> 011815000005210001099713
+                    <span className="font-semibold">{t('shared.labels.rib')} :</span> 011815000005210001099713
                   </p>
                   <p className="text-sm text-blue-800 dark:text-blue-200">
-                    <span className="font-semibold">À l'ordre de :</span> CamionBack
+                    <span className="font-semibold">{t('shared.labels.payableTo')} :</span> CamionBack
                   </p>
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="receipt-upload" className="text-sm font-medium">
-                  Reçu de paiement <span className="text-destructive">*</span>
+                  {t('clientDashboard.dialogs.payment.receiptPreview')} <span className="text-destructive">*</span>
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  Veuillez téléverser votre reçu de paiement (formats acceptés : JPEG, PNG, WebP - max. 5 Mo).
+                  {t('shared.labels.receiptUploadInstructions')}
                 </p>
                 <div className="flex items-center gap-2">
                   <Button
@@ -2798,7 +2735,7 @@ export default function ClientDashboard() {
                     data-testid="button-upload-receipt"
                   >
                     <Upload className="w-4 h-4" />
-                    {paymentReceipt ? "Reçu téléversé" : "Téléverser le reçu"}
+                    {paymentReceipt ? t('clientDashboard.dialogs.payment.receiptUploaded') : t('clientDashboard.dialogs.payment.uploadReceipt')}
                   </Button>
                   <input
                     id="receipt-upload"
@@ -2813,7 +2750,7 @@ export default function ClientDashboard() {
                   <div className="mt-2">
                     <img
                       src={paymentReceipt}
-                      alt="Reçu de paiement"
+                      alt={t('clientDashboard.dialogs.payment.receiptPreview')}
                       className="w-full h-40 object-cover rounded-lg border"
                     />
                   </div>
@@ -2828,7 +2765,7 @@ export default function ClientDashboard() {
               onClick={() => setShowPaymentDialog(false)}
               data-testid="button-cancel-payment"
             >
-              Annuler
+              {t('common.cancel')}
             </Button>
             <Button
               type="button"
@@ -2836,7 +2773,7 @@ export default function ClientDashboard() {
               disabled={!paymentReceipt || markAsPaidMutation.isPending}
               data-testid="button-confirm-payment"
             >
-              {markAsPaidMutation.isPending ? "Envoi en cours..." : "Confirmer le paiement"}
+              {markAsPaidMutation.isPending ? t('clientDashboard.dialogs.payment.confirming') : t('clientDashboard.dialogs.payment.confirm')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -2845,9 +2782,9 @@ export default function ClientDashboard() {
       <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
         <DialogContent className="max-w-[90vw] sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Signaler un problème</DialogTitle>
+            <DialogTitle>{t('clientDashboard.dialogs.report.title')}</DialogTitle>
             <DialogDescription>
-              Décrivez le problème rencontré avec cette commande.
+              {t('clientDashboard.dialogs.report.description')}
             </DialogDescription>
           </DialogHeader>
           <Form {...reportForm}>
@@ -2857,21 +2794,21 @@ export default function ClientDashboard() {
                 name="type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Type de problème <span className="text-destructive">*</span></FormLabel>
+                    <FormLabel>{t('clientDashboard.dialogs.report.problemType')} <span className="text-destructive">*</span></FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-report-type">
-                          <SelectValue placeholder="Sélectionnez un type" />
+                          <SelectValue placeholder={t('clientDashboard.dialogs.report.selectType')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="service">Problème de service</SelectItem>
-                        <SelectItem value="payment">Problème de paiement</SelectItem>
-                        <SelectItem value="communication">Problème de communication</SelectItem>
-                        <SelectItem value="quality">Problème de qualité</SelectItem>
-                        <SelectItem value="damage">Marchandises endommagées</SelectItem>
-                        <SelectItem value="delay">Retard de livraison</SelectItem>
-                        <SelectItem value="other">Autre</SelectItem>
+                        <SelectItem value="service">{t('shared.labels.serviceIssue')}</SelectItem>
+                        <SelectItem value="payment">{t('shared.labels.paymentIssue')}</SelectItem>
+                        <SelectItem value="communication">{t('shared.labels.communicationIssue')}</SelectItem>
+                        <SelectItem value="quality">{t('clientDashboard.dialogs.report.types.quality')}</SelectItem>
+                        <SelectItem value="damage">{t('clientDashboard.dialogs.report.types.damage')}</SelectItem>
+                        <SelectItem value="delay">{t('clientDashboard.dialogs.report.types.delay')}</SelectItem>
+                        <SelectItem value="other">{t('clientDashboard.dialogs.report.types.other')}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -2883,10 +2820,10 @@ export default function ClientDashboard() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description détaillée <span className="text-destructive">*</span></FormLabel>
+                    <FormLabel>{t('clientDashboard.dialogs.report.descriptionLabel')} <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Décrivez en détail le problème rencontré..."
+                        placeholder={t('clientDashboard.dialogs.report.descriptionPlaceholder')}
                         className="resize-none h-32"
                         data-testid="textarea-report-description"
                         {...field}
@@ -2903,14 +2840,14 @@ export default function ClientDashboard() {
                   onClick={() => setShowReportDialog(false)}
                   data-testid="button-cancel-report"
                 >
-                  Annuler
+                  {t('common.cancel')}
                 </Button>
                 <Button
                   type="submit"
                   disabled={createReportMutation.isPending}
                   data-testid="button-submit-report"
                 >
-                  {createReportMutation.isPending ? "Envoi en cours..." : "Envoyer le signalement"}
+                  {createReportMutation.isPending ? t('clientDashboard.dialogs.report.submitting') : t('clientDashboard.dialogs.report.submit')}
                 </Button>
               </DialogFooter>
             </form>

@@ -27,19 +27,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Textarea } from "@/components/ui/textarea";
 import { format, isSameDay, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
-
-const reportSchema = z.object({
-  description: z.string().min(10, "Description minimale: 10 caractères"),
-  type: z.string().min(1, "Type de problème requis"),
-});
-
-const editOfferSchema = z.object({
-  amount: z.coerce.number().min(1, "Le montant doit être supérieur à 0"),
-  pickupDate: z.string().min(1, "Date de prise en charge requise"),
-  loadType: z.enum(["return", "shared"], {
-    required_error: "Type de chargement requis",
-  }),
-});
+import { useTranslation } from 'react-i18next';
 
 // REMOVED: Referent system no longer used - transporter validation is now done directly by admin
 // const referenceSchema = z.object({
@@ -53,7 +41,22 @@ const editOfferSchema = z.object({
 export default function TransporterDashboard() {
   const [, setLocation] = useLocation();
   const { user, loading: authLoading, logout } = useAuth();
-  const [selectedCity, setSelectedCity] = useState("Toutes les villes");
+  const { t, i18n } = useTranslation();
+  
+  // Create dynamic Zod schemas with useMemo
+  const reportSchema = useMemo(() => z.object({
+    description: z.string().min(10, t('transporterDashboard.validation.descriptionMin')),
+    type: z.string().min(1, t('transporterDashboard.validation.problemTypeRequired')),
+  }), [t]);
+
+  const editOfferSchema = useMemo(() => z.object({
+    amount: z.coerce.number().min(1, t('transporterDashboard.validation.amountMin')),
+    pickupDate: z.string().min(1, t('transporterDashboard.validation.pickupDateRequired')),
+    loadType: z.enum(["return", "shared"], {
+      required_error: t('transporterDashboard.validation.loadTypeRequired'),
+    }),
+  }), [t]);
+  const [selectedCity, setSelectedCity] = useState("allCities");
   const [searchQuery, setSearchQuery] = useState("");
   // Removed offerDialogOpen - new workflow uses interest buttons instead of offer form
   const [chatOpen, setChatOpen] = useState(false);
@@ -85,8 +88,8 @@ export default function TransporterDashboard() {
       // With new workflow, transporters can simply scroll to and click "Je suis intéressé"
       // No need to open a separate dialog
       toast({
-        title: "Commande partagée",
-        description: "Cliquez sur 'Je suis intéressé' pour exprimer votre intérêt",
+        title: t('transporterDashboard.dialogs.sharedOrder.title'),
+        description: t('transporterDashboard.dialogs.sharedOrder.description'),
       });
       // Clean URL after processing
       window.history.replaceState({}, '', '/transporter-dashboard');
@@ -196,8 +199,8 @@ export default function TransporterDashboard() {
     // Client info now comes from enriched request.client object
     setSelectedClientDetails({
       ...request,
-      clientPhone: request.client?.phoneNumber || "Non disponible",
-      clientName: request.client?.name || "Client",
+      clientPhone: request.client?.phoneNumber || t('shared.labels.notAvailable'),
+      clientName: request.client?.name || t('shared.labels.client'),
     });
     setClientDetailsOpen(true);
   };
@@ -261,16 +264,16 @@ export default function TransporterDashboard() {
     },
     onSuccess: () => {
       toast({
-        title: "Succès",
-        description: "La commande a été marquée comme à facturer",
+        title: t('transporterDashboard.toast.markedBilled'),
+        description: t('transporterDashboard.toast.markedBilledDesc'),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/requests/accepted"] });
     },
     onError: () => {
       toast({
         variant: "destructive",
-        title: "Erreur",
-        description: "Échec de la mise à jour",
+        title: t('transporterDashboard.toast.billedError'),
+        description: t('transporterDashboard.toast.billedErrorDesc'),
       });
     },
   });
@@ -283,8 +286,8 @@ export default function TransporterDashboard() {
     },
     onSuccess: () => {
       toast({
-        title: "Commande masquée",
-        description: "Cette commande ne sera plus affichée",
+        title: t('transporterDashboard.toast.orderHidden'),
+        description: t('transporterDashboard.toast.orderHiddenDesc'),
       });
       // Invalidate new query key with partial matching (TanStack Query v5)
       queryClient.invalidateQueries({ 
@@ -301,8 +304,8 @@ export default function TransporterDashboard() {
       if (is404) {
         toast({
           variant: "destructive",
-          title: "Demande non disponible",
-          description: "Cette demande n'est plus disponible. Elle a peut-être été supprimée par le client.",
+          title: t('transporterDashboard.toast.requestUnavailable'),
+          description: t('transporterDashboard.toast.requestUnavailableDesc'),
         });
         // Invalidate queries to refresh the list
         queryClient.invalidateQueries({ 
@@ -313,8 +316,8 @@ export default function TransporterDashboard() {
       } else {
         toast({
           variant: "destructive",
-          title: "Erreur",
-          description: "Échec de l'opération",
+          title: t('transporterDashboard.toast.hideError'),
+          description: t('transporterDashboard.toast.hideErrorDesc'),
         });
       }
     },
@@ -336,8 +339,8 @@ export default function TransporterDashboard() {
     },
     onSuccess: () => {
       toast({
-        title: "Intérêt exprimé",
-        description: "Votre intérêt a été enregistré. Le client sera notifié.",
+        title: t('transporterDashboard.toast.interestExpressed'),
+        description: t('transporterDashboard.toast.interestExpressedDesc'),
       });
       // Invalidate queries to refresh both tabs and move the card automatically
       queryClient.invalidateQueries({ 
@@ -356,8 +359,8 @@ export default function TransporterDashboard() {
     onError: () => {
       toast({
         variant: "destructive",
-        title: "Erreur",
-        description: "Impossible d'enregistrer votre intérêt",
+        title: t('transporterDashboard.toast.interestError'),
+        description: t('transporterDashboard.toast.interestErrorDesc'),
       });
     },
   });
@@ -371,8 +374,8 @@ export default function TransporterDashboard() {
     },
     onSuccess: () => {
       toast({
-        title: "Intérêt retiré",
-        description: "Votre intérêt a été retiré",
+        title: t('transporterDashboard.toast.interestWithdrawn'),
+        description: t('transporterDashboard.toast.interestWithdrawnDesc'),
       });
       // Invalidate queries to refresh both tabs and move the card automatically
       queryClient.invalidateQueries({ 
@@ -391,8 +394,8 @@ export default function TransporterDashboard() {
     onError: () => {
       toast({
         variant: "destructive",
-        title: "Erreur",
-        description: "Impossible de retirer votre intérêt",
+        title: t('transporterDashboard.toast.withdrawError'),
+        description: t('transporterDashboard.toast.withdrawErrorDesc'),
       });
     },
   });
@@ -406,8 +409,8 @@ export default function TransporterDashboard() {
     },
     onSuccess: () => {
       toast({
-        title: "Succès",
-        description: "Votre retour à vide a été annoncé",
+        title: t('transporterDashboard.toast.returnAnnounced'),
+        description: t('transporterDashboard.toast.returnAnnouncedDesc'),
       });
       setAnnounceReturnOpen(false);
       // Reset form fields
@@ -418,8 +421,8 @@ export default function TransporterDashboard() {
     onError: () => {
       toast({
         variant: "destructive",
-        title: "Erreur",
-        description: "Échec de l'annonce du retour",
+        title: t('transporterDashboard.toast.returnError'),
+        description: t('transporterDashboard.toast.returnErrorDesc'),
       });
     },
   });
@@ -461,8 +464,8 @@ export default function TransporterDashboard() {
     },
     onSuccess: () => {
       toast({
-        title: "Offre modifiée",
-        description: "Votre offre a été mise à jour avec succès",
+        title: t('transporterDashboard.toast.offerUpdated'),
+        description: t('transporterDashboard.toast.offerUpdatedDesc'),
       });
       setEditOfferDialogOpen(false);
       editOfferForm.reset();
@@ -471,8 +474,8 @@ export default function TransporterDashboard() {
     onError: () => {
       toast({
         variant: "destructive",
-        title: "Erreur",
-        description: "Échec de la modification de l'offre",
+        title: t('transporterDashboard.toast.offerError'),
+        description: t('transporterDashboard.toast.offerErrorDesc'),
       });
     },
   });
@@ -494,8 +497,8 @@ export default function TransporterDashboard() {
     },
     onSuccess: () => {
       toast({
-        title: "Signalement envoyé",
-        description: "Votre signalement a été envoyé à l'équipe support",
+        title: t('transporterDashboard.toast.reportSent'),
+        description: t('transporterDashboard.toast.reportSentDesc'),
       });
       setShowReportDialog(false);
       reportForm.reset();
@@ -503,8 +506,8 @@ export default function TransporterDashboard() {
     onError: () => {
       toast({
         variant: "destructive",
-        title: "Erreur",
-        description: "Échec de l'envoi du signalement",
+        title: t('transporterDashboard.toast.reportError'),
+        description: t('transporterDashboard.toast.reportErrorDesc'),
       });
     },
   });
@@ -531,7 +534,7 @@ export default function TransporterDashboard() {
   };
 
   const handleDeclineRequest = (requestId: string) => {
-    if (confirm("Voulez-vous vraiment masquer cette commande ? Elle ne sera plus visible dans votre liste.")) {
+    if (confirm(t('transporterDashboard.labels.hideConfirm'))) {
       declineRequestMutation.mutate(requestId);
     }
   };
@@ -542,7 +545,7 @@ export default function TransporterDashboard() {
       const notDeclined = !req.declinedBy || !req.declinedBy.includes(user.id);
       // Exclude requests where transporter has already expressed interest
       const notInterested = !req.transporterInterests?.includes(user.id);
-      const cityMatch: boolean = selectedCity === "Toutes les villes" || 
+      const cityMatch: boolean = selectedCity === "allCities" || 
                        req.fromCity === selectedCity || 
                        req.toCity === selectedCity;
       return notDeclined && notInterested && cityMatch;
@@ -579,10 +582,10 @@ export default function TransporterDashboard() {
             <Clock className="w-5 h-5 text-blue-600 dark:text-blue-500 mt-0.5 flex-shrink-0" />
             <div>
               <h3 className="font-semibold text-blue-900 dark:text-blue-100">
-                ⏳ Compte en cours de validation
+                ⏳ {t('transporterDashboard.dialogs.notValidated.title')}
               </h3>
               <p className="text-sm text-blue-800 dark:text-blue-200 mt-1">
-                Votre compte est en cours de validation par l'équipe CamionBack. Vous pourrez accéder à toutes les fonctionnalités une fois votre compte activé. Merci de votre patience !
+                {t('transporterDashboard.dialogs.notValidated.description')}
               </p>
             </div>
           </div>
@@ -594,15 +597,15 @@ export default function TransporterDashboard() {
           <TabsList className="grid w-full max-w-3xl grid-cols-3">
             <TabsTrigger value="available" data-testid="tab-available">
               <Search className="mr-2 h-4 w-4" />
-              Disponibles
+              {t('transporterDashboard.tabs.available')}
             </TabsTrigger>
             <TabsTrigger value="interested" data-testid="tab-interested">
               <Package className="mr-2 h-4 w-4" />
-              Intéressé
+              {t('transporterDashboard.tabs.myInterests')}
             </TabsTrigger>
             <TabsTrigger value="to-process" data-testid="tab-to-process">
               <CheckCircle className="mr-2 h-4 w-4" />
-              À traiter
+              {t('transporterDashboard.tabs.accepted')}
             </TabsTrigger>
           </TabsList>
 
@@ -614,9 +617,9 @@ export default function TransporterDashboard() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Toutes les villes">Toutes les villes</SelectItem>
+                  <SelectItem value="allCities">{t('transporterDashboard.filters.allCities')}</SelectItem>
                   {citiesLoading ? (
-                    <div className="p-2 text-sm text-muted-foreground">Chargement...</div>
+                    <div className="p-2 text-sm text-muted-foreground">{t('common.loading')}</div>
                   ) : (
                     cities.map((city: any) => (
                       <SelectItem key={city.id} value={city.name}>{city.name}</SelectItem>
@@ -653,7 +656,7 @@ export default function TransporterDashboard() {
               <div className="text-center py-12">
                 <Search className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">
-                  Aucune demande trouvée
+                  {t('transporterDashboard.noRequests')}
                 </p>
               </div>
             )}
@@ -694,7 +697,7 @@ export default function TransporterDashboard() {
 
                         {/* Date proposée avec badge de couleur */}
                         <div className="space-y-2 pt-2 border-t">
-                          <p className="text-xs font-medium text-muted-foreground">📅 Date proposée</p>
+                          <p className="text-xs font-medium text-muted-foreground">📅 {t('transporterDashboard.labels.proposedDate')}</p>
                           <div className="flex items-center gap-2">
                             <Badge 
                               className={`${datesMatch 
@@ -702,17 +705,17 @@ export default function TransporterDashboard() {
                                 : 'bg-orange-500 hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700'
                               } text-white border-0 text-xs font-medium`}
                             >
-                              {availabilityDate ? format(availabilityDate, "dd MMMM yyyy", { locale: fr }) : 'Non spécifiée'}
+                              {availabilityDate ? format(availabilityDate, "dd MMMM yyyy", { locale: i18n.language === 'ar' ? undefined : fr }) : t('transporterDashboard.labels.notSpecified')}
                             </Badge>
                             {datesMatch ? (
-                              <span className="text-xs text-green-600 dark:text-green-400 font-medium">✓ Correspond</span>
+                              <span className="text-xs text-green-600 dark:text-green-400 font-medium">✓ {t('transporterDashboard.labels.matches')}</span>
                             ) : (
-                              <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">⚠ Différente</span>
+                              <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">⚠ {t('transporterDashboard.labels.different')}</span>
                             )}
                           </div>
                           {requestDate && (
                             <p className="text-xs text-muted-foreground">
-                              Date client : {format(requestDate, "dd MMMM yyyy", { locale: fr })}
+                              {t('transporterDashboard.labels.clientDate')}: {format(requestDate, "dd MMMM yyyy", { locale: i18n.language === 'ar' ? undefined : fr })}
                             </p>
                           )}
                         </div>
@@ -720,7 +723,7 @@ export default function TransporterDashboard() {
                         {/* Prix si disponible */}
                         {interest.transporterAmount && (
                           <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-[#00ff88]/10 to-transparent border-l-4 border-[#00ff88]">
-                            <span className="text-xs font-medium text-muted-foreground">Montant</span>
+                            <span className="text-xs font-medium text-muted-foreground">{t('shared.labels.amount')}</span>
                             <span className="text-lg font-bold text-[#00ff88] ml-auto">
                               {Math.floor(interest.transporterAmount).toLocaleString()} Dhs
                             </span>
@@ -730,7 +733,7 @@ export default function TransporterDashboard() {
                         {/* Client */}
                         {interest.client && (
                           <div className="pt-2 border-t">
-                            <p className="text-xs text-muted-foreground">Client : {interest.client.name}</p>
+                            <p className="text-xs text-muted-foreground">{t('shared.labels.client')} : {interest.client.name}</p>
                           </div>
                         )}
                       </CardContent>
@@ -742,10 +745,10 @@ export default function TransporterDashboard() {
               <div className="text-center py-12">
                 <Package className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">
-                  Vous n'avez pas encore exprimé d'intérêt
+                  {t('transporterDashboard.noInterests')}
                 </p>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Cliquez sur "Intéressé" dans l'onglet Disponibles pour commencer
+                  {t('transporterDashboard.browseAvailable')}
                 </p>
               </div>
             )}
@@ -826,7 +829,7 @@ export default function TransporterDashboard() {
                                 data-testid={`button-mark-billing-${request.id}`}
                               >
                                 <CheckCircle className="h-4 w-4" />
-                                Marquer comme à facturer
+                                {t('transporterDashboard.actions.markForBilling')}
                               </Button>
                             )}
                             <Button
@@ -837,7 +840,7 @@ export default function TransporterDashboard() {
                               className="gap-2"
                             >
                               <Flag className="h-4 w-4" />
-                              <span className="hidden sm:inline">Signaler</span>
+                              <span className="hidden sm:inline">{t('transporterDashboard.actions.report')}</span>
                             </Button>
                           </div>
                         </div>
@@ -845,12 +848,12 @@ export default function TransporterDashboard() {
                         <div className="space-y-2">
                           <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
-                              <p className="text-muted-foreground">Type de marchandise</p>
+                              <p className="text-muted-foreground">{t('shared.labels.goodsType')}</p>
                               <p className="font-medium">{request.goodsType}</p>
                             </div>
                             {request.estimatedWeight && (
                               <div>
-                                <p className="text-muted-foreground">Poids estimé</p>
+                                <p className="text-muted-foreground">{t('shared.labels.estimatedWeight')}</p>
                                 <p className="font-medium">{request.estimatedWeight}</p>
                               </div>
                             )}
@@ -860,17 +863,17 @@ export default function TransporterDashboard() {
                             <div className="bg-primary/5 border border-primary/20 rounded-md p-3 mt-3">
                               <p className="text-sm text-muted-foreground flex items-center gap-2">
                                 <Calendar className="w-4 h-4" />
-                                Date de la mission
+                                {t('shared.labels.missionDate')}
                               </p>
                               <p className="text-base font-semibold text-primary mt-1">
-                                {format(new Date(request.pickupDate), "EEEE d MMMM yyyy", { locale: fr })}
+                                {format(new Date(request.pickupDate), "EEEE d MMMM yyyy", { locale: i18n.language === 'ar' ? undefined : fr })}
                               </p>
                             </div>
                           )}
                           
                           {request.description && (
                             <div>
-                              <p className="text-sm text-muted-foreground">Description</p>
+                              <p className="text-sm text-muted-foreground">{t('shared.labels.description')}</p>
                               <p className="text-sm">{request.description}</p>
                             </div>
                           )}
@@ -884,7 +887,7 @@ export default function TransporterDashboard() {
                               data-testid={`button-view-request-photos-${request.id}`}
                             >
                               <ImageIcon className="w-4 h-4" />
-                              Voir les photos ({request.photos.length})
+                              {t('transporterDashboard.actions.viewPhotos')} ({request.photos.length})
                             </Button>
                           )}
                         </div>
@@ -893,13 +896,13 @@ export default function TransporterDashboard() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleChat(request.clientId, request.clientName || "Client", request.id)}
+                            onClick={() => handleChat(request.clientId, request.clientName || t('shared.labels.client'), request.id)}
                             className="gap-2 w-full sm:w-auto bg-[#00cc88] hover:bg-[#00cc88]/90 text-white border-[#00cc88]"
                             data-testid={`button-chat-request-${request.id}`}
                             style={{ textShadow: "0 1px 1px rgba(0,0,0,0.2)" }}
                           >
                             <MessageSquare className="w-4 w-4" />
-                            Envoyer un message au client
+                            {t('transporterDashboard.actions.sendMessage')}
                           </Button>
                         )}
                       </CardContent>
@@ -942,17 +945,17 @@ export default function TransporterDashboard() {
       <Dialog open={clientDetailsOpen} onOpenChange={setClientDetailsOpen}>
         <DialogContent className="max-w-[90vw] sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-xl">Détails du client</DialogTitle>
+            <DialogTitle className="text-xl">{t('transporterDashboard.dialogs.clientDetails.title')}</DialogTitle>
           </DialogHeader>
           {selectedClientDetails && (
             <div className="space-y-4">
               <div>
-                <p className="text-sm text-muted-foreground">Commande</p>
+                <p className="text-sm text-muted-foreground">{t('shared.labels.order')}</p>
                 <p className="font-semibold text-lg">{selectedClientDetails.referenceId}</p>
               </div>
               
               <div>
-                <p className="text-sm text-muted-foreground">Téléphone</p>
+                <p className="text-sm text-muted-foreground">{t('transporterDashboard.dialogs.clientDetails.phone')}</p>
                 <div className="flex items-center gap-2">
                   <Phone className="w-4 h-4 text-primary" />
                   <a 
@@ -966,7 +969,7 @@ export default function TransporterDashboard() {
               </div>
 
               <div className="border-t pt-4">
-                <p className="text-sm text-muted-foreground mb-2">Trajet</p>
+                <p className="text-sm text-muted-foreground mb-2">{t('shared.labels.route')}</p>
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-muted-foreground" />
                   <p className="font-medium">
@@ -980,7 +983,7 @@ export default function TransporterDashboard() {
                 className="w-full"
                 data-testid="button-close-client-details"
               >
-                Fermer
+                {t('transporterDashboard.dialogs.clientDetails.close')}
               </Button>
             </div>
           )}
@@ -991,18 +994,18 @@ export default function TransporterDashboard() {
       <Dialog open={announceReturnOpen} onOpenChange={setAnnounceReturnOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Annoncer un retour à vide</DialogTitle>
+            <DialogTitle>{t('transporterDashboard.dialogs.announceReturn.title')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <label className="text-sm font-medium mb-2 block">Ville de départ</label>
+              <label className="text-sm font-medium mb-2 block">{t('transporterDashboard.dialogs.announceReturn.fromCity')}</label>
               <Select value={returnFromCity} onValueChange={setReturnFromCity}>
                 <SelectTrigger data-testid="select-return-from-city">
-                  <SelectValue placeholder="Sélectionner la ville de départ" />
+                  <SelectValue placeholder={t('transporterDashboard.dialogs.announceReturn.selectFromCity')} />
                 </SelectTrigger>
                 <SelectContent>
                   {citiesLoading ? (
-                    <div className="p-2 text-sm text-muted-foreground">Chargement...</div>
+                    <div className="p-2 text-sm text-muted-foreground">{t('common.loading')}</div>
                   ) : (
                     cities.map((city: any) => (
                       <SelectItem key={city.id} value={city.name}>
@@ -1015,14 +1018,14 @@ export default function TransporterDashboard() {
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-2 block">Ville d'arrivée</label>
+              <label className="text-sm font-medium mb-2 block">{t('transporterDashboard.dialogs.announceReturn.toCity')}</label>
               <Select value={returnToCity} onValueChange={setReturnToCity}>
                 <SelectTrigger data-testid="select-return-to-city">
-                  <SelectValue placeholder="Sélectionner la ville d'arrivée" />
+                  <SelectValue placeholder={t('transporterDashboard.dialogs.announceReturn.selectToCity')} />
                 </SelectTrigger>
                 <SelectContent>
                   {citiesLoading ? (
-                    <div className="p-2 text-sm text-muted-foreground">Chargement...</div>
+                    <div className="p-2 text-sm text-muted-foreground">{t('common.loading')}</div>
                   ) : (
                     cities.map((city: any) => (
                       <SelectItem key={city.id} value={city.name}>
@@ -1035,7 +1038,7 @@ export default function TransporterDashboard() {
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-2 block">Date de retour</label>
+              <label className="text-sm font-medium mb-2 block">{t('transporterDashboard.dialogs.announceReturn.availabilityDate')}</label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -1055,15 +1058,15 @@ export default function TransporterDashboard() {
                 className="flex-1"
                 data-testid="button-cancel-return"
               >
-                Annuler
+                {t('common.actions.cancel')}
               </Button>
               <Button
                 onClick={() => {
                   if (!returnFromCity || !returnToCity || !returnDate) {
                     toast({
                       variant: "destructive",
-                      title: "Erreur",
-                      description: "Veuillez remplir tous les champs",
+                      title: t('common.toast.error'),
+                      description: t('transporterDashboard.dialogs.announceReturn.fillAllFields'),
                     });
                     return;
                   }
@@ -1077,7 +1080,7 @@ export default function TransporterDashboard() {
                 className="flex-1 bg-[#00d4b2] hover:bg-[#00d4b2] border border-[#00d4b2]"
                 data-testid="button-submit-return"
               >
-                {announceReturnMutation.isPending ? "En cours..." : "Annoncer"}
+                {announceReturnMutation.isPending ? t('transporterDashboard.dialogs.announceReturn.announcing') : t('transporterDashboard.dialogs.announceReturn.announce')}
               </Button>
             </div>
           </div>
@@ -1094,9 +1097,9 @@ export default function TransporterDashboard() {
       }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Modifier votre offre</DialogTitle>
+            <DialogTitle>{t('transporterDashboard.dialogs.editOffer.title')}</DialogTitle>
             <DialogDescription>
-              Modifiez le montant, la date ou le type de chargement de votre offre
+              {t('transporterDashboard.dialogs.editOffer.description')}
             </DialogDescription>
           </DialogHeader>
           <Form {...editOfferForm}>
@@ -1118,11 +1121,11 @@ export default function TransporterDashboard() {
                 name="amount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Montant (MAD) <span className="text-destructive">*</span></FormLabel>
+                    <FormLabel>{t('transporterDashboard.dialogs.editOffer.amount')} <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
                       <Input
                         type="number"
-                        placeholder="Ex: 5000"
+                        placeholder={t('transporterDashboard.dialogs.editOffer.amountPlaceholder')}
                         data-testid="input-edit-amount"
                         {...field}
                       />
@@ -1136,7 +1139,7 @@ export default function TransporterDashboard() {
                 name="pickupDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Date de prise en charge <span className="text-destructive">*</span></FormLabel>
+                    <FormLabel>{t('transporterDashboard.dialogs.editOffer.pickupDate')} <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
                       <Input
                         type="date"
@@ -1153,16 +1156,16 @@ export default function TransporterDashboard() {
                 name="loadType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Type de chargement <span className="text-destructive">*</span></FormLabel>
+                    <FormLabel>{t('transporterDashboard.dialogs.editOffer.loadType')} <span className="text-destructive">*</span></FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-edit-load-type">
-                          <SelectValue placeholder="Sélectionnez le type" />
+                          <SelectValue placeholder={t('transporterDashboard.dialogs.editOffer.selectLoadType')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="return">Retour (camion vide)</SelectItem>
-                        <SelectItem value="shared">Groupage / Partagé</SelectItem>
+                        <SelectItem value="return">{t('shared.loadTypes.return')}</SelectItem>
+                        <SelectItem value="shared">{t('shared.loadTypes.shared')}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -1180,14 +1183,14 @@ export default function TransporterDashboard() {
                   }}
                   data-testid="button-cancel-edit-offer"
                 >
-                  Annuler
+                  {t('common.actions.cancel')}
                 </Button>
                 <Button
                   type="submit"
                   disabled={updateOfferMutation.isPending}
                   data-testid="button-submit-edit-offer"
                 >
-                  {updateOfferMutation.isPending ? "Modification..." : "Modifier l'offre"}
+                  {updateOfferMutation.isPending ? t('transporterDashboard.dialogs.editOffer.updating') : t('transporterDashboard.dialogs.editOffer.submit')}
                 </Button>
               </DialogFooter>
             </form>
@@ -1198,9 +1201,9 @@ export default function TransporterDashboard() {
       <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
         <DialogContent className="max-w-[90vw] sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Signaler un problème</DialogTitle>
+            <DialogTitle>{t('transporterDashboard.dialogs.report.title')}</DialogTitle>
             <DialogDescription>
-              Décrivez le problème rencontré avec ce client.
+              {t('transporterDashboard.dialogs.report.description')}
             </DialogDescription>
           </DialogHeader>
           <Form {...reportForm}>
@@ -1210,20 +1213,20 @@ export default function TransporterDashboard() {
                 name="type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Type de problème <span className="text-destructive">*</span></FormLabel>
+                    <FormLabel>{t('transporterDashboard.dialogs.report.problemType')} <span className="text-destructive">*</span></FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-report-type">
-                          <SelectValue placeholder="Sélectionnez un type" />
+                          <SelectValue placeholder={t('transporterDashboard.dialogs.report.selectType')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="no-show">Client absent</SelectItem>
-                        <SelectItem value="payment">Problème de paiement</SelectItem>
-                        <SelectItem value="communication">Problème de communication</SelectItem>
-                        <SelectItem value="incorrect-info">Informations incorrectes</SelectItem>
-                        <SelectItem value="damaged-goods">Marchandises non conformes</SelectItem>
-                        <SelectItem value="other">Autre</SelectItem>
+                        <SelectItem value="no-show">{t('transporterDashboard.dialogs.report.types.noShow')}</SelectItem>
+                        <SelectItem value="payment">{t('transporterDashboard.dialogs.report.types.payment')}</SelectItem>
+                        <SelectItem value="communication">{t('transporterDashboard.dialogs.report.types.communication')}</SelectItem>
+                        <SelectItem value="incorrect-info">{t('transporterDashboard.dialogs.report.types.incorrectInfo')}</SelectItem>
+                        <SelectItem value="damaged-goods">{t('transporterDashboard.dialogs.report.types.damagedGoods')}</SelectItem>
+                        <SelectItem value="other">{t('transporterDashboard.dialogs.report.types.other')}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -1235,10 +1238,10 @@ export default function TransporterDashboard() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description détaillée <span className="text-destructive">*</span></FormLabel>
+                    <FormLabel>{t('transporterDashboard.dialogs.report.detailedDescription')} <span className="text-destructive">*</span></FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Décrivez en détail le problème rencontré..."
+                        placeholder={t('transporterDashboard.dialogs.report.descriptionPlaceholder')}
                         className="resize-none h-32"
                         data-testid="textarea-report-description"
                         {...field}
@@ -1255,14 +1258,14 @@ export default function TransporterDashboard() {
                   onClick={() => setShowReportDialog(false)}
                   data-testid="button-cancel-report"
                 >
-                  Annuler
+                  {t('common.actions.cancel')}
                 </Button>
                 <Button
                   type="submit"
                   disabled={createReportMutation.isPending}
                   data-testid="button-submit-report"
                 >
-                  {createReportMutation.isPending ? "Envoi en cours..." : "Envoyer le signalement"}
+                  {createReportMutation.isPending ? t('transporterDashboard.dialogs.report.submitting') : t('transporterDashboard.dialogs.report.submit')}
                 </Button>
               </DialogFooter>
             </form>
@@ -1276,19 +1279,19 @@ export default function TransporterDashboard() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-xl">
               <Flag className="h-5 w-5 text-amber-600" />
-              Compte non validé
+              {t('transporterDashboard.dialogs.notValidated.title')}
             </DialogTitle>
           </DialogHeader>
           <div className="py-4 space-y-4">
             <p className="text-muted-foreground leading-relaxed">
-              Votre compte CamionBack n'est pas encore validé par notre équipe.
+              {t('transporterDashboard.dialogs.notValidated.message1')}
             </p>
             <p className="text-muted-foreground leading-relaxed">
-              Vous pourrez annoncer vos retours et bénéficier de toutes les fonctionnalités dès que votre compte sera activé.
+              {t('transporterDashboard.dialogs.notValidated.message2')}
             </p>
             <p className="text-muted-foreground leading-relaxed flex items-center gap-2">
               <TruckIcon className="h-4 w-4 text-[#00d4b2]" />
-              Merci pour votre patience.
+              {t('transporterDashboard.dialogs.notValidated.thanks')}
             </p>
           </div>
           <DialogFooter>
@@ -1297,7 +1300,7 @@ export default function TransporterDashboard() {
               className="w-full"
               data-testid="button-close-not-validated"
             >
-              Fermer
+              {t('common.actions.close')}
             </Button>
           </DialogFooter>
         </DialogContent>
