@@ -172,7 +172,7 @@ export function RequestCard({
                   {request.departureAddress?.split(',')[0] || request.fromCity}
                 </div>
                 {request.departureAddress?.includes(',') && (
-                  <div className="force-font-light text-[11px] text-muted-foreground/80 mt-0.5 leading-tight opacity-75">
+                  <div className="!font-light text-[11px] text-muted-foreground/80 mt-0.5 leading-tight opacity-75">
                     {request.departureAddress.split(',').slice(1).join(',').trim()}
                   </div>
                 )}
@@ -191,7 +191,7 @@ export function RequestCard({
                   {request.arrivalAddress?.split(',')[0] || request.toCity}
                 </div>
                 {request.arrivalAddress?.includes(',') && (
-                  <div className="force-font-light text-[11px] text-muted-foreground/80 mt-0.5 leading-tight opacity-75">
+                  <div className="!font-light text-[11px] text-muted-foreground/80 mt-0.5 leading-tight opacity-75">
                     {request.arrivalAddress.split(',').slice(1).join(',').trim()}
                   </div>
                 )}
