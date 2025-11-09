@@ -112,25 +112,15 @@
     "profileError": "Échec de la complétion du profil"
   },
   "clientDashboard": {
-    "title": "Tableau de bord client",
+    "myRequests": "Mes demandes",
+    "manageRequests": "Gérez vos demandes de transport",
     "tabs": {
-      "newRequest": "Nouvelle demande",
-      "myRequests": "Mes demandes",
-      "archived": "Archivées"
+      "active": "Actives",
+      "toPay": "À payer",
+      "completed": "Terminées"
     },
-    "newRequest": {
-      "title": "Créer une demande de transport",
-      "subtitle": "Remplissez les détails de votre demande"
-    },
-    "myRequests": {
-      "title": "Mes demandes en cours",
-      "noRequests": "Aucune demande active",
-      "createFirst": "Créez votre première demande de transport"
-    },
-    "archived": {
-      "title": "Demandes archivées",
-      "noArchived": "Aucune demande archivée"
-    },
+    "noRequests": "Aucune demande active",
+    "createFirst": "Créez votre première demande de transport",
     "status": {
       "orderCompleted": "Commande terminée",
       "awaitingPaymentConfirmation": "En attente de confirmation paiement",
@@ -138,13 +128,16 @@
       "deliveryInProgress": "Livraison en cours 🚚📦",
       "offerConfirmed": "Transporteur sélectionné ✅ Livraison prévue",
       "transporterAssigned": "Transporteur assigné ✅ Suivi en cours",
-      "offersReceived": "Offres reçues",
-      "waitingForOffers": "En attente d'offres 📩",
-      "beingQualified": "En cours de qualification 📋",
-      "needsQualification": "En attente de qualification 🔍"
+      "chooseTransporter": "Choisissez votre transporteur 👇",
+      "offersReceived": "Des transporteurs ont postulé 🚚 Comparez les profils",
+      "waitingForOffers": "En attente d'offres transporteurs…",
+      "requestFinalization": "Finalisation de votre demande…",
+      "logisticsQualification": "Qualification logistique en cours…"
     },
     "actions": {
       "viewOffers": "Voir les offres",
+      "interested": "Transporteurs intéressés",
+      "offersReceived": "Offres reçues",
       "chat": "Discuter",
       "viewDetails": "Voir détails",
       "edit": "Modifier",
@@ -153,66 +146,128 @@
       "confirmDelivery": "Confirmer livraison",
       "confirmPayment": "Confirmer paiement",
       "uploadReceipt": "Télécharger reçu",
-      "rateTransporter": "Noter le transporteur"
+      "rateTransporter": "Noter le transporteur",
+      "chooseTransporter": "Choisir un transporteur",
+      "viewPhotos": "Voir les photos"
     },
-    "deleteDialog": {
-      "title": "Supprimer la demande",
-      "description": "Êtes-vous sûr de vouloir supprimer cette demande ? Cette action est irréversible.",
-      "cancel": "Annuler",
-      "confirm": "Supprimer"
-    },
-    "reportDialog": {
-      "title": "Signaler un problème",
-      "description": "Décrivez le problème rencontré",
-      "problemType": "Type de problème",
-      "selectType": "Sélectionnez un type",
-      "types": {
-        "noResponse": "Transporteur ne répond pas",
-        "quality": "Problème de qualité de service",
-        "price": "Désaccord sur le prix",
-        "delay": "Retard de livraison",
-        "damage": "Marchandise endommagée",
-        "other": "Autre"
+    "dialogs": {
+      "edit": {
+        "title": "Modifier la demande",
+        "fromCity": "Ville de départ",
+        "selectFromCity": "Sélectionner",
+        "toCity": "Ville d'arrivée",
+        "selectToCity": "Sélectionner",
+        "goodsType": "Type de marchandise",
+        "selectGoodsType": "Sélectionner",
+        "description": "Description",
+        "descriptionPlaceholder": "Décrivez votre demande de transport...",
+        "handlingRequired": "Manutention requise",
+        "departureFloor": "Étage départ",
+        "departureElevator": "Ascenseur départ",
+        "arrivalFloor": "Étage arrivée",
+        "arrivalElevator": "Ascenseur arrivée",
+        "budget": "Budget (DH)",
+        "pickupDate": "Date souhaitée",
+        "photos": "Photos",
+        "addMorePhotos": "Cliquez pour ajouter de nouvelles photos",
+        "changePhotos": "Cliquez pour choisir d'autres photos",
+        "save": "Enregistrer les changements",
+        "saving": "Enregistrement..."
       },
-      "descriptionLabel": "Description",
-      "descriptionPlaceholder": "Décrivez le problème en détail...",
-      "submit": "Envoyer le signalement"
+      "rating": {
+        "title": "Noter le transporteur",
+        "description": "Votre avis nous aide à améliorer le service",
+        "selectRating": "Note sélectionnée : {{rating}} {{stars}}",
+        "star": "étoile",
+        "stars": "étoiles",
+        "submit": "Valider la note",
+        "submitting": "Enregistrement..."
+      },
+      "payment": {
+        "title": "Confirmer le paiement",
+        "description": "Téléversez votre reçu de paiement",
+        "uploadReceipt": "Téléverser le reçu",
+        "receiptUploaded": "Reçu téléversé",
+        "receiptPreview": "Reçu de paiement",
+        "confirm": "Confirmer le paiement",
+        "confirming": "Envoi en cours..."
+      },
+      "transporter": {
+        "title": "Informations transporteur",
+        "name": "Nom",
+        "notAvailable": "Non disponible",
+        "phone": "Téléphone",
+        "city": "Ville",
+        "vehicleType": "Type de véhicule",
+        "rating": "Note moyenne",
+        "close": "Fermer"
+      },
+      "report": {
+        "title": "Signaler un problème",
+        "description": "Décrivez le problème rencontré",
+        "problemType": "Type de problème",
+        "selectType": "Sélectionnez un type",
+        "types": {
+          "noResponse": "Transporteur ne répond pas",
+          "quality": "Problème de qualité de service",
+          "price": "Désaccord sur le prix",
+          "delay": "Retard de livraison",
+          "damage": "Marchandise endommagée",
+          "other": "Autre"
+        },
+        "descriptionLabel": "Description",
+        "descriptionPlaceholder": "Décrivez le problème en détail...",
+        "submit": "Envoyer le signalement",
+        "submitting": "Envoi en cours..."
+      },
+      "offers": {
+        "title": "Transporteurs disponibles",
+        "noOffers": "Aucune offre pour le moment",
+        "swipeMode": "Mode swipe",
+        "tableMode": "Mode tableau",
+        "matchesEnd": "Fin des matches",
+        "matchesEndDesc": "Vous avez vu tous les transporteurs disponibles",
+        "transporterName": "Transporteur"
+      }
     },
-    "editDialog": {
-      "title": "Modifier la demande",
-      "save": "Enregistrer"
-    },
-    "goodsTypes": {
-      "furniture": "Meubles",
-      "appliances": "Électroménager",
-      "goods": "Marchandises",
-      "moving": "Déménagement",
-      "construction": "Matériaux de construction",
-      "parcel": "Colis",
-      "vehicle": "Véhicule",
-      "other": "Autre"
+    "labels": {
+      "handling": "Manutention",
+      "truckImage": "Camion",
+      "transporterTruck": "Camion du transporteur"
     },
     "toast": {
-      "requestDeleted": "Demande supprimée",
-      "requestDeletedDesc": "La demande a été supprimée avec succès",
+      "transporterSelected": "Transporteur sélectionné !",
+      "transporterAssigned": "{{transporterName}} a été assigné à votre commande",
+      "selectError": "Erreur",
+      "selectErrorDesc": "Impossible de sélectionner ce transporteur",
+      "offerDeclined": "Offre déclinée",
+      "offerDeclinedDesc": "L'offre a été déclinée et le transporteur a été notifié.",
+      "declineError": "Erreur",
+      "declineErrorDesc": "Impossible de décliner l'offre",
+      "requestDeleted": "Commande supprimée",
+      "requestDeletedDesc": "Votre commande a été supprimée avec succès.",
       "deleteError": "Erreur",
-      "deleteErrorDesc": "Échec de la suppression de la demande",
-      "reportSent": "Signalement envoyé",
-      "reportSentDesc": "Votre signalement a été envoyé à l'équipe support",
-      "reportError": "Erreur",
-      "reportErrorDesc": "Échec de l'envoi du signalement",
-      "requestUpdated": "Demande mise à jour",
-      "requestUpdatedDesc": "La demande a été modifiée avec succès",
-      "updateError": "Erreur",
-      "updateErrorDesc": "Échec de la modification",
+      "deleteErrorDesc": "Impossible de supprimer la commande. Veuillez réessayer.",
+      "orderCompleted": "Commande terminée",
+      "orderCompletedDesc": "Merci pour votre évaluation ! La commande est maintenant terminée.",
+      "completeError": "Erreur",
+      "completeErrorDesc": "Impossible de terminer la commande",
       "deliveryConfirmed": "Succès",
       "deliveryConfirmedDesc": "Merci ! Veuillez maintenant évaluer le transporteur",
       "deliveryError": "Erreur",
-      "deliveryErrorDesc": "Impossible de terminer la commande",
+      "deliveryErrorDesc": "Impossible de confirmer la livraison",
       "paymentConfirmed": "Paiement confirmé",
       "paymentConfirmedDesc": "Le paiement a été validé",
       "paymentError": "Erreur",
       "paymentErrorDesc": "Échec de la confirmation du paiement",
+      "reportSent": "Signalement envoyé",
+      "reportSentDesc": "Votre signalement a été envoyé à l'équipe support",
+      "reportError": "Erreur",
+      "reportErrorDesc": "Échec de l'envoi du signalement",
+      "requestUpdated": "Commande modifiée",
+      "requestUpdatedDesc": "Vos modifications ont été enregistrées avec succès",
+      "updateError": "Erreur",
+      "updateErrorDesc": "Échec de la modification de la commande",
       "receiptUploaded": "Reçu téléversé",
       "receiptUploadedDesc": "Le reçu de paiement a été chargé avec succès",
       "receiptError": "Erreur",
@@ -222,7 +277,18 @@
       "fileTooLarge": "Fichier trop volumineux",
       "fileTooLargeDesc": "La taille maximale autorisée est de 10 Mo",
       "readError": "Erreur de lecture",
-      "readErrorDesc": "Impossible de lire le fichier. Veuillez réessayer avec une autre image."
+      "readErrorDesc": "Impossible de lire le fichier. Veuillez réessayer avec une autre image.",
+      "contactSaved": "Contact enregistré",
+      "contactSavedDesc": "Vous pouvez maintenant contacter ce transporteur"
+    },
+    "validation": {
+      "fromCityRequired": "Ville de départ requise",
+      "toCityRequired": "Ville d'arrivée requise",
+      "descriptionMin": "Description minimale: 10 caractères",
+      "goodsTypeRequired": "Type de marchandise requis",
+      "handlingFieldsRequired": "Tous les champs de manutention sont requis si la manutention est demandée",
+      "reportDescriptionMin": "Description minimale: 10 caractères",
+      "reportTypeRequired": "Type de problème requis"
     }
   },
   "newRequestForm": {
@@ -263,7 +329,6 @@
     }
   },
   "transporterDashboard": {
-    "title": "Tableau de bord transporteur",
     "tabs": {
       "available": "Disponibles",
       "myInterests": "Mes intérêts",
@@ -274,25 +339,12 @@
       "allCities": "Toutes les villes",
       "searchPlaceholder": "Rechercher une commande..."
     },
-    "available": {
-      "title": "Commandes disponibles",
-      "noRequests": "Aucune commande disponible",
-      "checkLater": "Revenez plus tard pour voir de nouvelles opportunités"
-    },
-    "myInterests": {
-      "title": "Mes intérêts",
-      "noInterests": "Vous n'avez exprimé aucun intérêt",
-      "browseAvailable": "Parcourez les commandes disponibles pour manifester votre intérêt"
-    },
-    "accepted": {
-      "title": "Commandes acceptées",
-      "noAccepted": "Aucune commande acceptée",
-      "noAcceptedDesc": "Les commandes que vous acceptez apparaîtront ici"
-    },
-    "calendar": {
-      "title": "Calendrier des livraisons",
-      "selectDate": "Sélectionnez une date pour voir vos livraisons"
-    },
+    "noRequests": "Aucune commande disponible",
+    "checkLater": "Revenez plus tard pour voir de nouvelles opportunités",
+    "noInterests": "Vous n'avez exprimé aucun intérêt",
+    "browseAvailable": "Cliquez sur \"Intéressé\" dans l'onglet Disponibles pour commencer",
+    "noAccepted": "Aucune commande acceptée",
+    "noAcceptedDesc": "Les commandes que vous acceptez apparaîtront ici",
     "actions": {
       "interested": "Je suis intéressé",
       "withdrawInterest": "Retirer mon intérêt",
@@ -304,50 +356,69 @@
       "markBilled": "Marquer à facturer",
       "hideOrder": "Masquer",
       "confirmPickup": "Confirmer prise en charge",
-      "confirmDelivery": "Confirmer livraison"
+      "confirmDelivery": "Confirmer livraison",
+      "announceReturn": "Annoncer retour vide"
     },
-    "notValidatedDialog": {
-      "title": "Profil non validé",
-      "description": "Votre profil doit être validé par notre équipe avant de pouvoir annoncer des retours à vide. Vous recevrez une notification dès que votre profil sera validé.",
-      "close": "Fermer"
-    },
-    "reportDialog": {
-      "title": "Signaler un problème",
-      "description": "Décrivez le problème rencontré",
-      "problemType": "Type de problème",
-      "selectType": "Sélectionnez un type",
-      "types": {
-        "noResponse": "Client ne répond pas",
-        "wrongInfo": "Informations incorrectes",
-        "cancelled": "Client a annulé",
-        "other": "Autre"
+    "dialogs": {
+      "notValidated": {
+        "title": "Profil non validé",
+        "description": "Votre profil doit être validé par notre équipe avant de pouvoir annoncer des retours à vide. Vous recevrez une notification dès que votre profil sera validé.",
+        "close": "Fermer"
       },
-      "descriptionLabel": "Description",
-      "descriptionPlaceholder": "Décrivez le problème en détail...",
-      "submit": "Envoyer le signalement"
-    },
-    "editOfferDialog": {
-      "title": "Modifier votre offre",
-      "amount": "Montant",
-      "amountPlaceholder": "Ex: 500",
-      "pickupDate": "Date de prise en charge",
-      "loadType": "Type de chargement",
-      "loadTypes": {
-        "return": "Retour",
-        "shared": "Partagé"
+      "report": {
+        "title": "Signaler un problème",
+        "description": "Décrivez le problème rencontré",
+        "problemType": "Type de problème",
+        "selectType": "Sélectionnez un type",
+        "types": {
+          "noResponse": "Client ne répond pas",
+          "wrongInfo": "Informations incorrectes",
+          "cancelled": "Client a annulé",
+          "other": "Autre"
+        },
+        "descriptionLabel": "Description",
+        "descriptionPlaceholder": "Décrivez en détail le problème rencontré...",
+        "submit": "Envoyer le signalement",
+        "submitting": "Envoi en cours..."
       },
-      "save": "Enregistrer",
-      "cancel": "Annuler"
+      "editOffer": {
+        "title": "Modifier votre offre",
+        "amount": "Montant",
+        "amountPlaceholder": "Ex: 5000",
+        "pickupDate": "Date de prise en charge",
+        "loadType": "Type de chargement",
+        "selectLoadType": "Sélectionnez le type",
+        "save": "Modifier l'offre",
+        "saving": "Modification...",
+        "cancel": "Annuler"
+      },
+      "announceReturn": {
+        "title": "Annoncer un retour à vide",
+        "fromCity": "Ville de départ",
+        "selectFromCity": "Sélectionner la ville de départ",
+        "toCity": "Ville d'arrivée",
+        "selectToCity": "Sélectionner la ville d'arrivée",
+        "availabilityDate": "Date de disponibilité",
+        "announce": "Annoncer",
+        "announcing": "En cours...",
+        "fillAllFields": "Veuillez remplir tous les champs"
+      },
+      "clientDetails": {
+        "title": "Informations client",
+        "clientName": "Nom du client",
+        "phone": "Téléphone",
+        "close": "Fermer"
+      },
+      "sharedOrder": {
+        "title": "Commande partagée",
+        "description": "Cliquez sur 'Je suis intéressé' pour exprimer votre intérêt"
+      }
     },
-    "clientDetailsDialog": {
-      "title": "Informations client",
-      "clientName": "Nom du client",
-      "phone": "Téléphone",
-      "close": "Fermer"
-    },
-    "sharedOrderDialog": {
-      "title": "Commande partagée",
-      "description": "Cliquez sur 'Je suis intéressé' pour exprimer votre intérêt"
+    "labels": {
+      "availabilityDate": "Date disponibilité",
+      "notSpecified": "Non spécifiée",
+      "clientName": "Client",
+      "hideConfirm": "Voulez-vous vraiment masquer cette commande ? Elle ne sera plus visible dans votre liste."
     },
     "toast": {
       "interestExpressed": "Intérêt exprimé",
@@ -380,7 +451,8 @@
       "returnAnnouncedDesc": "Votre retour à vide a été annoncé",
       "returnError": "Erreur",
       "returnErrorDesc": "Échec de l'annonce du retour",
-      "fillAllFields": "Veuillez remplir tous les champs"
+      "fillAllFieldsError": "Erreur",
+      "fillAllFieldsErrorDesc": "Veuillez remplir tous les champs"
     },
     "validation": {
       "descriptionMin": "Description minimale: 10 caractères",
@@ -388,6 +460,29 @@
       "amountMin": "Le montant doit être supérieur à 0",
       "pickupDateRequired": "Date de prise en charge requise",
       "loadTypeRequired": "Type de chargement requis"
+    }
+  },
+  "shared": {
+    "goodsTypes": {
+      "furniture": "Meubles",
+      "appliances": "Électroménager",
+      "goods": "Marchandises",
+      "moving": "Déménagement",
+      "construction": "Matériaux de construction",
+      "parcel": "Colis",
+      "vehicle": "Véhicule",
+      "other": "Autre"
+    },
+    "loadTypes": {
+      "return": "Retour",
+      "shared": "Partagé"
+    },
+    "labels": {
+      "yes": "Oui",
+      "no": "Non",
+      "transporter": "Transporteur",
+      "client": "Client",
+      "handling": "Manutention"
     }
   },
   "requestCard": {
