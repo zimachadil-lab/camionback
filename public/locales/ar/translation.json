@@ -112,6 +112,39 @@
     "profileValidation": "ملفك الشخصي قيد المراجعة من قبل فريقنا",
     "profileError": "فشل إكمال الملف الشخصي"
   },
+  "header": {
+    "brand": "كاميون باك",
+    "client": {
+      "orders": "طلباتي",
+      "howItWorks": "كيف يعمل",
+      "contact": "اتصل بنا",
+      "newRequest": "طلب جديد",
+      "newRequestShort": "جديد"
+    },
+    "transporter": {
+      "dashboard": "لوحة القيادة",
+      "profile": "ملفي الشخصي",
+      "payments": "المدفوعات المستلمة",
+      "ratings": "تقييمات العملاء",
+      "rib": "معلومات البنك",
+      "howItWorks": "كيف يعمل",
+      "contact": "اتصل بنا",
+      "announceReturn": "الإعلان عن العودة",
+      "announceReturnShort": "العودة"
+    },
+    "admin": {
+      "dashboard": "لوحة القيادة",
+      "contact": "اتصل بنا"
+    },
+    "coordinator": {
+      "dashboard": "لوحة القيادة",
+      "users": "إدارة المستخدمين",
+      "contact": "اتصل بنا"
+    },
+    "userMenu": {
+      "logout": "تسجيل الخروج"
+    }
+  },
   "clientDashboard": {
     "myRequests": "طلباتي",
     "manageRequests": "إدارة طلبات النقل الخاصة بك",

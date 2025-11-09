@@ -2207,7 +2207,7 @@ export default function ClientDashboard() {
                         <div className="grid grid-cols-2 gap-4 text-sm">
                           <div>
                             <p className="text-muted-foreground">Type de marchandise</p>
-                            <p className="font-medium">{request.goodsType}</p>
+                            <p className="font-medium">{categoryConfig.label}</p>
                           </div>
                           {request.estimatedWeight && (
                             <div>

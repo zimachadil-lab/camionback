@@ -790,6 +790,7 @@ export default function TransporterDashboard() {
                 {filteredAcceptedRequests.map((request: any) => {
                   // Client info comes from request object in new workflow
                   const isMarkedForBilling = request.paymentStatus === "awaiting_payment";
+                  const categoryConfig = getCategoryConfig(request.goodsType, t);
 
                   return (
                     <Card key={request.id} className="hover-elevate">
@@ -849,7 +850,7 @@ export default function TransporterDashboard() {
                           <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
                               <p className="text-muted-foreground">{t('shared.labels.goodsType')}</p>
-                              <p className="font-medium">{request.goodsType}</p>
+                              <p className="font-medium">{categoryConfig.label}</p>
                             </div>
                             {request.estimatedWeight && (
                               <div>

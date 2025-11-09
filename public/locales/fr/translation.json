@@ -112,6 +112,39 @@
     "profileValidation": "Votre profil est en cours de validation par notre équipe",
     "profileError": "Échec de la complétion du profil"
   },
+  "header": {
+    "brand": "CamionBack",
+    "client": {
+      "orders": "Mes commandes",
+      "howItWorks": "Comment ça marche",
+      "contact": "Nous contacter",
+      "newRequest": "Nouvelle demande",
+      "newRequestShort": "Nouveau"
+    },
+    "transporter": {
+      "dashboard": "Tableau de bord",
+      "profile": "Mon Profil",
+      "payments": "Paiements reçus",
+      "ratings": "Mes avis clients",
+      "rib": "Mon RIB",
+      "howItWorks": "Comment ça marche",
+      "contact": "Nous contacter",
+      "announceReturn": "Annoncer un retour",
+      "announceReturnShort": "Retour"
+    },
+    "admin": {
+      "dashboard": "Tableau de bord",
+      "contact": "Nous contacter"
+    },
+    "coordinator": {
+      "dashboard": "Tableau de bord",
+      "users": "Gestions des Utilisateurs",
+      "contact": "Nous contacter"
+    },
+    "userMenu": {
+      "logout": "Se déconnecter"
+    }
+  },
   "clientDashboard": {
     "myRequests": "Mes demandes",
     "manageRequests": "Gérez vos demandes de transport",

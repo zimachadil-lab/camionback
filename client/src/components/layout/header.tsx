@@ -17,6 +17,7 @@ import { ContactWhatsAppDialog } from "@/components/contact-whatsapp-dialog";
 import { CoordinatorNotifications } from "@/components/coordinator/coordinator-notifications";
 import { CoordinatorMessaging } from "@/components/coordinator/coordinator-messaging";
 import { LanguageSelector } from "@/components/ui/language-selector";
+import { useTranslation } from "react-i18next";
 
 interface HeaderProps {
   user: {
@@ -33,34 +34,35 @@ interface HeaderProps {
 export function Header({ user, onNewRequest, onAnnounceReturn, onLogout }: HeaderProps) {
   const [location, navigate] = useLocation();
   const [showContactDialog, setShowContactDialog] = useState(false);
+  const { t } = useTranslation();
 
   const getMenuItems = () => {
     if (user.role === "client") {
       return [
-        { label: "Mes commandes", icon: Package, href: "/" },
-        { label: "Comment ça marche", icon: HelpCircle, href: "/how-it-works-client" },
-        { label: "Nous contacter", icon: MessageCircle, onClick: () => setShowContactDialog(true) },
+        { label: t('header.client.orders'), icon: Package, href: "/" },
+        { label: t('header.client.howItWorks'), icon: HelpCircle, href: "/how-it-works-client" },
+        { label: t('header.client.contact'), icon: MessageCircle, onClick: () => setShowContactDialog(true) },
       ];
     } else if (user.role === "transporteur") {
       return [
-        { label: "Tableau de bord", icon: Package, href: "/" },
-        { label: "Mon Profil", icon: User, href: "/transporter/profile" },
-        { label: "Paiements reçus", icon: Receipt, href: "/transporter/payments" },
-        { label: "Mes avis clients", icon: Star, href: "/transporter/ratings" },
-        { label: "Mon RIB", icon: CreditCard, href: "/transporter/rib" },
-        { label: "Comment ça marche", icon: HelpCircle, href: "/how-it-works-transporter" },
-        { label: "Nous contacter", icon: MessageCircle, onClick: () => setShowContactDialog(true) },
+        { label: t('header.transporter.dashboard'), icon: Package, href: "/" },
+        { label: t('header.transporter.profile'), icon: User, href: "/transporter/profile" },
+        { label: t('header.transporter.payments'), icon: Receipt, href: "/transporter/payments" },
+        { label: t('header.transporter.ratings'), icon: Star, href: "/transporter/ratings" },
+        { label: t('header.transporter.rib'), icon: CreditCard, href: "/transporter/rib" },
+        { label: t('header.transporter.howItWorks'), icon: HelpCircle, href: "/how-it-works-transporter" },
+        { label: t('header.transporter.contact'), icon: MessageCircle, onClick: () => setShowContactDialog(true) },
       ];
     } else if (user.role === "admin") {
       return [
-        { label: "Tableau de bord", icon: Package, href: "/" },
-        { label: "Nous contacter", icon: MessageCircle, onClick: () => setShowContactDialog(true) },
+        { label: t('header.admin.dashboard'), icon: Package, href: "/" },
+        { label: t('header.admin.contact'), icon: MessageCircle, onClick: () => setShowContactDialog(true) },
       ];
     } else if (user.role === "coordinateur") {
       return [
-        { label: "Tableau de bord", icon: Package, href: "/" },
-        { label: "Gestions des Utilisateurs", icon: User, href: "/coordinator/users" },
-        { label: "Nous contacter", icon: MessageCircle, onClick: () => setShowContactDialog(true) },
+        { label: t('header.coordinator.dashboard'), icon: Package, href: "/" },
+        { label: t('header.coordinator.users'), icon: User, href: "/coordinator/users" },
+        { label: t('header.coordinator.contact'), icon: MessageCircle, onClick: () => setShowContactDialog(true) },
       ];
     }
     return [];
@@ -79,7 +81,7 @@ export function Header({ user, onNewRequest, onAnnounceReturn, onLogout }: Heade
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
               C
             </div>
-            <span className="hidden sm:inline">CamionBack</span>
+            <span className="hidden sm:inline">{t('header.brand')}</span>
           </div>
 
           <nav className="hidden md:flex items-center gap-1">
@@ -112,8 +114,8 @@ export function Header({ user, onNewRequest, onAnnounceReturn, onLogout }: Heade
               data-testid="button-new-request-header"
             >
               <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">Nouvelle demande</span>
-              <span className="sm:hidden">Nouveau</span>
+              <span className="hidden sm:inline">{t('header.client.newRequest')}</span>
+              <span className="sm:hidden">{t('header.client.newRequestShort')}</span>
             </Button>
           )}
 
@@ -125,8 +127,8 @@ export function Header({ user, onNewRequest, onAnnounceReturn, onLogout }: Heade
               data-testid="button-announce-return-header"
             >
               <TruckIcon className="h-4 w-4" />
-              <span className="hidden sm:inline">Annoncer un retour</span>
-              <span className="sm:hidden">Retour</span>
+              <span className="hidden sm:inline">{t('header.transporter.announceReturn')}</span>
+              <span className="sm:hidden">{t('header.transporter.announceReturnShort')}</span>
             </Button>
           )}
 
@@ -188,7 +190,7 @@ export function Header({ user, onNewRequest, onAnnounceReturn, onLogout }: Heade
                 data-testid="button-logout"
               >
                 <LogOut className="h-4 w-4" />
-                Se déconnecter
+                {t('header.userMenu.logout')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
