@@ -10,6 +10,7 @@ import { fr, ar } from "date-fns/locale";
 import { PhotoGalleryDialog } from "./photo-gallery-dialog";
 import { DatePickerDialog } from "./date-picker-dialog";
 import { getCategoryConfig } from "@/lib/goods-category-config";
+import { RouteMap } from "@/components/route-map";
 
 interface RequestCardProps {
   request: {
@@ -202,16 +203,14 @@ export function RequestCard({
           <p className="text-xs text-muted-foreground ps-6 italic">
             🔒 {t('requestCard.neighborhoodCityNote')}
           </p>
-          {/* Distance display */}
-          {request.distance && (
-            <div className="ps-6 mt-2">
-              <Badge 
-                variant="outline" 
-                className="bg-[#17cfcf]/10 border-[#17cfcf]/40 text-[#17cfcf] font-semibold"
-                data-testid={`badge-distance-${request.id}`}
-              >
-                📏 {request.distance} km
-              </Badge>
+          {/* Distance display with map visualization */}
+          {request.distance && request.departureAddress && request.arrivalAddress && (
+            <div className="ps-6 mt-3">
+              <RouteMap
+                departureCity={request.departureAddress.split(',').pop()?.trim() || request.fromCity}
+                arrivalCity={request.arrivalAddress.split(',').pop()?.trim() || request.toCity}
+                distance={request.distance}
+              />
             </div>
           )}
         </div>
