@@ -151,50 +151,129 @@ export function PhoneAuth() {
 
         <Card className="w-full">
         <CardHeader className="text-center space-y-3 pb-4">
-          {/* Animation des camions aller-retour */}
-          <div className="relative mb-4" style={{ height: '90px', overflow: 'hidden' }}>
+          {/* Animation des camions - Version améliorée et dynamique */}
+          <div className="relative mb-4" style={{ height: '100px' }}>
             <style dangerouslySetInnerHTML={{ __html: `
-              @keyframes truckTop {
-                0% { transform: translateX(-120%); }
-                100% { transform: translateX(120%); }
+              @keyframes truckDrive {
+                0% { 
+                  transform: translateX(-130%) translateY(0px) scale(1);
+                  filter: drop-shadow(0 3px 6px rgba(28, 166, 166, 0.5));
+                }
+                25% { 
+                  transform: translateX(-40%) translateY(-2px) scale(1.02);
+                  filter: drop-shadow(0 5px 10px rgba(28, 166, 166, 0.6));
+                }
+                50% { 
+                  transform: translateX(20%) translateY(0px) scale(1);
+                  filter: drop-shadow(0 3px 6px rgba(28, 166, 166, 0.5));
+                }
+                75% { 
+                  transform: translateX(80%) translateY(-2px) scale(0.98);
+                  filter: drop-shadow(0 5px 10px rgba(28, 166, 166, 0.6));
+                }
+                100% { 
+                  transform: translateX(130%) translateY(0px) scale(1);
+                  filter: drop-shadow(0 3px 6px rgba(28, 166, 166, 0.5));
+                }
               }
-              @keyframes truckBottom {
-                0% { transform: translateX(120%) scaleX(-1); }
-                100% { transform: translateX(-120%) scaleX(-1); }
+              
+              @keyframes truckReturn {
+                0% { 
+                  transform: translateX(130%) scaleX(-1) translateY(0px) scale(1, 1);
+                  filter: drop-shadow(0 3px 6px rgba(43, 182, 115, 0.5));
+                }
+                25% { 
+                  transform: translateX(40%) scaleX(-1) translateY(-3px) scale(1.03, 1.03);
+                  filter: drop-shadow(0 6px 12px rgba(43, 182, 115, 0.7));
+                }
+                50% { 
+                  transform: translateX(-20%) scaleX(-1) translateY(0px) scale(1, 1);
+                  filter: drop-shadow(0 3px 6px rgba(43, 182, 115, 0.5));
+                }
+                75% { 
+                  transform: translateX(-80%) scaleX(-1) translateY(-3px) scale(0.97, 0.97);
+                  filter: drop-shadow(0 6px 12px rgba(43, 182, 115, 0.7));
+                }
+                100% { 
+                  transform: translateX(-130%) scaleX(-1) translateY(0px) scale(1, 1);
+                  filter: drop-shadow(0 3px 6px rgba(43, 182, 115, 0.5));
+                }
               }
-              .truck-top {
-                animation: truckTop 6s linear infinite;
+              
+              @keyframes roadPulse {
+                0%, 100% { opacity: 0.15; }
+                50% { opacity: 0.3; }
+              }
+              
+              @keyframes dashMove {
+                0% { stroke-dashoffset: 0; }
+                100% { stroke-dashoffset: -20; }
+              }
+              
+              .truck-top-new {
+                animation: truckDrive 5s ease-in-out infinite;
                 display: block;
+                will-change: transform;
               }
-              .truck-bottom {
-                animation: truckBottom 6s linear infinite;
-                animation-delay: 0.5s;
+              
+              .truck-bottom-new {
+                animation: truckReturn 6.5s ease-in-out infinite;
+                animation-delay: 0.8s;
                 display: block;
+                will-change: transform;
               }
-              .truck-container.paused .truck-top,
-              .truck-container.paused .truck-bottom {
+              
+              .road-line {
+                animation: dashMove 1s linear infinite;
+                stroke-dasharray: 10 10;
+              }
+              
+              .road-bg {
+                animation: roadPulse 3s ease-in-out infinite;
+              }
+              
+              .truck-container-new.paused .truck-top-new,
+              .truck-container-new.paused .truck-bottom-new,
+              .truck-container-new.paused .road-line {
                 animation-play-state: paused;
               }
+              
               @media (max-height: 680px) {
-                .truck-container-wrapper {
-                  margin-top: -8px;
+                .truck-animation-wrapper {
+                  transform: scale(0.95);
                 }
               }
             `}} />
-            <div className="truck-container-wrapper">
-              <div className={`truck-container ${isPaused ? 'paused' : ''}`} style={{ position: 'relative', height: '60px', overflow: 'hidden', paddingTop: '8px' }}>
-                {/* Camion du haut - Turquoise (gauche vers droite →) */}
-                <div className="truck-top" style={{ position: 'absolute', top: '8px', left: 0, right: 0 }}>
-                  <Truck className="w-10 h-10 md:w-11 md:h-11 text-[#1CA6A6]" style={{ filter: 'drop-shadow(0 2px 4px rgba(28, 166, 166, 0.4))' }} />
+            
+            <div className="truck-animation-wrapper">
+              {/* Route animée en arrière-plan */}
+              <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, transform: 'translateY(-50%)', zIndex: 0 }}>
+                <svg width="100%" height="60" style={{ opacity: 0.2 }}>
+                  <rect className="road-bg" width="100%" height="60" fill="#1CA6A6" rx="4" />
+                  <line className="road-line" x1="0" y1="20" x2="100%" y2="20" stroke="#CDE8E8" strokeWidth="2" strokeDasharray="10 10" />
+                  <line className="road-line" x1="0" y1="40" x2="100%" y2="40" stroke="#CDE8E8" strokeWidth="2" strokeDasharray="10 10" style={{ animationDelay: '0.5s' }} />
+                </svg>
+              </div>
+              
+              {/* Conteneur des camions */}
+              <div className={`truck-container-new ${isPaused ? 'paused' : ''}`} style={{ position: 'relative', height: '75px', zIndex: 1 }}>
+                {/* Camion turquoise - Allant de gauche à droite */}
+                <div className="truck-top-new" style={{ position: 'absolute', top: '8px', left: 0, right: 0 }}>
+                  <Truck className="w-12 h-12 md:w-14 md:h-14 text-[#1CA6A6]" />
                 </div>
-                {/* Camion du bas - Vert (droite vers gauche ←) */}
-                <div className="truck-bottom" style={{ position: 'absolute', top: '38px', left: 0, right: 0 }}>
-                  <Truck className="w-10 h-10 md:w-11 md:h-11 text-[#2BB673]" style={{ filter: 'drop-shadow(0 2px 4px rgba(43, 182, 115, 0.4))' }} />
+                
+                {/* Camion vert - Retour de droite à gauche */}
+                <div className="truck-bottom-new" style={{ position: 'absolute', top: '40px', left: 0, right: 0 }}>
+                  <Truck className="w-11 h-11 md:w-13 md:h-13 text-[#2BB673]" />
                 </div>
               </div>
-              {/* Texte bonus - bien espacé sous les camions */}
-              <div style={{ marginTop: '10px', textAlign: 'center' }}>
-                <p className="text-[11px] md:text-xs text-[#CDE8E8]/85 font-medium">
+              
+              {/* Texte bonus avec animation subtile */}
+              <div style={{ marginTop: '2px', textAlign: 'center', position: 'relative', zIndex: 2 }}>
+                <p className="text-[11px] md:text-xs text-[#CDE8E8]/90 font-semibold tracking-wide" style={{ 
+                  textShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                  animation: 'roadPulse 3s ease-in-out infinite'
+                }}>
                   Pas de retour à vide 🚛💨
                 </p>
               </div>
