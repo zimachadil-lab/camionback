@@ -28,6 +28,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { format, isSameDay, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useTranslation } from 'react-i18next';
+import { getCategoryConfig } from "@/lib/goods-category-config";
 
 // REMOVED: Referent system no longer used - transporter validation is now done directly by admin
 // const referenceSchema = z.object({
