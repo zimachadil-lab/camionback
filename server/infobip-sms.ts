@@ -146,8 +146,13 @@ export async function sendOfferAcceptedSMS(transporterPhone: string): Promise<bo
 /**
  * Send SMS to transporter when their account is activated by admin
  */
-export async function sendTransporterActivatedSMS(transporterPhone: string): Promise<boolean> {
-  const message = `Felicitations ! Votre compte CamionBack est maintenant active. N'hesitez pas a consulter camionback.com pour voir les missions disponibles. - L'equipe CamionBack`;
+export async function sendTransporterActivatedSMS(transporterPhone: string, language: string = 'fr'): Promise<boolean> {
+  const messages = {
+    fr: `Felicitations ! Votre compte CamionBack est maintenant active. N'hesitez pas a consulter camionback.com pour voir les missions disponibles. - L'equipe CamionBack`,
+    ar: `تهانينا! تم تفعيل حسابك في كاميون باك. لا تتردد في زيارة camionback.com لمشاهدة المهام المتاحة. - فريق كاميون باك`
+  };
+  
+  const message = messages[language as keyof typeof messages] || messages.fr;
   
   // Fire and forget - don't block the main process
   sendSMS(transporterPhone, message).catch(err => {

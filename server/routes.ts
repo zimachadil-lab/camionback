@@ -842,8 +842,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Send SMS notification if transporter is validated
       if (validated && user.phoneNumber) {
-        console.log(`📱 Envoi SMS activation à ${user.phoneNumber}`);
-        sendTransporterActivatedSMS(user.phoneNumber).catch(err => {
+        console.log(`📱 Envoi SMS activation à ${user.phoneNumber} (langue: ${user.preferredLanguage || 'fr'})`);
+        sendTransporterActivatedSMS(user.phoneNumber, user.preferredLanguage || 'fr').catch(err => {
           console.error('Erreur envoi SMS activation transporteur:', err);
         });
       }
