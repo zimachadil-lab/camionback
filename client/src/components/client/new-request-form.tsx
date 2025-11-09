@@ -9,18 +9,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Upload, MapPin, Loader2 } from "lucide-react";
+import { Calendar, Upload, MapPin, Loader2, Info } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { RecommendedTransportersDialog } from "./recommended-transporters-dialog";
 import { useAuth } from "@/lib/auth-context";
 import { MetaPixelEvents } from "@/lib/meta-pixel";
+import { GooglePlacesAutocomplete } from "@/components/google-places-autocomplete";
 
 // Schema will be created with translations in component
 const createRequestSchema = (t: (key: string) => string) => z.object({
   fromCity: z.string().min(2, t('newRequestForm.validation.fromCityRequired')),
   toCity: z.string().min(2, t('newRequestForm.validation.toCityRequired')),
+  departureAddress: z.string().optional(),
+  arrivalAddress: z.string().optional(),
   description: z.string().min(10, t('newRequestForm.validation.descriptionMin')),
   goodsType: z.string().min(1, t('newRequestForm.validation.goodsTypeRequired')),
   dateTime: z.string().optional(),
@@ -79,6 +82,8 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
     defaultValues: {
       fromCity: "",
       toCity: "",
+      departureAddress: "",
+      arrivalAddress: "",
       description: "",
       goodsType: "",
       dateTime: "",
@@ -125,6 +130,8 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
       const payload: any = {
         fromCity: data.fromCity,
         toCity: data.toCity,
+        departureAddress: data.departureAddress || data.fromCity,
+        arrivalAddress: data.arrivalAddress || data.toCity,
         description: data.description,
         goodsType: data.goodsType,
         clientId: user.id,
@@ -215,22 +222,19 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('newRequestForm.fromCity')}</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-from-city">
-                          <SelectValue placeholder={t('newRequestForm.fromCityPlaceholder')} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {citiesLoading ? (
-                          <div className="p-2 text-sm text-muted-foreground">{t('common.loading')}</div>
-                        ) : (
-                          cities.map((city: any) => (
-                            <SelectItem key={city.id} value={city.name}>{city.name}</SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <GooglePlacesAutocomplete
+                        value={field.value}
+                        onChange={(address, placeDetails) => {
+                          field.onChange(address);
+                          if (placeDetails) {
+                            form.setValue('departureAddress', address);
+                          }
+                        }}
+                        placeholder={t('newRequestForm.fromCityPlaceholder')}
+                        dataTestId="input-from-city"
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -242,26 +246,30 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('newRequestForm.toCity')}</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-to-city">
-                          <SelectValue placeholder={t('newRequestForm.toCityPlaceholder')} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {citiesLoading ? (
-                          <div className="p-2 text-sm text-muted-foreground">{t('common.loading')}</div>
-                        ) : (
-                          cities.map((city: any) => (
-                            <SelectItem key={city.id} value={city.name}>{city.name}</SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <GooglePlacesAutocomplete
+                        value={field.value}
+                        onChange={(address, placeDetails) => {
+                          field.onChange(address);
+                          if (placeDetails) {
+                            form.setValue('arrivalAddress', address);
+                          }
+                        }}
+                        placeholder={t('newRequestForm.toCityPlaceholder')}
+                        dataTestId="input-to-city"
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+            </div>
+
+            <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-md">
+              <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-blue-800 dark:text-blue-300">
+                {t('newRequestForm.addressPrivacyNote')}
+              </p>
             </div>
 
             <FormField

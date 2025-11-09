@@ -334,9 +334,10 @@
   },
   "newRequestForm": {
     "fromCity": "Ville de départ",
-    "fromCityPlaceholder": "Sélectionnez la ville de départ",
+    "fromCityPlaceholder": "Tapez votre ville ou quartier de départ",
     "toCity": "Ville d'arrivée",
-    "toCityPlaceholder": "Sélectionnez la ville d'arrivée",
+    "toCityPlaceholder": "Tapez votre ville ou quartier d'arrivée",
+    "addressPrivacyNote": "🔒 Confidentialité : Votre adresse complète (quartier) sera affichée uniquement à vous. Les transporteurs ne verront que la ville pour préserver votre confidentialité jusqu'à l'acceptation de l'offre.",
     "goodsType": "Type de marchandise",
     "goodsTypePlaceholder": "Sélectionnez le type",
     "description": "Description",
