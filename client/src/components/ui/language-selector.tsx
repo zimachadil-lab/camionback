@@ -6,7 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Languages } from "lucide-react";
+import { Globe, Check } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -15,7 +15,7 @@ interface LanguageSelectorProps {
 }
 
 export function LanguageSelector({ userId }: LanguageSelectorProps) {
-  const { i18n, t } = useTranslation();
+  const { i18n } = useTranslation();
   const { toast } = useToast();
 
   const changeLanguage = async (lng: string) => {
@@ -45,8 +45,8 @@ export function LanguageSelector({ userId }: LanguageSelectorProps) {
   };
 
   const languages = [
-    { code: 'fr', label: 'Français', nativeLabel: 'FR' },
-    { code: 'ar', label: 'العربية', nativeLabel: 'AR' },
+    { code: 'fr', label: 'Français', short: 'FR' },
+    { code: 'ar', label: 'العربية', short: 'ع' },
   ];
 
   const currentLanguage = languages.find(lang => lang.code === i18n.language) || languages[0];
@@ -54,11 +54,17 @@ export function LanguageSelector({ userId }: LanguageSelectorProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" data-testid="button-language-selector">
-          <Languages className="h-5 w-5" />
+        <Button 
+          variant="ghost" 
+          size="sm"
+          className="gap-2"
+          data-testid="button-language-selector"
+        >
+          <Globe className="w-4 h-4" />
+          <span className="font-medium">{currentLanguage.short}</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" className="min-w-[140px]">
         {languages.map((lang) => (
           <DropdownMenuItem
             key={lang.code}
@@ -66,9 +72,10 @@ export function LanguageSelector({ userId }: LanguageSelectorProps) {
             className="gap-2 cursor-pointer"
             data-testid={`language-option-${lang.code}`}
           >
-            <span className={i18n.language === lang.code ? 'font-bold' : ''}>
-              {lang.label} ({lang.nativeLabel})
-            </span>
+            <span className="flex-1">{lang.label}</span>
+            {i18n.language === lang.code && (
+              <Check className="w-4 h-4 text-primary" />
+            )}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
