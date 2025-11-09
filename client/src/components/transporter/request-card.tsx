@@ -20,6 +20,7 @@ interface RequestCardProps {
     toCity: string;
     departureAddress?: string;
     arrivalAddress?: string;
+    distance?: number | null;
     description: string;
     goodsType: string;
     estimatedWeight?: string;
@@ -201,6 +202,18 @@ export function RequestCard({
           <p className="text-xs text-muted-foreground ps-6 italic">
             🔒 {t('requestCard.neighborhoodCityNote')}
           </p>
+          {/* Distance display */}
+          {request.distance && (
+            <div className="ps-6 mt-2">
+              <Badge 
+                variant="outline" 
+                className="bg-[#17cfcf]/10 border-[#17cfcf]/40 text-[#17cfcf] font-semibold"
+                data-testid={`badge-distance-${request.id}`}
+              >
+                📏 {request.distance} km
+              </Badge>
+            </div>
+          )}
         </div>
 
         {/* Date de mission */}
