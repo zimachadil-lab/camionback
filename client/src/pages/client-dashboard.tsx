@@ -832,14 +832,43 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
 
             {/* Route et Prix */}
             <div className="space-y-2">
-              {/* Trajet */}
+              {/* Trajet - stacked layout */}
               <div className="flex items-center gap-2 text-sm">
-                <Truck className="w-4 h-4 text-muted-foreground" />
-                <span className="font-medium text-base">
-                  <span>{request.fromCity}</span>
-                  <span className="text-[#17cfcf] mx-2">→</span>
-                  <span>{request.toCity}</span>
-                </span>
+                <Truck className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <div className="flex items-center gap-3 flex-1">
+                  {/* Departure location */}
+                  <div className="flex-1 min-w-0">
+                    <div className="bg-muted/70 rounded-lg px-3 py-2">
+                      <div className="font-bold text-sm leading-tight break-words">
+                        {request.departureAddress?.split(',')[0] || request.fromCity}
+                      </div>
+                      {request.departureAddress?.includes(',') && (
+                        <div className="text-xs text-muted-foreground mt-0.5 leading-tight">
+                          {request.departureAddress.split(',').slice(1).join(',').trim()}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Arrow separator */}
+                  <div className="flex-shrink-0">
+                    <span className="text-[#17cfcf] text-xl">→</span>
+                  </div>
+
+                  {/* Arrival location */}
+                  <div className="flex-1 min-w-0">
+                    <div className="bg-muted/70 rounded-lg px-3 py-2">
+                      <div className="font-bold text-sm leading-tight break-words">
+                        {request.arrivalAddress?.split(',')[0] || request.toCity}
+                      </div>
+                      {request.arrivalAddress?.includes(',') && (
+                        <div className="text-xs text-muted-foreground mt-0.5 leading-tight">
+                          {request.arrivalAddress.split(',').slice(1).join(',').trim()}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Prix - Style transporteur */}
@@ -2201,15 +2230,40 @@ export default function ClientDashboard() {
                       <div key={request.id} className={`p-4 rounded-lg border-2 ${categoryConfig.borderColor} space-y-4`}>
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                           <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <div className="flex items-center gap-2 mb-2 flex-wrap">
                               <p className="font-semibold text-lg">{request.referenceId}</p>
                               <Badge variant="default" className="bg-blue-600">
                                 À facturer
                               </Badge>
                             </div>
-                            <p className="text-sm text-muted-foreground">
-                              {request.fromCity} → {request.toCity}
-                            </p>
+                            {/* Route - stacked compact layout */}
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 min-w-0">
+                                <div className="bg-muted/50 rounded px-2 py-1">
+                                  <div className="font-semibold text-xs leading-tight break-words">
+                                    {request.departureAddress?.split(',')[0] || request.fromCity}
+                                  </div>
+                                  {request.departureAddress?.includes(',') && (
+                                    <div className="text-[10px] text-muted-foreground leading-tight">
+                                      {request.departureAddress.split(',').slice(1).join(',').trim()}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <span className="text-[#17cfcf] text-sm flex-shrink-0">→</span>
+                              <div className="flex-1 min-w-0">
+                                <div className="bg-muted/50 rounded px-2 py-1">
+                                  <div className="font-semibold text-xs leading-tight break-words">
+                                    {request.arrivalAddress?.split(',')[0] || request.toCity}
+                                  </div>
+                                  {request.arrivalAddress?.includes(',') && (
+                                    <div className="text-[10px] text-muted-foreground leading-tight">
+                                      {request.arrivalAddress.split(',').slice(1).join(',').trim()}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         </div>
 
@@ -2351,7 +2405,7 @@ export default function ClientDashboard() {
                     <div key={request.id} className={`p-4 rounded-lg border-2 ${categoryConfig.borderColor} space-y-3`}>
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <div className="flex items-center gap-2 mb-2 flex-wrap">
                             <p className="font-semibold">{request.referenceId}</p>
                             {request.status === "expired" ? (
                               <Badge variant="destructive" className="bg-orange-600">
@@ -2363,9 +2417,34 @@ export default function ClientDashboard() {
                               </Badge>
                             )}
                           </div>
-                          <p className="text-sm text-muted-foreground">
-                            {request.fromCity} → {request.toCity}
-                          </p>
+                          {/* Route - stacked compact layout */}
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="bg-muted/50 rounded px-2 py-1">
+                                <div className="font-semibold text-xs leading-tight break-words">
+                                  {request.departureAddress?.split(',')[0] || request.fromCity}
+                                </div>
+                                {request.departureAddress?.includes(',') && (
+                                  <div className="text-[10px] text-muted-foreground leading-tight">
+                                    {request.departureAddress.split(',').slice(1).join(',').trim()}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <span className="text-[#17cfcf] text-sm flex-shrink-0">→</span>
+                            <div className="flex-1 min-w-0">
+                              <div className="bg-muted/50 rounded px-2 py-1">
+                                <div className="font-semibold text-xs leading-tight break-words">
+                                  {request.arrivalAddress?.split(',')[0] || request.toCity}
+                                </div>
+                                {request.arrivalAddress?.includes(',') && (
+                                  <div className="text-[10px] text-muted-foreground leading-tight">
+                                    {request.arrivalAddress.split(',').slice(1).join(',').trim()}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
                           {request.status === "expired" && (
                             <div className="mt-2 p-2 rounded bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800">
                               <p className="text-sm text-orange-800 dark:text-orange-300">

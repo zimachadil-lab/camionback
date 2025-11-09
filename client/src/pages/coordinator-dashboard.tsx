@@ -2082,11 +2082,36 @@ export default function CoordinatorDashboard() {
         {/* Trajet et date avec bouton d'assignation */}
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-muted-foreground" />
-              <span className="font-semibold text-base">
-                {request.fromCity} → {request.toCity}
-              </span>
+            {/* Route - stacked layout */}
+            <div className="flex items-center gap-2 flex-1">
+              <MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <div className="flex items-center gap-2 flex-1">
+                <div className="flex-1 min-w-0">
+                  <div className="bg-muted/70 rounded-lg px-2 py-1.5">
+                    <div className="font-bold text-xs leading-tight break-words">
+                      {request.departureAddress?.split(',')[0] || request.fromCity}
+                    </div>
+                    {request.departureAddress?.includes(',') && (
+                      <div className="text-[10px] text-muted-foreground mt-0.5 leading-tight">
+                        {request.departureAddress.split(',').slice(1).join(',').trim()}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <span className="text-[#17cfcf] text-sm flex-shrink-0">→</span>
+                <div className="flex-1 min-w-0">
+                  <div className="bg-muted/70 rounded-lg px-2 py-1.5">
+                    <div className="font-bold text-xs leading-tight break-words">
+                      {request.arrivalAddress?.split(',')[0] || request.toCity}
+                    </div>
+                    {request.arrivalAddress?.includes(',') && (
+                      <div className="text-[10px] text-muted-foreground mt-0.5 leading-tight">
+                        {request.arrivalAddress.split(',').slice(1).join(',').trim()}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
             {/* Bouton d'assignation coordinateur */}
             {request.assignedTo ? (
@@ -2739,11 +2764,36 @@ export default function CoordinatorDashboard() {
                             {request.referenceId}
                           </h3>
                         </div>
+                        {/* Route - stacked compact layout */}
                         <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                          <MapPin className="h-4 w-4" />
-                          <span className="font-medium">{request.fromCity}</span>
-                          <span>→</span>
-                          <span className="font-medium">{request.toCity}</span>
+                          <MapPin className="h-4 w-4 flex-shrink-0" />
+                          <div className="flex items-center gap-2 flex-1">
+                            <div className="flex-1 min-w-0">
+                              <div className="bg-muted/50 rounded px-2 py-1">
+                                <div className="font-semibold text-xs leading-tight break-words">
+                                  {request.departureAddress?.split(',')[0] || request.fromCity}
+                                </div>
+                                {request.departureAddress?.includes(',') && (
+                                  <div className="text-[10px] text-muted-foreground leading-tight">
+                                    {request.departureAddress.split(',').slice(1).join(',').trim()}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <span className="text-[#17cfcf] text-sm flex-shrink-0">→</span>
+                            <div className="flex-1 min-w-0">
+                              <div className="bg-muted/50 rounded px-2 py-1">
+                                <div className="font-semibold text-xs leading-tight break-words">
+                                  {request.arrivalAddress?.split(',')[0] || request.toCity}
+                                </div>
+                                {request.arrivalAddress?.includes(',') && (
+                                  <div className="text-[10px] text-muted-foreground leading-tight">
+                                    {request.arrivalAddress.split(',').slice(1).join(',').trim()}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
                         </div>
                         {request.dateTime && (
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
