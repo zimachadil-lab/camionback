@@ -10,9 +10,9 @@ interface MessagesBadgeProps {
 export function MessagesBadge({ userId }: MessagesBadgeProps) {
   const [, navigate] = useLocation();
   
-  const { data } = useQuery({
+  const { data } = useQuery<{ count: number }>({
     queryKey: [`/api/chat/unread-count?userId=${userId}`],
-    refetchInterval: 5000, // Refresh every 5 seconds
+    refetchInterval: 5000,
   });
 
   const unreadCount = data?.count || 0;
@@ -28,10 +28,10 @@ export function MessagesBadge({ userId }: MessagesBadgeProps) {
       <MessageSquare className="h-5 w-5" />
       {unreadCount > 0 && (
         <span
-          className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs font-semibold rounded-full h-5 w-5 flex items-center justify-center"
+          className="absolute -top-0.5 -end-0.5 h-5 min-w-[1.25rem] px-1 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-background"
           data-testid="badge-unread-messages-count"
         >
-          {unreadCount > 9 ? "9+" : unreadCount}
+          {unreadCount > 99 ? "99+" : unreadCount}
         </span>
       )}
     </Button>
