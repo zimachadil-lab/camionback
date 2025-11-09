@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,13 +32,12 @@ const MOROCCAN_CITIES = [
   "Khouribga"
 ];
 
-const profileSchema = z.object({
-  name: z.string().min(3, "Le nom doit contenir au moins 3 caractères"),
-  city: z.string().min(1, "Veuillez sélectionner une ville"),
-  truckPhoto: z.instanceof(File, { message: "La photo du camion est obligatoire" }),
+// Schema will be created with translations in component
+const createProfileSchema = (t: (key: string) => string) => z.object({
+  name: z.string().min(3, t('completeProfile.fullNameError')),
+  city: z.string().min(1, t('completeProfile.cityError')),
+  truckPhoto: z.instanceof(File, { message: t('completeProfile.truckPhotoRequired') }),
 });
-
-type ProfileForm = z.infer<typeof profileSchema>;
 
 export default function CompleteProfile() {
   const [, setLocation] = useLocation();
@@ -45,8 +45,14 @@ export default function CompleteProfile() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const { toast } = useToast();
   const { user, loading: authLoading, refreshUser } = useAuth();
+  const { t, i18n } = useTranslation();
+
+  // Create schema with translations - recreates on language change
+  const profileSchema = useMemo(() => createProfileSchema(t), [t, i18n.language]);
+  type ProfileForm = z.infer<typeof profileSchema>;
 
   // IMPORTANT: All hooks must be called before any conditional returns
+  // Form recreates when language changes due to resolver dependency
   const form = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -75,7 +81,7 @@ export default function CompleteProfile() {
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Chargement...</p>
+          <p>{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -119,8 +125,8 @@ export default function CompleteProfile() {
       const result = await response.json();
 
       toast({
-        title: "Profil complété",
-        description: "Votre profil est en cours de validation par notre équipe",
+        title: t('completeProfile.profileCompleted'),
+        description: t('completeProfile.profileValidation'),
       });
 
       // Track transporter registration with Meta Pixel
@@ -137,8 +143,8 @@ export default function CompleteProfile() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Erreur",
-        description: "Échec de la complétion du profil",
+        title: t('common.error'),
+        description: t('completeProfile.profileError'),
       });
     } finally {
       setLoading(false);
@@ -147,14 +153,14 @@ export default function CompleteProfile() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-      <Card className="w-full max-w-lg">
+      <Card key={i18n.language} className="w-full max-w-lg">
         <CardHeader className="text-center space-y-2">
           <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-2">
             <Truck className="w-8 h-8 text-primary" />
           </div>
-          <CardTitle className="text-2xl font-bold">Complétez votre profil</CardTitle>
+          <CardTitle className="text-2xl font-bold">{t('completeProfile.title')}</CardTitle>
           <CardDescription>
-            Remplissez ces informations pour commencer à proposer vos services
+            {t('completeProfile.subtitle')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -165,10 +171,10 @@ export default function CompleteProfile() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nom complet</FormLabel>
+                    <FormLabel>{t('completeProfile.fullName')}</FormLabel>
                     <FormControl>
                       <Input 
-                        placeholder="Ahmed El Mansouri" 
+                        placeholder={t('completeProfile.fullNamePlaceholder')} 
                         {...field} 
                         data-testid="input-name"
                       />
@@ -183,11 +189,11 @@ export default function CompleteProfile() {
                 name="city"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Ville de résidence</FormLabel>
+                    <FormLabel>{t('completeProfile.city')}</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-city">
-                          <SelectValue placeholder="Sélectionnez une ville" />
+                          <SelectValue placeholder={t('completeProfile.selectCity')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -204,7 +210,7 @@ export default function CompleteProfile() {
               />
 
               <div className="space-y-2">
-                <FormLabel>Numéro de téléphone</FormLabel>
+                <FormLabel>{t('completeProfile.phoneNumber')}</FormLabel>
                 <Input 
                   value={user.phoneNumber || ""} 
                   disabled 
@@ -212,7 +218,7 @@ export default function CompleteProfile() {
                   data-testid="input-phone-disabled"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Le numéro de téléphone ne peut pas être modifié
+                  {t('completeProfile.phoneCannotChange')}
                 </p>
               </div>
 
@@ -221,14 +227,14 @@ export default function CompleteProfile() {
                 name="truckPhoto"
                 render={({ field: { value, onChange, ...fieldProps } }) => (
                   <FormItem>
-                    <FormLabel>Photo du camion *</FormLabel>
+                    <FormLabel>{t('completeProfile.truckPhoto')} *</FormLabel>
                     <FormControl>
                       <div className="space-y-4">
                         {previewUrl ? (
                           <div className="border-2 border-dashed rounded-lg p-4">
                             <img 
                               src={previewUrl} 
-                              alt="Aperçu camion" 
+                              alt={t('completeProfile.truckPhotoPreview')} 
                               className="max-h-48 mx-auto rounded-lg mb-4"
                             />
                             <Button
@@ -244,14 +250,14 @@ export default function CompleteProfile() {
                               }}
                               data-testid="button-remove-photo"
                             >
-                              Changer la photo
+                              {t('completeProfile.changePhoto')}
                             </Button>
                           </div>
                         ) : (
                           <div className="border-2 border-dashed rounded-lg p-6 text-center">
                             <Upload className="w-12 h-12 mx-auto text-muted-foreground mb-2" />
                             <p className="text-sm text-muted-foreground mb-4">
-                              Cliquez pour télécharger une photo de votre camion
+                              {t('completeProfile.uploadPhoto')}
                             </p>
                             <Input
                               type="file"
@@ -283,7 +289,7 @@ export default function CompleteProfile() {
                 disabled={loading}
                 data-testid="button-submit-profile"
               >
-                {loading ? "Enregistrement..." : "Soumettre mon profil"}
+                {loading ? t('completeProfile.submitting') : t('completeProfile.submit')}
               </Button>
             </form>
           </Form>

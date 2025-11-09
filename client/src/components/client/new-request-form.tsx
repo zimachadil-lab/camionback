@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,11 +17,12 @@ import { RecommendedTransportersDialog } from "./recommended-transporters-dialog
 import { useAuth } from "@/lib/auth-context";
 import { MetaPixelEvents } from "@/lib/meta-pixel";
 
-const requestSchema = z.object({
-  fromCity: z.string().min(2, "Ville de départ requise"),
-  toCity: z.string().min(2, "Ville d'arrivée requise"),
-  description: z.string().min(10, "Description minimale: 10 caractères"),
-  goodsType: z.string().min(1, "Type de marchandise requis"),
+// Schema will be created with translations in component
+const createRequestSchema = (t: (key: string) => string) => z.object({
+  fromCity: z.string().min(2, t('newRequestForm.validation.fromCityRequired')),
+  toCity: z.string().min(2, t('newRequestForm.validation.toCityRequired')),
+  description: z.string().min(10, t('newRequestForm.validation.descriptionMin')),
+  goodsType: z.string().min(1, t('newRequestForm.validation.goodsTypeRequired')),
   dateTime: z.string().optional(),
   budget: z.string().optional(),
   // Manutention fields
@@ -39,16 +41,15 @@ const requestSchema = z.object({
     return true;
   },
   {
-    message: "Les informations d'étage et d'ascenseur sont obligatoires si manutention requise",
+    message: t('newRequestForm.validation.handlingFieldsRequired'),
     path: ["handlingRequired"],
   }
 );
 
-type RequestFormData = z.infer<typeof requestSchema>;
-
-const goodsTypes = [
-  "Meubles", "Électroménager", "Marchandises", "Déménagement",
-  "Matériaux de construction", "Colis", "Véhicule", "Autre"
+// Goods types mapping for translations
+const goodsTypesKeys = [
+  "furniture", "appliances", "goods", "moving",
+  "construction", "parcel", "vehicle", "other"
 ];
 
 export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
@@ -58,6 +59,11 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
   const [createdRequestId, setCreatedRequestId] = useState<string>("");
   const { toast } = useToast();
   const { user } = useAuth();
+  const { t, i18n } = useTranslation();
+
+  // Create schema with translations - recreates on language change
+  const requestSchema = useMemo(() => createRequestSchema(t), [t, i18n.language]);
+  type RequestFormData = z.infer<typeof requestSchema>;
 
   // Fetch cities from API
   const { data: cities = [], isLoading: citiesLoading } = useQuery({
@@ -105,8 +111,8 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
       if (!user?.id) {
         toast({
           variant: "destructive",
-          title: "Erreur",
-          description: "Vous devez être connecté pour créer une demande",
+          title: t('common.error'),
+          description: t('newRequestForm.loginRequired'),
         });
         return;
       }
@@ -151,8 +157,8 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
       setCreatedRequestId(createdRequest.id);
       
       toast({
-        title: "Demande créée",
-        description: "Votre demande de transport a été publiée avec succès",
+        title: t('newRequestForm.requestCreated'),
+        description: t('newRequestForm.requestCreatedDesc'),
       });
       
       // Track transport request creation with Meta Pixel
@@ -188,16 +194,16 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Erreur",
-        description: "Échec de création de la demande",
+        title: t('newRequestForm.error'),
+        description: t('newRequestForm.errorDesc'),
       });
     }
   };
 
   return (
-    <Card>
+    <Card key={i18n.language}>
       <CardHeader>
-        <CardTitle className="text-2xl">Nouvelle demande de transport</CardTitle>
+        <CardTitle className="text-2xl">{t('clientDashboard.newRequest.title')}</CardTitle>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -208,16 +214,16 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
                 name="fromCity"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Ville de départ</FormLabel>
+                    <FormLabel>{t('newRequestForm.fromCity')}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-from-city">
-                          <SelectValue placeholder="Sélectionner" />
+                          <SelectValue placeholder={t('newRequestForm.fromCityPlaceholder')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {citiesLoading ? (
-                          <div className="p-2 text-sm text-muted-foreground">Chargement...</div>
+                          <div className="p-2 text-sm text-muted-foreground">{t('common.loading')}</div>
                         ) : (
                           cities.map((city: any) => (
                             <SelectItem key={city.id} value={city.name}>{city.name}</SelectItem>
@@ -235,16 +241,16 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
                 name="toCity"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Ville d'arrivée</FormLabel>
+                    <FormLabel>{t('newRequestForm.toCity')}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-to-city">
-                          <SelectValue placeholder="Sélectionner" />
+                          <SelectValue placeholder={t('newRequestForm.toCityPlaceholder')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {citiesLoading ? (
-                          <div className="p-2 text-sm text-muted-foreground">Chargement...</div>
+                          <div className="p-2 text-sm text-muted-foreground">{t('common.loading')}</div>
                         ) : (
                           cities.map((city: any) => (
                             <SelectItem key={city.id} value={city.name}>{city.name}</SelectItem>
@@ -263,16 +269,18 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
               name="goodsType"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Type de marchandise</FormLabel>
+                  <FormLabel>{t('newRequestForm.goodsType')}</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger data-testid="select-goods-type">
-                        <SelectValue placeholder="Sélectionner" />
+                        <SelectValue placeholder={t('newRequestForm.goodsTypePlaceholder')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {goodsTypes.map((type) => (
-                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                      {goodsTypesKeys.map((typeKey, index) => (
+                        <SelectItem key={typeKey} value={t(`clientDashboard.goodsTypes.${typeKey}`)}>
+                          {t(`clientDashboard.goodsTypes.${typeKey}`)}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -286,10 +294,10 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>{t('newRequestForm.description')}</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Décrivez votre demande de transport..."
+                      placeholder={t('newRequestForm.descriptionPlaceholder')}
                       className="min-h-24"
                       data-testid="input-description"
                       {...field}
@@ -305,10 +313,10 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
               name="budget"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Budget (optionnel)</FormLabel>
+                  <FormLabel>{t('newRequestForm.budget')}</FormLabel>
                   <FormControl>
                     <Input 
-                      placeholder="ex: 500 MAD" 
+                      placeholder={t('newRequestForm.budgetPlaceholder')} 
                       data-testid="input-budget"
                       {...field} 
                     />
