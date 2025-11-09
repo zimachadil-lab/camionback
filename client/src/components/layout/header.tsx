@@ -33,7 +33,7 @@ interface HeaderProps {
 export function Header({ user, onLogout }: HeaderProps) {
   const [location, navigate] = useLocation();
   const [showContactDialog, setShowContactDialog] = useState(false);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const getMenuItems = () => {
     if (user.role === "client") {
@@ -180,27 +180,28 @@ export function Header({ user, onLogout }: HeaderProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64">
-              <DropdownMenuLabel>
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
-                    <AvatarFallback className={`${getRoleColor()} text-white font-semibold`}>
-                      {getUserInitials()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col">
-                    <span className="font-semibold text-sm">
-                      {user.role === "client" && user.clientId 
-                        ? user.clientId 
-                        : user.name || "Utilisateur"}
-                    </span>
-                    <span className="text-xs text-muted-foreground capitalize">{user.role}</span>
+              <div dir={i18n.dir()}>
+                <DropdownMenuLabel>
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback className={`${getRoleColor()} text-white font-semibold`}>
+                        {getUserInitials()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-sm">
+                        {user.role === "client" && user.clientId 
+                          ? user.clientId 
+                          : user.name || "Utilisateur"}
+                      </span>
+                      <span className="text-xs text-muted-foreground capitalize">{user.role}</span>
+                    </div>
                   </div>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              
-              {/* Navigation - All Links (Primary + Secondary) */}
-              <div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                
+                {/* Navigation - All Links (Primary + Secondary) */}
+                <div>
                 {/* Primary Links */}
                 {primaryLinks.map((item, idx) => {
                   const Icon = item.icon;
@@ -242,15 +243,16 @@ export function Header({ user, onLogout }: HeaderProps) {
                 <DropdownMenuSeparator />
               </div>
 
-              {/* Logout */}
-              <DropdownMenuItem
-                onClick={onLogout}
-                className="gap-3 cursor-pointer text-destructive focus:text-destructive hover:bg-destructive/10 transition-all duration-200 font-medium py-2.5"
-                data-testid="button-logout"
-              >
-                <LogOut className="h-4 w-4" />
-                <span>{t('header.userMenu.logout')}</span>
-              </DropdownMenuItem>
+                {/* Logout */}
+                <DropdownMenuItem
+                  onClick={onLogout}
+                  className="gap-3 cursor-pointer text-destructive focus:text-destructive hover:bg-destructive/10 transition-all duration-200 font-medium py-2.5"
+                  data-testid="button-logout"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>{t('header.userMenu.logout')}</span>
+                </DropdownMenuItem>
+              </div>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
