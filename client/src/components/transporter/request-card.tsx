@@ -168,18 +168,11 @@ export function RequestCard({
             {/* Departure location */}
             <div className="flex-1 min-w-0">
               <div className="bg-muted/70 rounded-lg px-3 py-2">
-                <div className="font-bold text-sm text-white leading-tight break-words">
+                <div style={{ fontWeight: 700, fontSize: '14px', color: 'white', lineHeight: '1.25', wordBreak: 'break-word' }}>
                   {request.departureAddress?.split(',')[0] || request.fromCity}
                 </div>
                 {request.departureAddress?.includes(',') && (
-                  <div 
-                    className="text-[11px] text-muted-foreground/80 mt-0.5 leading-tight opacity-75"
-                    ref={(el) => {
-                      if (el) {
-                        el.style.setProperty('font-weight', '300', 'important');
-                      }
-                    }}
-                  >
+                  <div style={{ fontWeight: 300, fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginTop: '2px', lineHeight: '1.25' }}>
                     {request.departureAddress.split(',').slice(1).join(',').trim()}
                   </div>
                 )}
@@ -194,18 +187,11 @@ export function RequestCard({
             {/* Arrival location */}
             <div className="flex-1 min-w-0">
               <div className="bg-muted/70 rounded-lg px-3 py-2">
-                <div className="font-bold text-sm text-white leading-tight break-words">
+                <div style={{ fontWeight: 700, fontSize: '14px', color: 'white', lineHeight: '1.25', wordBreak: 'break-word' }}>
                   {request.arrivalAddress?.split(',')[0] || request.toCity}
                 </div>
                 {request.arrivalAddress?.includes(',') && (
-                  <div 
-                    className="text-[11px] text-muted-foreground/80 mt-0.5 leading-tight opacity-75"
-                    ref={(el) => {
-                      if (el) {
-                        el.style.setProperty('font-weight', '300', 'important');
-                      }
-                    }}
-                  >
+                  <div style={{ fontWeight: 300, fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginTop: '2px', lineHeight: '1.25' }}>
                     {request.arrivalAddress.split(',').slice(1).join(',').trim()}
                   </div>
                 )}
