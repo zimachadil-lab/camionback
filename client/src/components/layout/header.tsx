@@ -9,8 +9,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu, User, Plus, LogOut, FileText, Clock, Receipt, Package, Star, TruckIcon, CreditCard, HelpCircle, MessageCircle } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
+import { Menu, User, LogOut, Package, Star, Receipt, CreditCard, HelpCircle, MessageCircle, Truck } from "lucide-react";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { MessagesBadge } from "@/components/chat/messages-badge";
 import { ContactWhatsAppDialog } from "@/components/contact-whatsapp-dialog";
@@ -37,132 +38,218 @@ export function Header({ user, onLogout }: HeaderProps) {
   const getMenuItems = () => {
     if (user.role === "client") {
       return [
-        { label: t('header.client.orders'), icon: Package, href: "/" },
-        { label: t('header.client.howItWorks'), icon: HelpCircle, href: "/how-it-works-client" },
-        { label: t('header.client.contact'), icon: MessageCircle, onClick: () => setShowContactDialog(true) },
+        { label: t('header.client.orders'), icon: Package, href: "/", priority: "primary" },
+        { label: t('header.client.howItWorks'), icon: HelpCircle, href: "/how-it-works-client", priority: "secondary" },
+        { label: t('header.client.contact'), icon: MessageCircle, onClick: () => setShowContactDialog(true), priority: "secondary" },
       ];
     } else if (user.role === "transporteur") {
       return [
-        { label: t('header.transporter.dashboard'), icon: Package, href: "/" },
-        { label: t('header.transporter.profile'), icon: User, href: "/transporter/profile" },
-        { label: t('header.transporter.payments'), icon: Receipt, href: "/transporter/payments" },
-        { label: t('header.transporter.ratings'), icon: Star, href: "/transporter/ratings" },
-        { label: t('header.transporter.rib'), icon: CreditCard, href: "/transporter/rib" },
-        { label: t('header.transporter.howItWorks'), icon: HelpCircle, href: "/how-it-works-transporter" },
-        { label: t('header.transporter.contact'), icon: MessageCircle, onClick: () => setShowContactDialog(true) },
+        { label: t('header.transporter.dashboard'), icon: Package, href: "/", priority: "primary" },
+        { label: t('header.transporter.profile'), icon: User, href: "/transporter/profile", priority: "primary" },
+        { label: t('header.transporter.payments'), icon: Receipt, href: "/transporter/payments", priority: "secondary" },
+        { label: t('header.transporter.ratings'), icon: Star, href: "/transporter/ratings", priority: "secondary" },
+        { label: t('header.transporter.rib'), icon: CreditCard, href: "/transporter/rib", priority: "secondary" },
+        { label: t('header.transporter.howItWorks'), icon: HelpCircle, href: "/how-it-works-transporter", priority: "secondary" },
+        { label: t('header.transporter.contact'), icon: MessageCircle, onClick: () => setShowContactDialog(true), priority: "secondary" },
       ];
     } else if (user.role === "admin") {
       return [
-        { label: t('header.admin.dashboard'), icon: Package, href: "/" },
-        { label: t('header.admin.contact'), icon: MessageCircle, onClick: () => setShowContactDialog(true) },
+        { label: t('header.admin.dashboard'), icon: Package, href: "/", priority: "primary" },
+        { label: t('header.admin.contact'), icon: MessageCircle, onClick: () => setShowContactDialog(true), priority: "secondary" },
       ];
     } else if (user.role === "coordinateur") {
       return [
-        { label: t('header.coordinator.dashboard'), icon: Package, href: "/" },
-        { label: t('header.coordinator.users'), icon: User, href: "/coordinator/users" },
-        { label: t('header.coordinator.contact'), icon: MessageCircle, onClick: () => setShowContactDialog(true) },
+        { label: t('header.coordinator.dashboard'), icon: Package, href: "/", priority: "primary" },
+        { label: t('header.coordinator.users'), icon: User, href: "/coordinator/users", priority: "primary" },
+        { label: t('header.coordinator.contact'), icon: MessageCircle, onClick: () => setShowContactDialog(true), priority: "secondary" },
       ];
     }
     return [];
   };
 
   const menuItems = getMenuItems();
+  const primaryLinks = menuItems.filter(item => item.priority === "primary");
+  const secondaryLinks = menuItems.filter(item => item.priority === "secondary");
+
+  const getUserInitials = () => {
+    if (user.role === "client" && user.clientId) {
+      return user.clientId.substring(0, 2).toUpperCase();
+    }
+    if (user.name) {
+      const names = user.name.split(" ");
+      if (names.length >= 2) {
+        return (names[0][0] + names[1][0]).toUpperCase();
+      }
+      return user.name.substring(0, 2).toUpperCase();
+    }
+    return user.role.substring(0, 2).toUpperCase();
+  };
+
+  const getRoleColor = () => {
+    switch (user.role) {
+      case "client":
+        return "bg-blue-500";
+      case "transporteur":
+        return "bg-emerald-500";
+      case "admin":
+        return "bg-purple-500";
+      case "coordinateur":
+        return "bg-amber-500";
+      default:
+        return "bg-primary";
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between px-4 md:px-6">
-        <div className="flex items-center gap-6">
-          <div 
-            onClick={() => navigate("/")}
-            className="flex items-center gap-2 font-bold text-xl hover:opacity-80 transition-opacity cursor-pointer"
-          >
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
-              C
-            </div>
-            <span className="hidden sm:inline">{t('header.brand')}</span>
+      <div className="flex h-16 items-center justify-between px-4 md:px-6 max-w-screen-2xl mx-auto">
+        {/* Left Section: Logo + Brand */}
+        <div 
+          onClick={() => navigate("/")}
+          className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity min-w-fit"
+          data-testid="link-home"
+        >
+          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-[#17cfcf] to-[#0ea5a5] shadow-md">
+            <Truck className="w-5 h-5 text-white" strokeWidth={2.5} />
           </div>
-
-          <nav className="hidden md:flex items-center gap-1">
-            {menuItems.map((item, idx) => {
-              const Icon = item.icon;
-              const isActive = item.href && location === item.href;
-              return (
-                <Button
-                  key={item.href || idx}
-                  onClick={() => item.onClick ? item.onClick() : item.href && navigate(item.href)}
-                  variant={isActive ? "secondary" : "ghost"}
-                  size="sm"
-                  className="gap-2"
-                  data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
-                >
-                  <Icon className="h-4 w-4" />
-                  {item.label}
-                </Button>
-              );
-            })}
-          </nav>
+          <div className="hidden sm:flex flex-col">
+            <span className="font-bold text-lg leading-none">{t('header.brand')}</span>
+            <span className="text-xs text-muted-foreground leading-none mt-0.5">Logistics</span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {user.role === "coordinateur" ? (
-            <>
-              <CoordinatorNotifications userId={user.id} />
-              <CoordinatorMessaging userId={user.id} />
-            </>
-          ) : (
-            <>
-              <NotificationBell userId={user.id} />
-              <MessagesBadge userId={user.id} />
-            </>
-          )}
-          
+        {/* Center Section: Desktop Navigation - Primary Links Only */}
+        <nav className="hidden lg:flex items-center gap-1 flex-1 justify-center px-8 overflow-x-auto">
+          {primaryLinks.map((item, idx) => {
+            const Icon = item.icon;
+            const isActive = item.href && location === item.href;
+            return (
+              <Button
+                key={item.href || idx}
+                onClick={() => item.onClick ? item.onClick() : item.href && navigate(item.href)}
+                variant={isActive ? "secondary" : "ghost"}
+                size="sm"
+                className="gap-2"
+                data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
+              >
+                <Icon className="h-4 w-4" />
+                <span className="hidden xl:inline">{item.label}</span>
+              </Button>
+            );
+          })}
+        </nav>
+
+        {/* Right Section: Actions */}
+        <div className="flex items-center gap-3 min-w-fit">
+          {/* Notifications & Messages Group */}
+          <div className="flex items-center gap-2">
+            {user.role === "coordinateur" ? (
+              <>
+                <CoordinatorNotifications userId={user.id} />
+                <CoordinatorMessaging userId={user.id} />
+              </>
+            ) : (
+              <>
+                <NotificationBell userId={user.id} />
+                <MessagesBadge userId={user.id} />
+              </>
+            )}
+          </div>
+
+          <Separator orientation="vertical" className="h-8 hidden md:block" />
+
+          {/* Language Selector */}
           <LanguageSelector userId={user.id} />
 
+          <Separator orientation="vertical" className="h-8 hidden md:block" />
+
+          {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" data-testid="button-user-menu">
-                <Menu className="h-5 w-5" />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="relative rounded-full hover-elevate"
+                data-testid="button-user-menu"
+              >
+                <Avatar className="h-9 w-9">
+                  <AvatarFallback className={`${getRoleColor()} text-white font-semibold text-sm`}>
+                    {getUserInitials()}
+                  </AvatarFallback>
+                </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="end" className="w-64">
               <DropdownMenuLabel>
-                <div className="flex flex-col">
-                  <span className="font-medium">
-                    {user.role === "client" && user.clientId 
-                      ? user.clientId 
-                      : user.name || "Utilisateur"}
-                  </span>
-                  <span className="text-xs text-muted-foreground capitalize">{user.role}</span>
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarFallback className={`${getRoleColor()} text-white font-semibold`}>
+                      {getUserInitials()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-sm">
+                      {user.role === "client" && user.clientId 
+                        ? user.clientId 
+                        : user.name || "Utilisateur"}
+                    </span>
+                    <span className="text-xs text-muted-foreground capitalize">{user.role}</span>
+                  </div>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               
-              <div className="md:hidden">
-                {menuItems.map((item, idx) => {
+              {/* Navigation - All Links (Primary + Secondary) */}
+              <div>
+                {/* Primary Links */}
+                {primaryLinks.map((item, idx) => {
                   const Icon = item.icon;
-                  const testId = `nav-mobile-${item.label.toLowerCase().replace(/\s+/g, "-")}`;
+                  const testId = `nav-menu-${item.label.toLowerCase().replace(/\s+/g, "-")}`;
                   return (
                     <DropdownMenuItem
                       key={item.href || idx}
                       onClick={() => item.onClick ? item.onClick() : item.href && navigate(item.href)}
-                      className="gap-2 cursor-pointer"
+                      className="gap-3 cursor-pointer py-2.5"
                       data-testid={testId}
                     >
                       <Icon className="h-4 w-4" />
-                      {item.label}
+                      <span>{item.label}</span>
                     </DropdownMenuItem>
                   );
                 })}
+                
+                {/* Secondary Links */}
+                {secondaryLinks.length > 0 && (
+                  <>
+                    <DropdownMenuSeparator />
+                    {secondaryLinks.map((item, idx) => {
+                      const Icon = item.icon;
+                      const testId = `nav-menu-${item.label.toLowerCase().replace(/\s+/g, "-")}`;
+                      return (
+                        <DropdownMenuItem
+                          key={item.href || idx}
+                          onClick={() => item.onClick ? item.onClick() : item.href && navigate(item.href)}
+                          className="gap-3 cursor-pointer py-2.5"
+                          data-testid={testId}
+                        >
+                          <Icon className="h-4 w-4" />
+                          <span>{item.label}</span>
+                        </DropdownMenuItem>
+                      );
+                    })}
+                  </>
+                )}
                 <DropdownMenuSeparator />
               </div>
 
+              {/* Logout */}
               <DropdownMenuItem
                 onClick={onLogout}
-                className="gap-2 cursor-pointer text-destructive focus:text-destructive hover:bg-destructive/10 transition-all duration-200 font-medium"
+                className="gap-3 cursor-pointer text-destructive focus:text-destructive hover:bg-destructive/10 transition-all duration-200 font-medium py-2.5"
                 data-testid="button-logout"
               >
                 <LogOut className="h-4 w-4" />
-                {t('header.userMenu.logout')}
+                <span>{t('header.userMenu.logout')}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
