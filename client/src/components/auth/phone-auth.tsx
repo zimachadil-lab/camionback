@@ -21,7 +21,6 @@ export function PhoneAuth() {
   const [confirmPin, setConfirmPin] = useState("");
   const [showPin, setShowPin] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
   const { toast } = useToast();
 
   // Format phone number as user types (6 12 34 56 78)
@@ -256,7 +255,7 @@ export function PhoneAuth() {
               </div>
               
               {/* Conteneur des camions */}
-              <div className={`truck-container-new ${isPaused ? 'paused' : ''}`} style={{ position: 'relative', height: '70px', zIndex: 1, overflow: 'hidden' }}>
+              <div className="truck-container-new" style={{ position: 'relative', height: '70px', zIndex: 1, overflow: 'hidden' }}>
                 {/* Camion turquoise - Allant de gauche à droite */}
                 <div className="truck-top-new" style={{ position: 'absolute', top: '5px', left: 0, right: 0, overflow: 'visible' }}>
                   <Truck className="w-11 h-11 md:w-12 md:h-12 text-[#1CA6A6]" />
@@ -301,8 +300,6 @@ export function PhoneAuth() {
                     placeholder={t('auth.phonePlaceholder')}
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
-                    onFocus={() => setIsPaused(true)}
-                    onBlur={() => setIsPaused(false)}
                     className="pl-16"
                     data-testid="input-phone"
                   />
@@ -334,8 +331,6 @@ export function PhoneAuth() {
                     placeholder="••••••"
                     value={pin}
                     onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    onFocus={() => setIsPaused(true)}
-                    onBlur={() => setIsPaused(false)}
                     className="text-center text-2xl tracking-widest pr-12"
                     maxLength={6}
                     data-testid="input-pin"
@@ -359,8 +354,6 @@ export function PhoneAuth() {
                     placeholder="••••••"
                     value={confirmPin}
                     onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    onFocus={() => setIsPaused(true)}
-                    onBlur={() => setIsPaused(false)}
                     className="text-center text-2xl tracking-widest"
                     maxLength={6}
                     data-testid="input-confirm-pin"
