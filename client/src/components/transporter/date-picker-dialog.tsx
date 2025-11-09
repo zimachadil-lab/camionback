@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Dialog,
@@ -10,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { format, isSameDay } from "date-fns";
-import { fr } from "date-fns/locale";
+import { fr, ar } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 
 interface DatePickerDialogProps {
@@ -28,6 +29,7 @@ export function DatePickerDialog({
   requestDate,
   isPending = false,
 }: DatePickerDialogProps) {
+  const { t, i18n } = useTranslation();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(requestDate);
 
   const handleConfirm = () => {
@@ -36,19 +38,22 @@ export function DatePickerDialog({
     }
   };
 
+  // Use appropriate locale for date-fns based on current language
+  const dateLocale = i18n.language === 'ar' ? ar : fr;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CalendarIcon className="h-5 w-5 text-primary" />
-            Choisir votre date de disponibilité
+            {t('transporterDashboard.datePickerDialog.title')}
           </DialogTitle>
           <DialogDescription>
-            Sélectionnez la date à laquelle vous êtes disponible pour effectuer ce transport.
+            {t('transporterDashboard.datePickerDialog.description')}
             {requestDate && (
               <span className="block mt-2 text-sm font-medium">
-                Date demandée par le client : {format(requestDate, "dd MMMM yyyy", { locale: fr })}
+                {t('transporterDashboard.datePickerDialog.clientRequestedDate')} {format(requestDate, "dd MMMM yyyy", { locale: dateLocale })}
               </span>
             )}
           </DialogDescription>
@@ -63,21 +68,22 @@ export function DatePickerDialog({
             initialFocus
             className="rounded-md border"
             data-testid="calendar-availability"
+            locale={dateLocale}
           />
 
           {selectedDate && (
             <div className="mt-4 p-3 bg-primary/10 rounded-md border border-primary/20">
               <p className="text-sm font-medium">
-                Date sélectionnée : {format(selectedDate, "dd MMMM yyyy", { locale: fr })}
+                {t('transporterDashboard.datePickerDialog.selectedDate')} {format(selectedDate, "dd MMMM yyyy", { locale: dateLocale })}
               </p>
               {requestDate && isSameDay(selectedDate, requestDate) && (
                 <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">
-                  ✓ Correspond à la date souhaitée par le client
+                  {t('transporterDashboard.datePickerDialog.matchesClientDate')}
                 </p>
               )}
               {requestDate && !isSameDay(selectedDate, requestDate) && (
                 <p className="text-xs text-orange-600 dark:text-orange-400 mt-1 font-medium">
-                  ℹ️ Date alternative proposée (acceptable)
+                  {t('transporterDashboard.datePickerDialog.alternativeDate')}
                 </p>
               )}
             </div>
@@ -91,7 +97,7 @@ export function DatePickerDialog({
             disabled={isPending}
             data-testid="button-cancel-availability"
           >
-            Annuler
+            {t('transporterDashboard.datePickerDialog.cancel')}
           </Button>
           <Button
             onClick={handleConfirm}
@@ -99,7 +105,7 @@ export function DatePickerDialog({
             className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
             data-testid="button-confirm-interest"
           >
-            {isPending ? "En cours..." : "Confirmer mon intérêt"}
+            {isPending ? t('transporterDashboard.datePickerDialog.pending') : t('transporterDashboard.datePickerDialog.confirmInterest')}
           </Button>
         </DialogFooter>
       </DialogContent>

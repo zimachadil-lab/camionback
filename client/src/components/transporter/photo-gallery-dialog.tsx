@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface PhotoGalleryDialogProps {
   open: boolean;
@@ -11,6 +12,7 @@ interface PhotoGalleryDialogProps {
 }
 
 export function PhotoGalleryDialog({ open, onClose, photos, referenceId }: PhotoGalleryDialogProps) {
+  const { t } = useTranslation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
 
@@ -37,7 +39,7 @@ export function PhotoGalleryDialog({ open, onClose, photos, referenceId }: Photo
       <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] p-0 overflow-hidden" data-testid="dialog-photo-gallery">
         <DialogHeader className="p-4 sm:p-6 pb-3 sm:pb-4">
           <DialogTitle className="text-base sm:text-lg">
-            Photos du chargement – Commande {referenceId}
+            {t('transporterDashboard.photoGalleryDialog.title')} {referenceId}
           </DialogTitle>
         </DialogHeader>
 
@@ -45,7 +47,7 @@ export function PhotoGalleryDialog({ open, onClose, photos, referenceId }: Photo
           <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
             <img
               src={photos[currentIndex]}
-              alt={`Photo ${currentIndex + 1}`}
+              alt={`${t('transporterDashboard.photoGalleryDialog.photo')} ${currentIndex + 1}`}
               className="w-full h-full object-cover sm:object-contain cursor-pointer"
               onClick={handleImageClick}
               data-testid={`img-gallery-${currentIndex}`}
@@ -92,7 +94,7 @@ export function PhotoGalleryDialog({ open, onClose, photos, referenceId }: Photo
               >
                 <img
                   src={photo}
-                  alt={`Miniature ${idx + 1}`}
+                  alt={`${t('transporterDashboard.photoGalleryDialog.thumbnail')} ${idx + 1}`}
                   className="w-full h-full object-cover"
                 />
               </button>
@@ -153,7 +155,7 @@ export function PhotoGalleryDialog({ open, onClose, photos, referenceId }: Photo
 
           <img
             src={photos[currentIndex]}
-            alt={`Photo ${currentIndex + 1} en plein écran`}
+            alt={`${t('transporterDashboard.photoGalleryDialog.photo')} ${currentIndex + 1} ${t('transporterDashboard.photoGalleryDialog.fullscreen')}`}
             className="max-w-[95vw] max-h-[95vh] object-contain"
             onClick={(e) => e.stopPropagation()}
             data-testid="img-fullscreen"

@@ -144,7 +144,7 @@ export function RequestCard({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <MapPin className="w-4 h-4" />
-              <span className="font-medium">Trajet</span>
+              <span className="font-medium">{t('requestCard.route')}</span>
             </div>
             {/* Badge "Disponible" animé aligné avec Trajet */}
             <Badge 
@@ -154,7 +154,7 @@ export function RequestCard({
               <span className="relative flex items-center gap-1.5">
                 <span className="absolute -left-1 h-2 w-2 rounded-full bg-white opacity-75 animate-ping"></span>
                 <span className="relative h-2 w-2 rounded-full bg-white"></span>
-                Disponible
+                {t('requestCard.available')}
               </span>
             </Badge>
           </div>
@@ -169,7 +169,7 @@ export function RequestCard({
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Calendar className="w-4 h-4" />
-            <span className="font-medium">Disponibilité</span>
+            <span className="font-medium">{t('requestCard.availability')}</span>
           </div>
           <div className="pl-6 font-semibold">
             {format(dateTime, "dd MMMM yyyy", { locale: fr })}
@@ -181,7 +181,7 @@ export function RequestCard({
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <FileText className="w-4 h-4" />
-              <span className="font-medium">Descriptif</span>
+              <span className="font-medium">{t('requestCard.description')}</span>
             </div>
             <p className={`text-sm pl-6 ${showFullDescription ? '' : 'line-clamp-2'}`}>
               {request.description}
@@ -193,7 +193,7 @@ export function RequestCard({
                   className="text-xs text-[#17cfcf] hover:underline"
                   data-testid={`button-toggle-description-${request.id}`}
                 >
-                  {showFullDescription ? 'Voir moins' : 'Plus de détails'}
+                  {showFullDescription ? t('requestCard.seeLess') : t('requestCard.moreDetails')}
                 </button>
               )}
               
@@ -205,7 +205,7 @@ export function RequestCard({
                   data-testid={`button-view-photos-${request.id}`}
                 >
                   <ImageIcon className="w-3.5 h-3.5" />
-                  <span>{request.photos.length} photo{request.photos.length > 1 ? 's' : ''}</span>
+                  <span>{request.photos.length} {request.photos.length > 1 ? t('requestCard.photosPlural') : t('requestCard.photos')}</span>
                 </Button>
               )}
             </div>
@@ -227,25 +227,25 @@ export function RequestCard({
           <div className="space-y-3 pt-3 border-t">
             <div className="flex items-center gap-2 text-sm font-medium">
               <span>🏋️</span>
-              <span>Manutention : Oui</span>
+              <span>{t('requestCard.handlingYes')}</span>
             </div>
             <div className="grid grid-cols-2 gap-4 pl-6">
               {/* Départ */}
               <div className="space-y-1">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <span>🏢</span>
-                  <span className="font-medium">Départ</span>
+                  <span className="font-medium">{t('requestCard.departureLocation')}</span>
                 </div>
                 <div className="text-sm">
                   {request.departureFloor !== undefined && request.departureFloor !== null ? (
                     <>
-                      <div>{request.departureFloor === 0 ? 'RDC' : `${request.departureFloor}ᵉ étage`}</div>
+                      <div>{request.departureFloor === 0 ? t('requestCard.groundFloor') : t('requestCard.floor_ordinal', { floor: request.departureFloor })}</div>
                       <div className="text-xs text-muted-foreground">
-                        Ascenseur {request.departureElevator ? '✅' : '❌'}
+                        {t('requestCard.elevator')} {request.departureElevator ? '✅' : '❌'}
                       </div>
                     </>
                   ) : (
-                    <span className="text-xs text-muted-foreground">Non spécifié</span>
+                    <span className="text-xs text-muted-foreground">{t('requestCard.notSpecified')}</span>
                   )}
                 </div>
               </div>
@@ -254,18 +254,18 @@ export function RequestCard({
               <div className="space-y-1">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <span>🏠</span>
-                  <span className="font-medium">Arrivée</span>
+                  <span className="font-medium">{t('requestCard.arrivalLocation')}</span>
                 </div>
                 <div className="text-sm">
                   {request.arrivalFloor !== undefined && request.arrivalFloor !== null ? (
                     <>
-                      <div>{request.arrivalFloor === 0 ? 'RDC' : `${request.arrivalFloor}ᵉ étage`}</div>
+                      <div>{request.arrivalFloor === 0 ? t('requestCard.groundFloor') : t('requestCard.floor_ordinal', { floor: request.arrivalFloor })}</div>
                       <div className="text-xs text-muted-foreground">
-                        Ascenseur {request.arrivalElevator ? '✅' : '❌'}
+                        {t('requestCard.elevator')} {request.arrivalElevator ? '✅' : '❌'}
                       </div>
                     </>
                   ) : (
-                    <span className="text-xs text-muted-foreground">Non spécifié</span>
+                    <span className="text-xs text-muted-foreground">{t('requestCard.notSpecified')}</span>
                   )}
                 </div>
               </div>
@@ -276,7 +276,7 @@ export function RequestCard({
         {request.handlingRequired === false && (
           <div className="pt-2 border-t">
             <Badge variant="outline" className="text-xs">
-              Manutention : Non
+              {t('requestCard.handlingNo')}
             </Badge>
           </div>
         )}
@@ -287,7 +287,7 @@ export function RequestCard({
             <div className="w-7 h-7 rounded-full bg-[#00ff88]/20 flex items-center justify-center flex-shrink-0">
               <DollarSign className="w-4 h-4 text-[#00ff88]" />
             </div>
-            <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Montant Fixé</span>
+            <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">{t('requestCard.fixedAmount')}</span>
             <span className="text-lg font-bold text-[#00ff88] ml-auto">{Math.floor(request.transporterPrice).toLocaleString()} Dhs</span>
           </div>
         )}
@@ -297,7 +297,7 @@ export function RequestCard({
             <div className="w-7 h-7 rounded-full bg-[#00ff88]/20 flex items-center justify-center flex-shrink-0">
               <DollarSign className="w-4 h-4 text-[#00ff88]" />
             </div>
-            <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Budget</span>
+            <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">{t('requestCard.budgetLabel')}</span>
             <span className="text-lg font-bold text-[#00ff88] ml-auto">{request.budget.replace('.00', '').replace('MAD', 'Dhs')}</span>
           </div>
         )}
@@ -306,7 +306,7 @@ export function RequestCard({
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Votre compte est en cours de validation par l'équipe CamionBack. Vous pourrez soumettre des offres dès que votre profil sera approuvé.
+              {t('requestCard.validationWarning')}
             </AlertDescription>
           </Alert>
         )}
@@ -324,7 +324,7 @@ export function RequestCard({
                 data-testid={`button-withdraw-interest-${request.id}`}
               >
                 <ThumbsUp className="w-5 h-5 mr-2" />
-                {isPendingInterest ? "Retrait..." : "Intéressé"}
+                {isPendingInterest ? t('requestCard.withdrawing') : t('requestCard.interested_action')}
               </Button>
             ) : (
               <>
@@ -336,7 +336,7 @@ export function RequestCard({
                     data-testid={`button-not-available-${request.id}`}
                   >
                     <ThumbsDown className="w-5 h-5 mr-2" />
-                    <span>Indisponible</span>
+                    <span>{t('requestCard.notAvailable')}</span>
                   </Button>
                 )}
                 <Button 
@@ -346,7 +346,7 @@ export function RequestCard({
                   data-testid={`button-express-interest-${request.id}`}
                 >
                   <ThumbsUp className="w-5 h-5 mr-2" />
-                  <span>{isPendingInterest ? "Envoi..." : "Intéressé"}</span>
+                  <span>{isPendingInterest ? t('requestCard.sending') : t('requestCard.interested_action')}</span>
                 </Button>
               </>
             )
