@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { MapPin, Package, Calendar, DollarSign, Image as ImageIcon, AlertCircle, Eye, FileText, X, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown } from "lucide-react";
 import { format } from "date-fns";
-import { fr } from "date-fns/locale";
+import { fr, ar } from "date-fns/locale";
 import { PhotoGalleryDialog } from "./photo-gallery-dialog";
 import { DatePickerDialog } from "./date-picker-dialog";
 import { getCategoryConfig } from "@/lib/goods-category-config";
@@ -61,7 +61,7 @@ export function RequestCard({
   onWithdrawInterest,
   isPendingInterest = false,
 }: RequestCardProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [photoGalleryOpen, setPhotoGalleryOpen] = useState(false);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [showValidationWarning, setShowValidationWarning] = useState(false);
@@ -71,6 +71,9 @@ export function RequestCard({
   const dateTime = typeof request.dateTime === 'string' 
     ? new Date(request.dateTime) 
     : request.dateTime;
+
+  // Use appropriate locale for date-fns based on current language
+  const dateLocale = i18n.language === 'ar' ? ar : fr;
 
   const createdAt = request.createdAt 
     ? (typeof request.createdAt === 'string' ? new Date(request.createdAt) : request.createdAt)
@@ -172,7 +175,7 @@ export function RequestCard({
             <span className="font-medium">{t('requestCard.availability')}</span>
           </div>
           <div className="pl-6 font-semibold">
-            {format(dateTime, "dd MMMM yyyy", { locale: fr })}
+            {format(dateTime, "dd MMMM yyyy", { locale: dateLocale })}
           </div>
         </div>
 
