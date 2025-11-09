@@ -267,16 +267,6 @@ export function PhoneAuth() {
                   <Truck className="w-11 h-11 md:w-13 md:h-13 text-[#2BB673]" />
                 </div>
               </div>
-              
-              {/* Texte bonus avec animation subtile */}
-              <div style={{ marginTop: '2px', textAlign: 'center', position: 'relative', zIndex: 2 }}>
-                <p className="text-[11px] md:text-xs text-[#CDE8E8]/90 font-semibold tracking-wide" style={{ 
-                  textShadow: '0 1px 3px rgba(0,0,0,0.3)',
-                  animation: 'roadPulse 3s ease-in-out infinite'
-                }}>
-                  Pas de retour à vide 🚛💨
-                </p>
-              </div>
             </div>
           </div>
 
