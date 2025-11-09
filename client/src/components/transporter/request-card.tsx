@@ -286,7 +286,7 @@ export function RequestCard({
 
         {/* Prix - Zone compacte */}
         {request.transporterPrice && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-[#00ff88]/10 via-[#00ff88]/5 to-transparent border-s-4 border-[#00ff88]">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-[#00ff88]/10 via-[#00ff88]/5 to-transparent border-s-4 border-solid border-[#00ff88]">
             <div className="w-7 h-7 rounded-full bg-[#00ff88]/20 flex items-center justify-center flex-shrink-0">
               <DollarSign className="w-4 h-4 text-[#00ff88]" />
             </div>
@@ -296,7 +296,7 @@ export function RequestCard({
         )}
 
         {request.budget && !request.transporterPrice && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-[#00ff88]/10 via-[#00ff88]/5 to-transparent border-s-4 border-[#00ff88]">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-[#00ff88]/10 via-[#00ff88]/5 to-transparent border-s-4 border-solid border-[#00ff88]">
             <div className="w-7 h-7 rounded-full bg-[#00ff88]/20 flex items-center justify-center flex-shrink-0">
               <DollarSign className="w-4 h-4 text-[#00ff88]" />
             </div>
