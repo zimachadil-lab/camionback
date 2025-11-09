@@ -2113,6 +2113,16 @@ export default function CoordinatorDashboard() {
                 </div>
               </div>
             </div>
+            {/* Distance display */}
+            {request.distance && (
+              <Badge 
+                variant="outline" 
+                className="bg-[#17cfcf]/10 border-[#17cfcf]/40 text-[#17cfcf] font-semibold text-xs"
+                data-testid={`badge-distance-${request.id}`}
+              >
+                📏 {request.distance} km
+              </Badge>
+            )}
             {/* Bouton d'assignation coordinateur */}
             {request.assignedTo ? (
               request.assignedTo.id === user?.id ? (
@@ -2794,6 +2804,16 @@ export default function CoordinatorDashboard() {
                               </div>
                             </div>
                           </div>
+                          {/* Distance display */}
+                          {request.distance && (
+                            <Badge 
+                              variant="outline" 
+                              className="bg-[#17cfcf]/10 border-[#17cfcf]/40 text-[#17cfcf] font-semibold text-xs ms-2"
+                              data-testid={`badge-distance-interested-${request.id}`}
+                            >
+                              📏 {request.distance} km
+                            </Badge>
+                          )}
                         </div>
                         {request.dateTime && (
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
