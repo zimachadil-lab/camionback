@@ -388,4 +388,9 @@
   .animate-pulse-glow {
     animation: pulse-glow 2s ease-in-out infinite;
   }
+
+  /* Force font weight to light - overrides any parent inheritance with !important */
+  .force-font-light {
+    font-weight: 300 !important;
+  }
 }
