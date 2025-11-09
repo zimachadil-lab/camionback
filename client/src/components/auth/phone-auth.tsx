@@ -152,7 +152,7 @@ export function PhoneAuth() {
         <Card className="w-full">
         <CardHeader className="text-center space-y-3 pb-4">
           {/* Animation des camions aller-retour */}
-          <div className="relative mb-4" style={{ height: '90px' }}>
+          <div className="relative mb-4" style={{ height: '90px', overflow: 'hidden' }}>
             <style dangerouslySetInnerHTML={{ __html: `
               @keyframes truckTop {
                 0% { transform: translateX(-120%); }
@@ -177,13 +177,12 @@ export function PhoneAuth() {
               }
               @media (max-height: 680px) {
                 .truck-container-wrapper {
-                  transform: scale(0.9);
                   margin-top: -8px;
                 }
               }
             `}} />
             <div className="truck-container-wrapper">
-              <div className={`truck-container ${isPaused ? 'paused' : ''}`} style={{ position: 'relative', height: '60px', overflow: 'visible', paddingTop: '8px' }}>
+              <div className={`truck-container ${isPaused ? 'paused' : ''}`} style={{ position: 'relative', height: '60px', overflow: 'hidden', paddingTop: '8px' }}>
                 {/* Camion du haut - Turquoise (gauche vers droite →) */}
                 <div className="truck-top" style={{ position: 'absolute', top: '8px', left: 0, right: 0 }}>
                   <Truck className="w-10 h-10 md:w-11 md:h-11 text-[#1CA6A6]" style={{ filter: 'drop-shadow(0 2px 4px rgba(28, 166, 166, 0.4))' }} />
