@@ -168,11 +168,11 @@ export function RequestCard({
             {/* Departure location */}
             <div className="flex-1 min-w-0">
               <div className="bg-muted/70 rounded-lg px-3 py-2">
-                <div className="font-bold text-sm leading-tight break-words">
+                <div className="font-bold text-sm text-white leading-tight break-words">
                   {request.departureAddress?.split(',')[0] || request.fromCity}
                 </div>
                 {request.departureAddress?.includes(',') && (
-                  <div className="text-xs text-muted-foreground font-normal mt-0.5 leading-tight">
+                  <div className="text-[11px] text-muted-foreground/80 font-light mt-0.5 leading-tight opacity-75">
                     {request.departureAddress.split(',').slice(1).join(',').trim()}
                   </div>
                 )}
@@ -187,11 +187,11 @@ export function RequestCard({
             {/* Arrival location */}
             <div className="flex-1 min-w-0">
               <div className="bg-muted/70 rounded-lg px-3 py-2">
-                <div className="font-bold text-sm leading-tight break-words">
+                <div className="font-bold text-sm text-white leading-tight break-words">
                   {request.arrivalAddress?.split(',')[0] || request.toCity}
                 </div>
                 {request.arrivalAddress?.includes(',') && (
-                  <div className="text-xs text-muted-foreground font-normal mt-0.5 leading-tight">
+                  <div className="text-[11px] text-muted-foreground/80 font-light mt-0.5 leading-tight opacity-75">
                     {request.arrivalAddress.split(',').slice(1).join(',').trim()}
                   </div>
                 )}
