@@ -135,7 +135,7 @@ export function RouteMap({ departureCity, arrivalCity, distance, className = '' 
         <MapContainer
           center={MOROCCO_CENTER}
           zoom={6}
-          style={{ height: '280px', width: '100%' }}
+          style={{ height: '200px', width: '100%' }}
           zoomControl={true}
           scrollWheelZoom={false}
           dragging={true}

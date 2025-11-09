@@ -145,9 +145,9 @@ export function RequestCard({
         </Badge>
       </div>
 
-      <CardContent className="p-4 space-y-4">
+      <CardContent className="p-4 space-y-3">
         {/* Trajet avec badge Disponible aligné */}
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <MapPin className="w-4 h-4" />
@@ -200,9 +200,6 @@ export function RequestCard({
               </div>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground ps-6 italic">
-            🔒 {t('requestCard.neighborhoodCityNote')}
-          </p>
           {/* Distance display with map visualization */}
           {request.distance && request.departureAddress && request.arrivalAddress && (
             <div className="ps-6 mt-3">
@@ -216,19 +213,17 @@ export function RequestCard({
         </div>
 
         {/* Date de mission */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Calendar className="w-4 h-4" />
-            <span className="font-medium">{t('requestCard.availability')}</span>
-          </div>
-          <div className="ps-6 font-semibold">
+        <div className="flex items-center gap-2 text-sm">
+          <Calendar className="w-4 h-4 text-muted-foreground" />
+          <span className="font-medium text-muted-foreground">{t('requestCard.availability')}:</span>
+          <span className="font-semibold">
             {format(dateTime, "dd MMMM yyyy", { locale: dateLocale })}
-          </div>
+          </span>
         </div>
 
         {/* Services requis */}
         {request.description && (
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <FileText className="w-4 h-4" />
               <span className="font-medium">{t('requestCard.description')}</span>
