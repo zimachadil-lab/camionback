@@ -29,6 +29,7 @@ import {
 } from '@shared/schema';
 import { eq, and, or, desc, asc, lte, gte, sql, inArray, isNull, isNotNull, ne } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
+import { calculateDistance } from './distance.js';
 
 export interface IStorage {
   // User operations
@@ -3372,11 +3373,31 @@ export class DbStorage implements IStorage {
   async qualifyRequest(requestId: string, transporterAmount: number, platformFee: number, coordinatorId: string): Promise<TransportRequest | undefined> {
     const clientTotal = transporterAmount + platformFee;
     
+    // Get current request to access addresses for distance calculation
+    const currentRequest = await db.select()
+      .from(transportRequests)
+      .where(eq(transportRequests.id, requestId))
+      .limit(1);
+    
+    // Calculate distance if addresses are available
+    let distance: number | null = null;
+    if (currentRequest[0]?.departureAddress && currentRequest[0]?.arrivalAddress) {
+      const distanceResult = await calculateDistance(
+        currentRequest[0].departureAddress,
+        currentRequest[0].arrivalAddress
+      );
+      distance = distanceResult.distance;
+      if (distanceResult.error) {
+        console.warn(`[qualifyRequest] Distance calculation failed for ${requestId}:`, distanceResult.error);
+      }
+    }
+    
     const result = await db.update(transportRequests)
       .set({
         transporterAmount: transporterAmount.toString(),
         platformFee: platformFee.toString(),
         clientTotal: clientTotal.toString(),
+        distance: distance,
         qualifiedAt: new Date(),
         coordinationUpdatedAt: new Date(),
         coordinationUpdatedBy: coordinatorId,
