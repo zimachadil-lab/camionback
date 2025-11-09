@@ -26,12 +26,10 @@ interface HeaderProps {
     role: string;
     clientId?: string;
   };
-  onNewRequest?: () => void;
-  onAnnounceReturn?: () => void;
   onLogout: () => void;
 }
 
-export function Header({ user, onNewRequest, onAnnounceReturn, onLogout }: HeaderProps) {
+export function Header({ user, onLogout }: HeaderProps) {
   const [location, navigate] = useLocation();
   const [showContactDialog, setShowContactDialog] = useState(false);
   const { t } = useTranslation();
@@ -106,32 +104,6 @@ export function Header({ user, onNewRequest, onAnnounceReturn, onLogout }: Heade
         </div>
 
         <div className="flex items-center gap-2">
-          {user.role === "client" && onNewRequest && (
-            <Button
-              onClick={onNewRequest}
-              size="default"
-              className="gap-2"
-              data-testid="button-new-request-header"
-            >
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">{t('header.client.newRequest')}</span>
-              <span className="sm:hidden">{t('header.client.newRequestShort')}</span>
-            </Button>
-          )}
-
-          {user.role === "transporteur" && onAnnounceReturn && (
-            <Button
-              onClick={onAnnounceReturn}
-              size="default"
-              className="gap-2 bg-[#00d4b2] hover:bg-[#00d4b2] border border-[#00d4b2]"
-              data-testid="button-announce-return-header"
-            >
-              <TruckIcon className="h-4 w-4" />
-              <span className="hidden sm:inline">{t('header.transporter.announceReturn')}</span>
-              <span className="sm:hidden">{t('header.transporter.announceReturnShort')}</span>
-            </Button>
-          )}
-
           {user.role === "coordinateur" ? (
             <>
               <CoordinatorNotifications userId={user.id} />

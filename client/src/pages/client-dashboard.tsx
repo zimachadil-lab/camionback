@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star, CreditCard, Upload, Eye, Edit, MessageSquare, Calendar, Flag, Truck, Users, Zap, X, ChevronLeft, ChevronRight, Target, ArrowDown, Camera, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, DollarSign, ImageIcon } from "lucide-react";
+import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star, CreditCard, Upload, Eye, Edit, MessageSquare, Calendar, Flag, Truck, Users, Zap, X, ChevronLeft, ChevronRight, Target, ArrowDown, Camera, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, DollarSign, ImageIcon, Plus } from "lucide-react";
 import { getCategoryConfig } from "@/lib/goods-category-config";
 import { Header } from "@/components/layout/header";
 import { NewRequestForm } from "@/components/client/new-request-form";
@@ -2098,18 +2098,27 @@ export default function ClientDashboard() {
     <div className="min-h-screen bg-background">
       <Header
         user={user as any}
-        onNewRequest={() => setShowNewRequest(true)}
         onLogout={handleLogout}
       />
       
       <StoriesBar userRole="client" />
       
-      <div className="container mx-auto p-4 md:p-6 max-w-7xl space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">{t('clientDashboard.myRequests')}</h1>
-          <p className="text-muted-foreground mt-1">{t('clientDashboard.manageRequests')}</p>
+      <div className="container mx-auto px-4 md:px-6 max-w-7xl">
+        <div className="py-4 flex items-center justify-between flex-wrap gap-3">
+          <div className="flex-1" />
+          <Button
+            onClick={() => setShowNewRequest(true)}
+            size="default"
+            className="gap-2"
+            data-testid="button-new-request"
+          >
+            <Plus className="h-4 w-4" />
+            {t('header.client.newRequest')}
+          </Button>
         </div>
-
+      </div>
+      
+      <div className="container mx-auto p-4 md:p-6 max-w-7xl space-y-6">
         {showNewRequest ? (
           <NewRequestForm onSuccess={() => {
             setShowNewRequest(false);

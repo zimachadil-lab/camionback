@@ -570,11 +570,25 @@ export default function TransporterDashboard() {
     <div className="min-h-screen bg-background">
       <Header
         user={user! as { id: string; name?: string; role: string; clientId?: string }}
-        onAnnounceReturn={handleAnnounceReturn}
         onLogout={handleLogout}
       />
       
       <StoriesBar userRole="transporter" />
+      
+      <div className="container mx-auto px-4 md:px-6 max-w-7xl">
+        <div className="py-4 flex items-center justify-between flex-wrap gap-3">
+          <Button
+            onClick={handleAnnounceReturn}
+            size="default"
+            className="gap-2 bg-[#00d4b2] hover:bg-[#00d4b2] border border-[#00d4b2]"
+            data-testid="button-announce-return"
+          >
+            <TruckIcon className="h-4 w-4" />
+            {t('header.transporter.announceReturn')}
+          </Button>
+          <div className="flex-1" />
+        </div>
+      </div>
       
       {/* Account pending validation message - Simplified without referent system */}
       {user.status === "pending" && (
