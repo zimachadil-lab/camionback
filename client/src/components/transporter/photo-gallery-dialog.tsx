@@ -58,21 +58,21 @@ export function PhotoGalleryDialog({ open, onClose, photos, referenceId }: Photo
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute left-1 sm:left-2 top-1/2 -translate-y-1/2 bg-background/90 hover:bg-background h-8 w-8 sm:h-10 sm:w-10"
+                  className="absolute start-1 sm:start-2 top-1/2 -translate-y-1/2 bg-background/90 hover:bg-background h-8 w-8 sm:h-10 sm:w-10"
                   onClick={handlePrevious}
                   data-testid="button-previous-photo"
                 >
-                  <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+                  <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6 rtl:rotate-180" />
                 </Button>
 
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute right-1 sm:right-2 top-1/2 -translate-y-1/2 bg-background/90 hover:bg-background h-8 w-8 sm:h-10 sm:w-10"
+                  className="absolute end-1 sm:end-2 top-1/2 -translate-y-1/2 bg-background/90 hover:bg-background h-8 w-8 sm:h-10 sm:w-10"
                   onClick={handleNext}
                   data-testid="button-next-photo"
                 >
-                  <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
+                  <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6 rtl:rotate-180" />
                 </Button>
 
                 <div className="absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 bg-background/90 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
@@ -112,7 +112,7 @@ export function PhotoGalleryDialog({ open, onClose, photos, referenceId }: Photo
           <Button
             variant="ghost"
             size="icon"
-            className="absolute top-4 right-4 text-white hover:bg-white/20 h-10 w-10"
+            className="absolute top-4 end-4 text-white hover:bg-white/20 h-10 w-10"
             onClick={handleCloseFullscreen}
             data-testid="button-close-fullscreen"
           >
@@ -124,27 +124,27 @@ export function PhotoGalleryDialog({ open, onClose, photos, referenceId }: Photo
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 h-12 w-12"
+                className="absolute start-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 h-12 w-12"
                 onClick={(e) => {
                   e.stopPropagation();
                   handlePrevious();
                 }}
                 data-testid="button-fullscreen-previous"
               >
-                <ChevronLeft className="h-8 w-8" />
+                <ChevronLeft className="h-8 w-8 rtl:rotate-180" />
               </Button>
 
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 h-12 w-12"
+                className="absolute end-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 h-12 w-12"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleNext();
                 }}
                 data-testid="button-fullscreen-next"
               >
-                <ChevronRight className="h-8 w-8" />
+                <ChevronRight className="h-8 w-8 rtl:rotate-180" />
               </Button>
 
               <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-white/90 px-4 py-2 rounded-full text-sm font-medium">
