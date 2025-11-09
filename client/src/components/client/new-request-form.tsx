@@ -290,7 +290,7 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
                     <SelectContent>
                       {goodsTypesKeys.map((typeKey, index) => (
                         <SelectItem key={typeKey} value={typeKey}>
-                          {t(`clientDashboard.goodsTypes.${typeKey}`)}
+                          {t(`shared.goodsTypes.${typeKey}`)}
                         </SelectItem>
                       ))}
                     </SelectContent>
