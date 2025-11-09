@@ -163,10 +163,40 @@ export function RequestCard({
               </span>
             </Badge>
           </div>
-          <div className="flex items-center gap-2 text-base font-semibold ps-6">
-            <span className="truncate">{request.departureAddress || request.fromCity}</span>
-            <span className="text-[#17cfcf] rtl:rotate-180">→</span>
-            <span className="truncate">{request.arrivalAddress || request.toCity}</span>
+          {/* Route layout with stacked locations */}
+          <div className="flex items-center gap-3 ps-6">
+            {/* Departure location */}
+            <div className="flex-1 min-w-0">
+              <div className="bg-muted/70 rounded-lg px-3 py-2">
+                <div className="font-bold text-sm leading-tight break-words">
+                  {request.departureAddress?.split(',')[0] || request.fromCity}
+                </div>
+                {request.departureAddress?.includes(',') && (
+                  <div className="text-xs text-muted-foreground mt-0.5 leading-tight">
+                    {request.departureAddress.split(',').slice(1).join(',').trim()}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Arrow separator */}
+            <div className="flex-shrink-0">
+              <span className="text-[#17cfcf] text-xl rtl:rotate-180">→</span>
+            </div>
+
+            {/* Arrival location */}
+            <div className="flex-1 min-w-0">
+              <div className="bg-muted/70 rounded-lg px-3 py-2">
+                <div className="font-bold text-sm leading-tight break-words">
+                  {request.arrivalAddress?.split(',')[0] || request.toCity}
+                </div>
+                {request.arrivalAddress?.includes(',') && (
+                  <div className="text-xs text-muted-foreground mt-0.5 leading-tight">
+                    {request.arrivalAddress.split(',').slice(1).join(',').trim()}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
           <p className="text-xs text-muted-foreground ps-6 italic">
             🔒 {t('requestCard.neighborhoodCityNote')}
