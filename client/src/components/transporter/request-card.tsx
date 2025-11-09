@@ -171,15 +171,6 @@ export function RequestCard({
                 <div style={{ fontWeight: 700, fontSize: '14px', color: 'white', lineHeight: '1.25', wordBreak: 'break-word' }}>
                   {request.departureAddress?.split(',')[0] || request.fromCity}
                 </div>
-                {(() => {
-                  console.log('🔍 Departure DEBUG:', {
-                    ref: request.referenceId,
-                    fullAddress: request.departureAddress,
-                    hasComma: request.departureAddress?.includes(','),
-                    parts: request.departureAddress?.split(','),
-                  });
-                  return null;
-                })()}
                 {request.departureAddress?.includes(',') && (
                   <div style={{ fontWeight: 300, fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginTop: '2px', lineHeight: '1.25' }}>
                     {request.departureAddress.split(',').slice(1).join(',').trim()}

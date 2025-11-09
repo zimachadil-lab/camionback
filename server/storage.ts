@@ -3412,6 +3412,8 @@ export class DbStorage implements IStorage {
       status: transportRequests.status,
       fromCity: transportRequests.fromCity,
       toCity: transportRequests.toCity,
+      departureAddress: transportRequests.departureAddress,
+      arrivalAddress: transportRequests.arrivalAddress,
       description: transportRequests.description,
       goodsType: transportRequests.goodsType,
       dateTime: transportRequests.dateTime,
