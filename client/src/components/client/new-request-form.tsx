@@ -289,7 +289,7 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
                     </FormControl>
                     <SelectContent>
                       {goodsTypesKeys.map((typeKey, index) => (
-                        <SelectItem key={typeKey} value={t(`clientDashboard.goodsTypes.${typeKey}`)}>
+                        <SelectItem key={typeKey} value={typeKey}>
                           {t(`clientDashboard.goodsTypes.${typeKey}`)}
                         </SelectItem>
                       ))}
