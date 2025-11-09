@@ -370,6 +370,23 @@
     }
   },
   "transporterDashboard": {
+    "datePickerDialog": {
+      "title": "Choisir votre date de disponibilité",
+      "description": "Sélectionnez la date à laquelle vous êtes disponible pour effectuer ce transport.",
+      "clientRequestedDate": "Date demandée par le client :",
+      "selectedDate": "Date sélectionnée :",
+      "matchesClientDate": "✓ Correspond à la date souhaitée par le client",
+      "alternativeDate": "ℹ️ Date alternative proposée (acceptable)",
+      "cancel": "Annuler",
+      "confirmInterest": "Confirmer mon intérêt",
+      "pending": "En cours..."
+    },
+    "photoGalleryDialog": {
+      "title": "Photos du chargement – Commande",
+      "photo": "Photo",
+      "thumbnail": "Miniature",
+      "fullscreen": "en plein écran"
+    },
     "tabs": {
       "available": "Disponibles",
       "myInterests": "Mes intérêts",
@@ -571,7 +588,30 @@
     "interested": "Je suis intéressé",
     "withdrawInterest": "Retirer mon intérêt",
     "chat": "Discuter",
-    "viewPhotos": "Voir photos"
+    "viewPhotos": "Voir photos",
+    "route": "Trajet",
+    "availability": "Disponibilité",
+    "description": "Descriptif",
+    "available": "Disponible",
+    "photos": "photo",
+    "photosPlural": "photos",
+    "moreDetails": "Plus de détails",
+    "seeLess": "Voir moins",
+    "handlingYes": "Manutention : Oui",
+    "handlingNo": "Manutention : Non",
+    "departureLocation": "Départ",
+    "arrivalLocation": "Arrivée",
+    "groundFloor": "RDC",
+    "floor_ordinal": "{{floor}}ᵉ étage",
+    "elevator": "Ascenseur",
+    "notSpecified": "Non spécifié",
+    "fixedAmount": "Montant Fixé",
+    "budgetLabel": "Budget",
+    "notAvailable": "Indisponible",
+    "interested_action": "Intéressé",
+    "withdrawing": "Retrait...",
+    "sending": "Envoi...",
+    "validationWarning": "Votre compte est en cours de validation par l'équipe CamionBack. Vous pourrez soumettre des offres dès que votre profil sera approuvé."
   },
   "offerCard": {
     "transporter": "Transporteur",

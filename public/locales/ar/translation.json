@@ -370,6 +370,23 @@
     }
   },
   "transporterDashboard": {
+    "datePickerDialog": {
+      "title": "اختر تاريخ توفرك",
+      "description": "حدد التاريخ الذي تكون فيه متاحًا لتنفيذ هذا النقل.",
+      "clientRequestedDate": "التاريخ المطلوب من العميل:",
+      "selectedDate": "التاريخ المحدد:",
+      "matchesClientDate": "✓ يتطابق مع التاريخ المطلوب من العميل",
+      "alternativeDate": "ℹ️ تاريخ بديل مقترح (مقبول)",
+      "cancel": "إلغاء",
+      "confirmInterest": "تأكيد اهتمامي",
+      "pending": "جارٍ..."
+    },
+    "photoGalleryDialog": {
+      "title": "صور الشحنة – الطلب",
+      "photo": "صورة",
+      "thumbnail": "صورة مصغرة",
+      "fullscreen": "بملء الشاشة"
+    },
     "tabs": {
       "available": "متاحة",
       "myInterests": "اهتماماتي",
@@ -571,7 +588,30 @@
     "interested": "أنا مهتم",
     "withdrawInterest": "سحب اهتمامي",
     "chat": "محادثة",
-    "viewPhotos": "عرض الصور"
+    "viewPhotos": "عرض الصور",
+    "route": "المسار",
+    "availability": "التوفر",
+    "description": "الوصف",
+    "available": "متاح",
+    "photos": "صورة",
+    "photosPlural": "صور",
+    "moreDetails": "المزيد من التفاصيل",
+    "seeLess": "عرض أقل",
+    "handlingYes": "المناولة : نعم",
+    "handlingNo": "المناولة : لا",
+    "departureLocation": "المغادرة",
+    "arrivalLocation": "الوصول",
+    "groundFloor": "الطابق الأرضي",
+    "floor_ordinal": "الطابق {{floor}}",
+    "elevator": "المصعد",
+    "notSpecified": "غير محدد",
+    "fixedAmount": "المبلغ المحدد",
+    "budgetLabel": "الميزانية",
+    "notAvailable": "غير متاح",
+    "interested_action": "مهتم",
+    "withdrawing": "جارٍ السحب...",
+    "sending": "جارٍ الإرسال...",
+    "validationWarning": "حسابك قيد المراجعة من قبل فريق CamionBack. ستتمكن من تقديم العروض بمجرد الموافقة على ملفك الشخصي."
   },
   "offerCard": {
     "transporter": "ناقل",
