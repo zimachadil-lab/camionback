@@ -18,16 +18,17 @@ The platform features a mobile-first, dark teal design with full French/Arabic b
 - ✅ Complete Profile (transporter signup): 100% translated with reactive Zod validation
 - ✅ New Request Form (client): 100% translated with reactive Zod validation
 - ✅ Client Dashboard: 100% translated - all tabs, dialogs, buttons, status badges, forms (edit request, report issue), offer cards, payment confirmations
-- ✅ Transporter Dashboard: 100% translated - all tabs, request cards, offer dialogs, date pickers, photo galleries, status indicators
+- ✅ Transporter Dashboard: 100% translated - all tabs, menu navigation, request cards (route, availability, description, photos, handling details, action buttons), offer dialogs, date pickers (with Arabic date-fns locale), photo galleries, status indicators
 - ✅ Shared Components: Category labels (furniture, moving, construction, goods, parcel, appliances, vehicle) with localized icons
 - ⚠️ Admin/Coordinator Dashboards: Partially translated (not priority for end-user experience)
 
 **Implementation Details:**
 - **Language Selector Component:** `client/src/components/ui/language-selector.tsx` integrated into Header with Languages icon button (test-id: `button-language-selector`)
-- **Translation Files:** `public/locales/fr/translation.json` and `public/locales/ar/translation.json` (400+ keys organized by feature modules: clientDashboard.*, transporterDashboard.*, shared.*)
+- **Translation Files:** `public/locales/fr/translation.json` and `public/locales/ar/translation.json` (430+ keys organized by feature modules: clientDashboard.*, transporterDashboard.*, transporterCard.*, datePicker.*, photoGallery.*, shared.*)
 - **Reactive Validation:** Forms use `key={i18n.language}` to remount on language change, ensuring Zod validation messages update instantly
 - **Zod Schema Factories:** Helper functions like `createEditRequestSchema(t)` and `createReportSchema(t)` accept translation function for reactive validation messages
 - **Category Config Helper:** Shared `getCategoryConfig(goodsType, t)` in `client/src/lib/goods-category-config.ts` maps FR/AR strings to stable keys (furniture, moving, etc.) and returns localized labels via translation keys
+- **Date-fns Locale Support:** All date formatting uses dynamic locale selection (`i18n.language === 'ar' ? ar : fr`) in RequestCard and DatePickerDialog, displaying Arabic month/day names when Arabic is selected
 - **RTL Support:** Automatically applied via `document.documentElement.dir = 'rtl'` when Arabic selected, with proper bidirectional layout handling
 - **API Persistence:** Language preference updates sent to backend via `PATCH /api/users/:userId/language` with `{ preferredLanguage: 'fr' | 'ar' }`
 
