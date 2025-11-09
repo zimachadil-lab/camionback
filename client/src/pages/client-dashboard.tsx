@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star, CreditCard, Upload, Eye, Edit, MessageSquare, Calendar, Flag, Truck, Users, Zap, X, ChevronLeft, ChevronRight, Target, ArrowDown, Camera, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, DollarSign, ImageIcon } from "lucide-react";
@@ -1681,6 +1682,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
 export default function ClientDashboard() {
   const [, setLocation] = useLocation();
   const { user, loading: authLoading, logout } = useAuth();
+  const { t } = useTranslation();
   const [showNewRequest, setShowNewRequest] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [selectedTransporter, setSelectedTransporter] = useState<any>(null);
@@ -2170,8 +2172,8 @@ export default function ClientDashboard() {
       
       <div className="container mx-auto p-4 md:p-6 max-w-7xl space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Mes demandes</h1>
-          <p className="text-muted-foreground mt-1">Gérez vos demandes de transport</p>
+          <h1 className="text-3xl font-bold">{t('clientDashboard.myRequests')}</h1>
+          <p className="text-muted-foreground mt-1">{t('clientDashboard.manageRequests')}</p>
         </div>
 
         {showNewRequest ? (
@@ -2184,14 +2186,14 @@ export default function ClientDashboard() {
             <TabsList className="grid w-full max-w-3xl grid-cols-3">
               <TabsTrigger value="active" data-testid="tab-active">
                 <Package className="mr-2 h-4 w-4" />
-                Actives
+                {t('clientDashboard.tabs.active')}
               </TabsTrigger>
               <TabsTrigger value="to-pay" data-testid="tab-to-pay">
                 <CreditCard className="mr-2 h-4 w-4" />
-                À payer ({paymentPendingRequests.length})
+                {t('clientDashboard.tabs.toPay')} ({paymentPendingRequests.length})
               </TabsTrigger>
               <TabsTrigger value="completed" data-testid="tab-completed">
-                Terminées
+                {t('clientDashboard.tabs.completed')}
               </TabsTrigger>
             </TabsList>
 

@@ -11,7 +11,21 @@ Preferred communication style: Simple, everyday language.
 ### UI/UX Decisions
 The platform features a mobile-first, dark teal design with full French/Arabic bilingual support, built with React 18, TypeScript, Vite, Wouter, TanStack Query, and Tailwind CSS. UI components leverage Shadcn/ui for aesthetics and Radix UI for accessibility, with React Hook Form and Zod for form management. Key UI elements include responsive role-based navigation, an animated truck header, Instagram-style stories, a modern role selection page, and an interactive calendar for transporters. PWA enhancements provide offline support, advanced caching, and native-like push notifications. Recent UI/UX improvements include a redesigned transporter request card with a strong visual hierarchy, client dashboard enhancements with a premium blue "Offres reçues" button, and a restructured, card-based admin dashboard navigation.
 
-**Bilingual Support (FR/AR):** The platform now features complete French/Arabic bilingualism with react-i18next, providing a seamless language-switching experience. Translation resources are bundled directly into the application via JSON imports (no HTTP backend) ensuring instant loading. A prominent language selector is integrated into authentication pages, allowing users to switch between French and Arabic. The platform automatically applies RTL (right-to-left) layout when Arabic is selected, with document.dir and document.lang attributes updated dynamically. User language preferences are persisted in the database (preferredLanguage field) and localStorage for consistent cross-session experience. All authentication flows (PhoneAuth and SelectRole) are fully translated with professional Arabic localizations.
+**Bilingual Support (FR/AR):** The platform features reactive French/Arabic bilingualism with react-i18next. Translation resources are bundled directly via JSON imports ensuring instant loading. A language selector is integrated into authentication pages, allowing users to switch between French and Arabic. The platform automatically applies RTL (right-to-left) layout when Arabic is selected, with document.dir and document.lang attributes updated dynamically. User language preferences are persisted in the database (preferredLanguage field) and localStorage for consistent cross-session experience. 
+
+**Translation Coverage:**
+- ✅ Authentication flows (PhoneAuth, SelectRole): 100% translated
+- ✅ Complete Profile (transporter signup): 100% translated with reactive Zod validation
+- ✅ New Request Form (client): 100% translated with reactive Zod validation
+- ⚠️ Client Dashboard: Header and tabs translated (~15% coverage)
+- ❌ Transporter Dashboard: Not yet translated
+
+**Implementation Details:**
+- Forms use `key={i18n.language}` to remount on language change, ensuring Zod validation messages update reactively
+- Translation files: `public/locales/fr/translation.json` and `public/locales/ar/translation.json` (190+ lines each)
+- RTL layout auto-applied via `document.documentElement.dir` when Arabic selected
+
+**Remaining Work:** Complete translation of dashboard dialogs, action buttons, status badges, toast messages, and nested components (OfferCard, RequestWithOffers, chat flows). Transporter dashboard components need full translation implementation.
 
 ### Technical Implementations
 The backend is an Express.js and TypeScript application providing RESTful JSON APIs. Authentication is phone number-based with 6-digit PIN verification and bcrypt hashing. User roles (Client, Transporter, Admin, Coordinator) define access control. Real-time chat uses WebSockets, and an in-app notification system provides alerts. PostgreSQL (Neon Serverless) with Drizzle ORM is used for data storage.
