@@ -2,8 +2,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Package, Search, Shield, CreditCard } from "lucide-react";
 import { Link } from "wouter";
+import { useTranslation } from "react-i18next";
 
 export default function HowItWorksClient() {
+  const { t } = useTranslation();
+  
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-3xl mx-auto">
@@ -14,8 +17,8 @@ export default function HowItWorksClient() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold">Comment ça marche</h1>
-            <p className="text-sm text-muted-foreground">Guide pour les clients</p>
+            <h1 className="text-2xl font-bold">{t('howItWorks.client.title')}</h1>
+            <p className="text-sm text-muted-foreground">{t('howItWorks.client.subtitle')}</p>
           </div>
         </div>
 
@@ -27,23 +30,21 @@ export default function HowItWorksClient() {
                   <Package className="h-10 w-10 text-primary-foreground" />
                 </div>
               </div>
-              <CardTitle className="text-2xl">CamionBack</CardTitle>
+              <CardTitle className="text-2xl">{t('howItWorks.client.brandTitle')}</CardTitle>
               <CardDescription className="text-base">
-                Votre plateforme de transport au Maroc
+                {t('howItWorks.client.brandDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
               <div>
-                <h2 className="text-lg font-semibold mb-3">Qu'est-ce que CamionBack ?</h2>
+                <h2 className="text-lg font-semibold mb-3">{t('howItWorks.client.whatIs')}</h2>
                 <p className="text-muted-foreground leading-relaxed">
-                  CamionBack est une plateforme marocaine qui met en relation les particuliers 
-                  et entreprises avec des transporteurs disponibles pour des trajets inter-villes. 
-                  Trouvez facilement un transporteur fiable pour vos marchandises en quelques clics.
+                  {t('howItWorks.client.whatIsDescription')}
                 </p>
               </div>
 
               <div className="space-y-4">
-                <h2 className="text-lg font-semibold">Comment ça fonctionne ?</h2>
+                <h2 className="text-lg font-semibold">{t('howItWorks.client.howItWorksTitle')}</h2>
                 
                 <div className="flex gap-4">
                   <div className="flex-shrink-0">
@@ -52,10 +53,9 @@ export default function HowItWorksClient() {
                     </div>
                   </div>
                   <div>
-                    <h3 className="font-medium mb-1">Publiez votre commande</h3>
+                    <h3 className="font-medium mb-1">{t('howItWorks.client.step1Title')}</h3>
                     <p className="text-sm text-muted-foreground">
-                      Décrivez votre besoin : ville de départ, destination, type de marchandise, 
-                      date souhaitée et budget approximatif.
+                      {t('howItWorks.client.step1Description')}
                     </p>
                   </div>
                 </div>
@@ -67,10 +67,9 @@ export default function HowItWorksClient() {
                     </div>
                   </div>
                   <div>
-                    <h3 className="font-medium mb-1">Recevez plusieurs offres</h3>
+                    <h3 className="font-medium mb-1">{t('howItWorks.client.step2Title')}</h3>
                     <p className="text-sm text-muted-foreground">
-                      Les transporteurs disponibles vous envoient leurs propositions avec 
-                      leurs prix et dates de prise en charge.
+                      {t('howItWorks.client.step2Description')}
                     </p>
                   </div>
                 </div>
@@ -82,10 +81,9 @@ export default function HowItWorksClient() {
                     </div>
                   </div>
                   <div>
-                    <h3 className="font-medium mb-1">Comparez et choisissez</h3>
+                    <h3 className="font-medium mb-1">{t('howItWorks.client.step3Title')}</h3>
                     <p className="text-sm text-muted-foreground">
-                      Consultez les profils, notes et avis des transporteurs. 
-                      Sélectionnez celui qui correspond le mieux à vos besoins.
+                      {t('howItWorks.client.step3Description')}
                     </p>
                   </div>
                 </div>
@@ -97,23 +95,22 @@ export default function HowItWorksClient() {
                     </div>
                   </div>
                   <div>
-                    <h3 className="font-medium mb-1">Paiement sécurisé</h3>
+                    <h3 className="font-medium mb-1">{t('howItWorks.client.step4Title')}</h3>
                     <p className="text-sm text-muted-foreground">
-                      Le paiement n'est libéré qu'après la confirmation de la livraison. 
-                      Votre satisfaction et sécurité sont garanties.
+                      {t('howItWorks.client.step4Description')}
                     </p>
                   </div>
                 </div>
               </div>
 
               <div className="bg-muted/50 p-4 rounded-lg">
-                <h3 className="font-medium text-sm mb-2">✨ Avantages</h3>
+                <h3 className="font-medium text-sm mb-2">✨ {t('howItWorks.client.advantagesTitle')}</h3>
                 <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-                  <li>Comparaison de prix en temps réel</li>
-                  <li>Transporteurs vérifiés et notés</li>
-                  <li>Communication directe via chat intégré</li>
-                  <li>Paiement sécurisé</li>
-                  <li>Support client disponible</li>
+                  <li>{t('howItWorks.client.advantage1')}</li>
+                  <li>{t('howItWorks.client.advantage2')}</li>
+                  <li>{t('howItWorks.client.advantage3')}</li>
+                  <li>{t('howItWorks.client.advantage4')}</li>
+                  <li>{t('howItWorks.client.advantage5')}</li>
                 </ul>
               </div>
             </CardContent>
@@ -121,7 +118,7 @@ export default function HowItWorksClient() {
 
           <Link href="/client-dashboard">
             <Button className="w-full" size="lg" data-testid="button-back-dashboard">
-              Retour au tableau de bord
+              {t('howItWorks.client.backToDashboard')}
             </Button>
           </Link>
         </div>

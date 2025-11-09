@@ -2,8 +2,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, TruckIcon, Bell, MessageSquare, DollarSign } from "lucide-react";
 import { Link } from "wouter";
+import { useTranslation } from "react-i18next";
 
 export default function HowItWorksTransporter() {
+  const { t } = useTranslation();
+  
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-3xl mx-auto">
@@ -14,8 +17,8 @@ export default function HowItWorksTransporter() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold">Comment ça marche</h1>
-            <p className="text-sm text-muted-foreground">Guide pour les transporteurs</p>
+            <h1 className="text-2xl font-bold">{t('howItWorks.transporter.title')}</h1>
+            <p className="text-sm text-muted-foreground">{t('howItWorks.transporter.subtitle')}</p>
           </div>
         </div>
 
@@ -27,23 +30,21 @@ export default function HowItWorksTransporter() {
                   <TruckIcon className="h-10 w-10 text-primary-foreground" />
                 </div>
               </div>
-              <CardTitle className="text-2xl">CamionBack</CardTitle>
+              <CardTitle className="text-2xl">{t('howItWorks.transporter.brandTitle')}</CardTitle>
               <CardDescription className="text-base">
-                Rentabilisez vos trajets au Maroc
+                {t('howItWorks.transporter.brandDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
               <div>
-                <h2 className="text-lg font-semibold mb-3">Qu'est-ce que CamionBack ?</h2>
+                <h2 className="text-lg font-semibold mb-3">{t('howItWorks.transporter.whatIs')}</h2>
                 <p className="text-muted-foreground leading-relaxed">
-                  CamionBack aide les transporteurs à rentabiliser leurs trajets en trouvant 
-                  des chargements au retour. Plus besoin de rouler à vide ! Augmentez votre 
-                  chiffre d'affaires en optimisant chaque trajet.
+                  {t('howItWorks.transporter.whatIsDescription')}
                 </p>
               </div>
 
               <div className="space-y-4">
-                <h2 className="text-lg font-semibold">Comment ça fonctionne ?</h2>
+                <h2 className="text-lg font-semibold">{t('howItWorks.transporter.howItWorksTitle')}</h2>
                 
                 <div className="flex gap-4">
                   <div className="flex-shrink-0">
@@ -52,10 +53,9 @@ export default function HowItWorksTransporter() {
                     </div>
                   </div>
                   <div>
-                    <h3 className="font-medium mb-1">Recevez des demandes</h3>
+                    <h3 className="font-medium mb-1">{t('howItWorks.transporter.step1Title')}</h3>
                     <p className="text-sm text-muted-foreground">
-                      Consultez les demandes de transport dans les villes qui vous intéressent. 
-                      Filtrez par trajet et date selon vos disponibilités.
+                      {t('howItWorks.transporter.step1Description')}
                     </p>
                   </div>
                 </div>
@@ -67,10 +67,9 @@ export default function HowItWorksTransporter() {
                     </div>
                   </div>
                   <div>
-                    <h3 className="font-medium mb-1">Envoyez vos propositions</h3>
+                    <h3 className="font-medium mb-1">{t('howItWorks.transporter.step2Title')}</h3>
                     <p className="text-sm text-muted-foreground">
-                      Proposez votre prix, date de prise en charge et type de chargement 
-                      (retour ou groupage). Soyez compétitif pour augmenter vos chances.
+                      {t('howItWorks.transporter.step2Description')}
                     </p>
                   </div>
                 </div>
@@ -82,10 +81,9 @@ export default function HowItWorksTransporter() {
                     </div>
                   </div>
                   <div>
-                    <h3 className="font-medium mb-1">Communiquez facilement</h3>
+                    <h3 className="font-medium mb-1">{t('howItWorks.transporter.step3Title')}</h3>
                     <p className="text-sm text-muted-foreground">
-                      Discutez directement avec les clients via le chat intégré. 
-                      Précisez les détails et confirmez les arrangements.
+                      {t('howItWorks.transporter.step3Description')}
                     </p>
                   </div>
                 </div>
@@ -97,24 +95,23 @@ export default function HowItWorksTransporter() {
                     </div>
                   </div>
                   <div>
-                    <h3 className="font-medium mb-1">Augmentez vos revenus</h3>
+                    <h3 className="font-medium mb-1">{t('howItWorks.transporter.step4Title')}</h3>
                     <p className="text-sm text-muted-foreground">
-                      Évitez les trajets à vide, optimisez votre planning et 
-                      augmentez votre chiffre d'affaires mensuel.
+                      {t('howItWorks.transporter.step4Description')}
                     </p>
                   </div>
                 </div>
               </div>
 
               <div className="bg-muted/50 p-4 rounded-lg">
-                <h3 className="font-medium text-sm mb-2">✨ Avantages</h3>
+                <h3 className="font-medium text-sm mb-2">✨ {t('howItWorks.transporter.advantagesTitle')}</h3>
                 <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-                  <li>Accès à de nombreuses demandes de transport</li>
-                  <li>Vous fixez vos propres prix</li>
-                  <li>Communication directe avec les clients</li>
-                  <li>Planification facilitée de vos trajets</li>
-                  <li>Facturation simplifiée</li>
-                  <li>Système de notation pour construire votre réputation</li>
+                  <li>{t('howItWorks.transporter.advantage1')}</li>
+                  <li>{t('howItWorks.transporter.advantage2')}</li>
+                  <li>{t('howItWorks.transporter.advantage3')}</li>
+                  <li>{t('howItWorks.transporter.advantage4')}</li>
+                  <li>{t('howItWorks.transporter.advantage5')}</li>
+                  <li>{t('howItWorks.transporter.advantage6')}</li>
                 </ul>
               </div>
             </CardContent>
@@ -122,7 +119,7 @@ export default function HowItWorksTransporter() {
 
           <Link href="/transporter-dashboard">
             <Button className="w-full" size="lg" data-testid="button-back-dashboard">
-              Retour au tableau de bord
+              {t('howItWorks.transporter.backToDashboard')}
             </Button>
           </Link>
         </div>
