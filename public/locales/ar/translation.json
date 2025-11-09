@@ -148,6 +148,9 @@
   "clientDashboard": {
     "myRequests": "طلباتي",
     "manageRequests": "إدارة طلبات النقل الخاصة بك",
+    "newRequest": {
+      "title": "طلب نقل جديد"
+    },
     "tabs": {
       "active": "نشطة",
       "toPay": "للدفع",

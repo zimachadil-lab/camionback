@@ -148,6 +148,9 @@
   "clientDashboard": {
     "myRequests": "Mes demandes",
     "manageRequests": "Gérez vos demandes de transport",
+    "newRequest": {
+      "title": "Nouvelle demande de transport"
+    },
     "tabs": {
       "active": "Actives",
       "toPay": "À payer",
