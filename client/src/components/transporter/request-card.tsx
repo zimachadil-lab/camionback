@@ -127,7 +127,7 @@ export function RequestCard({
 
   return (
     <>
-    <Card className={`overflow-hidden hover-elevate border-2 ${categoryConfig.borderColor}`}>
+    <Card dir={i18n.dir()} className={`overflow-hidden hover-elevate border-2 ${categoryConfig.borderColor}`}>
       {/* En-tête coloré avec icône de catégorie */}
       <div className={`${categoryConfig.bgColor} p-3 flex items-center justify-between`}>
         <div className="flex items-center gap-2">
