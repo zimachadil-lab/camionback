@@ -152,7 +152,7 @@ export function PhoneAuth() {
         <Card className="w-full">
         <CardHeader className="text-center space-y-3 pb-4">
           {/* Animation des camions - Version améliorée et dynamique */}
-          <div className="relative mb-4" style={{ height: '100px' }}>
+          <div className="relative mb-4" style={{ height: '100px', overflow: 'hidden' }}>
             <style dangerouslySetInnerHTML={{ __html: `
               @keyframes truckDrive {
                 0% { 
@@ -245,9 +245,9 @@ export function PhoneAuth() {
               }
             `}} />
             
-            <div className="truck-animation-wrapper">
+            <div className="truck-animation-wrapper" style={{ overflow: 'hidden', position: 'relative', height: '100%' }}>
               {/* Route animée en arrière-plan */}
-              <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, transform: 'translateY(-50%)', zIndex: 0 }}>
+              <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, transform: 'translateY(-50%)', zIndex: 0, overflow: 'hidden' }}>
                 <svg width="100%" height="60" style={{ opacity: 0.2 }}>
                   <rect className="road-bg" width="100%" height="60" fill="#1CA6A6" rx="4" />
                   <line className="road-line" x1="0" y1="20" x2="100%" y2="20" stroke="#CDE8E8" strokeWidth="2" strokeDasharray="10 10" />
@@ -256,14 +256,14 @@ export function PhoneAuth() {
               </div>
               
               {/* Conteneur des camions */}
-              <div className={`truck-container-new ${isPaused ? 'paused' : ''}`} style={{ position: 'relative', height: '75px', zIndex: 1 }}>
+              <div className={`truck-container-new ${isPaused ? 'paused' : ''}`} style={{ position: 'relative', height: '75px', zIndex: 1, overflow: 'hidden' }}>
                 {/* Camion turquoise - Allant de gauche à droite */}
-                <div className="truck-top-new" style={{ position: 'absolute', top: '8px', left: 0, right: 0 }}>
+                <div className="truck-top-new" style={{ position: 'absolute', top: '8px', left: 0, right: 0, overflow: 'visible' }}>
                   <Truck className="w-12 h-12 md:w-14 md:h-14 text-[#1CA6A6]" />
                 </div>
                 
                 {/* Camion vert - Retour de droite à gauche */}
-                <div className="truck-bottom-new" style={{ position: 'absolute', top: '40px', left: 0, right: 0 }}>
+                <div className="truck-bottom-new" style={{ position: 'absolute', top: '40px', left: 0, right: 0, overflow: 'visible' }}>
                   <Truck className="w-11 h-11 md:w-13 md:h-13 text-[#2BB673]" />
                 </div>
               </div>
