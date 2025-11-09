@@ -155,13 +155,13 @@ export function RequestCard({
               data-testid={`badge-available-${request.id}`}
             >
               <span className="relative flex items-center gap-1.5">
-                <span className="absolute ltr:-left-1 rtl:-right-1 h-2 w-2 rounded-full bg-white opacity-75 animate-ping"></span>
+                <span className="absolute -start-1 h-2 w-2 rounded-full bg-white opacity-75 animate-ping"></span>
                 <span className="relative h-2 w-2 rounded-full bg-white"></span>
                 {t('requestCard.available')}
               </span>
             </Badge>
           </div>
-          <div className="flex items-center gap-2 text-base font-semibold ltr:pl-6 rtl:pr-6">
+          <div className="flex items-center gap-2 text-base font-semibold ps-6">
             <span className="truncate">{request.fromCity}</span>
             <span className="text-[#17cfcf] rtl:rotate-180">→</span>
             <span className="truncate">{request.toCity}</span>
@@ -174,7 +174,7 @@ export function RequestCard({
             <Calendar className="w-4 h-4" />
             <span className="font-medium">{t('requestCard.availability')}</span>
           </div>
-          <div className="ltr:pl-6 rtl:pr-6 font-semibold">
+          <div className="ps-6 font-semibold">
             {format(dateTime, "dd MMMM yyyy", { locale: dateLocale })}
           </div>
         </div>
@@ -186,10 +186,10 @@ export function RequestCard({
               <FileText className="w-4 h-4" />
               <span className="font-medium">{t('requestCard.description')}</span>
             </div>
-            <p className={`text-sm ltr:pl-6 rtl:pr-6 ${showFullDescription ? '' : 'line-clamp-2'}`}>
+            <p className={`text-sm ps-6 ${showFullDescription ? '' : 'line-clamp-2'}`}>
               {request.description}
             </p>
-            <div className="flex items-center gap-3 ltr:pl-6 rtl:pr-6">
+            <div className="flex items-center gap-3 ps-6">
               {request.description.length > 100 && (
                 <button
                   onClick={() => setShowFullDescription(!showFullDescription)}
@@ -219,7 +219,7 @@ export function RequestCard({
         {request.estimatedWeight && (
           <div className="flex items-center gap-2 pt-2 border-t">
             <Badge variant="outline" className="text-xs">
-              <Package className="w-3 h-3 ltr:mr-1 rtl:ml-1" />
+              <Package className="w-3 h-3 me-1" />
               {request.estimatedWeight}
             </Badge>
           </div>
@@ -232,7 +232,7 @@ export function RequestCard({
               <span>🏋️</span>
               <span>{t('requestCard.handlingYes')}</span>
             </div>
-            <div className="grid grid-cols-2 gap-4 ltr:pl-6 rtl:pr-6">
+            <div className="grid grid-cols-2 gap-4 ps-6">
               {/* Départ */}
               <div className="space-y-1">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -286,22 +286,22 @@ export function RequestCard({
 
         {/* Prix - Zone compacte */}
         {request.transporterPrice && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-[#00ff88]/10 via-[#00ff88]/5 to-transparent ltr:border-l-4 rtl:border-r-4 border-[#00ff88]">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-[#00ff88]/10 via-[#00ff88]/5 to-transparent border-s-4 border-[#00ff88]">
             <div className="w-7 h-7 rounded-full bg-[#00ff88]/20 flex items-center justify-center flex-shrink-0">
               <DollarSign className="w-4 h-4 text-[#00ff88]" />
             </div>
             <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">{t('requestCard.fixedAmount')}</span>
-            <span className="text-lg font-bold text-[#00ff88] ltr:ml-auto rtl:mr-auto">{Math.floor(request.transporterPrice).toLocaleString()} Dhs</span>
+            <span className="text-lg font-bold text-[#00ff88] ms-auto">{Math.floor(request.transporterPrice).toLocaleString()} Dhs</span>
           </div>
         )}
 
         {request.budget && !request.transporterPrice && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-[#00ff88]/10 via-[#00ff88]/5 to-transparent ltr:border-l-4 rtl:border-r-4 border-[#00ff88]">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-[#00ff88]/10 via-[#00ff88]/5 to-transparent border-s-4 border-[#00ff88]">
             <div className="w-7 h-7 rounded-full bg-[#00ff88]/20 flex items-center justify-center flex-shrink-0">
               <DollarSign className="w-4 h-4 text-[#00ff88]" />
             </div>
             <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">{t('requestCard.budgetLabel')}</span>
-            <span className="text-lg font-bold text-[#00ff88] ltr:ml-auto rtl:mr-auto">{request.budget.replace('.00', '').replace('MAD', 'Dhs')}</span>
+            <span className="text-lg font-bold text-[#00ff88] ms-auto">{request.budget.replace('.00', '').replace('MAD', 'Dhs')}</span>
           </div>
         )}
 
@@ -326,7 +326,7 @@ export function RequestCard({
                 className="col-span-2 h-12 font-semibold bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] hover:from-[#17cfcf]/90 hover:to-[#13b3b3]/90 text-white border-0 shadow-md hover:shadow-lg transition-shadow"
                 data-testid={`button-withdraw-interest-${request.id}`}
               >
-                <ThumbsUp className="w-5 h-5 ltr:mr-2 rtl:ml-2" />
+                <ThumbsUp className="w-5 h-5 me-2" />
                 {isPendingInterest ? t('requestCard.withdrawing') : t('requestCard.interested_action')}
               </Button>
             ) : (
@@ -338,7 +338,7 @@ export function RequestCard({
                     className="h-12 font-medium bg-muted/50 hover:bg-muted border-2 border-border hover:border-muted-foreground/30 transition-all"
                     data-testid={`button-not-available-${request.id}`}
                   >
-                    <ThumbsDown className="w-5 h-5 ltr:mr-2 rtl:ml-2" />
+                    <ThumbsDown className="w-5 h-5 me-2" />
                     <span>{t('requestCard.notAvailable')}</span>
                   </Button>
                 )}
@@ -348,7 +348,7 @@ export function RequestCard({
                   className={`h-12 font-semibold bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] hover:from-[#17cfcf]/90 hover:to-[#13b3b3]/90 text-white border-0 shadow-md hover:shadow-lg transition-shadow ${!onDecline ? 'col-span-2' : ''}`}
                   data-testid={`button-express-interest-${request.id}`}
                 >
-                  <ThumbsUp className="w-5 h-5 ltr:mr-2 rtl:ml-2" />
+                  <ThumbsUp className="w-5 h-5 me-2" />
                   <span>{isPendingInterest ? t('requestCard.sending') : t('requestCard.interested_action')}</span>
                 </Button>
               </>
@@ -362,7 +362,7 @@ export function RequestCard({
                   className="h-12 font-medium bg-muted/50 hover:bg-muted border-2 border-border hover:border-muted-foreground/30"
                   data-testid={`button-decline-${request.id}`}
                 >
-                  <X className="w-5 h-5 ltr:mr-2 rtl:ml-2" />
+                  <X className="w-5 h-5 me-2" />
                   Décliner
                 </Button>
               )}

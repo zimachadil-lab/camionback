@@ -58,7 +58,7 @@ export function PhotoGalleryDialog({ open, onClose, photos, referenceId }: Photo
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute ltr:left-1 rtl:right-1 sm:ltr:left-2 sm:rtl:right-2 top-1/2 -translate-y-1/2 bg-background/90 hover:bg-background h-8 w-8 sm:h-10 sm:w-10"
+                  className="absolute start-1 sm:start-2 top-1/2 -translate-y-1/2 bg-background/90 hover:bg-background h-8 w-8 sm:h-10 sm:w-10"
                   onClick={handlePrevious}
                   data-testid="button-previous-photo"
                 >
@@ -68,7 +68,7 @@ export function PhotoGalleryDialog({ open, onClose, photos, referenceId }: Photo
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute ltr:right-1 rtl:left-1 sm:ltr:right-2 sm:rtl:left-2 top-1/2 -translate-y-1/2 bg-background/90 hover:bg-background h-8 w-8 sm:h-10 sm:w-10"
+                  className="absolute end-1 sm:end-2 top-1/2 -translate-y-1/2 bg-background/90 hover:bg-background h-8 w-8 sm:h-10 sm:w-10"
                   onClick={handleNext}
                   data-testid="button-next-photo"
                 >
@@ -112,7 +112,7 @@ export function PhotoGalleryDialog({ open, onClose, photos, referenceId }: Photo
           <Button
             variant="ghost"
             size="icon"
-            className="absolute top-4 ltr:right-4 rtl:left-4 text-white hover:bg-white/20 h-10 w-10"
+            className="absolute top-4 end-4 text-white hover:bg-white/20 h-10 w-10"
             onClick={handleCloseFullscreen}
             data-testid="button-close-fullscreen"
           >
@@ -124,7 +124,7 @@ export function PhotoGalleryDialog({ open, onClose, photos, referenceId }: Photo
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute ltr:left-4 rtl:right-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 h-12 w-12"
+                className="absolute start-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 h-12 w-12"
                 onClick={(e) => {
                   e.stopPropagation();
                   handlePrevious();
@@ -137,7 +137,7 @@ export function PhotoGalleryDialog({ open, onClose, photos, referenceId }: Photo
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute ltr:right-4 rtl:left-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 h-12 w-12"
+                className="absolute end-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 h-12 w-12"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleNext();

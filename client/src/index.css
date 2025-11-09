@@ -263,6 +263,41 @@
  * need to be distinguished from eachother visually.
  */
 @layer utilities {
+  /* ── RTL Support with CSS Logical Properties ────────────────────────────────────────────── */
+  /* Padding */
+  .ps-1 { padding-inline-start: 0.25rem; }
+  .ps-2 { padding-inline-start: 0.5rem; }
+  .ps-3 { padding-inline-start: 0.75rem; }
+  .ps-4 { padding-inline-start: 1rem; }
+  .ps-6 { padding-inline-start: 1.5rem; }
+  .ps-8 { padding-inline-start: 2rem; }
+  
+  .pe-1 { padding-inline-end: 0.25rem; }
+  .pe-2 { padding-inline-end: 0.5rem; }
+  .pe-3 { padding-inline-end: 0.75rem; }
+  .pe-4 { padding-inline-end: 1rem; }
+  .pe-6 { padding-inline-end: 1.5rem; }
+  .pe-8 { padding-inline-end: 2rem; }
+  
+  /* Margin */
+  .ms-auto { margin-inline-start: auto; }
+  .me-auto { margin-inline-end: auto; }
+  .ms-1 { margin-inline-start: 0.25rem; }
+  .ms-2 { margin-inline-start: 0.5rem; }
+  .me-1 { margin-inline-end: 0.25rem; }
+  .me-2 { margin-inline-end: 0.5rem; }
+  
+  /* Position */
+  .-start-1 { inset-inline-start: -0.25rem; }
+  .start-1 { inset-inline-start: 0.25rem; }
+  .start-2 { inset-inline-start: 0.5rem; }
+  .start-4 { inset-inline-start: 1rem; }
+  .end-1 { inset-inline-end: 0.25rem; }
+  .end-2 { inset-inline-end: 0.5rem; }
+  .end-4 { inset-inline-end: 1rem; }
+  
+  /* Border */
+  .border-s-4 { border-inline-start-width: 4px; border-inline-start-style: solid; }
 
   /* Hide ugly search cancel button in Chrome until we can style it properly */
   input[type="search"]::-webkit-search-cancel-button {

@@ -1,5 +1,4 @@
 import type { Config } from "tailwindcss";
-import plugin from "tailwindcss/plugin";
 
 export default {
   darkMode: ["class"],
@@ -106,10 +105,6 @@ export default {
   },
   plugins: [
     require("tailwindcss-animate"), 
-    require("@tailwindcss/typography"),
-    plugin(function({ addVariant }) {
-      addVariant('rtl', '[dir="rtl"] &');
-      addVariant('ltr', '[dir="ltr"] &');
-    })
+    require("@tailwindcss/typography")
   ],
 } satisfies Config;

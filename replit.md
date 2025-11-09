@@ -29,11 +29,13 @@ The platform features a mobile-first, dark teal design with full French/Arabic b
 - **Zod Schema Factories:** Helper functions like `createEditRequestSchema(t)` and `createReportSchema(t)` accept translation function for reactive validation messages
 - **Category Config Helper:** Shared `getCategoryConfig(goodsType, t)` in `client/src/lib/goods-category-config.ts` maps FR/AR strings to stable keys (furniture, moving, etc.) and returns localized labels via translation keys
 - **Date-fns Locale Support:** All date formatting uses dynamic locale selection (`i18n.language === 'ar' ? ar : fr`) in RequestCard and DatePickerDialog, displaying Arabic month/day names when Arabic is selected
-- **RTL Support:** Comprehensive RTL implementation with Tailwind logical utilities throughout transporter components. When Arabic is selected, `document.documentElement.dir = 'rtl'` is applied automatically with proper bidirectional layout:
+- **RTL Support:** ✅ Comprehensive RTL implementation using **CSS logical properties** (native CSS feature) throughout transporter components. When Arabic is selected, `document.documentElement.dir = 'rtl'` is applied automatically with proper bidirectional layout. **Validated via E2E testing** showing correct Arabic text alignment, reversed layout direction, and proper element positioning.
+  - **Implementation:** Custom utilities defined in `@layer utilities` in `client/src/index.css` (lines 269-303) use CSS logical properties (`padding-inline-start`, `margin-inline-start`, `border-inline-start`, `inset-inline-start/end`) that automatically adapt to document direction without JavaScript or Tailwind variants
   - **RequestCard:** Uses logical spacing (`ps-*`, `ms-*`, `me-*`, `border-s-*`) instead of directional (`pl-*`, `ml-*`, `mr-*`, `border-l-*`) for automatic RTL reversal
-  - **Directional Icons:** Route arrow (→) and navigation chevrons use `rtl:rotate-180` to flip orientation in RTL mode
-  - **PhotoGalleryDialog:** Navigation buttons positioned with `start-*`/`end-*` utilities, ensuring previous/next semantics adapt to document direction
+  - **Directional Icons:** Route arrow (→) and navigation chevrons use `rtl:rotate-180` to flip orientation in RTL mode; non-directional icons (ThumbsUp, ThumbsDown, X) remain upright
+  - **PhotoGalleryDialog:** Navigation buttons positioned with `start-*`/`end-*` utilities using `inset-inline-start/end`, ensuring previous/next semantics adapt to document direction
   - **Layout Reversal:** Price badges, handling grids, footer buttons, and all UI elements respect RTL flow without manual intervention
+  - **Technical Note:** CSS logical properties were chosen over Tailwind `ltr:/rtl:` variants because variant selectors (`[dir="rtl"] .rtl\:pl-6`) cannot match when `dir` is set on the same element. Logical properties work at the CSS level, making them more reliable and maintainable
 - **API Persistence:** Language preference updates sent to backend via `PATCH /api/users/:userId/language` with `{ preferredLanguage: 'fr' | 'ar' }`
 
 **Architecture Pattern:** Translation keys use dot notation (e.g., `clientDashboard.tabs.active`, `shared.goodsTypes.furniture`) for organized namespacing. Category matching uses stable English keys internally while displaying localized labels, ensuring Arabic support works correctly without hardcoded French string matching.
