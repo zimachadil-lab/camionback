@@ -612,7 +612,8 @@
     "interested_action": "Intéressé",
     "withdrawing": "Retrait...",
     "sending": "Envoi...",
-    "validationWarning": "Votre compte est en cours de validation par l'équipe CamionBack. Vous pourrez soumettre des offres dès que votre profil sera approuvé."
+    "validationWarning": "Votre compte est en cours de validation par l'équipe CamionBack. Vous pourrez soumettre des offres dès que votre profil sera approuvé.",
+    "cityOnlyNote": "Adresse exacte dévoilée après acceptation de l'offre"
   },
   "offerCard": {
     "transporter": "Transporteur",

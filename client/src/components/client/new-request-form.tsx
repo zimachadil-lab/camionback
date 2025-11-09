@@ -17,6 +17,7 @@ import { RecommendedTransportersDialog } from "./recommended-transporters-dialog
 import { useAuth } from "@/lib/auth-context";
 import { MetaPixelEvents } from "@/lib/meta-pixel";
 import { GooglePlacesAutocomplete } from "@/components/google-places-autocomplete";
+import { extractCityFromAddress } from "@shared/utils";
 
 // Schema will be created with translations in component
 const createRequestSchema = (t: (key: string) => string) => z.object({
@@ -226,9 +227,23 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
                       <GooglePlacesAutocomplete
                         value={field.value}
                         onChange={(address, placeDetails) => {
-                          field.onChange(address);
-                          if (placeDetails) {
-                            form.setValue('departureAddress', address);
+                          // Store full address (neighborhood + city) for client view
+                          form.setValue('departureAddress', address);
+                          
+                          // Extract city only from Google Places components for transporter view
+                          if (placeDetails && placeDetails.address_components) {
+                            let city = "";
+                            placeDetails.address_components.forEach((comp: any) => {
+                              if (comp.types.includes("locality")) {
+                                city = comp.long_name;
+                              } else if (!city && comp.types.includes("administrative_area_level_1")) {
+                                city = comp.long_name;
+                              }
+                            });
+                            field.onChange(city || address);
+                          } else {
+                            // Manual input fallback - use extractCityFromAddress
+                            field.onChange(extractCityFromAddress(address));
                           }
                         }}
                         placeholder={t('newRequestForm.fromCityPlaceholder')}
@@ -250,9 +265,23 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
                       <GooglePlacesAutocomplete
                         value={field.value}
                         onChange={(address, placeDetails) => {
-                          field.onChange(address);
-                          if (placeDetails) {
-                            form.setValue('arrivalAddress', address);
+                          // Store full address (neighborhood + city) for client view
+                          form.setValue('arrivalAddress', address);
+                          
+                          // Extract city only from Google Places components for transporter view
+                          if (placeDetails && placeDetails.address_components) {
+                            let city = "";
+                            placeDetails.address_components.forEach((comp: any) => {
+                              if (comp.types.includes("locality")) {
+                                city = comp.long_name;
+                              } else if (!city && comp.types.includes("administrative_area_level_1")) {
+                                city = comp.long_name;
+                              }
+                            });
+                            field.onChange(city || address);
+                          } else {
+                            // Manual input fallback - use extractCityFromAddress
+                            field.onChange(extractCityFromAddress(address));
                           }
                         }}
                         placeholder={t('newRequestForm.toCityPlaceholder')}

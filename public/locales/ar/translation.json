@@ -612,7 +612,8 @@
     "interested_action": "مهتم",
     "withdrawing": "جارٍ السحب...",
     "sending": "جارٍ الإرسال...",
-    "validationWarning": "حسابك قيد المراجعة من قبل فريق CamionBack. ستتمكن من تقديم العروض بمجرد الموافقة على ملفك الشخصي."
+    "validationWarning": "حسابك قيد المراجعة من قبل فريق CamionBack. ستتمكن من تقديم العروض بمجرد الموافقة على ملفك الشخصي.",
+    "cityOnlyNote": "العنوان الدقيق سيظهر بعد قبول العرض"
   },
   "offerCard": {
     "transporter": "ناقل",

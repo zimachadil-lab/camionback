@@ -166,6 +166,9 @@ export function RequestCard({
             <span className="text-[#17cfcf] rtl:rotate-180">→</span>
             <span className="truncate">{request.toCity}</span>
           </div>
+          <p className="text-xs text-muted-foreground ps-6 italic">
+            🔒 {t('requestCard.cityOnlyNote')}
+          </p>
         </div>
 
         {/* Date de mission */}

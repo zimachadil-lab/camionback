@@ -51,17 +51,16 @@ export const GooglePlacesAutocomplete = forwardRef<HTMLInputElement, GooglePlace
         defaultValue={value}
         data-testid={dataTestId}
         options={{
-          types: ["(cities)"],
+          types: ["geocode"],
           componentRestrictions: { country: "ma" },
           language: i18n.language === "ar" ? "ar" : "fr",
           fields: ["address_components", "formatted_address", "geometry", "name", "place_id"],
         }}
         onPlaceSelected={(place) => {
           if (place && place.address_components) {
-            // Extract city and neighborhood from place
+            // Extract structured address components
             let city = "";
             let neighborhood = "";
-            let fullAddress = place.formatted_address || "";
 
             place.address_components.forEach((component: google.maps.GeocoderAddressComponent) => {
               if (component.types.includes("locality")) {
@@ -69,17 +68,19 @@ export const GooglePlacesAutocomplete = forwardRef<HTMLInputElement, GooglePlace
               } else if (component.types.includes("sublocality") || component.types.includes("sublocality_level_1")) {
                 neighborhood = component.long_name;
               } else if (!city && component.types.includes("administrative_area_level_1")) {
+                // Fallback to province/region if no locality found
                 city = component.long_name;
               }
             });
 
-            // Create formatted address string with city and optional neighborhood
+            // Create formatted address with neighborhood and city
             const addressParts = [neighborhood, city].filter(Boolean);
             const formattedAddress = addressParts.join(", ");
 
-            onChange(formattedAddress || fullAddress, place);
+            // Pass both formatted address and place object with structured data
+            onChange(formattedAddress || city || place.formatted_address || "", place);
           } else {
-            onChange("");
+            onChange("", undefined);
           }
         }}
         onChange={(e) => {
