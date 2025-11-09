@@ -16,6 +16,7 @@ import { MessagesBadge } from "@/components/chat/messages-badge";
 import { ContactWhatsAppDialog } from "@/components/contact-whatsapp-dialog";
 import { CoordinatorNotifications } from "@/components/coordinator/coordinator-notifications";
 import { CoordinatorMessaging } from "@/components/coordinator/coordinator-messaging";
+import { LanguageSelector } from "@/components/ui/language-selector";
 
 interface HeaderProps {
   user: {
@@ -140,6 +141,8 @@ export function Header({ user, onNewRequest, onAnnounceReturn, onLogout }: Heade
               <MessagesBadge userId={user.id} />
             </>
           )}
+          
+          <LanguageSelector userId={user.id} />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
