@@ -45,10 +45,14 @@ import { CoordinatorManagement } from "@/components/admin/coordinator-management
 import { CoordinationStatusManagement } from "@/components/admin/coordination-status-management";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useForceFrenchLayout } from "@/hooks/use-force-french-layout";
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const { user, loading: authLoading, logout } = useAuth();
+
+  // Force French language and LTR direction for Admin dashboard
+  useForceFrenchLayout();
   const [activeSection, setActiveSection] = useState<string>("requests");
   const [addTransporterOpen, setAddTransporterOpen] = useState(false);
   const [addClientOpen, setAddClientOpen] = useState(false);

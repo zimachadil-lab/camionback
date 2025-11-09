@@ -24,6 +24,7 @@ import { ManualAssignmentDialog } from "@/components/coordinator/manual-assignme
 import { QualificationDialog } from "@/components/coordinator/qualification-dialog";
 import { format, isSameDay } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useForceFrenchLayout } from "@/hooks/use-force-french-layout";
 
 // Configuration des catégories avec icônes et couleurs (même logique que transporteur)
 const getCategoryConfig = (goodsType: string): { icon: LucideIcon; color: string; bgColor: string; borderColor: string; label: string } => {
@@ -673,6 +674,10 @@ function InterestedTransportersView({ request, onAssignTransporter, isPending }:
 export default function CoordinatorDashboard() {
   const [, setLocation] = useLocation();
   const { user, loading: authLoading, logout } = useAuth();
+
+  // Force French language and LTR direction for Coordinator dashboard
+  useForceFrenchLayout();
+
   const [selectedCity, setSelectedCity] = useState("Toutes les villes");
   const [selectedStatus, setSelectedStatus] = useState("Tous les statuts");
   const [searchQuery, setSearchQuery] = useState("");
