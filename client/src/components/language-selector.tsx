@@ -24,72 +24,50 @@ export function LanguageSelector({ variant = 'default' }: { variant?: 'default' 
           variant={i18n.language === 'fr' ? 'default' : 'ghost'}
           size="sm"
           onClick={() => changeLanguage('fr')}
-          className="h-8 px-3 text-xs font-medium"
           data-testid="button-lang-fr"
         >
-          <span className="text-base mr-1">🇫🇷</span>
           FR
         </Button>
         <Button
           variant={i18n.language === 'ar' ? 'default' : 'ghost'}
           size="sm"
           onClick={() => changeLanguage('ar')}
-          className="h-8 px-3 text-xs font-medium"
           data-testid="button-lang-ar"
         >
-          <span className="text-base mr-1">🇲🇦</span>
-          AR
+          ع
         </Button>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-md mx-auto" data-testid="language-selector">
-      <div className="mb-4 text-center">
-        <div className="inline-flex items-center gap-2 text-muted-foreground mb-2">
-          <Globe className="w-5 h-5" />
-          <p className="text-sm font-medium">
+    <div className="w-full max-w-xs mx-auto" data-testid="language-selector">
+      <div className="mb-3 text-center">
+        <div className="inline-flex items-center gap-2 text-muted-foreground">
+          <Globe className="w-4 h-4" />
+          <p className="text-xs font-medium">
             {i18n.language === 'fr' ? 'Choisissez votre langue' : 'اختر لغتك'}
           </p>
         </div>
       </div>
       
-      <div className="grid grid-cols-2 gap-4">
+      <div className="flex gap-2">
         <Button
           variant={i18n.language === 'fr' ? 'default' : 'outline'}
-          size="lg"
           onClick={() => changeLanguage('fr')}
-          className={`h-auto py-6 flex flex-col gap-3 transition-all ${
-            i18n.language === 'fr' 
-              ? 'bg-[#17cfcf] hover:bg-[#14b8b8] text-white shadow-lg scale-105' 
-              : 'hover:bg-accent'
-          }`}
+          className="flex-1"
           data-testid="button-select-french"
         >
-          <span className="text-4xl">🇫🇷</span>
-          <span className="text-lg font-semibold">Français</span>
-          {i18n.language === 'fr' && (
-            <span className="text-xs opacity-90">Langue sélectionnée</span>
-          )}
+          <span className="font-semibold">Français</span>
         </Button>
 
         <Button
           variant={i18n.language === 'ar' ? 'default' : 'outline'}
-          size="lg"
           onClick={() => changeLanguage('ar')}
-          className={`h-auto py-6 flex flex-col gap-3 transition-all ${
-            i18n.language === 'ar' 
-              ? 'bg-[#17cfcf] hover:bg-[#14b8b8] text-white shadow-lg scale-105' 
-              : 'hover:bg-accent'
-          }`}
+          className="flex-1"
           data-testid="button-select-arabic"
         >
-          <span className="text-4xl">🇲🇦</span>
-          <span className="text-lg font-semibold">العربية</span>
-          {i18n.language === 'ar' && (
-            <span className="text-xs opacity-90">اللغة المحددة</span>
-          )}
+          <span className="font-semibold">العربية</span>
         </Button>
       </div>
     </div>
