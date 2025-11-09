@@ -227,24 +227,11 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
                       <GooglePlacesAutocomplete
                         value={field.value}
                         onChange={(address, placeDetails) => {
-                          // Store full address (neighborhood + city) for client view
+                          // Store full address (neighborhood + city) for both client and transporter view
                           form.setValue('departureAddress', address);
                           
-                          // Extract city only from Google Places components for transporter view
-                          if (placeDetails && placeDetails.address_components) {
-                            let city = "";
-                            placeDetails.address_components.forEach((comp: any) => {
-                              if (comp.types.includes("locality")) {
-                                city = comp.long_name;
-                              } else if (!city && comp.types.includes("administrative_area_level_1")) {
-                                city = comp.long_name;
-                              }
-                            });
-                            field.onChange(city || address);
-                          } else {
-                            // Manual input fallback - use extractCityFromAddress
-                            field.onChange(extractCityFromAddress(address));
-                          }
+                          // Use full address (neighborhood + city) for transporter view too
+                          field.onChange(address);
                         }}
                         placeholder={t('newRequestForm.fromCityPlaceholder')}
                         dataTestId="input-from-city"
@@ -265,24 +252,11 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
                       <GooglePlacesAutocomplete
                         value={field.value}
                         onChange={(address, placeDetails) => {
-                          // Store full address (neighborhood + city) for client view
+                          // Store full address (neighborhood + city) for both client and transporter view
                           form.setValue('arrivalAddress', address);
                           
-                          // Extract city only from Google Places components for transporter view
-                          if (placeDetails && placeDetails.address_components) {
-                            let city = "";
-                            placeDetails.address_components.forEach((comp: any) => {
-                              if (comp.types.includes("locality")) {
-                                city = comp.long_name;
-                              } else if (!city && comp.types.includes("administrative_area_level_1")) {
-                                city = comp.long_name;
-                              }
-                            });
-                            field.onChange(city || address);
-                          } else {
-                            // Manual input fallback - use extractCityFromAddress
-                            field.onChange(extractCityFromAddress(address));
-                          }
+                          // Use full address (neighborhood + city) for transporter view too
+                          field.onChange(address);
                         }}
                         placeholder={t('newRequestForm.toCityPlaceholder')}
                         dataTestId="input-to-city"

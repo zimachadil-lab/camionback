@@ -340,7 +340,7 @@
     "fromCityPlaceholder": "Tapez votre ville ou quartier de départ",
     "toCity": "Ville d'arrivée",
     "toCityPlaceholder": "Tapez votre ville ou quartier d'arrivée",
-    "addressPrivacyNote": "🔒 Confidentialité : Votre adresse complète (quartier) sera affichée uniquement à vous. Les transporteurs ne verront que la ville pour préserver votre confidentialité jusqu'à l'acceptation de l'offre.",
+    "addressPrivacyNote": "🔒 Confidentialité : Les transporteurs verront le quartier et la ville (ex: Hay Riad, Rabat). L'adresse exacte avec numéro de rue sera révélée uniquement après acceptation de votre offre.",
     "goodsType": "Type de marchandise",
     "goodsTypePlaceholder": "Sélectionnez le type",
     "description": "Description",
@@ -616,7 +616,8 @@
     "withdrawing": "Retrait...",
     "sending": "Envoi...",
     "validationWarning": "Votre compte est en cours de validation par l'équipe CamionBack. Vous pourrez soumettre des offres dès que votre profil sera approuvé.",
-    "cityOnlyNote": "Adresse exacte dévoilée après acceptation de l'offre"
+    "cityOnlyNote": "Adresse exacte dévoilée après acceptation de l'offre",
+    "neighborhoodCityNote": "Quartier et ville affichés - L'adresse complète sera révélée après acceptation de votre offre"
   },
   "offerCard": {
     "transporter": "Transporteur",

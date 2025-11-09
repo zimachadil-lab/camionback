@@ -18,6 +18,8 @@ interface RequestCardProps {
     clientName?: string;
     fromCity: string;
     toCity: string;
+    departureAddress?: string;
+    arrivalAddress?: string;
     description: string;
     goodsType: string;
     estimatedWeight?: string;
@@ -162,12 +164,12 @@ export function RequestCard({
             </Badge>
           </div>
           <div className="flex items-center gap-2 text-base font-semibold ps-6">
-            <span className="truncate">{request.fromCity}</span>
+            <span className="truncate">{request.departureAddress || request.fromCity}</span>
             <span className="text-[#17cfcf] rtl:rotate-180">→</span>
-            <span className="truncate">{request.toCity}</span>
+            <span className="truncate">{request.arrivalAddress || request.toCity}</span>
           </div>
           <p className="text-xs text-muted-foreground ps-6 italic">
-            🔒 {t('requestCard.cityOnlyNote')}
+            🔒 {t('requestCard.neighborhoodCityNote')}
           </p>
         </div>
 
