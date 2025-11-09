@@ -490,13 +490,40 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
             </div>
           </div>
 
-          {/* Trajet et statut */}
+          {/* Trajet et statut - stacked layout */}
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-2 text-sm">
-              <span className="font-medium">{request.fromCity} → {request.toCity}</span>
+            <div className="flex items-center gap-2 flex-1">
+              {/* Departure location */}
+              <div className="flex-1 min-w-0">
+                <div className="bg-muted/50 rounded px-2 py-1">
+                  <div className="font-semibold text-xs leading-tight break-words">
+                    {request.departureAddress?.split(',')[0] || request.fromCity}
+                  </div>
+                  {request.departureAddress?.includes(',') && (
+                    <div className="text-[10px] text-muted-foreground leading-tight">
+                      {request.departureAddress.split(',').slice(1).join(',').trim()}
+                    </div>
+                  )}
+                </div>
+              </div>
+              {/* Arrow */}
+              <span className="text-[#17cfcf] text-sm flex-shrink-0">→</span>
+              {/* Arrival location */}
+              <div className="flex-1 min-w-0">
+                <div className="bg-muted/50 rounded px-2 py-1">
+                  <div className="font-semibold text-xs leading-tight break-words">
+                    {request.arrivalAddress?.split(',')[0] || request.toCity}
+                  </div>
+                  {request.arrivalAddress?.includes(',') && (
+                    <div className="text-[10px] text-muted-foreground leading-tight">
+                      {request.arrivalAddress.split(',').slice(1).join(',').trim()}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
             {isAccepted && (
-              <Badge variant="default" className="bg-green-600">
+              <Badge variant="default" className="bg-green-600 flex-shrink-0">
                 Acceptée
               </Badge>
             )}
