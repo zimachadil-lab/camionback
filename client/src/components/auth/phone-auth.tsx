@@ -142,17 +142,17 @@ export function PhoneAuth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-[#0A2540] to-[#163049]">
-      <div className="w-full max-w-md space-y-6">
+    <div className="min-h-screen flex items-center justify-center p-3 bg-gradient-to-b from-[#0A2540] to-[#163049]">
+      <div className="w-full max-w-md space-y-3">
         {/* Language Selector - Très visible en haut */}
-        <div className="bg-card/30 backdrop-blur-md rounded-lg p-4 border border-card/50">
+        <div className="bg-card/30 backdrop-blur-md rounded-lg p-3 border border-card/50">
           <LanguageSelector />
         </div>
 
         <Card className="w-full">
-        <CardHeader className="text-center space-y-3 pb-4">
+        <CardHeader className="text-center space-y-2 pb-3 pt-4">
           {/* Animation des camions - Version améliorée et dynamique */}
-          <div className="relative mb-4" style={{ height: '100px', overflow: 'hidden' }}>
+          <div className="relative mb-2" style={{ height: '70px', overflow: 'hidden' }}>
             <style dangerouslySetInnerHTML={{ __html: `
               @keyframes truckDrive {
                 0% { 
@@ -256,21 +256,21 @@ export function PhoneAuth() {
               </div>
               
               {/* Conteneur des camions */}
-              <div className={`truck-container-new ${isPaused ? 'paused' : ''}`} style={{ position: 'relative', height: '75px', zIndex: 1, overflow: 'hidden' }}>
+              <div className={`truck-container-new ${isPaused ? 'paused' : ''}`} style={{ position: 'relative', height: '70px', zIndex: 1, overflow: 'hidden' }}>
                 {/* Camion turquoise - Allant de gauche à droite */}
-                <div className="truck-top-new" style={{ position: 'absolute', top: '8px', left: 0, right: 0, overflow: 'visible' }}>
-                  <Truck className="w-12 h-12 md:w-14 md:h-14 text-[#1CA6A6]" />
+                <div className="truck-top-new" style={{ position: 'absolute', top: '5px', left: 0, right: 0, overflow: 'visible' }}>
+                  <Truck className="w-11 h-11 md:w-12 md:h-12 text-[#1CA6A6]" />
                 </div>
                 
                 {/* Camion vert - Retour de droite à gauche */}
-                <div className="truck-bottom-new" style={{ position: 'absolute', top: '40px', left: 0, right: 0, overflow: 'visible' }}>
-                  <Truck className="w-11 h-11 md:w-13 md:h-13 text-[#2BB673]" />
+                <div className="truck-bottom-new" style={{ position: 'absolute', top: '36px', left: 0, right: 0, overflow: 'visible' }}>
+                  <Truck className="w-10 h-10 md:w-11 md:h-11 text-[#2BB673]" />
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="mx-auto w-full max-w-[200px]">
+          <div className="mx-auto w-full max-w-[180px]">
             <img 
               src={camionbackLogo} 
               alt="CamionBack Logo" 
@@ -279,7 +279,7 @@ export function PhoneAuth() {
               data-testid="img-logo"
             />
           </div>
-          <CardDescription className="text-base">
+          <CardDescription className="text-sm">
             {step === "phone" 
               ? t('auth.enterPhoneNumber') 
               : mode === "login" 
@@ -287,10 +287,10 @@ export function PhoneAuth() {
                 : t('auth.createPIN')}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4 pb-5">
           {step === "phone" ? (
-            <div className="space-y-4">
-              <div className="space-y-2">
+            <div className="space-y-3">
+              <div className="space-y-1.5">
                 <label className="text-sm font-medium">{t('auth.phoneNumber')}</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium pointer-events-none select-none">
@@ -323,8 +323,8 @@ export function PhoneAuth() {
               </Button>
             </div>
           ) : (
-            <div className="space-y-4">
-              <div className="space-y-2">
+            <div className="space-y-3">
+              <div className="space-y-1.5">
                 <label className="text-sm font-medium">
                   {mode === "login" ? t('auth.pin') : t('auth.createNewPIN')}
                 </label>
@@ -352,7 +352,7 @@ export function PhoneAuth() {
               </div>
 
               {mode === "register" && (
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="text-sm font-medium">{t('auth.confirmPIN')}</label>
                   <Input
                     type={showPin ? "text" : "password"}
