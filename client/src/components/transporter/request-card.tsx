@@ -172,7 +172,14 @@ export function RequestCard({
                   {request.departureAddress?.split(',')[0] || request.fromCity}
                 </div>
                 {request.departureAddress?.includes(',') && (
-                  <div className="!font-light text-[11px] text-muted-foreground/80 mt-0.5 leading-tight opacity-75">
+                  <div 
+                    className="text-[11px] text-muted-foreground/80 mt-0.5 leading-tight opacity-75"
+                    ref={(el) => {
+                      if (el) {
+                        el.style.setProperty('font-weight', '300', 'important');
+                      }
+                    }}
+                  >
                     {request.departureAddress.split(',').slice(1).join(',').trim()}
                   </div>
                 )}
@@ -191,7 +198,14 @@ export function RequestCard({
                   {request.arrivalAddress?.split(',')[0] || request.toCity}
                 </div>
                 {request.arrivalAddress?.includes(',') && (
-                  <div className="!font-light text-[11px] text-muted-foreground/80 mt-0.5 leading-tight opacity-75">
+                  <div 
+                    className="text-[11px] text-muted-foreground/80 mt-0.5 leading-tight opacity-75"
+                    ref={(el) => {
+                      if (el) {
+                        el.style.setProperty('font-weight', '300', 'important');
+                      }
+                    }}
+                  >
                     {request.arrivalAddress.split(',').slice(1).join(',').trim()}
                   </div>
                 )}
