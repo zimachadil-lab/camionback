@@ -72,13 +72,15 @@ export const GooglePlacesAutocomplete = forwardRef<HTMLInputElement, GooglePlace
               const addressParts = [neighborhood, city].filter(Boolean);
               const formattedAddress = addressParts.join(", ");
 
-              // Update input value immediately for controlled behavior
+              const finalValue = formattedAddress || city || place.formatted_address || "";
+
+              // Update input immediately before calling onChange to avoid race conditions
               if (inputRef.current) {
-                inputRef.current.value = formattedAddress || city || place.formatted_address || "";
+                inputRef.current.value = finalValue;
               }
 
               // Pass both formatted address and place object with structured data
-              onChange(formattedAddress || city || place.formatted_address || "", place);
+              onChange(finalValue, place);
             } else {
               if (inputRef.current) {
                 inputRef.current.value = "";
@@ -105,7 +107,7 @@ export const GooglePlacesAutocomplete = forwardRef<HTMLInputElement, GooglePlace
       };
     }, [i18n.language, onChange]);
 
-    // Update input value when prop changes
+    // Sync input value when prop changes (for dialog opening with existing value)
     useEffect(() => {
       if (inputRef.current && inputRef.current.value !== value) {
         inputRef.current.value = value;
@@ -132,6 +134,13 @@ export const GooglePlacesAutocomplete = forwardRef<HTMLInputElement, GooglePlace
         ref={inputRef}
         type="text"
         defaultValue={value}
+        onBlur={(e) => {
+          // Sync manual typing when user leaves the field
+          const currentValue = e.target.value;
+          if (currentValue !== value) {
+            onChange(currentValue);
+          }
+        }}
         placeholder={placeholder}
         className={className}
         data-testid={dataTestId}
