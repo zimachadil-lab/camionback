@@ -454,21 +454,43 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
 
   return (
     <>
-      <Card className={`overflow-hidden hover-elevate bg-[#0f324f]/30 border-2 ${categoryConfig.borderColor}`}>
-        <CardContent className="p-4 space-y-3">
-          {/* Header avec référence et actions */}
-          <div className="flex items-start justify-between gap-2">
-            <h3 className="text-lg font-semibold" data-testid={`text-reference-${request.id}`}>
-              {request.referenceId}
-            </h3>
-            <div className="flex items-center gap-2">
+      {/* Modern card with three-zone layout */}
+      <div className="relative rounded-xl overflow-hidden border-2 border-border/40 bg-card shadow-lg hover:shadow-xl transition-all hover-elevate">
+        {/* Category accent bar */}
+        <div className={`absolute top-0 left-0 right-0 h-1 ${categoryConfig.borderColor}`} />
+        
+        <div className="p-6 space-y-6">
+          {/* ZONE 1: Header - Reference, Status Badge, Actions */}
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="flex-1 min-w-0">
+              <h3 className="text-lg font-semibold mb-2" data-testid={`text-reference-${request.id}`}>
+                {request.referenceId}
+              </h3>
+              {/* Status badge with semantic colors */}
+              <div className={`inline-flex items-center gap-2.5 px-3 py-2 rounded-full text-sm font-medium ${
+                clientStatus.isProcessing 
+                  ? 'bg-[hsl(var(--status-processing))]/15 text-[hsl(var(--status-processing))] border border-[hsl(var(--status-processing))]/30' 
+                  : 'bg-[hsl(var(--status-info))]/15 text-[hsl(var(--status-info))] border border-[hsl(var(--status-info))]/30'
+              }`}>
+                <div className="relative flex-shrink-0">
+                  {clientStatus.isProcessing && (
+                    <div className="absolute inset-0 bg-[hsl(var(--status-processing))]/50 rounded-full animate-ping"></div>
+                  )}
+                  <StatusIcon className={`relative w-4 h-4 ${clientStatus.isProcessing ? 'animate-spin' : ''}`} />
+                </div>
+                <span className="font-medium">{clientStatus.text}</span>
+              </div>
+            </div>
+            
+            {/* Action buttons */}
+            <div className="flex items-center gap-2 flex-shrink-0">
               {!isAccepted && (
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setShowEditDialog(true)}
                   data-testid={`button-edit-${request.id}`}
-                  className="h-8 w-8 text-[#1abc9c] hover:text-[#1abc9c] hover:bg-[#1abc9c]/10"
+                  className="h-9 w-9"
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
@@ -479,7 +501,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                   size="sm"
                   onClick={() => onOpenPhotosDialog(request.photos)}
                   data-testid={`button-view-photos-${request.id}`}
-                  className="h-8 px-2 gap-1.5 text-[#3498db] hover:text-[#3498db] hover:bg-[#3498db]/10"
+                  className="h-9 gap-1.5"
                 >
                   <Camera className="h-4 w-4" />
                   <span className="text-xs font-medium">{request.photos.length}</span>
@@ -490,12 +512,14 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                 size="icon"
                 onClick={() => setShowDeleteDialog(true)}
                 data-testid={`button-delete-${request.id}`}
-                className="h-8 w-8 text-[#e74c3c] hover:text-[#e74c3c] hover:bg-[#e74c3c]/10"
+                className="h-9 w-9 text-destructive hover:text-destructive"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
           </div>
+
+          {/* ZONE 2: Logistics Details */}
 
           {/* Carte de trajet avec distance */}
           {request.fromCity && request.toCity && (
@@ -813,8 +837,8 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Dialog des offres / transporteurs intéressés */}
       <Dialog open={showOffersDialog} onOpenChange={setShowOffersDialog}>
@@ -2098,16 +2122,27 @@ export default function ClientDashboard() {
           />
         ) : (
           <Tabs defaultValue="active" className="w-full">
-            <TabsList className="grid w-full max-w-3xl grid-cols-2">
-              <TabsTrigger value="active" data-testid="tab-active">
-                <Package className="mr-2 h-4 w-4" />
-                {t('clientDashboard.tabs.active')}
-              </TabsTrigger>
-              <TabsTrigger value="completed" data-testid="tab-completed">
-                <CheckCircle className="mr-2 h-4 w-4" />
-                {t('clientDashboard.tabs.completed')}
-              </TabsTrigger>
-            </TabsList>
+            {/* Modern segmented control tabs */}
+            <div className="flex items-center justify-center mb-8">
+              <TabsList className="inline-flex h-12 items-center justify-center rounded-full bg-muted/30 p-1.5 backdrop-blur-sm border border-border/40 shadow-lg">
+                <TabsTrigger 
+                  value="active" 
+                  data-testid="tab-active"
+                  className="inline-flex items-center justify-center gap-2 rounded-full px-6 py-2.5 text-sm font-medium transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+                >
+                  <Package className="h-4 w-4" />
+                  <span>{t('clientDashboard.tabs.active')}</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="completed" 
+                  data-testid="tab-completed"
+                  className="inline-flex items-center justify-center gap-2 rounded-full px-6 py-2.5 text-sm font-medium transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  <span>{t('clientDashboard.tabs.completed')}</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
             <TabsContent value="active" className="mt-6 space-y-6">
               {activeRequests.length > 0 ? (
