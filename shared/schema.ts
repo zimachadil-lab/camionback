@@ -94,7 +94,7 @@ export const transportRequests = pgTable("transport_requests", {
 // Offers from transporters
 export const offers = pgTable("offers", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  requestId: varchar("request_id").notNull().references(() => transportRequests.id),
+  requestId: varchar("request_id").notNull().references(() => transportRequests.id, { onDelete: 'cascade' }),
   transporterId: varchar("transporter_id").notNull().references(() => users.id),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   pickupDate: timestamp("pickup_date").notNull(), // Date proposée pour la prise en charge
@@ -108,7 +108,7 @@ export const offers = pgTable("offers", {
 // Transporter Interests - Track transporters who expressed interest with their availability dates
 export const transporterInterests = pgTable("transporter_interests", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  requestId: varchar("request_id").notNull().references(() => transportRequests.id),
+  requestId: varchar("request_id").notNull().references(() => transportRequests.id, { onDelete: 'cascade' }),
   transporterId: varchar("transporter_id").notNull().references(() => users.id),
   availabilityDate: timestamp("availability_date").notNull(), // Date when transporter is available
   hiddenFromClient: boolean("hidden_from_client").default(false), // Coordinator can hide transporter from client view
@@ -118,7 +118,7 @@ export const transporterInterests = pgTable("transporter_interests", {
 // Chat messages
 export const chatMessages = pgTable("chat_messages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  requestId: varchar("request_id").notNull().references(() => transportRequests.id),
+  requestId: varchar("request_id").notNull().references(() => transportRequests.id, { onDelete: 'cascade' }),
   senderId: varchar("sender_id").notNull().references(() => users.id),
   receiverId: varchar("receiver_id").notNull().references(() => users.id),
   message: text("message"), // Text message content (null for voice/photo/video messages)
@@ -154,7 +154,7 @@ export const notifications = pgTable("notifications", {
 // Ratings - Individual ratings for each completed transport
 export const ratings = pgTable("ratings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  requestId: varchar("request_id").notNull().unique().references(() => transportRequests.id), // One rating per request
+  requestId: varchar("request_id").notNull().unique().references(() => transportRequests.id, { onDelete: 'cascade' }), // One rating per request
   transporterId: varchar("transporter_id").notNull().references(() => users.id),
   clientId: varchar("client_id").notNull().references(() => users.id),
   score: integer("score").notNull(), // 1-5 stars
@@ -176,7 +176,7 @@ export const emptyReturns = pgTable("empty_returns", {
 // Contracts - Generated when client accepts an offer
 export const contracts = pgTable("contracts", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  requestId: varchar("request_id").notNull().references(() => transportRequests.id),
+  requestId: varchar("request_id").notNull().references(() => transportRequests.id, { onDelete: 'cascade' }),
   offerId: varchar("offer_id").notNull().references(() => offers.id),
   clientId: varchar("client_id").notNull().references(() => users.id),
   transporterId: varchar("transporter_id").notNull().references(() => users.id),
@@ -189,7 +189,7 @@ export const contracts = pgTable("contracts", {
 // Reports/Signalements - Users can report issues with completed requests
 export const reports = pgTable("reports", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  requestId: varchar("request_id").notNull().references(() => transportRequests.id),
+  requestId: varchar("request_id").notNull().references(() => transportRequests.id, { onDelete: 'cascade' }),
   reporterId: varchar("reporter_id").notNull().references(() => users.id), // User who created the report
   reporterType: text("reporter_type").notNull(), // 'client' or 'transporter'
   reportedUserId: varchar("reported_user_id").notNull().references(() => users.id), // User being reported
@@ -356,7 +356,7 @@ export const coordinationStatuses = pgTable("coordination_statuses", {
 // Request Notes - Internal notes added by coordinators on transport requests
 export const requestNotes = pgTable("request_notes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  requestId: varchar("request_id").notNull().references(() => transportRequests.id),
+  requestId: varchar("request_id").notNull().references(() => transportRequests.id, { onDelete: 'cascade' }),
   coordinatorId: varchar("coordinator_id").notNull().references(() => users.id),
   content: text("content").notNull(), // Free-text note content
   createdAt: timestamp("created_at").defaultNow(),
