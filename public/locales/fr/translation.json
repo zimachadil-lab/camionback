@@ -412,7 +412,8 @@
       "available": "Disponibles",
       "myInterests": "Mes intérêts",
       "accepted": "Acceptées",
-      "calendar": "Calendrier"
+      "calendar": "Calendrier",
+      "payments": "Paiements"
     },
     "filters": {
       "allCities": "Toutes les villes",

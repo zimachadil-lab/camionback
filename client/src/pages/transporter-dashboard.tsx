@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, Image as ImageIcon, Clock, Calendar, Flag, Edit, TruckIcon } from "lucide-react";
+import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, Image as ImageIcon, Clock, Calendar, Flag, Edit, TruckIcon, Wallet, Star } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { RequestCard } from "@/components/transporter/request-card";
 // OfferForm removed - new workflow uses interest-based matching instead of price offers
@@ -161,6 +161,21 @@ export default function TransporterDashboard() {
     },
     refetchInterval: 5000,
   });
+
+  // Fetch completed payments (for Paiements tab)
+  const { data: allTransporterRequests = [], isLoading: paymentsLoading } = useQuery({
+    queryKey: ["/api/requests/transporter", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const response = await fetch(`/api/requests?transporterId=${user!.id}`);
+      return response.json();
+    },
+  });
+
+  // Filter to get only completed + paid requests
+  const completedPayments = allTransporterRequests.filter((req: any) => 
+    req.status === 'completed' && req.paymentStatus === 'paid'
+  );
 
   // Filter accepted requests by selected calendar date
   const filteredAcceptedRequests = useMemo(() => {
@@ -623,6 +638,19 @@ export default function TransporterDashboard() {
                   </span>
                 )}
               </TabsTrigger>
+              <TabsTrigger 
+                value="payments" 
+                data-testid="tab-payments"
+                className="relative inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 flex-1 data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#f59e0b] data-[state=active]:via-[#d97706] data-[state=active]:to-[#b45309] data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-amber-500/50 text-slate-400 hover:text-slate-200 hover:bg-white/5"
+              >
+                <Wallet className="h-4 w-4 flex-shrink-0" />
+                <span className="truncate">{t('transporterDashboard.tabs.payments')}</span>
+                {completedPayments.length > 0 && (
+                  <span className="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 text-xs font-bold rounded-full bg-gradient-to-br from-amber-400 to-amber-500 text-white shadow-md flex-shrink-0">
+                    {completedPayments.length}
+                  </span>
+                )}
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -841,6 +869,104 @@ export default function TransporterDashboard() {
                 <CheckCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">
                   Aucune commande à traiter
+                </p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="payments" className="mt-6 space-y-6">
+            {paymentsLoading ? (
+              <div className="flex justify-center py-12">
+                <LoadingTruck />
+              </div>
+            ) : completedPayments.length > 0 ? (
+              <div className="space-y-4">
+                {completedPayments.map((payment: any) => (
+                  <Card key={payment.id} className="hover-elevate">
+                    <CardContent className="p-6 space-y-4">
+                      <div className="flex items-start justify-between flex-wrap gap-4">
+                        <div className="space-y-2">
+                          <div>
+                            <h3 className="text-lg font-semibold">{payment.referenceId}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              <MapPin className="inline w-4 h-4 mr-1" />
+                              {payment.fromCity} → {payment.toCity}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm">
+                            <div>
+                              <span className="text-muted-foreground">Montant: </span>
+                              <span className="font-semibold text-emerald-600">
+                                {payment.transporterAmount || payment.clientTotal || payment.budget || 'N/A'} MAD
+                              </span>
+                            </div>
+                            {payment.paymentDate && (
+                              <div>
+                                <span className="text-muted-foreground">Payé le: </span>
+                                <span className="font-medium">
+                                  {format(new Date(payment.paymentDate), "d MMM yyyy", { locale: fr })}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Rating received */}
+                        {payment.transporterRating && (
+                          <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 rounded-lg p-4 border border-amber-200 dark:border-amber-800">
+                            <p className="text-xs text-muted-foreground mb-1">Évaluation reçue</p>
+                            <div className="flex items-center gap-1">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  className={`w-5 h-5 ${
+                                    star <= payment.transporterRating
+                                      ? "fill-amber-500 text-amber-500"
+                                      : "text-gray-300 dark:text-gray-600"
+                                  }`}
+                                />
+                              ))}
+                              <span className="ml-2 font-bold text-lg">{payment.transporterRating}/5</span>
+                            </div>
+                            {payment.transporterRatingComment && (
+                              <p className="text-sm text-muted-foreground mt-2 italic">
+                                "{payment.transporterRatingComment}"
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Request details */}
+                      <div className="pt-4 border-t space-y-2 text-sm">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <span className="text-muted-foreground">Type: </span>
+                            <span className="font-medium">{payment.goodsType || 'N/A'}</span>
+                          </div>
+                          {payment.distance && (
+                            <div>
+                              <span className="text-muted-foreground">Distance: </span>
+                              <span className="font-medium">{payment.distance} km</span>
+                            </div>
+                          )}
+                        </div>
+                        {payment.description && (
+                          <div>
+                            <span className="text-muted-foreground">Description: </span>
+                            <span className="font-medium">{payment.description}</span>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Wallet className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">
+                  Aucun paiement reçu pour le moment
                 </p>
               </div>
             )}
