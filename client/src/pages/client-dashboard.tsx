@@ -519,145 +519,134 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
             </div>
           </div>
 
-          {/* ZONE 2: Logistics Details */}
-
-          {/* Carte de trajet avec distance */}
-          {request.fromCity && request.toCity && (
-            <div className="space-y-2">
-              <RouteMap
-                departureCity={request.fromCity}
-                arrivalCity={request.toCity}
-                departureAddress={request.departureAddress}
-                arrivalAddress={request.arrivalAddress}
-                distance={request.distance}
-                variant="compact"
-              />
-              
-              {/* Ligne compacte récapitulative */}
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/20 rounded-md">
-                <div className="flex items-center gap-2 flex-1 min-w-0 text-xs">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#5BC0EB] flex-shrink-0"></div>
-                    <span className="font-medium truncate">{request.fromCity}</span>
+          {/* ZONE 2: Logistics Details - Modern Grid Layout */}
+          <div className="grid gap-4">
+            {/* Route Map */}
+            {request.fromCity && request.toCity && (
+              <div className="space-y-3">
+                <RouteMap
+                  departureCity={request.fromCity}
+                  arrivalCity={request.toCity}
+                  departureAddress={request.departureAddress}
+                  arrivalAddress={request.arrivalAddress}
+                  distance={request.distance}
+                  variant="compact"
+                />
+                
+                {/* Compact route summary */}
+                <div className="flex items-center gap-3 px-4 py-2.5 bg-muted/20 rounded-lg border border-border/30">
+                  <div className="flex items-center gap-2 flex-1 min-w-0 text-sm">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0"></div>
+                      <span className="font-medium truncate">{request.fromCity}</span>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-2 h-2 rounded-full bg-destructive flex-shrink-0"></div>
+                      <span className="font-medium truncate">{request.toCity}</span>
+                    </div>
                   </div>
-                  <ArrowRight className="w-3 h-3 text-muted-foreground flex-shrink-0" />
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#e74c3c] flex-shrink-0"></div>
-                    <span className="font-medium truncate">{request.toCity}</span>
+                  {request.distance && (
+                    <div className="flex-shrink-0 px-3 py-1 bg-primary/15 rounded-md border border-primary/30">
+                      <span className="text-sm font-bold text-primary">{request.distance} km</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Details Grid */}
+            <div className="grid gap-3">
+              {/* Description */}
+              {request.description && (
+                <div className="flex gap-3 p-3.5 rounded-lg bg-muted/30 border border-border/40">
+                  <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <FileText className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">Description</p>
+                    <p className="text-sm leading-relaxed line-clamp-2">{request.description}</p>
                   </div>
                 </div>
-                {request.distance && (
-                  <div className="flex-shrink-0 px-2 py-0.5 bg-[#5BC0EB]/20 rounded border border-[#5BC0EB]/40">
-                    <span className="text-xs font-bold text-[#5BC0EB]">{request.distance} km</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Statut logistique visible */}
-          <div className={`relative flex items-center gap-2.5 px-3 py-2 rounded-lg border-2 shadow-sm ${
-            clientStatus.isProcessing 
-              ? 'bg-gradient-to-r from-emerald-400/30 via-green-400/25 to-emerald-400/30 border-emerald-400/80' 
-              : 'bg-gradient-to-r from-[#1abc9c]/20 via-[#16a085]/15 to-[#1abc9c]/20 border-[#1abc9c]/40'
-          }`}>
-            <div className="relative flex-shrink-0">
-              {clientStatus.isProcessing && (
-                <div className="absolute inset-0 bg-emerald-400/50 rounded-full animate-ping"></div>
               )}
-              <div className={`relative w-7 h-7 rounded-full flex items-center justify-center border-2 ${
-                clientStatus.isProcessing 
-                  ? 'bg-emerald-400/40 border-emerald-400/90' 
-                  : 'bg-[#1abc9c]/20 border-[#1abc9c]/50'
-              }`}>
-                <StatusIcon className={`w-4 h-4 ${
-                  clientStatus.isProcessing 
-                    ? 'text-emerald-400 animate-spin' 
-                    : 'text-[#1abc9c]'
-                }`} />
-              </div>
+
+              {/* Qualified Price */}
+              {request.clientTotal && request.qualifiedAt && (
+                <div className="flex gap-3 p-3.5 rounded-lg bg-[hsl(var(--status-success))]/10 border border-[hsl(var(--status-success))]/30">
+                  <div className="w-9 h-9 rounded-lg bg-[hsl(var(--status-success))]/20 flex items-center justify-center flex-shrink-0">
+                    <DollarSign className="w-4 h-4 text-[hsl(var(--status-success))]" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">Prix Qualifié</p>
+                    <p className="text-xl font-bold text-[hsl(var(--status-success))]">
+                      {Math.floor(request.clientTotal).toLocaleString()} Dhs
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {format(new Date(request.qualifiedAt), "dd MMM yyyy 'à' HH:mm", { locale: fr })}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
-            <span className={`text-sm font-semibold whitespace-nowrap ${
-              clientStatus.isProcessing ? 'text-emerald-300' : 'text-foreground'
-            }`}>
-              {clientStatus.text}
-            </span>
           </div>
 
-          {/* Description */}
-          {request.description && (
-            <div className="relative pl-9 pr-3 py-2.5 rounded-lg border border-border/50 bg-gradient-to-br from-muted/40 to-muted/20">
-              <div className="absolute left-2.5 top-2.5">
-                <div className="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center">
-                  <FileText className="w-3 h-3 text-primary" />
-                </div>
-              </div>
-              <p className="text-sm leading-relaxed line-clamp-2">{request.description}</p>
-            </div>
-          )}
-
-          {/* Prix qualifié */}
-          {request.clientTotal && request.qualifiedAt && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-[#00ff88]/10 via-[#00ff88]/5 to-transparent border-l-4 border-[#00ff88]">
-                <div className="w-7 h-7 rounded-full bg-[#00ff88]/20 flex items-center justify-center flex-shrink-0">
-                  <DollarSign className="w-4 h-4 text-[#00ff88]" />
-                </div>
-                <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Prix Qualifié</span>
-                <span className="text-lg font-bold text-[#00ff88] ml-auto">{Math.floor(request.clientTotal).toLocaleString()} Dhs</span>
-              </div>
-              <p className="text-xs text-muted-foreground px-1">
-                Qualifié le {format(new Date(request.qualifiedAt), "dd MMM yyyy 'à' HH:mm", { locale: fr })}
-              </p>
-            </div>
-          )}
-
-          {/* Bouton Offres reçues / Transporteurs intéressés OU Informations du transporteur */}
-          {!hasTransporter ? (
-            <div className="relative">
-              <Button
-                variant="outline"
-                className="w-full gap-2 sm:gap-3 h-auto sm:h-14 py-3 sm:py-0 border-2 border-blue-500 bg-gradient-to-r from-blue-500/10 to-blue-600/10 hover:from-blue-500/20 hover:to-blue-600/20 text-foreground font-semibold shadow-md hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300"
-                onClick={() => {
-                  setShowOffersDialog(true);
-                  // Charger les transporteurs intéressés seulement quand le dialog s'ouvre
-                  if (isQualifiedWorkflow) {
-                    refetchInterestedTransporters();
-                  }
-                }}
-                data-testid={`button-view-offers-${request.id}`}
-              >
-                <div className="flex items-center gap-2 sm:gap-3 w-full">
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
-                    <Users className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+          {/* ZONE 3: Action Footer - Modern Button Layout */}
+          <div className="grid gap-3 pt-2 border-t border-border/30">
+            {/* Primary Action: View offers or transporter info */}
+            {!hasTransporter ? (
+              <>
+                {/* View Offers Button */}
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="w-full justify-start gap-3 h-auto py-4 px-4 border-2 border-[hsl(var(--status-info))]/60 bg-[hsl(var(--status-info))]/10 hover:bg-[hsl(var(--status-info))]/20 transition-all shadow-md"
+                  onClick={() => {
+                    setShowOffersDialog(true);
+                    if (isQualifiedWorkflow) {
+                      refetchInterestedTransporters();
+                    }
+                  }}
+                  data-testid={`button-view-offers-${request.id}`}
+                >
+                  <div className="w-11 h-11 rounded-full bg-[hsl(var(--status-info))] flex items-center justify-center flex-shrink-0">
+                    <Users className="w-5 h-5 text-white" />
                   </div>
                   <div className="flex-1 text-left min-w-0">
-                    <p className="text-xs sm:text-sm font-semibold leading-tight truncate">
+                    <p className="text-sm font-semibold leading-tight">
                       {isQualifiedWorkflow ? t('clientDashboard.actions.interested') : t('clientDashboard.actions.offersReceived')}
                     </p>
-                    <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
+                    <p className="text-xs text-muted-foreground">
                       Voir {displayCount > 1 ? 'les' : 'la'} {displayCount} {displayCount > 1 ? 'propositions' : 'proposition'}
                     </p>
                   </div>
                   <Badge 
                     variant="default" 
-                    className="text-base sm:text-lg font-bold px-2.5 sm:px-3 py-0.5 sm:py-1 bg-blue-500 hover:bg-blue-500 flex-shrink-0 animate-pulse"
+                    className="text-lg font-bold px-3 py-1 bg-[hsl(var(--status-info))] hover:bg-[hsl(var(--status-info))] flex-shrink-0 no-default-hover-elevate animate-pulse"
                   >
                     {displayCount}
                   </Badge>
-                </div>
-              </Button>
-            </div>
-          ) : (
-            <Button
-              variant="default"
-              className="w-full gap-3 h-14 border-2 border-[#1abc9c] bg-gradient-to-r from-[#1abc9c]/90 to-[#16a085]/90 hover:from-[#1abc9c] hover:to-[#16a085] text-white font-semibold shadow-md hover:shadow-lg transition-all duration-300"
-              onClick={() => onViewTransporter(request.id)}
-              data-testid={`button-transporter-info-${request.id}`}
-            >
-              <div className="flex items-center gap-3 w-full">
-                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-                  <Info className="w-5 h-5 text-white" />
+                </Button>
+
+                {/* Coordinator Contact Button */}
+                <Button
+                  onClick={handleWhatsAppContact}
+                  data-testid={`button-coordinator-${request.id}`}
+                  size="lg"
+                  className="w-full gap-2.5 font-semibold bg-primary hover:bg-primary/90"
+                >
+                  <Phone className="w-5 h-5" />
+                  Contacter le coordinateur
+                </Button>
+              </>
+            ) : (
+              <Button
+                size="lg"
+                className="w-full justify-start gap-3 h-auto py-4 px-4 font-semibold bg-[hsl(var(--status-success))] hover:bg-[hsl(var(--status-success))]/90 text-white shadow-md"
+                onClick={() => onViewTransporter(request.id)}
+                data-testid={`button-transporter-info-${request.id}`}
+              >
+                <div className="w-11 h-11 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+                  <Info className="w-5 h-5" />
                 </div>
                 <div className="flex-1 text-left">
                   <p className="text-sm font-bold leading-tight">
@@ -667,38 +656,12 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                     {t('clientDashboard.actions.viewTransporterDetails')}
                   </p>
                 </div>
-              </div>
-            </Button>
-          )}
-
-          {/* Nouveaux boutons: CamioMatch et Coordinateur */}
-          {!hasTransporter && (
-            <div className="flex flex-wrap gap-2.5">
-              {/* CamioMatch - Masqué pour raisons stratégiques, gardé en système */}
-              {false && (
-                <Button
-                  onClick={() => setShowCamioMatchDialog(true)}
-                  data-testid={`button-camiomatch-${request.id}`}
-                  className="flex-1 min-w-[135px] gap-2 rounded-xl font-semibold text-white bg-gradient-to-br from-[#17cfcf] to-[#13b3b3] border-0 shadow-md hover:shadow-lg hover:shadow-[#17cfcf]/30 transition-shadow duration-300 hover-elevate"
-                >
-                  <Zap className="w-5 h-5" />
-                  CamioMatch
-                </Button>
-              )}
-              <Button
-                onClick={handleWhatsAppContact}
-                data-testid={`button-coordinator-${request.id}`}
-                className="w-full gap-2 rounded-xl font-semibold text-white bg-gradient-to-br from-[#17cfcf] to-[#13b3b3] border-0 shadow-md hover:shadow-lg hover:shadow-[#17cfcf]/25 transition-shadow duration-300 hover-elevate"
-              >
-                <Phone className="w-5 h-5" />
-                Coordinateur
               </Button>
-            </div>
-          )}
+            )}
 
-          {/* Actions pour commande avec transporteur (acceptée ou assignée) */}
-          {hasTransporter && (
-            <div className="flex flex-col gap-3 pt-3">
+            {/* Actions pour commande avec transporteur (acceptée ou assignée) */}
+            {hasTransporter && (
+              <div className="flex flex-col gap-2">
               {/* Bouton principal: Message */}
               <Button
                 onClick={() => {
@@ -835,8 +798,9 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
