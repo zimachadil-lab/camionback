@@ -148,7 +148,7 @@ export function RequestCard({
       <CardContent className="p-4 space-y-3">
         {/* Trajet avec badge Disponible aligné */}
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <MapPin className="w-4 h-4" />
               <span className="font-medium">{t('requestCard.route')}</span>
@@ -165,50 +165,15 @@ export function RequestCard({
               </span>
             </Badge>
           </div>
-          {/* Route layout with stacked locations */}
-          <div className="flex items-center gap-3 ps-6">
-            {/* Departure location */}
-            <div className="flex-1 min-w-0">
-              <div className="bg-muted/70 rounded-lg px-3 py-2">
-                <div style={{ fontWeight: 700, fontSize: '14px', color: 'white', lineHeight: '1.25', wordBreak: 'break-word' }}>
-                  {request.departureAddress?.split(',')[0] || request.fromCity}
-                </div>
-                {request.departureAddress?.includes(',') && (
-                  <div style={{ fontWeight: 300, fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginTop: '2px', lineHeight: '1.25' }}>
-                    {request.departureAddress.split(',').slice(1).join(',').trim()}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Arrow separator */}
-            <div className="flex-shrink-0">
-              <span className="text-[#17cfcf] text-xl rtl:rotate-180">→</span>
-            </div>
-
-            {/* Arrival location */}
-            <div className="flex-1 min-w-0">
-              <div className="bg-muted/70 rounded-lg px-3 py-2">
-                <div style={{ fontWeight: 700, fontSize: '14px', color: 'white', lineHeight: '1.25', wordBreak: 'break-word' }}>
-                  {request.arrivalAddress?.split(',')[0] || request.toCity}
-                </div>
-                {request.arrivalAddress?.includes(',') && (
-                  <div style={{ fontWeight: 300, fontSize: '11px', color: 'rgba(255,255,255,0.6)', marginTop: '2px', lineHeight: '1.25' }}>
-                    {request.arrivalAddress.split(',').slice(1).join(',').trim()}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
           {/* Distance display with map visualization */}
           {request.distance && request.departureAddress && request.arrivalAddress && (
-            <div className="ps-6 mt-3">
-              <RouteMap
-                departureCity={request.departureAddress.split(',').pop()?.trim() || request.fromCity}
-                arrivalCity={request.arrivalAddress.split(',').pop()?.trim() || request.toCity}
-                distance={request.distance}
-              />
-            </div>
+            <RouteMap
+              departureCity={request.departureAddress.split(',').pop()?.trim() || request.fromCity}
+              arrivalCity={request.arrivalAddress.split(',').pop()?.trim() || request.toCity}
+              distance={request.distance}
+              departureAddress={request.departureAddress}
+              arrivalAddress={request.arrivalAddress}
+            />
           )}
         </div>
 
