@@ -2251,13 +2251,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "No transporter assigned to this request" });
       }
 
-      // Update payment status
+      // Update payment status (status stays 'in_progress' until admin validates)
       const paymentStatus = paidBy === 'client' ? 'paid_by_client' : 'paid_by_camionback';
       const updatedRequest = await storage.updateTransportRequest(req.params.id, {
         paymentReceipt,
         paymentStatus,
         paymentDate: new Date(),
-        status: 'completed', // Move to completed since payment + rating done
+        transporterRating: rating,
+        transporterRatingComment: comment || null,
+        // Status stays 'in_progress' - admin will change to 'completed' after validation
       });
 
       // Create rating for transporter
@@ -2307,6 +2309,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Payment error:", error);
       res.status(500).json({ error: "Failed to process payment" });
+    }
+  });
+
+  // ADMIN: Validate payment - marks request as completed
+  app.post("/api/admin/requests/:id/validate-payment", requireAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const request = await storage.getTransportRequest(req.params.id);
+      
+      if (!request) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+
+      // Check if payment is in validation state
+      if (request.paymentStatus !== 'paid_by_client' && request.paymentStatus !== 'paid_by_camionback') {
+        return res.status(400).json({ error: "Payment is not awaiting validation" });
+      }
+
+      // Update to final completed state
+      const updatedRequest = await storage.updateTransportRequest(req.params.id, {
+        status: 'completed',
+        paymentStatus: 'paid',
+        paymentValidatedAt: new Date(),
+        paymentValidatedBy: req.user!.id,
+      });
+
+      // Notify client/coordinator
+      try {
+        await storage.createNotification({
+          userId: request.clientId,
+          type: "payment_validated",
+          title: "Paiement validé",
+          message: `Votre paiement pour la commande ${request.referenceId} a été validé. Merci !`,
+          relatedId: request.id,
+        });
+      } catch (notifError) {
+        console.error("Failed to create validation notification:", notifError);
+      }
+
+      res.json({ 
+        success: true, 
+        request: updatedRequest
+      });
+    } catch (error) {
+      console.error("Validate payment error:", error);
+      res.status(500).json({ error: "Failed to validate payment" });
+    }
+  });
+
+  // ADMIN: Reject payment - resets request to in_progress
+  app.post("/api/admin/requests/:id/reject-payment", requireAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const { reason } = req.body;
+      
+      if (!reason || !reason.trim()) {
+        return res.status(400).json({ error: "Rejection reason is required" });
+      }
+
+      const request = await storage.getTransportRequest(req.params.id);
+      
+      if (!request) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+
+      // Check if payment is in validation state
+      if (request.paymentStatus !== 'paid_by_client' && request.paymentStatus !== 'paid_by_camionback') {
+        return res.status(400).json({ error: "Payment is not awaiting validation" });
+      }
+
+      // Reset to in_progress state
+      const updatedRequest = await storage.updateTransportRequest(req.params.id, {
+        status: 'in_progress',
+        paymentStatus: 'a_facturer',
+        paymentReceipt: null,
+        paymentDate: null,
+        paymentRejectionReason: reason.trim(),
+      });
+
+      // Notify client/coordinator with rejection reason
+      try {
+        await storage.createNotification({
+          userId: request.clientId,
+          type: "payment_rejected",
+          title: "Paiement rejeté",
+          message: `Votre paiement pour la commande ${request.referenceId} a été rejeté. Raison : ${reason.trim()}. Veuillez soumettre à nouveau.`,
+          relatedId: request.id,
+        });
+      } catch (notifError) {
+        console.error("Failed to create rejection notification:", notifError);
+      }
+
+      res.json({ 
+        success: true, 
+        request: updatedRequest
+      });
+    } catch (error) {
+      console.error("Reject payment error:", error);
+      res.status(500).json({ error: "Failed to reject payment" });
     }
   });
 

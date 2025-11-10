@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCircle, UserCheck, CreditCard, Phone, Eye, EyeOff, TruckIcon, MapPin, Calendar, FileText, MessageSquare, Trash2, Send, Flag, Pencil, Camera, RefreshCw, Circle, Edit, Compass, Settings, Weight, Building2, Home } from "lucide-react";
+import { Users, Package, DollarSign, TrendingUp, Plus, Search, CheckCircle, XCircle, UserCheck, CreditCard, Phone, Eye, EyeOff, TruckIcon, MapPin, Calendar, FileText, MessageSquare, Trash2, Send, Flag, Pencil, Camera, RefreshCw, Circle, Edit, Compass, Settings, Weight, Building2, Home, Star, X } from "lucide-react";
 import { LoadingTruck } from "@/components/ui/loading-truck";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -669,6 +669,48 @@ export default function AdminDashboard() {
         variant: "destructive",
         title: "Erreur",
         description: "Échec de la mise à jour du signalement",
+      });
+    },
+  });
+
+  // Validate payment mutation - marks request as completed
+  const validatePaymentMutation = useMutation({
+    mutationFn: async (requestId: string) => {
+      return await apiRequest("POST", `/api/admin/requests/${requestId}/validate-payment`, {});
+    },
+    onSuccess: () => {
+      toast({
+        title: "Paiement validé",
+        description: "Le paiement a été validé et la commande est maintenant terminée",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: error.message || "Échec de la validation du paiement",
+      });
+    },
+  });
+
+  // Reject payment mutation - resets request to in_progress
+  const rejectPaymentMutation = useMutation({
+    mutationFn: async ({ requestId, reason }: { requestId: string; reason: string }) => {
+      return await apiRequest("POST", `/api/admin/requests/${requestId}/reject-payment`, { reason });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Paiement rejeté",
+        description: "Le paiement a été rejeté et le client a été notifié",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: error.message || "Échec du rejet du paiement",
       });
     },
   });
@@ -1689,130 +1731,171 @@ export default function AdminDashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CreditCard className="w-5 h-5" />
-                  Gestion des paiements - Commandes en production
-                  <Badge className="ml-2" data-testid="badge-production-count">
-                    {productionRequests.length}
+                  Validation des paiements
+                  <Badge className="ml-2 bg-emerald-500" data-testid="badge-pending-validation-count">
+                    {allRequests.filter((r: any) => r.paymentStatus === 'paid_by_client' || r.paymentStatus === 'paid_by_camionback').length} en attente
                   </Badge>
                 </CardTitle>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Reçus de paiement soumis par les clients/coordinateurs avec notation des transporteurs
+                </p>
               </CardHeader>
               <CardContent>
-                {productionRequests.length === 0 ? (
-                  <div className="text-center py-8">
-                    <CreditCard className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">Aucune commande en production</p>
+                {allRequests.filter((r: any) => r.paymentStatus === 'paid_by_client' || r.paymentStatus === 'paid_by_camionback').length === 0 ? (
+                  <div className="text-center py-12">
+                    <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                    <p className="text-lg font-medium text-foreground">Aucun paiement en attente de validation</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Tous les paiements soumis ont été traités
+                    </p>
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>N° Commande</TableHead>
-                        <TableHead>Client</TableHead>
-                        <TableHead>Transporteur</TableHead>
-                        <TableHead>Montant net</TableHead>
-                        <TableHead>Total client</TableHead>
-                        <TableHead>Commission</TableHead>
-                        <TableHead>Statut paiement</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {productionRequests.map((request: any) => {
+                  <div className="space-y-4">
+                    {allRequests
+                      .filter((r: any) => r.paymentStatus === 'paid_by_client' || r.paymentStatus === 'paid_by_camionback')
+                      .sort((a: any, b: any) => {
+                        const dateA = a.paymentDate ? new Date(a.paymentDate).getTime() : 0;
+                        const dateB = b.paymentDate ? new Date(b.paymentDate).getTime() : 0;
+                        return dateB - dateA;
+                      })
+                      .map((request: any) => {
                         const client = allUsers.find((u: any) => u.id === request.clientId);
-                        
-                        // Get accepted offer details
                         const acceptedOffer = request.acceptedOfferId 
                           ? allOffers.find((o: any) => o.id === request.acceptedOfferId)
                           : null;
-                        
-                        // Get transporter from accepted offer
                         const transporter = acceptedOffer 
                           ? allUsers.find((u: any) => u.id === acceptedOffer.transporterId)
-                          : null;
+                          : (request.assignedTransporterId ? allUsers.find((u: any) => u.id === request.assignedTransporterId) : null);
 
-                        // Use manual pricing values if available (qualified requests), otherwise calculate for legacy
                         const netAmount = request.transporterAmount 
                           ? parseFloat(request.transporterAmount)
                           : (acceptedOffer ? parseFloat(acceptedOffer.amount) : 0);
                         
                         const commissionAmount = request.platformFee 
                           ? parseFloat(request.platformFee)
-                          : (acceptedOffer ? netAmount * (parseFloat(adminSettings?.commissionPercentage || "10") / 100) : 0);
+                          : 0;
                         
                         const totalClientAmount = request.clientTotal 
                           ? parseFloat(request.clientTotal)
-                          : (netAmount + commissionAmount); // For legacy requests, calculate total
+                          : (netAmount + commissionAmount);
 
                         return (
-                          <TableRow key={request.id}>
-                            <TableCell className="font-medium">{request.referenceId}</TableCell>
-                            <TableCell>
-                              Client {client?.clientId || "Non défini"}
-                            </TableCell>
-                            <TableCell>
-                              <div>
-                                <p className="font-medium">
-                                  {transporter?.name || "Transporteur"}
-                                </p>
-                                <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                  <Phone className="w-3 h-3" />
-                                  <a href={`tel:${transporter?.phoneNumber}`} className="hover:underline">
-                                    {transporter?.phoneNumber || "N/A"}
-                                  </a>
+                          <Card key={request.id} className="border-2 border-emerald-200 dark:border-emerald-800">
+                            <CardHeader className="pb-3">
+                              <div className="flex items-start justify-between">
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <CardTitle className="text-lg">N° {request.referenceId}</CardTitle>
+                                    {request.paymentStatus === 'paid_by_client' && (
+                                      <Badge className="bg-blue-600 text-white">Client</Badge>
+                                    )}
+                                    {request.paymentStatus === 'paid_by_camionback' && (
+                                      <Badge className="bg-purple-600 text-white">CamionBack</Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-muted-foreground mt-1">
+                                    {request.fromCity} → {request.toCity}
+                                  </p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-xl font-bold text-emerald-600">{totalClientAmount.toFixed(2)} MAD</p>
+                                  <p className="text-xs text-muted-foreground">Total client</p>
                                 </div>
                               </div>
-                            </TableCell>
-                            <TableCell>
-                              <span className="font-semibold">{netAmount.toFixed(2)} MAD</span>
-                            </TableCell>
-                            <TableCell>
-                              <span className="font-semibold text-primary">{totalClientAmount.toFixed(2)} MAD</span>
-                            </TableCell>
-                            <TableCell>
-                              <span className="font-semibold text-green-600">{commissionAmount.toFixed(2)} MAD</span>
-                            </TableCell>
-                            <TableCell>
-                              {request.paymentStatus === 'paid_by_client' && (
-                                <Badge className="bg-blue-600 text-white">Payé par client</Badge>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                              {/* Client & Transporter Info */}
+                              <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                  <p className="font-medium text-muted-foreground">Client</p>
+                                  <p className="font-semibold">{client?.name || `Client ${client?.clientId}`}</p>
+                                  <p className="text-muted-foreground">{client?.phoneNumber}</p>
+                                </div>
+                                <div>
+                                  <p className="font-medium text-muted-foreground">Transporteur</p>
+                                  <p className="font-semibold">{transporter?.name || "N/A"}</p>
+                                  <p className="text-muted-foreground">{transporter?.phoneNumber}</p>
+                                  {request.transporterRating > 0 && (
+                                    <div className="flex items-center gap-1 mt-1">
+                                      <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                                      <span className="font-semibold">{request.transporterRating}/5</span>
+                                      {request.transporterRatingComment && (
+                                        <span className="text-xs text-muted-foreground ml-1">"{request.transporterRatingComment}"</span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Payment Details */}
+                              <div className="grid grid-cols-3 gap-4 p-3 bg-muted/50 rounded-lg text-sm">
+                                <div>
+                                  <p className="text-muted-foreground">Montant transporteur</p>
+                                  <p className="font-semibold">{netAmount.toFixed(2)} MAD</p>
+                                </div>
+                                <div>
+                                  <p className="text-muted-foreground">Commission</p>
+                                  <p className="font-semibold text-green-600">{commissionAmount.toFixed(2)} MAD</p>
+                                </div>
+                                <div>
+                                  <p className="text-muted-foreground">Date de soumission</p>
+                                  <p className="font-semibold">
+                                    {request.paymentDate ? format(new Date(request.paymentDate), 'dd/MM/yyyy HH:mm', { locale: fr }) : 'N/A'}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Payment Receipt */}
+                              {request.paymentReceipt && (
+                                <div>
+                                  <p className="text-sm font-medium mb-2">Reçu de paiement :</p>
+                                  <img 
+                                    src={request.paymentReceipt} 
+                                    alt="Reçu de paiement" 
+                                    className="w-full max-w-md h-48 object-cover rounded-lg border cursor-pointer hover-elevate"
+                                    onClick={() => {
+                                      setSelectedReceipt(request.paymentReceipt);
+                                      setShowReceiptDialog(true);
+                                    }}
+                                  />
+                                </div>
                               )}
-                              {request.paymentStatus === 'paid_by_camionback' && (
-                                <Badge className="bg-purple-600 text-white">Payé CamionBack</Badge>
-                              )}
-                              {(request.paymentStatus === 'pending' || request.paymentStatus === 'awaiting_payment' || request.paymentStatus === 'pending_admin_validation') && (
-                                <Badge variant="secondary">En attente</Badge>
-                              )}
-                              {!request.paymentStatus && (
-                                <Badge variant="outline">Non défini</Badge>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex gap-2 justify-end flex-wrap">
+
+                              {/* Action Buttons */}
+                              <div className="flex gap-2 pt-2">
                                 <Button
-                                  size="sm"
-                                  variant={request.paymentStatus === 'paid_by_client' ? 'default' : 'outline'}
-                                  onClick={() => handleUpdatePaymentStatus(request.id, 'paid_by_client')}
-                                  data-testid={`button-paid-by-client-${request.id}`}
-                                  disabled={request.paymentStatus === 'paid_by_client'}
+                                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                                  onClick={() => {
+                                    if (confirm(`Valider le paiement pour la commande ${request.referenceId} ?\n\nCela marquera la commande comme terminée.`)) {
+                                      validatePaymentMutation.mutate(request.id);
+                                    }
+                                  }}
+                                  disabled={validatePaymentMutation.isPending}
+                                  data-testid={`button-validate-payment-${request.id}`}
                                 >
-                                  <CheckCircle className="w-4 h-4 mr-1" />
-                                  Payé par client
+                                  <CheckCircle className="w-4 h-4 mr-2" />
+                                  Valider le paiement
                                 </Button>
                                 <Button
-                                  size="sm"
-                                  variant={request.paymentStatus === 'paid_by_camionback' ? 'default' : 'outline'}
-                                  onClick={() => handleUpdatePaymentStatus(request.id, 'paid_by_camionback')}
-                                  data-testid={`button-paid-by-camionback-${request.id}`}
-                                  disabled={request.paymentStatus === 'paid_by_camionback'}
+                                  variant="destructive"
+                                  onClick={() => {
+                                    const reason = prompt(`Rejeter le paiement pour la commande ${request.referenceId} ?\n\nVeuillez indiquer la raison du rejet :`);
+                                    if (reason && reason.trim()) {
+                                      rejectPaymentMutation.mutate({ requestId: request.id, reason: reason.trim() });
+                                    }
+                                  }}
+                                  disabled={rejectPaymentMutation.isPending}
+                                  data-testid={`button-reject-payment-${request.id}`}
                                 >
-                                  <CheckCircle className="w-4 h-4 mr-1" />
-                                  Payé CamionBack
+                                  <X className="w-4 h-4 mr-2" />
+                                  Rejeter
                                 </Button>
                               </div>
-                            </TableCell>
-                          </TableRow>
+                            </CardContent>
+                          </Card>
                         );
                       })}
-                    </TableBody>
-                  </Table>
+                  </div>
                 )}
               </CardContent>
             </Card>

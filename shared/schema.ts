@@ -61,9 +61,14 @@ export const transportRequests = pgTable("transport_requests", {
   status: text("status").default("open"), // open, accepted, completed, cancelled
   acceptedOfferId: varchar("accepted_offer_id"),
   acceptedAt: timestamp("accepted_at"), // When client or coordinator accepted the offer
-  paymentStatus: text("payment_status").default("a_facturer"), // a_facturer, paid_by_client, paid_by_camionback
+  paymentStatus: text("payment_status").default("a_facturer"), // a_facturer, paid_by_client, paid_by_camionback, paid
   paymentReceipt: text("payment_receipt"), // Client's payment receipt photo (base64)
   paymentDate: timestamp("payment_date"),
+  transporterRating: integer("transporter_rating"), // Rating given to transporter by client/coord (1-5)
+  transporterRatingComment: text("transporter_rating_comment"), // Optional comment for rating
+  paymentValidatedAt: timestamp("payment_validated_at"), // When admin validated payment
+  paymentValidatedBy: varchar("payment_validated_by").references(() => users.id), // Admin who validated
+  paymentRejectionReason: text("payment_rejection_reason"), // Reason if payment was rejected
   viewCount: integer("view_count").default(0), // Number of times request was viewed
   declinedBy: text("declined_by").array().default(sql`ARRAY[]::text[]`), // IDs of transporters who declined
   smsSent: boolean("sms_sent").default(false), // Track if first offer SMS was sent to client
