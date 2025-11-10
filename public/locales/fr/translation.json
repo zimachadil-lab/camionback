@@ -728,5 +728,32 @@
     "notFound": "Page non trouvée",
     "unauthorized": "Non autorisé",
     "sessionExpired": "Session expirée"
+  },
+  "paymentDialog": {
+    "title": "Confirmer le paiement",
+    "description": "Téléversez le reçu et évaluez {{transporterName}}",
+    "uploadReceipt": "Reçu de paiement",
+    "selectReceipt": "Sélectionner le reçu",
+    "changeReceipt": "Changer le reçu",
+    "rateTransporter": "Évaluer le transporteur",
+    "comment": "Commentaire",
+    "optional": "(optionnel)",
+    "commentPlaceholder": "Partagez votre expérience...",
+    "excellent": "Excellent",
+    "veryGood": "Très bien",
+    "good": "Bien",
+    "average": "Moyen",
+    "poor": "Insuffisant",
+    "cancel": "Annuler",
+    "confirm": "Confirmer le paiement",
+    "submitting": "Envoi en cours...",
+    "success": "Paiement confirmé",
+    "successDesc": "Merci ! La commande est maintenant terminée.",
+    "error": "Erreur",
+    "errorDesc": "Échec de la confirmation du paiement",
+    "receiptRequired": "Veuillez téléverser le reçu de paiement",
+    "ratingRequired": "Veuillez évaluer le transporteur",
+    "photoTooLarge": "Photo trop volumineuse",
+    "photoTooLargeDesc": "La taille maximale autorisée est de 10 Mo"
   }
 }

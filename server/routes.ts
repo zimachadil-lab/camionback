@@ -2199,6 +2199,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // NEW SIMPLIFIED PAYMENT WORKFLOW: Client/Coordinator pays and rates transporter in one action
+  app.post("/api/requests/:id/payment", requireAuth, requireRole(['client', 'coordinateur']), async (req, res) => {
+    try {
+      const request = await storage.getTransportRequest(req.params.id);
+      
+      if (!request) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+
+      // Authorization check
+      const userId = req.user!.id;
+      const userRole = req.user!.role;
+      
+      if (userRole === 'client' && request.clientId !== userId) {
+        return res.status(403).json({ error: "Unauthorized: you can only pay for your own requests" });
+      }
+
+      // Validate request body
+      const { paymentReceipt, paidBy, rating, comment } = req.body;
+      
+      if (!paymentReceipt) {
+        return res.status(400).json({ error: "Payment receipt is required" });
+      }
+      
+      if (!rating || rating < 1 || rating > 5) {
+        return res.status(400).json({ error: "Valid rating (1-5) is required" });
+      }
+
+      if (!paidBy || !['client', 'coordinator'].includes(paidBy)) {
+        return res.status(400).json({ error: "paidBy must be 'client' or 'coordinator'" });
+      }
+
+      // Get transporter ID (from accepted offer or manual assignment)
+      let transporterId: string | null = null;
+      if (request.acceptedOfferId) {
+        const acceptedOffer = await storage.getOffer(request.acceptedOfferId);
+        if (acceptedOffer) {
+          transporterId = acceptedOffer.transporterId;
+        }
+      } else if (request.assignedTransporterId) {
+        transporterId = request.assignedTransporterId;
+      }
+
+      if (!transporterId) {
+        return res.status(400).json({ error: "No transporter assigned to this request" });
+      }
+
+      // Update payment status
+      const paymentStatus = paidBy === 'client' ? 'paid_by_client' : 'paid_by_camionback';
+      const updatedRequest = await storage.updateTransportRequest(req.params.id, {
+        paymentReceipt,
+        paymentStatus,
+        paymentDate: new Date(),
+        status: 'completed', // Move to completed since payment + rating done
+      });
+
+      // Create rating for transporter
+      await storage.createRating({
+        requestId: req.params.id,
+        clientId: request.clientId,
+        transporterId,
+        score: rating,
+        comment: comment || null,
+      });
+
+      // Update transporter stats (rating average and total trips)
+      const transporter = await storage.getUser(transporterId);
+      if (transporter) {
+        const newTotalRatings = (transporter.totalRatings || 0) + 1;
+        const currentAvg = parseFloat(transporter.rating?.toString() || "0");
+        const newAvg = ((currentAvg * (transporter.totalRatings || 0)) + rating) / newTotalRatings;
+        
+        await storage.updateUser(transporterId, {
+          rating: newAvg.toFixed(2),
+          totalRatings: newTotalRatings,
+          totalTrips: (transporter.totalTrips || 0) + 1,
+        });
+      }
+
+      // Create notification for admin
+      try {
+        const allUsers = await storage.getAllUsers();
+        const adminUsers = allUsers.filter((u: any) => u.role === "admin");
+        for (const admin of adminUsers) {
+          await storage.createNotification({
+            userId: admin.id,
+            type: "payment_received",
+            title: "Nouveau paiement reçu",
+            message: `${paidBy === 'client' ? 'Le client' : 'Le coordinateur'} a payé la commande ${request.referenceId}. Vérifiez le reçu.`,
+            relatedId: request.id,
+          });
+        }
+      } catch (notifError) {
+        console.error("Failed to create admin notification:", notifError);
+      }
+
+      res.json({ 
+        success: true, 
+        request: updatedRequest
+      });
+    } catch (error) {
+      console.error("Payment error:", error);
+      res.status(500).json({ error: "Failed to process payment" });
+    }
+  });
+
   // Mark a request as paid (client uploads receipt and awaits admin validation)
   // NOTE: In production, this should use session/JWT authentication instead of req.body.clientId
   app.post("/api/requests/:id/mark-as-paid", requireAuth, requireRole(['client', 'coordinateur']), async (req, res) => {

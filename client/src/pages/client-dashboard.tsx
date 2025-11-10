@@ -9,6 +9,7 @@ import { Header } from "@/components/layout/header";
 import { NewRequestForm } from "@/components/client/new-request-form";
 import { OfferCard } from "@/components/client/offer-card";
 import { ChatWindow } from "@/components/chat/chat-window";
+import { PaymentDialog } from "@/components/payment/payment-dialog";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -624,6 +625,27 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                 </div>
               </Button>
             </div>
+          ) : request.status === 'in_progress' ? (
+            <Button
+              variant="default"
+              className="w-full gap-3 h-14 border-2 border-emerald-500 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold shadow-md hover:shadow-lg hover:shadow-emerald-500/30 transition-all duration-300"
+              onClick={() => handlePayment(request.id)}
+              data-testid={`button-pay-${request.id}`}
+            >
+              <div className="flex items-center gap-3 w-full">
+                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+                  <CreditCard className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="text-sm font-bold leading-tight">
+                    Payer
+                  </p>
+                  <p className="text-xs text-white/80">
+                    Téléverser le reçu et évaluer
+                  </p>
+                </div>
+              </div>
+            </Button>
           ) : (
             <Button
               variant="default"
@@ -1617,6 +1639,8 @@ export default function ClientDashboard() {
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [paymentRequestId, setPaymentRequestId] = useState<string>("");
   const [paymentReceipt, setPaymentReceipt] = useState<string>("");
+  const [showNewPaymentDialog, setShowNewPaymentDialog] = useState(false);
+  const [newPaymentRequestId, setNewPaymentRequestId] = useState<string>("");
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [reportRequestId, setReportRequestId] = useState<string>("");
   const [showPhotosDialog, setShowPhotosDialog] = useState(false);
@@ -1966,6 +1990,11 @@ export default function ClientDashboard() {
     setReportRequestId(requestId);
     reportForm.reset();
     setShowReportDialog(true);
+  };
+
+  const handlePayment = (requestId: string) => {
+    setNewPaymentRequestId(requestId);
+    setShowNewPaymentDialog(true);
   };
 
   const handleSubmitReport = (data: any) => {
