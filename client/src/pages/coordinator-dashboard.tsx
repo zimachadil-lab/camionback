@@ -2715,7 +2715,7 @@ export default function CoordinatorDashboard() {
                           <div className="mb-2">
                             <div className="flex gap-3 items-center">
                               {/* Left: Carte carrée */}
-                              <div className="flex-shrink-0">
+                              <div className="flex-shrink-0 relative z-0">
                                 <RouteMap
                                   variant="compact"
                                   departureCity={request.fromCity}
