@@ -2102,12 +2102,30 @@ export default function CoordinatorDashboard() {
             {/* Route info inline */}
             <div className="flex items-center gap-2 flex-wrap">
               <div className="w-3 h-3 rounded-full bg-[#10b981] flex-shrink-0"></div>
-              <span className="text-sm font-semibold">{request.departureAddress?.split(',').pop()?.trim() || request.fromCity}</span>
+              <div className="text-sm">
+                {request.departureAddress?.includes(',') ? (
+                  <>
+                    <span className="font-bold">{request.departureAddress.split(',')[0]}</span>
+                    <span className="text-muted-foreground">, {request.departureAddress.split(',').slice(1).join(',').trim()}</span>
+                  </>
+                ) : (
+                  <span className="text-muted-foreground">{request.fromCity}</span>
+                )}
+              </div>
               <span className="text-[#17cfcf] text-xl">→</span>
               <span className="text-base font-bold text-[#17cfcf]">{request.distance} km</span>
               <span className="text-[#17cfcf] text-xl">→</span>
               <div className="w-3 h-3 rounded-full bg-[#ef4444] flex-shrink-0"></div>
-              <span className="text-sm font-semibold">{request.arrivalAddress?.split(',').pop()?.trim() || request.toCity}</span>
+              <div className="text-sm">
+                {request.arrivalAddress?.includes(',') ? (
+                  <>
+                    <span className="font-bold">{request.arrivalAddress.split(',')[0]}</span>
+                    <span className="text-muted-foreground">, {request.arrivalAddress.split(',').slice(1).join(',').trim()}</span>
+                  </>
+                ) : (
+                  <span className="text-muted-foreground">{request.toCity}</span>
+                )}
+              </div>
               
               {/* Bouton d'assignation coordinateur */}
               {request.assignedTo ? (
