@@ -625,19 +625,6 @@ export default function TransporterDashboard() {
                 )}
               </TabsTrigger>
               <TabsTrigger 
-                value="interested" 
-                data-testid="tab-interested"
-                className="relative inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#f59e0b] data-[state=active]:via-[#d97706] data-[state=active]:to-[#b45309] data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-orange-500/50 text-slate-400 hover:text-slate-200 hover:bg-white/5"
-              >
-                <Package className="h-4 w-4" />
-                <span>{t('transporterDashboard.tabs.myInterests')}</span>
-                {myInterests.length > 0 && (
-                  <span className="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 text-xs font-bold rounded-full bg-gradient-to-br from-orange-400 to-orange-500 text-white shadow-md">
-                    {myInterests.length}
-                  </span>
-                )}
-              </TabsTrigger>
-              <TabsTrigger 
                 value="to-process" 
                 data-testid="tab-to-process"
                 className="relative inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#10b981] data-[state=active]:via-[#059669] data-[state=active]:to-[#047857] data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-green-500/50 text-slate-400 hover:text-slate-200 hover:bg-white/5"
@@ -701,98 +688,6 @@ export default function TransporterDashboard() {
                 <Search className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">
                   {t('transporterDashboard.noRequests')}
-                </p>
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="interested" className="mt-6 space-y-6">
-            {interestsLoading ? (
-              <div className="flex justify-center py-12">
-                <LoadingTruck />
-              </div>
-            ) : myInterests.length > 0 ? (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {myInterests.map((interest: any) => {
-                  const requestDate = interest.requestDate ? new Date(interest.requestDate) : null;
-                  const availabilityDate = interest.availabilityDate ? new Date(interest.availabilityDate) : null;
-                  const datesMatch = requestDate && availabilityDate && 
-                    requestDate.toDateString() === availabilityDate.toDateString();
-
-                  return (
-                    <Card key={interest.interestId} className="overflow-hidden hover-elevate border-2">
-                      <div className="bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] p-3">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-semibold text-white text-sm">{getCategoryConfig(interest.goodsType).label}</h3>
-                          <Badge className="bg-slate-900/90 text-white border-0 font-mono text-xs">
-                            {interest.referenceId}
-                          </Badge>
-                        </div>
-                      </div>
-
-                      <CardContent className="p-4 space-y-3">
-                        {/* Trajet */}
-                        <div className="flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-sm font-semibold">
-                            {interest.fromCity} → {interest.toCity}
-                          </span>
-                        </div>
-
-                        {/* Date proposée avec badge de couleur */}
-                        <div className="space-y-2 pt-2 border-t">
-                          <p className="text-xs font-medium text-muted-foreground">📅 {t('transporterDashboard.labels.proposedDate')}</p>
-                          <div className="flex items-center gap-2">
-                            <Badge 
-                              className={`${datesMatch 
-                                ? 'bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700' 
-                                : 'bg-orange-500 hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700'
-                              } text-white border-0 text-xs font-medium`}
-                            >
-                              {availabilityDate ? format(availabilityDate, "dd MMMM yyyy", { locale: i18n.language === 'ar' ? undefined : fr }) : t('transporterDashboard.labels.notSpecified')}
-                            </Badge>
-                            {datesMatch ? (
-                              <span className="text-xs text-green-600 dark:text-green-400 font-medium">✓ {t('transporterDashboard.labels.matches')}</span>
-                            ) : (
-                              <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">⚠ {t('transporterDashboard.labels.different')}</span>
-                            )}
-                          </div>
-                          {requestDate && (
-                            <p className="text-xs text-muted-foreground">
-                              {t('transporterDashboard.labels.clientDate')}: {format(requestDate, "dd MMMM yyyy", { locale: i18n.language === 'ar' ? undefined : fr })}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Prix si disponible */}
-                        {interest.transporterAmount && (
-                          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-[#00ff88]/10 to-transparent border-l-4 border-[#00ff88]">
-                            <span className="text-xs font-medium text-muted-foreground">{t('shared.labels.amount')}</span>
-                            <span className="text-lg font-bold text-[#00ff88] ml-auto">
-                              {Math.floor(interest.transporterAmount).toLocaleString()} Dhs
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Client */}
-                        {interest.client && (
-                          <div className="pt-2 border-t">
-                            <p className="text-xs text-muted-foreground">{t('shared.labels.client')} : {interest.client.name}</p>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Package className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">
-                  {t('transporterDashboard.noInterests')}
-                </p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  {t('transporterDashboard.browseAvailable')}
                 </p>
               </div>
             )}
