@@ -309,7 +309,7 @@ export function InteractiveRouteMap({
       <Card className="overflow-hidden border-2 shadow-lg">
         <div 
           ref={mapRef} 
-          className="w-full h-[400px] bg-gradient-to-br from-teal-50 to-blue-50 dark:from-teal-950 dark:to-blue-950"
+          className="w-full aspect-square bg-gradient-to-br from-teal-50 to-blue-50 dark:from-teal-950 dark:to-blue-950"
           data-testid="interactive-route-map"
         />
         
@@ -325,18 +325,6 @@ export function InteractiveRouteMap({
           </div>
         )}
       </Card>
-
-      {/* Interactive Instructions */}
-      {!isLoading && (fromCity || toCity) && (
-        <div className="mt-4 flex items-start gap-3 p-4 bg-gradient-to-r from-teal-50 to-blue-50 dark:from-teal-950/50 dark:to-blue-950/50 border border-teal-200 dark:border-teal-800 rounded-lg">
-          <Navigation className="h-5 w-5 text-teal-600 dark:text-teal-400 flex-shrink-0 mt-0.5" />
-          <div className="text-sm">
-            <p className="font-medium text-teal-900 dark:text-teal-100">
-              {t('interactiveMap.dragToAdjust')}
-            </p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
