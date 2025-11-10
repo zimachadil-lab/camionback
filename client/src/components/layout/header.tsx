@@ -148,13 +148,10 @@ export function Header({ user, onLogout, onCreateRequest }: HeaderProps) {
               onClick={onCreateRequest}
               size="icon"
               variant="default"
-              className="bg-gradient-to-br from-[#17cfcf] to-[#0ea5a5] hover:from-[#15b8b8] hover:to-[#0c8f8f] text-white shadow-md relative"
+              className="bg-gradient-to-br from-[#17cfcf] to-[#0ea5a5] hover:from-[#15b8b8] hover:to-[#0c8f8f] text-white shadow-md"
               data-testid="button-new-request-header"
             >
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Truck className="w-4 h-4 text-white/40 absolute" />
-              </div>
-              <Plus className="w-5 h-5 relative z-10" />
+              <Package className="w-5 h-5" />
             </Button>
           )}
           
