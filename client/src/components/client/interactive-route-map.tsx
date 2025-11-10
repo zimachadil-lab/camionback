@@ -154,29 +154,24 @@ export function InteractiveRouteMap({
 
           const fromLocation = fromResult.geometry.location;
           
-          // Create custom marker element for departure
-          const fromMarkerElement = document.createElement('div');
-          fromMarkerElement.innerHTML = `
-            <div class="relative animate-bounce-slow">
-              <div class="absolute -inset-2 bg-teal-400 rounded-full blur-md opacity-60"></div>
-              <div class="relative bg-gradient-to-br from-teal-500 to-teal-600 text-white rounded-full p-3 shadow-xl border-2 border-white">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
-                  <circle cx="12" cy="10" r="3"></circle>
-                </svg>
-              </div>
-              <div class="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap bg-teal-600 text-white text-xs px-3 py-1.5 rounded-full shadow-lg font-medium">
-                ${t('interactiveMap.departure')}
-              </div>
-            </div>
-          `;
-
-          // Create advanced marker with AdvancedMarkerElement
-          const fromMarker = new google.maps.marker.AdvancedMarkerElement({
+          // Create classic marker with custom icon
+          const fromMarker = new google.maps.Marker({
             map,
             position: fromLocation,
-            content: fromMarkerElement,
-            gmpDraggable: true,
+            draggable: true,
+            title: t('interactiveMap.departure'),
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: 12,
+              fillColor: '#14b8a6',
+              fillOpacity: 1,
+              strokeColor: '#ffffff',
+              strokeWeight: 3,
+            },
+            label: {
+              text: '🚚',
+              fontSize: '20px',
+            },
           });
 
           // Add drag listener
@@ -223,28 +218,24 @@ export function InteractiveRouteMap({
 
           const toLocation = toResult.geometry.location;
           
-          // Create custom marker element for arrival
-          const toMarkerElement = document.createElement('div');
-          toMarkerElement.innerHTML = `
-            <div class="relative animate-bounce-slow" style="animation-delay: 0.2s;">
-              <div class="absolute -inset-2 bg-orange-400 rounded-full blur-md opacity-60"></div>
-              <div class="relative bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-full p-3 shadow-xl border-2 border-white">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
-                  <circle cx="12" cy="10" r="3"></circle>
-                </svg>
-              </div>
-              <div class="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap bg-orange-600 text-white text-xs px-3 py-1.5 rounded-full shadow-lg font-medium">
-                ${t('interactiveMap.arrival')}
-              </div>
-            </div>
-          `;
-
-          const toMarker = new google.maps.marker.AdvancedMarkerElement({
+          // Create classic marker with custom icon
+          const toMarker = new google.maps.Marker({
             map,
             position: toLocation,
-            content: toMarkerElement,
-            gmpDraggable: true,
+            draggable: true,
+            title: t('interactiveMap.arrival'),
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: 12,
+              fillColor: '#f97316',
+              fillOpacity: 1,
+              strokeColor: '#ffffff',
+              strokeWeight: 3,
+            },
+            label: {
+              text: '📍',
+              fontSize: '20px',
+            },
           });
 
           // Add drag listener
@@ -273,8 +264,8 @@ export function InteractiveRouteMap({
 
         // Draw route if both cities exist
         if (fromCity && toCity && fromMarkerRef.current && toMarkerRef.current) {
-          const fromPos = fromMarkerRef.current.position as google.maps.LatLng;
-          const toPos = toMarkerRef.current.position as google.maps.LatLng;
+          const fromPos = fromMarkerRef.current.getPosition() as google.maps.LatLng;
+          const toPos = toMarkerRef.current.getPosition() as google.maps.LatLng;
 
           // Create curved path
           const path = [fromPos, toPos];
