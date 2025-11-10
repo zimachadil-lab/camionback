@@ -199,22 +199,24 @@ export function NewRequestForm({ onSuccess, onClose }: { onSuccess?: () => void;
       
       {/* Glassmorphism Card */}
       <div className="relative z-10 w-full max-w-4xl backdrop-blur-xl bg-gradient-to-br from-white/10 via-white/5 to-transparent border border-white/20 rounded-3xl p-6 sm:p-8 shadow-2xl">
+        {/* Close Button - First to ensure proper stacking */}
+        {onClose && (
+          <div className="absolute top-4 ltr:right-4 rtl:left-4 z-30">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="h-10 w-10 rounded-full hover:bg-accent/80 backdrop-blur-sm"
+              data-testid="button-close-new-request"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+        )}
+        
         {/* Decorative Elements - Behind content */}
         <div className="absolute top-4 right-4 w-32 h-32 bg-gradient-to-br from-cyan-400/20 to-transparent rounded-full blur-2xl pointer-events-none" />
         <div className="absolute bottom-4 left-4 w-40 h-40 bg-gradient-to-tr from-teal-400/20 to-transparent rounded-full blur-2xl pointer-events-none" />
-        
-        {/* Close Button */}
-        {onClose && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="absolute ltr:right-4 rtl:left-4 top-4 z-20 h-10 w-10 rounded-full hover:bg-accent/80 backdrop-blur-sm"
-            data-testid="button-close-new-request"
-          >
-            <X className="h-5 w-5" />
-          </Button>
-        )}
         
         {/* Content - Above decorative elements */}
         <div className="relative z-10">
