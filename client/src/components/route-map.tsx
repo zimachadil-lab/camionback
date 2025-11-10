@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useTranslation } from 'react-i18next';
+import { motion, useReducedMotion } from 'framer-motion';
 
 // Fix for default marker icons in Leaflet
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -91,6 +92,7 @@ function FitBounds({ positions }: { positions: [number, number][] }) {
 export function RouteMap({ departureCity, arrivalCity, distance, className = '', variant = 'default' }: RouteMapProps) {
   const { t } = useTranslation();
   const mapRef = useRef<L.Map | null>(null);
+  const shouldReduceMotion = useReducedMotion();
   
   const departureCoords = getCityCoordinates(departureCity);
   const arrivalCoords = getCityCoordinates(arrivalCity);
@@ -183,7 +185,20 @@ export function RouteMap({ departureCity, arrivalCity, distance, className = '',
                 <div className="w-3 h-3 rounded-full bg-[#10b981]"></div>
                 <span className="text-xs text-muted-foreground">{departureCity}</span>
               </div>
-              <span className="text-[#17cfcf] font-bold">→</span>
+              <motion.span 
+                className="text-[#17cfcf] font-bold"
+                animate={shouldReduceMotion ? {} : {
+                  x: [0, 8, 0],
+                  opacity: [0.6, 1, 0.6],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              >
+                →
+              </motion.span>
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-3 rounded-full bg-[#ef4444]"></div>
                 <span className="text-xs text-muted-foreground">{arrivalCity}</span>
