@@ -506,6 +506,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                 departureAddress={request.departureAddress}
                 arrivalAddress={request.arrivalAddress}
                 distance={request.distance}
+                variant="compact"
               />
               
               {/* Ligne compacte récapitulative */}
