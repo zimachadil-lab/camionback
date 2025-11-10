@@ -43,6 +43,7 @@ const CITY_COORDINATES: Record<string, [number, number]> = {
   'agadir': [30.4278, -9.5981],
   'oujda': [34.6814, -1.9086],
   'kenitra': [34.2610, -6.5802],
+  'kénitra': [34.2610, -6.5802],
   'tétouan': [35.5889, -5.3626],
   'tetouan': [35.5889, -5.3626],
   'safi': [32.2994, -9.2372],
@@ -54,6 +55,12 @@ const CITY_COORDINATES: Record<string, [number, number]> = {
   'settat': [32.9919, -7.6167],
   'larache': [35.1933, -6.1561],
   'ksar el kebir': [35.0017, -5.9050],
+  // Additional cities from coordinator data
+  'berrechid': [33.2656, -7.5872],
+  'salé': [34.0531, -6.7985],
+  'sale': [34.0531, -6.7985],
+  'anassi': [33.5731, -7.5898], // Near Casablanca
+  'hay riad': [34.0100, -6.8400], // Rabat neighborhood
 };
 
 // Fallback to Morocco center if city not found

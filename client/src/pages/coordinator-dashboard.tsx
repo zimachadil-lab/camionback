@@ -2009,8 +2009,10 @@ export default function CoordinatorDashboard() {
             <div className="flex-shrink-0">
               <RouteMap
                 variant="compact"
-                departureCity={request.departureAddress.split(',').pop()?.trim() || request.fromCity}
-                arrivalCity={request.arrivalAddress.split(',').pop()?.trim() || request.toCity}
+                departureCity={request.fromCity}
+                arrivalCity={request.toCity}
+                departureAddress={request.departureAddress}
+                arrivalAddress={request.arrivalAddress}
                 distance={request.distance}
               />
             </div>
@@ -2621,8 +2623,10 @@ export default function CoordinatorDashboard() {
                               <div className="flex-shrink-0">
                                 <RouteMap
                                   variant="compact"
-                                  departureCity={request.departureAddress.split(',').pop()?.trim() || request.fromCity}
-                                  arrivalCity={request.arrivalAddress.split(',').pop()?.trim() || request.toCity}
+                                  departureCity={request.fromCity}
+                                  arrivalCity={request.toCity}
+                                  departureAddress={request.departureAddress}
+                                  arrivalAddress={request.arrivalAddress}
                                   distance={request.distance}
                                 />
                               </div>
