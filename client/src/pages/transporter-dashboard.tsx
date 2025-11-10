@@ -1074,7 +1074,7 @@ export default function TransporterDashboard() {
                 className="flex-1"
                 data-testid="button-cancel-return"
               >
-                {t('common.actions.cancel')}
+                {t('common.cancel')}
               </Button>
               <Button
                 onClick={() => {
@@ -1199,7 +1199,7 @@ export default function TransporterDashboard() {
                   }}
                   data-testid="button-cancel-edit-offer"
                 >
-                  {t('common.actions.cancel')}
+                  {t('common.cancel')}
                 </Button>
                 <Button
                   type="submit"
@@ -1274,7 +1274,7 @@ export default function TransporterDashboard() {
                   onClick={() => setShowReportDialog(false)}
                   data-testid="button-cancel-report"
                 >
-                  {t('common.actions.cancel')}
+                  {t('common.cancel')}
                 </Button>
                 <Button
                   type="submit"
