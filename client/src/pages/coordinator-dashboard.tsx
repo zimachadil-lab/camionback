@@ -2111,6 +2111,66 @@ export default function CoordinatorDashboard() {
               </div>
             )}
 
+            {/* Info transporteur */}
+            {request.transporter && (
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-gradient-to-r from-[#17cfcf]/10 to-transparent border border-[#17cfcf]/30">
+                <Truck className="h-5 w-5 text-[#17cfcf]" />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-muted-foreground">Transporteur:</span>
+                    <span className="font-semibold text-foreground" data-testid={`text-transporter-name-${request.id}`}>
+                      {request.transporter.name || "Non renseigné"}
+                    </span>
+                  </div>
+                  {request.transporter.phoneNumber && (
+                    <a 
+                      href={`tel:${request.transporter.phoneNumber}`}
+                      className="text-[#17cfcf] hover:underline font-medium text-sm flex items-center gap-1 mt-1"
+                      data-testid={`link-call-transporter-${request.id}`}
+                    >
+                      <Phone className="h-3.5 w-3.5" />
+                      {request.transporter.phoneNumber}
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Statut de paiement */}
+            {showPaymentStatusSelector && request.paymentStatus && (
+              <div className={`flex items-center gap-2 p-2 rounded-lg border ${
+                request.paymentStatus === 'paid' || request.paymentStatus === 'pending_admin_validation' 
+                  ? 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800'
+                  : request.paymentStatus === 'awaiting_payment'
+                  ? 'bg-orange-50 dark:bg-orange-950 border-orange-200 dark:border-orange-800'
+                  : 'bg-gray-50 dark:bg-gray-950 border-gray-200 dark:border-gray-800'
+              }`}>
+                <DollarSign className={`h-4 w-4 ${
+                  request.paymentStatus === 'paid' || request.paymentStatus === 'pending_admin_validation'
+                    ? 'text-green-600 dark:text-green-400'
+                    : request.paymentStatus === 'awaiting_payment'
+                    ? 'text-orange-600 dark:text-orange-400'
+                    : 'text-gray-600 dark:text-gray-400'
+                }`} />
+                <span className="text-xs font-medium text-muted-foreground">Paiement:</span>
+                <span 
+                  className={`text-sm font-semibold ${
+                    request.paymentStatus === 'paid' || request.paymentStatus === 'pending_admin_validation'
+                      ? 'text-green-700 dark:text-green-300'
+                      : request.paymentStatus === 'awaiting_payment'
+                      ? 'text-orange-700 dark:text-orange-300'
+                      : 'text-gray-700 dark:text-gray-300'
+                  }`}
+                  data-testid={`text-payment-status-${request.id}`}
+                >
+                  {request.paymentStatus === 'paid' ? 'Payé' 
+                    : request.paymentStatus === 'awaiting_payment' ? 'En attente'
+                    : request.paymentStatus === 'pending_admin_validation' ? 'Validation admin'
+                    : request.paymentStatus}
+                </span>
+              </div>
+            )}
+
             {/* Bouton photos */}
             {request.photos && request.photos.length > 0 && (
               <Button
