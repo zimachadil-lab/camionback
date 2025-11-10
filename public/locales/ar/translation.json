@@ -261,6 +261,7 @@
       "offers": {
         "title": "الناقلون المتاحون",
         "noOffers": "لا توجد عروض في الوقت الحالي",
+        "loading": "جاري التحميل...",
         "swipeMode": "وضع السحب",
         "tableMode": "وضع الجدول",
         "matchesEnd": "نهاية المطابقات",
@@ -275,7 +276,10 @@
     "labels": {
       "handling": "المناولة",
       "truckImage": "شاحنة",
-      "transporterTruck": "شاحنة الناقل"
+      "transporterTruck": "شاحنة الناقل",
+      "proposedAvailability": "التوفر المقترح",
+      "matchesRequestedDate": "يطابق تاريخك",
+      "alternativeDate": "تاريخ بديل مقترح"
     },
     "toast": {
       "transporterSelected": "تم اختيار الناقل!",

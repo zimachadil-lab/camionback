@@ -261,6 +261,7 @@
       "offers": {
         "title": "Transporteurs disponibles",
         "noOffers": "Aucune offre pour le moment",
+        "loading": "Chargement en cours...",
         "swipeMode": "Mode swipe",
         "tableMode": "Mode tableau",
         "matchesEnd": "Fin des matches",
@@ -275,7 +276,10 @@
     "labels": {
       "handling": "Manutention",
       "truckImage": "Camion",
-      "transporterTruck": "Camion du transporteur"
+      "transporterTruck": "Camion du transporteur",
+      "proposedAvailability": "Disponibilité proposée",
+      "matchesRequestedDate": "Correspond à votre date",
+      "alternativeDate": "Date alternative proposée"
     },
     "toast": {
       "transporterSelected": "Transporteur sélectionné !",
