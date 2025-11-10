@@ -140,39 +140,33 @@ export function RouteMap({ departureCity, arrivalCity, departureAddress, arrival
   const mapWidth = variant === 'compact' ? '360px' : '100%';
   const showDistanceBadge = variant === 'default';
   
-  // Create custom markers with teal color
-  const createCustomIcon = (color: string) => {
+  // Create custom markers with emoji and color
+  const createCustomIcon = (color: string, emoji: string) => {
     return L.divIcon({
       className: 'custom-marker',
       html: `
         <div style="
-          width: 24px;
-          height: 24px;
+          width: 32px;
+          height: 32px;
           background-color: ${color};
           border: 3px solid white;
-          border-radius: 50% 50% 50% 0;
-          transform: rotate(-45deg);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
           box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+          font-size: 18px;
         ">
-          <div style="
-            width: 10px;
-            height: 10px;
-            background-color: white;
-            border-radius: 50%;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-          "></div>
+          ${emoji}
         </div>
       `,
-      iconSize: [24, 24],
-      iconAnchor: [12, 24],
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
     });
   };
   
-  const departureIcon = createCustomIcon('#10b981'); // Green for departure
-  const arrivalIcon = createCustomIcon('#ef4444'); // Red for arrival
+  const departureIcon = createCustomIcon('#14b8a6', '🚚'); // Teal truck for departure
+  const arrivalIcon = createCustomIcon('#f97316', '📍'); // Orange pin for arrival
   
   return (
     <div className={variant === 'compact' ? className : `space-y-3 ${className}`}>
