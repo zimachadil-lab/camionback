@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { MapPin, Navigation, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { loadGoogleMapsAPI } from "@/lib/google-maps-loader";
 
 declare global {
   interface Window {
@@ -36,31 +37,15 @@ export function InteractiveRouteMap({
   const [mapError, setMapError] = useState(false);
   const { t, i18n } = useTranslation();
 
-  // Wait for Google Maps to load with retry logic
-  const waitForGoogleMaps = async (maxAttempts = 10, delayMs = 500): Promise<boolean> => {
-    for (let i = 0; i < maxAttempts; i++) {
-      if (window.google?.maps) {
-        return true;
-      }
-      await new Promise(resolve => setTimeout(resolve, delayMs));
-    }
-    return false;
-  };
-
   // Initialize map
   useEffect(() => {
     if (!mapRef.current) return;
 
     const initMap = async () => {
       try {
-        // Wait for Google Maps to load with retry
-        const loaded = await waitForGoogleMaps();
-        if (!loaded) {
-          console.error("Google Maps failed to load after retries");
-          setMapError(true);
-          setIsLoading(false);
-          return;
-        }
+        // Load Google Maps API with Morocco region setting
+        const language = i18n.language === "ar" ? "ar" : "fr";
+        await loadGoogleMapsAPI({ language });
 
         // Initialize geocoder
         geocoderRef.current = new google.maps.Geocoder();
