@@ -2157,41 +2157,44 @@ export default function ClientDashboard() {
                   
                   {/* Glassmorphism Card */}
                   <div className="relative z-10 max-w-2xl w-full backdrop-blur-xl bg-gradient-to-br from-white/10 via-white/5 to-transparent border border-white/20 rounded-3xl p-12 shadow-2xl">
-                    {/* Animated Floating Package Icon - Single Animation */}
-                    <div className="relative mb-8">
-                      <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/20 to-teal-400/20 blur-3xl" />
-                      <div className="relative mx-auto w-24 h-24 bg-gradient-to-br from-[#17cfcf] to-[#0ea5a5] rounded-2xl shadow-2xl shadow-cyan-500/50 flex items-center justify-center animate-bounce">
-                        <Package className="w-12 h-12 text-white" strokeWidth={2} />
+                    {/* Decorative Elements - Behind content */}
+                    <div className="absolute top-4 right-4 w-32 h-32 bg-gradient-to-br from-cyan-400/20 to-transparent rounded-full blur-2xl pointer-events-none" />
+                    <div className="absolute bottom-4 left-4 w-40 h-40 bg-gradient-to-tr from-teal-400/20 to-transparent rounded-full blur-2xl pointer-events-none" />
+                    
+                    {/* Content - Above decorative elements */}
+                    <div className="relative z-10">
+                      {/* Animated Floating Package Icon - Single Animation */}
+                      <div className="relative mb-8">
+                        <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/20 to-teal-400/20 blur-3xl pointer-events-none" />
+                        <div className="relative mx-auto w-24 h-24 bg-gradient-to-br from-[#17cfcf] to-[#0ea5a5] rounded-2xl shadow-2xl shadow-cyan-500/50 flex items-center justify-center animate-bounce">
+                          <Package className="w-12 h-12 text-white" strokeWidth={2} />
+                        </div>
+                      </div>
+
+                      {/* Title with Proper Contrast */}
+                      <h2 className="text-4xl font-bold mb-6 text-foreground">
+                        Prêt à expédier ?
+                      </h2>
+                      
+                      {/* Description */}
+                      <p className="text-lg text-foreground mb-8 leading-relaxed">
+                        Commandez maintenant votre <span className="font-semibold text-[#17cfcf]">camion de retour</span>
+                      </p>
+
+                      {/* CTA Button - Using System Default for Guaranteed Contrast */}
+                      <div className="w-full max-w-md mx-auto">
+                        <Button 
+                          onClick={() => setShowNewRequest(true)} 
+                          size="lg"
+                          variant="default"
+                          className="w-full font-bold shadow-xl"
+                          data-testid="button-create-request-empty"
+                        >
+                          <Package className="w-5 h-5 mr-2" />
+                          Créer ma demande
+                        </Button>
                       </div>
                     </div>
-
-                    {/* Title with Proper Contrast */}
-                    <h2 className="text-4xl font-bold mb-6 text-foreground">
-                      Prêt à expédier ?
-                    </h2>
-                    
-                    {/* Description */}
-                    <p className="text-lg text-foreground mb-8 leading-relaxed">
-                      Commandez maintenant votre <span className="font-semibold text-[#17cfcf]">camion de retour</span>
-                    </p>
-
-                    {/* CTA Button - Using System Default for Guaranteed Contrast */}
-                    <div className="w-full max-w-md mx-auto">
-                      <Button 
-                        onClick={() => setShowNewRequest(true)} 
-                        size="lg"
-                        variant="default"
-                        className="w-full font-bold shadow-xl"
-                        data-testid="button-create-request-empty"
-                      >
-                        <Package className="w-5 h-5 mr-2" />
-                        Créer ma demande
-                      </Button>
-                    </div>
-
-                    {/* Decorative Elements */}
-                    <div className="absolute top-4 right-4 w-32 h-32 bg-gradient-to-br from-cyan-400/20 to-transparent rounded-full blur-2xl" />
-                    <div className="absolute bottom-4 left-4 w-40 h-40 bg-gradient-to-tr from-teal-400/20 to-transparent rounded-full blur-2xl" />
                   </div>
                 </div>
               )}
