@@ -538,6 +538,15 @@
     }
   },
   "shared": {
+    "actions": {
+      "cancel": "Annuler",
+      "confirm": "Confirmer",
+      "save": "Enregistrer",
+      "delete": "Supprimer",
+      "edit": "Modifier",
+      "close": "Fermer",
+      "understood": "Compris"
+    },
     "goodsTypes": {
       "furniture": "Meubles",
       "appliances": "Électroménager",

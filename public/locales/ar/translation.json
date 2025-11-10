@@ -538,6 +538,15 @@
     }
   },
   "shared": {
+    "actions": {
+      "cancel": "إلغاء",
+      "confirm": "تأكيد",
+      "save": "حفظ",
+      "delete": "حذف",
+      "edit": "تعديل",
+      "close": "إغلاق",
+      "understood": "مفهوم"
+    },
     "goodsTypes": {
       "furniture": "أثاث",
       "appliances": "أجهزة كهرومنزلية",
