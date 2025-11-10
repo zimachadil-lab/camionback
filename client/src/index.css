@@ -397,5 +397,16 @@
   /* Google Places Autocomplete - Ensure dropdown is above dialogs */
   .pac-container {
     z-index: 9999 !important;
+    pointer-events: auto !important;
+  }
+
+  /* Allow clicks through dialog overlay to reach Google Places suggestions */
+  [data-radix-dialog-overlay] {
+    pointer-events: none !important;
+  }
+
+  /* But keep the dialog content itself clickable */
+  [data-radix-dialog-content] {
+    pointer-events: auto !important;
   }
 }

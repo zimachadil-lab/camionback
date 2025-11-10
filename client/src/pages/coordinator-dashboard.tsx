@@ -2952,9 +2952,23 @@ export default function CoordinatorDashboard() {
 
       {/* Edit Request Dialog */}
       {editFormData && (
-        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen} modal={false}>
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
           <DialogContent 
             className="max-w-2xl max-h-[80vh] overflow-y-auto"
+            onPointerDownOutside={(e) => {
+              // Empêcher la fermeture du Dialog lors d'un clic sur Google Places
+              const target = e.target as HTMLElement;
+              if (target.closest('.pac-container')) {
+                e.preventDefault();
+              }
+            }}
+            onInteractOutside={(e) => {
+              // Empêcher la fermeture du Dialog lors d'une interaction avec Google Places
+              const target = e.target as HTMLElement;
+              if (target.closest('.pac-container')) {
+                e.preventDefault();
+              }
+            }}
           >
             <DialogHeader>
               <DialogTitle>Modifier la commande</DialogTitle>
