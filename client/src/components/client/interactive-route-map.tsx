@@ -301,7 +301,7 @@ export function InteractiveRouteMap({
     };
 
     updateMapWithCities();
-  }, [fromCity, toCity, onFromCityChange, onToCityChange, t]);
+  }, [fromCity, toCity, onFromCityChange, onToCityChange, t, isLoading]);
 
   if (mapError) {
     return (
