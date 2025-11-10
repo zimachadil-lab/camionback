@@ -43,7 +43,7 @@ export function PaymentDialog({
       }
 
       // Submit payment and rating in one request
-      await apiRequest(`/api/requests/${requestId}/payment`, "POST", {
+      await apiRequest("POST", `/api/requests/${requestId}/payment`, {
         paymentReceipt: receiptPhoto,
         paidBy,
         rating,
@@ -51,8 +51,11 @@ export function PaymentDialog({
       });
     },
     onSuccess: async () => {
+      // Invalidate all relevant query keys used by dashboards
+      await queryClient.invalidateQueries({ queryKey: ['/api/client/requests'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/coordinator/active-requests'] });
+      await queryClient.invalidateQueries({ queryKey: ['/api/coordinator/payment-requests'] });
       await queryClient.invalidateQueries({ queryKey: ['/api/requests'] });
-      await queryClient.invalidateQueries({ queryKey: ['/api/coordinator/requests'] });
       toast({
         title: t('paymentDialog.success'),
         description: t('paymentDialog.successDesc'),
