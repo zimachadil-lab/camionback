@@ -2109,10 +2109,13 @@ export default function ClientDashboard() {
       
       <div className="container mx-auto p-4 md:p-6 max-w-7xl space-y-6">
         {showNewRequest ? (
-          <NewRequestForm onSuccess={() => {
-            setShowNewRequest(false);
-            queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
-          }} />
+          <NewRequestForm 
+            onSuccess={() => {
+              setShowNewRequest(false);
+              queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+            }}
+            onClose={() => setShowNewRequest(false)}
+          />
         ) : (
           <Tabs defaultValue="active" className="w-full">
             <TabsList className="grid w-full max-w-3xl grid-cols-3">

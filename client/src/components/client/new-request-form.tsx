@@ -8,8 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Upload, MapPin, Loader2, Info } from "lucide-react";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Calendar, Upload, MapPin, Loader2, Info, X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
@@ -57,7 +57,7 @@ const goodsTypesKeys = [
   "construction", "parcel", "vehicle", "other"
 ];
 
-export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
+export function NewRequestForm({ onSuccess, onClose }: { onSuccess?: () => void; onClose?: () => void }) {
   const [photos, setPhotos] = useState<File[]>([]);
   const [showRecommendationsDialog, setShowRecommendationsDialog] = useState(false);
   const [recommendedTransporters, setRecommendedTransporters] = useState<any[]>([]);
@@ -213,8 +213,18 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
 
   return (
     <Card key={i18n.language}>
-      <CardHeader>
-        <CardTitle className="text-2xl">{t('clientDashboard.newRequest.title')}</CardTitle>
+      <CardHeader className="relative pb-4">
+        {onClose && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="absolute right-4 top-4 h-8 w-8"
+            data-testid="button-close-new-request"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
         <Form {...form}>
