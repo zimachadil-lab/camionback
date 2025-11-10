@@ -832,36 +832,20 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
               </Badge>
             </div>
 
-            {/* Route et Prix */}
-            <div className="space-y-2">
-              {/* Carte de trajet avec distance dans le dialogue */}
-              {request.fromCity && request.toCity && (
-                <div className="mt-2">
-                  <RouteMap
-                    departureCity={request.fromCity}
-                    arrivalCity={request.toCity}
-                    departureAddress={request.departureAddress}
-                    arrivalAddress={request.arrivalAddress}
-                    distance={request.distance}
-                  />
+            {/* Prix - Style transporteur */}
+            {isQualifiedWorkflow && request.clientTotal && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-[#00ff88]/10 via-[#00ff88]/5 to-transparent border-l-4 border-[#00ff88]">
+                <div className="w-7 h-7 rounded-full bg-[#00ff88]/20 flex items-center justify-center flex-shrink-0">
+                  <DollarSign className="w-4 h-4 text-[#00ff88]" />
                 </div>
-              )}
-
-              {/* Prix - Style transporteur */}
-              {isQualifiedWorkflow && request.clientTotal && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-[#00ff88]/10 via-[#00ff88]/5 to-transparent border-l-4 border-[#00ff88]">
-                  <div className="w-7 h-7 rounded-full bg-[#00ff88]/20 flex items-center justify-center flex-shrink-0">
-                    <DollarSign className="w-4 h-4 text-[#00ff88]" />
-                  </div>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold text-[#00ff88]">
-                      {parseFloat(request.clientTotal).toFixed(2)}
-                    </span>
-                    <span className="text-sm font-medium text-[#00ff88]/70">MAD</span>
-                  </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-bold text-[#00ff88]">
+                    {parseFloat(request.clientTotal).toFixed(2)}
+                  </span>
+                  <span className="text-sm font-medium text-[#00ff88]/70">MAD</span>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </DialogHeader>
 
           <div className="space-y-3 mt-4">
