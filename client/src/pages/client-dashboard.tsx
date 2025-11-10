@@ -224,14 +224,18 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
     },
   });
 
-  // Fetch interested transporters ONLY when dialog is opened (lazy loading for better performance)
-  const { data: interestedTransporters = [], refetch: refetchInterestedTransporters } = useQuery({
+  // Fetch interested transporters when dialog is opened (auto-loads when showOffersDialog is true)
+  const { 
+    data: interestedTransporters = [], 
+    refetch: refetchInterestedTransporters,
+    isFetching: isFetchingTransporters 
+  } = useQuery({
     queryKey: ["/api/requests", request.id, "interested-transporters"],
     queryFn: async () => {
       const response = await fetch(`/api/requests/${request.id}/interested-transporters`);
       return response.json();
     },
-    enabled: false, // Disabled by default - only fetch when needed (dialog opens)
+    enabled: showOffersDialog, // Auto-fetch when dialog opens
   });
 
   const offersWithTransporters = offers.map((offer: any) => {
@@ -850,8 +854,15 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
 
           <div className="space-y-3 mt-4">
             {isQualifiedWorkflow ? (
-              // New workflow: Display interested transporters
-              interestedTransporters.length > 0 ? (
+              // New workflow: Display interested transporters with loading state
+              isFetchingTransporters ? (
+                <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                  <Truck className="w-12 h-12 text-[#17cfcf] animate-pulse" />
+                  <p className="text-base font-medium text-[#17cfcf] animate-pulse">
+                    {t('clientDashboard.dialogs.offers.loading')}
+                  </p>
+                </div>
+              ) : interestedTransporters.length > 0 ? (
                 <div className="space-y-3">
                   {interestedTransporters.map((transporter: any, index: number) => {
                     // Array of vibrant border colors
