@@ -1,7 +1,7 @@
-import { useRef, useEffect, forwardRef } from "react";
-import Autocomplete from "react-google-autocomplete";
+import { useRef, useEffect, forwardRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { useTranslation } from "react-i18next";
+import { loadGoogleMapsAPI } from "@/lib/google-maps-loader";
 
 interface GooglePlacesAutocompleteProps {
   value: string;
@@ -15,6 +15,9 @@ export const GooglePlacesAutocomplete = forwardRef<HTMLInputElement, GooglePlace
   ({ value, onChange, placeholder, className, dataTestId }, ref) => {
     const { i18n } = useTranslation();
     const inputRef = useRef<HTMLInputElement>(null);
+    const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [hasError, setHasError] = useState(false);
 
     // Expose the input element via ref if provided
     useEffect(() => {
@@ -25,10 +28,84 @@ export const GooglePlacesAutocomplete = forwardRef<HTMLInputElement, GooglePlace
       }
     }, [ref]);
 
-    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
+    // Initialize Google Places Autocomplete using shared loader
+    useEffect(() => {
+      const initAutocomplete = async () => {
+        if (!inputRef.current) return;
 
-    if (!apiKey) {
-      console.warn("Google Maps API key not found. Using regular input.");
+        try {
+          setIsLoading(true);
+          setHasError(false);
+
+          // Load Google Maps API with Morocco region
+          const language = i18n.language === "ar" ? "ar" : "fr";
+          await loadGoogleMapsAPI({ language });
+
+          // Initialize autocomplete
+          autocompleteRef.current = new google.maps.places.Autocomplete(inputRef.current, {
+            types: ["geocode"],
+            componentRestrictions: { country: "ma" },
+            fields: ["address_components", "formatted_address", "geometry", "name", "place_id"],
+          });
+
+          // Listen for place selection
+          autocompleteRef.current.addListener("place_changed", () => {
+            const place = autocompleteRef.current?.getPlace();
+            
+            if (place && place.address_components) {
+              // Extract structured address components
+              let city = "";
+              let neighborhood = "";
+
+              place.address_components.forEach((component: google.maps.GeocoderAddressComponent) => {
+                if (component.types.includes("locality")) {
+                  city = component.long_name;
+                } else if (component.types.includes("sublocality") || component.types.includes("sublocality_level_1")) {
+                  neighborhood = component.long_name;
+                } else if (!city && component.types.includes("administrative_area_level_1")) {
+                  // Fallback to province/region if no locality found
+                  city = component.long_name;
+                }
+              });
+
+              // Create formatted address with neighborhood and city
+              const addressParts = [neighborhood, city].filter(Boolean);
+              const formattedAddress = addressParts.join(", ");
+
+              // Pass both formatted address and place object with structured data
+              onChange(formattedAddress || city || place.formatted_address || "", place);
+            } else {
+              onChange("", undefined);
+            }
+          });
+
+          setIsLoading(false);
+        } catch (error) {
+          console.error("Failed to load Google Maps API:", error);
+          setHasError(true);
+          setIsLoading(false);
+        }
+      };
+
+      initAutocomplete();
+
+      // Cleanup
+      return () => {
+        if (autocompleteRef.current) {
+          google.maps.event.clearInstanceListeners(autocompleteRef.current);
+        }
+      };
+    }, [i18n.language, onChange]);
+
+    // Update input value when prop changes
+    useEffect(() => {
+      if (inputRef.current && inputRef.current.value !== value) {
+        inputRef.current.value = value;
+      }
+    }, [value]);
+
+    if (hasError) {
+      console.warn("Google Maps API failed to load. Using regular input.");
       return (
         <Input
           ref={inputRef}
@@ -43,51 +120,15 @@ export const GooglePlacesAutocomplete = forwardRef<HTMLInputElement, GooglePlace
     }
 
     return (
-      <Autocomplete
+      <Input
         ref={inputRef}
-        apiKey={apiKey}
-        className={`flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
-        placeholder={placeholder}
+        type="text"
         defaultValue={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className={className}
         data-testid={dataTestId}
-        options={{
-          types: ["geocode"],
-          componentRestrictions: { country: "ma" },
-          language: i18n.language === "ar" ? "ar" : "fr",
-          fields: ["address_components", "formatted_address", "geometry", "name", "place_id"],
-        }}
-        onPlaceSelected={(place) => {
-          if (place && place.address_components) {
-            // Extract structured address components
-            let city = "";
-            let neighborhood = "";
-
-            place.address_components.forEach((component: google.maps.GeocoderAddressComponent) => {
-              if (component.types.includes("locality")) {
-                city = component.long_name;
-              } else if (component.types.includes("sublocality") || component.types.includes("sublocality_level_1")) {
-                neighborhood = component.long_name;
-              } else if (!city && component.types.includes("administrative_area_level_1")) {
-                // Fallback to province/region if no locality found
-                city = component.long_name;
-              }
-            });
-
-            // Create formatted address with neighborhood and city
-            const addressParts = [neighborhood, city].filter(Boolean);
-            const formattedAddress = addressParts.join(", ");
-
-            // Pass both formatted address and place object with structured data
-            onChange(formattedAddress || city || place.formatted_address || "", place);
-          } else {
-            onChange("", undefined);
-          }
-        }}
-        onChange={(e) => {
-          // Handle manual typing
-          const target = e.target as HTMLInputElement;
-          onChange(target.value);
-        }}
+        disabled={isLoading}
       />
     );
   }
