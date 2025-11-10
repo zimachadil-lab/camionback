@@ -76,18 +76,6 @@
   --chart-4: 145 50% 38%;
   --chart-5: 130 60% 36%;
 
-  /* Semantic status colors - optimized for accessibility */
-  --status-success: 158 64% 52%;
-  --status-success-foreground: 158 64% 12%;
-  --status-warning: 43 92% 62%;
-  --status-warning-foreground: 43 92% 22%;
-  --status-info: 192 82% 54%;
-  --status-info-foreground: 192 82% 14%;
-  --status-neutral: 200 18% 82%;
-  --status-neutral-foreground: 200 18% 22%;
-  --status-processing: 166 70% 52%;
-  --status-processing-foreground: 166 70% 12%;
-
   --font-sans: Inter, Poppins, sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: Menlo, monospace;
@@ -205,18 +193,6 @@
   --chart-3: 160 55% 58%;
   --chart-4: 145 50% 62%;
   --chart-5: 130 60% 60%;
-
-  /* Semantic status colors - optimized for dark mode */
-  --status-success: 158 64% 52%;
-  --status-success-foreground: 158 64% 95%;
-  --status-warning: 43 92% 62%;
-  --status-warning-foreground: 43 92% 95%;
-  --status-info: 192 82% 54%;
-  --status-info-foreground: 192 82% 95%;
-  --status-neutral: 200 18% 72%;
-  --status-neutral-foreground: 200 18% 95%;
-  --status-processing: 166 70% 52%;
-  --status-processing-foreground: 166 70% 95%;
 
   --shadow-2xs: 0px 2px 0px 0px hsl(210 30% 5% / 0.15);
   --shadow-xs: 0px 2px 0px 0px hsl(210 30% 5% / 0.20);
