@@ -393,4 +393,9 @@
   .force-font-light {
     font-weight: 300 !important;
   }
+
+  /* Google Places Autocomplete - Ensure dropdown is above dialogs */
+  .pac-container {
+    z-index: 9999 !important;
+  }
 }

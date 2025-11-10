@@ -41,11 +41,17 @@ export const GooglePlacesAutocomplete = forwardRef<HTMLInputElement, GooglePlace
           const language = i18n.language === "ar" ? "ar" : "fr";
           await loadGoogleMapsAPI({ language });
 
-          // Initialize autocomplete
+          // Initialize autocomplete with Morocco bias
           autocompleteRef.current = new google.maps.places.Autocomplete(inputRef.current, {
             types: ["geocode"],
             componentRestrictions: { country: "ma" },
             fields: ["address_components", "formatted_address", "geometry", "name", "place_id"],
+            // Bias results towards Morocco
+            bounds: new google.maps.LatLngBounds(
+              new google.maps.LatLng(27.662, -13.168), // Southwest corner
+              new google.maps.LatLng(35.923, -1.010)   // Northeast corner
+            ),
+            strictBounds: false,
           });
 
           // Listen for place selection
