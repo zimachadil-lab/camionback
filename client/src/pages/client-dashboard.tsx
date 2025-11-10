@@ -539,26 +539,30 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
             </span>
           </div>
 
-          {/* Catégorie et infos compactes */}
-          <div className="space-y-2">
-            <div>
-              <p className="text-muted-foreground text-xs mb-1">{t('clientDashboard.dialogs.edit.goodsType')}</p>
-              <p className="text-sm font-medium">{categoryConfig.label}</p>
-            </div>
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              {request.viewCount !== undefined && (
+          {/* Catégorie et infos compactes - Une ligne */}
+          <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+            <span className="flex items-center gap-1.5 font-medium text-foreground">
+              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: categoryConfig.color }}></span>
+              {categoryConfig.label}
+            </span>
+            {request.viewCount !== undefined && (
+              <>
+                <span className="text-muted-foreground/40">•</span>
                 <span className="flex items-center gap-1">
                   <Eye className="w-3 h-3" />
                   {request.viewCount} vue{request.viewCount > 1 ? 's' : ''}
                 </span>
-              )}
-              {createdAt && (
+              </>
+            )}
+            {createdAt && (
+              <>
+                <span className="text-muted-foreground/40">•</span>
                 <span className="flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
-                  Créée le {format(createdAt, "d MMM yyyy", { locale: fr })}
+                  {format(createdAt, "d MMM yyyy", { locale: fr })}
                 </span>
-              )}
-            </div>
+              </>
+            )}
           </div>
 
           {/* Description */}
