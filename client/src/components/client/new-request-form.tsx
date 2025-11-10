@@ -62,6 +62,8 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
   const [showRecommendationsDialog, setShowRecommendationsDialog] = useState(false);
   const [recommendedTransporters, setRecommendedTransporters] = useState<any[]>([]);
   const [createdRequestId, setCreatedRequestId] = useState<string>("");
+  const [fromCityConfirmed, setFromCityConfirmed] = useState(false);
+  const [toCityConfirmed, setToCityConfirmed] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   const { t, i18n } = useTranslation();
@@ -233,6 +235,9 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
                           
                           // Use full address (neighborhood + city) for transporter view too
                           field.onChange(address);
+                          
+                          // Mark as confirmed only when a place is selected from autocomplete
+                          setFromCityConfirmed(!!placeDetails);
                         }}
                         placeholder={t('newRequestForm.fromCityPlaceholder')}
                         dataTestId="input-from-city"
@@ -258,6 +263,9 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
                           
                           // Use full address (neighborhood + city) for transporter view too
                           field.onChange(address);
+                          
+                          // Mark as confirmed only when a place is selected from autocomplete
+                          setToCityConfirmed(!!placeDetails);
                         }}
                         placeholder={t('newRequestForm.toCityPlaceholder')}
                         dataTestId="input-to-city"
@@ -269,8 +277,8 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
               />
             </div>
 
-            {/* Interactive map visualization */}
-            {form.watch('fromCity') && form.watch('toCity') && (
+            {/* Interactive map visualization - only show when both cities are confirmed */}
+            {fromCityConfirmed && toCityConfirmed && form.watch('fromCity') && form.watch('toCity') && (
               <InteractiveRouteMap
                 fromCity={form.watch('fromCity')}
                 toCity={form.watch('toCity')}

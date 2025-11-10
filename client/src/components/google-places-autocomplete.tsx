@@ -16,6 +16,7 @@ export const GooglePlacesAutocomplete = forwardRef<HTMLInputElement, GooglePlace
     const { i18n } = useTranslation();
     const inputRef = useRef<HTMLInputElement>(null);
     const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+    const isSelectingFromAutocomplete = useRef(false);
     const [isLoading, setIsLoading] = useState(true);
     const [hasError, setHasError] = useState(false);
 
@@ -52,6 +53,9 @@ export const GooglePlacesAutocomplete = forwardRef<HTMLInputElement, GooglePlace
           autocompleteRef.current.addListener("place_changed", () => {
             const place = autocompleteRef.current?.getPlace();
             
+            // Mark that we're selecting from autocomplete
+            isSelectingFromAutocomplete.current = true;
+            
             if (place && place.address_components) {
               // Extract structured address components
               let city = "";
@@ -77,6 +81,11 @@ export const GooglePlacesAutocomplete = forwardRef<HTMLInputElement, GooglePlace
             } else {
               onChange("", undefined);
             }
+            
+            // Reset flag after a short delay
+            setTimeout(() => {
+              isSelectingFromAutocomplete.current = false;
+            }, 100);
           });
 
           setIsLoading(false);
@@ -124,7 +133,12 @@ export const GooglePlacesAutocomplete = forwardRef<HTMLInputElement, GooglePlace
         ref={inputRef}
         type="text"
         defaultValue={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => {
+          // Only call onChange when typing manually, not when autocomplete updates the field
+          if (!isSelectingFromAutocomplete.current) {
+            onChange(e.target.value, undefined);
+          }
+        }}
         placeholder={placeholder}
         className={className}
         data-testid={dataTestId}
