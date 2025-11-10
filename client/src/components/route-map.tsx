@@ -239,14 +239,15 @@ export function RouteMap({ departureCity, arrivalCity, distance, className = '',
                   // Reduced motion: truck stays in the middle
                   x: containerWidth > 0 ? containerWidth / 2 - truckSize / 2 : 0,
                 } : {
-                  // Full animation: truck travels from start to end
-                  x: [0, travelDistance, 0],
+                  // Full animation: truck travels from start to end (one-way trip)
+                  x: travelDistance,
                 }}
                 transition={{
-                  duration: 4,
+                  duration: 3.5,
                   repeat: Infinity,
+                  repeatType: "loop", // Truck reappears at start instead of going backwards
                   ease: "easeInOut",
-                  repeatDelay: 0.5,
+                  repeatDelay: 0.8,
                 }}
               >
                 <Truck 
