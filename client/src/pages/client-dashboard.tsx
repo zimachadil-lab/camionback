@@ -2151,12 +2151,12 @@ export default function ClientDashboard() {
                   />
                 ))
               ) : (
-                <div className="relative min-h-[500px] flex items-center justify-center px-4 py-16">
+                <div className="relative flex items-center justify-center px-4 py-8">
                   {/* Subtle Background Gradient */}
                   <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-teal-500/10 to-emerald-500/10 rounded-3xl" />
                   
                   {/* Glassmorphism Card */}
-                  <div className="relative z-10 max-w-2xl w-full backdrop-blur-xl bg-gradient-to-br from-white/10 via-white/5 to-transparent border border-white/20 rounded-3xl p-12 shadow-2xl">
+                  <div className="relative z-10 max-w-2xl w-full backdrop-blur-xl bg-gradient-to-br from-white/10 via-white/5 to-transparent border border-white/20 rounded-3xl p-6 sm:p-8 shadow-2xl">
                     {/* Decorative Elements - Behind content */}
                     <div className="absolute top-4 right-4 w-32 h-32 bg-gradient-to-br from-cyan-400/20 to-transparent rounded-full blur-2xl pointer-events-none" />
                     <div className="absolute bottom-4 left-4 w-40 h-40 bg-gradient-to-tr from-teal-400/20 to-transparent rounded-full blur-2xl pointer-events-none" />
@@ -2164,20 +2164,20 @@ export default function ClientDashboard() {
                     {/* Content - Above decorative elements */}
                     <div className="relative z-10">
                       {/* Animated Floating Package Icon - Single Animation */}
-                      <div className="relative mb-8">
+                      <div className="relative mb-6">
                         <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/20 to-teal-400/20 blur-3xl pointer-events-none" />
-                        <div className="relative mx-auto w-24 h-24 bg-gradient-to-br from-[#17cfcf] to-[#0ea5a5] rounded-2xl shadow-2xl shadow-cyan-500/50 flex items-center justify-center animate-bounce">
-                          <Package className="w-12 h-12 text-white" strokeWidth={2} />
+                        <div className="relative mx-auto w-20 h-20 bg-gradient-to-br from-[#17cfcf] to-[#0ea5a5] rounded-2xl shadow-2xl shadow-cyan-500/50 flex items-center justify-center animate-bounce">
+                          <Package className="w-10 h-10 text-white" strokeWidth={2} />
                         </div>
                       </div>
 
                       {/* Title with Proper Contrast */}
-                      <h2 className="text-4xl font-bold mb-6 text-foreground">
+                      <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-foreground">
                         Prêt à expédier ?
                       </h2>
                       
                       {/* Description */}
-                      <p className="text-lg text-foreground mb-8 leading-relaxed">
+                      <p className="text-base sm:text-lg text-foreground mb-6 leading-relaxed">
                         Commandez maintenant votre <span className="font-semibold text-[#17cfcf]">camion de retour</span>
                       </p>
 
