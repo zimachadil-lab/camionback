@@ -141,11 +141,43 @@ export const GooglePlacesAutocomplete = forwardRef<HTMLInputElement, GooglePlace
         ref={inputRef}
         type="text"
         defaultValue={value}
-        onBlur={(e) => {
+        onBlur={async (e) => {
           // Sync manual typing when user leaves the field
           const currentValue = e.target.value;
           if (currentValue !== value) {
-            onChange(currentValue);
+            // Handle empty value (user cleared the field)
+            if (!currentValue.trim()) {
+              onChange("");
+              return;
+            }
+
+            // Try to geocode the manually entered address
+            try {
+              if (!window.google?.maps?.Geocoder) {
+                // Google Maps not loaded, just pass the text value
+                onChange(currentValue);
+                return;
+              }
+
+              const geocoder = new google.maps.Geocoder();
+              const result = await geocoder.geocode({ 
+                address: currentValue,
+                componentRestrictions: { country: "ma" }, // Restrict to Morocco
+              });
+
+              if (result.results && result.results.length > 0) {
+                const place = result.results[0];
+                // Successfully geocoded - pass both address and place details
+                onChange(currentValue, place as google.maps.places.PlaceResult);
+              } else {
+                // Geocoding failed - just pass the text value without confirmation
+                onChange(currentValue);
+              }
+            } catch (error) {
+              console.warn("Geocoding failed for manual entry:", error);
+              // On error, just pass the text value without confirmation
+              onChange(currentValue);
+            }
           }
         }}
         placeholder={placeholder}
