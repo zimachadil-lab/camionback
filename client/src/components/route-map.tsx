@@ -1,9 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useTranslation } from 'react-i18next';
 import { motion, useReducedMotion } from 'framer-motion';
+import { Truck } from 'lucide-react';
 
 // Fix for default marker icons in Leaflet
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -89,13 +90,48 @@ function FitBounds({ positions }: { positions: [number, number][] }) {
   return null;
 }
 
+// Hook to measure container width with ResizeObserver
+function useContainerWidth() {
+  const [width, setWidth] = useState(0);
+  const [element, setElement] = useState<HTMLDivElement | null>(null);
+
+  // Callback ref to get the element when it mounts
+  const containerRef = useCallback((node: HTMLDivElement | null) => {
+    setElement(node);
+  }, []);
+
+  useEffect(() => {
+    if (!element) return;
+
+    const updateWidth = () => {
+      setWidth(element.offsetWidth);
+    };
+
+    // Initial measurement
+    updateWidth();
+
+    // Observe resize
+    const resizeObserver = new ResizeObserver(updateWidth);
+    resizeObserver.observe(element);
+
+    return () => resizeObserver.disconnect();
+  }, [element]);
+
+  return { containerRef, width };
+}
+
 export function RouteMap({ departureCity, arrivalCity, distance, className = '', variant = 'default' }: RouteMapProps) {
   const { t } = useTranslation();
   const mapRef = useRef<L.Map | null>(null);
   const shouldReduceMotion = useReducedMotion();
+  const { containerRef, width: containerWidth } = useContainerWidth();
   
   const departureCoords = getCityCoordinates(departureCity);
   const arrivalCoords = getCityCoordinates(arrivalCity);
+  
+  // Calculate truck animation distance (clamped to avoid negative values)
+  const truckSize = 20; // Icon size in pixels
+  const travelDistance = Math.max(0, containerWidth - truckSize);
   
   // Conditional dimensions based on variant
   const mapHeight = variant === 'compact' ? '360px' : '200px';
@@ -176,34 +212,58 @@ export function RouteMap({ departureCity, arrivalCity, distance, className = '',
         </MapContainer>
       </div>
       
-      {/* Distance label - only shown in default mode */}
+      {/* Distance badge with animated truck - only shown in default mode */}
       {showDistanceBadge && distance && (
         <div className="flex items-center justify-center">
           <div className="px-4 py-2 bg-[#17cfcf]/10 border border-[#17cfcf]/30 rounded-lg">
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5">
+            {/* Route visualization with animated truck */}
+            <div 
+              ref={containerRef}
+              className="relative flex items-center justify-between gap-2 min-h-[24px]"
+              aria-label={`${departureCity} vers ${arrivalCity}, ${distance} kilomètres`}
+            >
+              {/* Departure city */}
+              <div className="flex items-center gap-1.5 z-10">
                 <div className="w-3 h-3 rounded-full bg-[#10b981]"></div>
-                <span className="text-xs text-muted-foreground">{departureCity}</span>
+                <span className="text-xs text-muted-foreground whitespace-nowrap">{departureCity}</span>
               </div>
-              <motion.span 
-                className="text-[#17cfcf] font-bold"
-                animate={shouldReduceMotion ? {} : {
-                  x: [0, 8, 0],
-                  opacity: [0.6, 1, 0.6],
+              
+              {/* Animated truck traveling from departure to arrival */}
+              <motion.div
+                className="absolute left-0 z-20"
+                style={{ 
+                  width: truckSize,
+                  height: truckSize,
+                }}
+                animate={shouldReduceMotion ? {
+                  // Reduced motion: truck stays in the middle
+                  x: containerWidth > 0 ? containerWidth / 2 - truckSize / 2 : 0,
+                } : {
+                  // Full animation: truck travels from start to end
+                  x: [0, travelDistance, 0],
                 }}
                 transition={{
-                  duration: 2,
+                  duration: 4,
                   repeat: Infinity,
                   ease: "easeInOut",
+                  repeatDelay: 0.5,
                 }}
               >
-                →
-              </motion.span>
-              <div className="flex items-center gap-1.5">
+                <Truck 
+                  className="text-[#17cfcf]" 
+                  size={truckSize}
+                  strokeWidth={2.5}
+                />
+              </motion.div>
+              
+              {/* Arrival city */}
+              <div className="flex items-center gap-1.5 z-10">
                 <div className="w-3 h-3 rounded-full bg-[#ef4444]"></div>
-                <span className="text-xs text-muted-foreground">{arrivalCity}</span>
+                <span className="text-xs text-muted-foreground whitespace-nowrap">{arrivalCity}</span>
               </div>
             </div>
+            
+            {/* Distance display */}
             <div className="text-center mt-1.5">
               <span className="text-lg font-bold text-[#17cfcf]">{distance} km</span>
             </div>
