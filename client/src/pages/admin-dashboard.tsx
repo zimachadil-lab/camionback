@@ -46,6 +46,7 @@ import { CoordinationStatusManagement } from "@/components/admin/coordination-st
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useForceFrenchLayout } from "@/hooks/use-force-french-layout";
+import { getCategoryConfig } from "@/lib/goods-category-config";
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
@@ -3478,7 +3479,7 @@ export default function AdminDashboard() {
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground">Type de marchandise</p>
-                          <p className="font-medium">{request.goodsType}</p>
+                          <p className="font-medium">{getCategoryConfig(request.goodsType).label}</p>
                         </div>
                       </div>
                       <div>
@@ -3697,7 +3698,7 @@ export default function AdminDashboard() {
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Type de marchandise</p>
-                        <p className="font-medium">{selectedRequest.goodsType}</p>
+                        <p className="font-medium">{getCategoryConfig(selectedRequest.goodsType).label}</p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Budget estimé</p>

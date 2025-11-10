@@ -61,9 +61,26 @@ export const getCategoryConfig = (goodsType: string): CategoryConfig => {
       bgColor: 'bg-gradient-to-br from-cyan-500 to-cyan-600',
       borderColor: 'border-cyan-500',
       translationKey: 'shared.goodsTypes.vehicle'
+    },
+    'other': {
+      icon: Package,
+      color: 'text-white',
+      bgColor: 'bg-gradient-to-br from-purple-500 to-purple-600',
+      borderColor: 'border-purple-500',
+      translationKey: 'shared.goodsTypes.other'
     }
   };
   
+  // First, check if the type is already a direct key in categoryKeyMap
+  if (categoryKeyMap[type]) {
+    const config = categoryKeyMap[type];
+    return {
+      ...config,
+      label: i18next.t(config.translationKey)
+    };
+  }
+  
+  // Then, try to map from French/Arabic terms
   const frTranslations: Record<string, string> = {
     'meubles': 'furniture',
     'mobilier': 'furniture',
@@ -86,7 +103,9 @@ export const getCategoryConfig = (goodsType: string): CategoryConfig => {
     'أجهزة': 'appliances',
     'أجهزة كهرومنزلية': 'appliances',
     'véhicule': 'vehicle',
-    'مركبة': 'vehicle'
+    'مركبة': 'vehicle',
+    'autre': 'other',
+    'آخر': 'other'
   };
   
   let categoryKey: string | null = null;

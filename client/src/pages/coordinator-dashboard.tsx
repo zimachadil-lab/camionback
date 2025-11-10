@@ -2958,7 +2958,7 @@ export default function CoordinatorDashboard() {
 
               <div>
                 <p className="text-sm text-muted-foreground">Type de marchandise</p>
-                <p className="font-medium">{selectedRequest.goodsType}</p>
+                <p className="font-medium">{getCategoryConfig(selectedRequest.goodsType).label}</p>
               </div>
 
               <div>
@@ -3401,7 +3401,7 @@ export default function CoordinatorDashboard() {
                           <div className="flex items-center gap-2">
                             <Package className="h-4 w-4 text-muted-foreground" />
                             <span className="text-muted-foreground">Marchandise:</span>
-                            <span className="font-medium">{request.goodsType}</span>
+                            <span className="font-medium">{getCategoryConfig(request.goodsType).label}</span>
                           </div>
 
                           <div className="flex items-center gap-2">

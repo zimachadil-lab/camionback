@@ -694,7 +694,7 @@ export default function TransporterDashboard() {
                     <Card key={interest.interestId} className="overflow-hidden hover-elevate border-2">
                       <div className="bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] p-3">
                         <div className="flex items-center justify-between">
-                          <h3 className="font-semibold text-white text-sm">{interest.goodsType}</h3>
+                          <h3 className="font-semibold text-white text-sm">{getCategoryConfig(interest.goodsType).label}</h3>
                           <Badge className="bg-slate-900/90 text-white border-0 font-mono text-xs">
                             {interest.referenceId}
                           </Badge>

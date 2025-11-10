@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { getCategoryConfig } from "@/lib/goods-category-config";
 
 interface PublicRequest {
   id: string;
@@ -214,7 +215,7 @@ export default function PublicRequestView() {
           <CardContent className="space-y-3">
             <div>
               <p className="text-sm text-muted-foreground">Type de marchandise</p>
-              <p className="font-medium" data-testid="text-goods-type">{request.goodsType}</p>
+              <p className="font-medium" data-testid="text-goods-type">{getCategoryConfig(request.goodsType).label}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Description</p>
