@@ -23,6 +23,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { ManualAssignmentDialog } from "@/components/coordinator/manual-assignment-dialog";
 import { QualificationDialog } from "@/components/coordinator/qualification-dialog";
 import { RouteMap } from "@/components/route-map";
+import { GooglePlacesAutocomplete } from "@/components/google-places-autocomplete";
 import { format, isSameDay } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useForceFrenchLayout } from "@/hooks/use-force-french-layout";
@@ -1408,6 +1409,8 @@ export default function CoordinatorDashboard() {
       requestId: request.id,
       fromCity: request.fromCity,
       toCity: request.toCity,
+      departureAddress: request.departureAddress || request.fromCity || '',
+      arrivalAddress: request.arrivalAddress || request.toCity || '',
       description: request.description,
       dateTime: request.dateTime,
       photos: request.photos || [],
@@ -3022,44 +3025,100 @@ export default function CoordinatorDashboard() {
             </DialogHeader>
 
             <div className="space-y-4">
-              {/* Villes */}
+              {/* Adresses avec Google Places Autocomplete */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium mb-1 block">Ville de départ</label>
-                  <Select
-                    value={editFormData.fromCity}
-                    onValueChange={(value) => setEditFormData({ ...editFormData, fromCity: value })}
-                  >
-                    <SelectTrigger data-testid="select-edit-from-city">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cities.map((city: any) => (
-                        <SelectItem key={city.id} value={city.name}>
-                          {city.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <label className="text-sm font-medium mb-1 block">Adresse de départ</label>
+                  <GooglePlacesAutocomplete
+                    value={editFormData.departureAddress || editFormData.fromCity || ''}
+                    onChange={(address, placeDetails) => {
+                      // Extract city from structured place details
+                      let city = '';
+                      if (placeDetails?.address_components) {
+                        placeDetails.address_components.forEach((component: any) => {
+                          if (component.types.includes('locality')) {
+                            city = component.long_name;
+                          } else if (!city && component.types.includes('administrative_area_level_1')) {
+                            // Fallback to province/region if no locality
+                            city = component.long_name;
+                          }
+                        });
+                      }
+                      // Fallback: extract from formatted address (avoid country name)
+                      if (!city && address) {
+                        const parts = address.split(',').map(p => p.trim()).filter(p => p);
+                        // Take second-to-last part (likely city) instead of last (country)
+                        if (parts.length >= 2) {
+                          city = parts[parts.length - 2];
+                        } else if (parts.length === 1) {
+                          city = parts[0];
+                        }
+                      }
+                      
+                      // Defensive: prevent country names
+                      if (city && (city.toLowerCase() === 'maroc' || city.toLowerCase() === 'morocco' || city.toLowerCase() === 'المغرب')) {
+                        city = editFormData.fromCity || '';
+                      }
+                      
+                      setEditFormData({ 
+                        ...editFormData, 
+                        departureAddress: address,
+                        fromCity: city || editFormData.fromCity
+                      });
+                    }}
+                    placeholder="Quartier, Ville"
+                    dataTestId="input-edit-departure-address"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Ex: Hay Hassani, Casablanca
+                  </p>
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium mb-1 block">Ville d'arrivée</label>
-                  <Select
-                    value={editFormData.toCity}
-                    onValueChange={(value) => setEditFormData({ ...editFormData, toCity: value })}
-                  >
-                    <SelectTrigger data-testid="select-edit-to-city">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cities.map((city: any) => (
-                        <SelectItem key={city.id} value={city.name}>
-                          {city.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <label className="text-sm font-medium mb-1 block">Adresse d'arrivée</label>
+                  <GooglePlacesAutocomplete
+                    value={editFormData.arrivalAddress || editFormData.toCity || ''}
+                    onChange={(address, placeDetails) => {
+                      // Extract city from structured place details
+                      let city = '';
+                      if (placeDetails?.address_components) {
+                        placeDetails.address_components.forEach((component: any) => {
+                          if (component.types.includes('locality')) {
+                            city = component.long_name;
+                          } else if (!city && component.types.includes('administrative_area_level_1')) {
+                            // Fallback to province/region if no locality
+                            city = component.long_name;
+                          }
+                        });
+                      }
+                      // Fallback: extract from formatted address (avoid country name)
+                      if (!city && address) {
+                        const parts = address.split(',').map(p => p.trim()).filter(p => p);
+                        // Take second-to-last part (likely city) instead of last (country)
+                        if (parts.length >= 2) {
+                          city = parts[parts.length - 2];
+                        } else if (parts.length === 1) {
+                          city = parts[0];
+                        }
+                      }
+                      
+                      // Defensive: prevent country names
+                      if (city && (city.toLowerCase() === 'maroc' || city.toLowerCase() === 'morocco' || city.toLowerCase() === 'المغرب')) {
+                        city = editFormData.toCity || '';
+                      }
+                      
+                      setEditFormData({ 
+                        ...editFormData, 
+                        arrivalAddress: address,
+                        toCity: city || editFormData.toCity
+                      });
+                    }}
+                    placeholder="Quartier, Ville"
+                    dataTestId="input-edit-arrival-address"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Ex: Hay Riad, Rabat
+                  </p>
                 </div>
               </div>
 

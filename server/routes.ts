@@ -5585,10 +5585,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const coordinatorId = req.user!.id;
       const { id } = req.params;
-      const { fromCity, toCity, description, dateTime, photos } = req.body;
+      const { fromCity, toCity, departureAddress, arrivalAddress, description, dateTime, photos } = req.body;
 
       console.log(`[PATCH /api/coordinator/requests/:id] Received update request for ${id}`);
-      console.log(`[PATCH /api/coordinator/requests/:id] Body:`, { fromCity, toCity, description, dateTime, photos: photos?.length });
+      console.log(`[PATCH /api/coordinator/requests/:id] Body:`, { fromCity, toCity, departureAddress, arrivalAddress, description, dateTime, photos: photos?.length });
 
       // Get current request to compare changes
       const currentRequest = await storage.getTransportRequest(id);
@@ -5610,6 +5610,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (toCity !== undefined && toCity !== currentRequest.toCity) {
         updates.toCity = toCity;
         changes.toCity = { before: currentRequest.toCity, after: toCity };
+      }
+      if (departureAddress !== undefined && departureAddress !== currentRequest.departureAddress) {
+        updates.departureAddress = departureAddress;
+        changes.departureAddress = { before: currentRequest.departureAddress, after: departureAddress };
+      }
+      if (arrivalAddress !== undefined && arrivalAddress !== currentRequest.arrivalAddress) {
+        updates.arrivalAddress = arrivalAddress;
+        changes.arrivalAddress = { before: currentRequest.arrivalAddress, after: arrivalAddress };
       }
       if (description !== undefined && description !== currentRequest.description) {
         updates.description = description;
