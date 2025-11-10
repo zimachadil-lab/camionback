@@ -143,8 +143,8 @@ export function RouteMap({ departureCity, arrivalCity, departureAddress, arrival
   const travelDistance = Math.max(0, containerWidth - truckSize);
   
   // Conditional dimensions based on variant
-  const mapHeight = variant === 'compact' ? '360px' : '200px';
-  const mapWidth = variant === 'compact' ? '360px' : '100%';
+  const mapHeight = variant === 'compact' ? '180px' : '200px';
+  const mapWidth = variant === 'compact' ? '100%' : '100%';
   const showDistanceBadge = variant === 'default';
   
   // Create custom markers with emoji and color
