@@ -64,6 +64,7 @@ export function NewRequestForm({ onSuccess, onClose }: { onSuccess?: () => void;
   const [createdRequestId, setCreatedRequestId] = useState<string>("");
   const [fromCityConfirmed, setFromCityConfirmed] = useState(false);
   const [toCityConfirmed, setToCityConfirmed] = useState(false);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   const { t, i18n } = useTranslation();
@@ -180,7 +181,11 @@ export function NewRequestForm({ onSuccess, onClose }: { onSuccess?: () => void;
         budget: data.budget,
       });
       
-      // Fetch recommended transporters
+      // Open recommendations dialog immediately with loading state
+      setLoadingRecommendations(true);
+      setShowRecommendationsDialog(true);
+      
+      // Fetch recommended transporters in background
       try {
         const recommendationsResponse = await fetch(
           `/api/requests/${createdRequest.id}/recommended-transporters`
@@ -188,19 +193,16 @@ export function NewRequestForm({ onSuccess, onClose }: { onSuccess?: () => void;
         if (recommendationsResponse.ok) {
           const recommendationsData = await recommendationsResponse.json();
           setRecommendedTransporters(recommendationsData.transporters || []);
-          setShowRecommendationsDialog(true);
         } else {
-          // If recommendations fail, still call onSuccess
-          form.reset();
-          setPhotos([]);
-          onSuccess?.();
+          // If recommendations fail, show empty list
+          setRecommendedTransporters([]);
         }
       } catch (err) {
         console.error("Failed to fetch recommendations:", err);
-        // If recommendations fail, still call onSuccess
-        form.reset();
-        setPhotos([]);
-        onSuccess?.();
+        // If recommendations fail, show empty list
+        setRecommendedTransporters([]);
+      } finally {
+        setLoadingRecommendations(false);
       }
     } catch (error) {
       toast({
@@ -416,7 +418,7 @@ export function NewRequestForm({ onSuccess, onClose }: { onSuccess?: () => void;
                 
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-4">
-                    <h4 className="text-sm font-medium">🏢 Départ</h4>
+                    <h4 className="text-sm font-medium">Départ</h4>
                     <FormField
                       control={form.control}
                       name="departureFloor"
@@ -460,7 +462,7 @@ export function NewRequestForm({ onSuccess, onClose }: { onSuccess?: () => void;
                   </div>
 
                   <div className="space-y-4">
-                    <h4 className="text-sm font-medium">🏠 Arrivée</h4>
+                    <h4 className="text-sm font-medium">Arrivée</h4>
                     <FormField
                       control={form.control}
                       name="arrivalFloor"
@@ -562,6 +564,7 @@ export function NewRequestForm({ onSuccess, onClose }: { onSuccess?: () => void;
         }}
         requestId={createdRequestId}
         transporters={recommendedTransporters}
+        isLoading={loadingRecommendations}
       />
     </Card>
   );

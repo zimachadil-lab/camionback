@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Truck, Star, MapPin, Award } from "lucide-react";
+import { Truck, Star, MapPin, Award, Loader2, Search } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -29,6 +29,7 @@ interface RecommendedTransportersDialogProps {
   onOpenChange: (open: boolean) => void;
   requestId: string;
   transporters: RecommendedTransporter[];
+  isLoading?: boolean;
 }
 
 export function RecommendedTransportersDialog({
@@ -36,6 +37,7 @@ export function RecommendedTransportersDialog({
   onOpenChange,
   requestId,
   transporters,
+  isLoading = false,
 }: RecommendedTransportersDialogProps) {
   const { toast } = useToast();
   const [isNotifying, setIsNotifying] = useState(false);
@@ -91,13 +93,24 @@ export function RecommendedTransportersDialog({
       <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Truck className="h-6 w-6 text-primary" />
-            Transporteurs disponibles
+            {isLoading ? (
+              <>
+                <Search className="h-6 w-6 text-primary animate-pulse" />
+                Recherche en cours...
+              </>
+            ) : (
+              <>
+                <Truck className="h-6 w-6 text-primary" />
+                Transporteurs disponibles
+              </>
+            )}
           </DialogTitle>
           <DialogDescription>
-            {transporters.length > 0 ? (
+            {isLoading ? (
+              "Analyse des meilleurs transporteurs pour votre trajet..."
+            ) : transporters.length > 0 ? (
               <>
-                🚛 {transporters.length} transporteur{transporters.length > 1 ? "s" : ""} disponible{transporters.length > 1 ? "s" : ""} sur ce trajet.
+                {transporters.length} transporteur{transporters.length > 1 ? "s" : ""} disponible{transporters.length > 1 ? "s" : ""} sur ce trajet.
                 <br />
                 Souhaitez-vous leur envoyer une notification ?
               </>
@@ -107,7 +120,22 @@ export function RecommendedTransportersDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {transporters.length > 0 && (
+        {isLoading ? (
+          <div className="py-12 flex flex-col items-center justify-center gap-4">
+            <div className="relative">
+              <Loader2 className="h-16 w-16 text-primary animate-spin" />
+              <Truck className="h-8 w-8 text-primary/40 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+            </div>
+            <div className="text-center space-y-2">
+              <p className="font-medium text-lg">
+                Recherche des meilleurs transporteurs
+              </p>
+              <p className="text-sm text-muted-foreground max-w-md">
+                Notre système analyse les transporteurs disponibles, leurs retours annoncés, et leur historique pour vous proposer les meilleures options.
+              </p>
+            </div>
+          </div>
+        ) : transporters.length > 0 && (
           <div className="space-y-3 my-4">
             {transporters.map((transporter) => (
               <Card key={transporter.id} className="p-4">
@@ -168,12 +196,12 @@ export function RecommendedTransportersDialog({
           <Button
             variant="outline"
             onClick={handleLater}
-            disabled={isNotifying}
+            disabled={isNotifying || isLoading}
             data-testid="button-notify-later"
           >
-            Non, plus tard
+            {isLoading ? "Veuillez patienter..." : "Non, plus tard"}
           </Button>
-          {transporters.length > 0 && (
+          {!isLoading && transporters.length > 0 && (
             <Button
               onClick={handleNotify}
               disabled={isNotifying}
