@@ -96,8 +96,8 @@ export function RouteMap({ departureCity, arrivalCity, distance, className = '',
   const arrivalCoords = getCityCoordinates(arrivalCity);
   
   // Conditional dimensions based on variant
-  const mapHeight = variant === 'compact' ? '120px' : '200px';
-  const mapWidth = variant === 'compact' ? '120px' : '100%';
+  const mapHeight = variant === 'compact' ? '360px' : '200px';
+  const mapWidth = variant === 'compact' ? '360px' : '100%';
   const showDistanceBadge = variant === 'default';
   
   // Create custom markers with teal color
