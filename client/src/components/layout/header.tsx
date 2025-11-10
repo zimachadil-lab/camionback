@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { Menu, User, LogOut, Package, Star, Receipt, CreditCard, HelpCircle, MessageCircle, Truck } from "lucide-react";
+import { Menu, User, LogOut, Package, Star, Receipt, CreditCard, HelpCircle, MessageCircle, Truck, Plus } from "lucide-react";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { MessagesBadge } from "@/components/chat/messages-badge";
 import { ContactWhatsAppDialog } from "@/components/contact-whatsapp-dialog";
@@ -28,9 +28,10 @@ interface HeaderProps {
     clientId?: string;
   };
   onLogout: () => void;
+  onCreateRequest?: () => void;
 }
 
-export function Header({ user, onLogout }: HeaderProps) {
+export function Header({ user, onLogout, onCreateRequest }: HeaderProps) {
   const [location, navigate] = useLocation();
   const [showContactDialog, setShowContactDialog] = useState(false);
   const { t, i18n } = useTranslation();
@@ -141,6 +142,22 @@ export function Header({ user, onLogout }: HeaderProps) {
 
         {/* Right Section: Actions */}
         <div className="flex items-center gap-3 min-w-fit">
+          {/* New Request Button - Client Only */}
+          {user.role === "client" && onCreateRequest && (
+            <Button
+              onClick={onCreateRequest}
+              size="icon"
+              variant="default"
+              className="bg-gradient-to-br from-[#17cfcf] to-[#0ea5a5] hover:from-[#15b8b8] hover:to-[#0c8f8f] text-white shadow-md relative"
+              data-testid="button-new-request-header"
+            >
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Truck className="w-4 h-4 text-white/40 absolute" />
+              </div>
+              <Plus className="w-5 h-5 relative z-10" />
+            </Button>
+          )}
+          
           {/* Notifications & Messages Group */}
           <div className="flex items-center gap-2">
             {user.role === "coordinateur" ? (

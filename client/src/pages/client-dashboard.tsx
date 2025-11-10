@@ -2061,24 +2061,10 @@ export default function ClientDashboard() {
       <Header
         user={user as any}
         onLogout={handleLogout}
+        onCreateRequest={() => setShowNewRequest(true)}
       />
       
       <StoriesBar userRole="client" />
-      
-      <div className="container mx-auto px-4 md:px-6 max-w-7xl">
-        <div className="py-4 flex items-center justify-between flex-wrap gap-3">
-          <div className="flex-1" />
-          <Button
-            onClick={() => setShowNewRequest(true)}
-            size="default"
-            className="gap-2"
-            data-testid="button-new-request"
-          >
-            <Plus className="h-4 w-4" />
-            {t('header.client.newRequest')}
-          </Button>
-        </div>
-      </div>
       
       <div className="container mx-auto p-4 md:p-6 max-w-7xl space-y-6">
         {showNewRequest ? (
