@@ -21,6 +21,7 @@ interface RouteMapProps {
   arrivalCity: string;
   distance?: number;
   className?: string;
+  variant?: 'default' | 'compact';
 }
 
 // Moroccan cities coordinates (approximate centers)
@@ -87,12 +88,17 @@ function FitBounds({ positions }: { positions: [number, number][] }) {
   return null;
 }
 
-export function RouteMap({ departureCity, arrivalCity, distance, className = '' }: RouteMapProps) {
+export function RouteMap({ departureCity, arrivalCity, distance, className = '', variant = 'default' }: RouteMapProps) {
   const { t } = useTranslation();
   const mapRef = useRef<L.Map | null>(null);
   
   const departureCoords = getCityCoordinates(departureCity);
   const arrivalCoords = getCityCoordinates(arrivalCity);
+  
+  // Conditional dimensions based on variant
+  const mapHeight = variant === 'compact' ? '120px' : '200px';
+  const mapWidth = variant === 'compact' ? '120px' : '100%';
+  const showDistanceBadge = variant === 'default';
   
   // Create custom markers with teal color
   const createCustomIcon = (color: string) => {
@@ -129,13 +135,13 @@ export function RouteMap({ departureCity, arrivalCity, distance, className = '' 
   const arrivalIcon = createCustomIcon('#ef4444'); // Red for arrival
   
   return (
-    <div className={`space-y-3 ${className}`}>
+    <div className={variant === 'compact' ? className : `space-y-3 ${className}`}>
       {/* Map container */}
-      <div className="rounded-lg overflow-hidden border border-border/40 shadow-lg">
+      <div className={`rounded-lg overflow-hidden border border-border/40 ${variant === 'compact' ? 'shadow-md' : 'shadow-lg'}`}>
         <MapContainer
           center={MOROCCO_CENTER}
           zoom={6}
-          style={{ height: '200px', width: '100%' }}
+          style={{ height: mapHeight, width: mapWidth }}
           zoomControl={true}
           scrollWheelZoom={false}
           dragging={true}
@@ -168,8 +174,8 @@ export function RouteMap({ departureCity, arrivalCity, distance, className = '' 
         </MapContainer>
       </div>
       
-      {/* Distance label */}
-      {distance && (
+      {/* Distance label - only shown in default mode */}
+      {showDistanceBadge && distance && (
         <div className="flex items-center justify-center">
           <div className="px-4 py-2 bg-[#17cfcf]/10 border border-[#17cfcf]/30 rounded-lg">
             <div className="flex items-center gap-2">
