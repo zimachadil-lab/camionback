@@ -2427,6 +2427,19 @@ export default function CoordinatorDashboard() {
           {/* Annuler la commande - Pour les commandes en production */}
           {showPaymentControls && (
             <>
+              {/* Bouton Payer - Si transporteur défini et en cours */}
+              {request.status === 'in_progress' && (request.assignedTransporterId || request.acceptedOfferId) && (
+                <Button
+                  size="default"
+                  className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold shadow-lg hover:shadow-xl hover:shadow-emerald-500/30 transition-all"
+                  onClick={() => handleCoordinatorPayment(request.id)}
+                  data-testid={`button-pay-coordinator-${request.id}`}
+                >
+                  <CreditCard className="h-5 w-5 mr-2" />
+                  Payer
+                </Button>
+              )}
+
               <Button
                 size="default"
                 variant="destructive"

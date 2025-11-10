@@ -2772,6 +2772,25 @@ export default function ClientDashboard() {
         </DialogContent>
       </Dialog>
 
+      {/* New Payment Dialog with Rating */}
+      {newPaymentRequestId && (
+        <PaymentDialog
+          open={showNewPaymentDialog}
+          onOpenChange={setShowNewPaymentDialog}
+          requestId={newPaymentRequestId}
+          transporterName={
+            requests.find((r: any) => r.id === newPaymentRequestId)?.transporter?.name || 
+            requests.find((r: any) => r.id === newPaymentRequestId)?.transporterName ||
+            "Transporteur"
+          }
+          paidBy="client"
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['/api/requests'] });
+            setShowNewPaymentDialog(false);
+          }}
+        />
+      )}
+
       {/* Dialog d'affichage des photos */}
       <Dialog open={showPhotosDialog} onOpenChange={setShowPhotosDialog}>
         <DialogContent className="max-w-[90vw] sm:max-w-2xl">

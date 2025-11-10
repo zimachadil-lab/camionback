@@ -2216,6 +2216,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Unauthorized: you can only pay for your own requests" });
       }
 
+      // Check if already paid to prevent duplications
+      if (request.paymentStatus === 'paid_by_client' || request.paymentStatus === 'paid_by_camionback') {
+        return res.status(400).json({ error: "Payment already processed for this request" });
+      }
+
       // Validate request body
       const { paymentReceipt, paidBy, rating, comment } = req.body;
       
