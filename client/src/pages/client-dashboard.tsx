@@ -2098,16 +2098,36 @@ export default function ClientDashboard() {
           />
         ) : (
           <Tabs defaultValue="active" className="w-full">
-            <TabsList className="grid w-full max-w-3xl grid-cols-2">
-              <TabsTrigger value="active" data-testid="tab-active">
-                <Package className="mr-2 h-4 w-4" />
-                {t('clientDashboard.tabs.active')}
-              </TabsTrigger>
-              <TabsTrigger value="completed" data-testid="tab-completed">
-                <CheckCircle className="mr-2 h-4 w-4" />
-                {t('clientDashboard.tabs.completed')}
-              </TabsTrigger>
-            </TabsList>
+            <div className="flex justify-center mb-8">
+              <TabsList className="inline-flex h-14 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0a1929]/80 via-[#1a2942]/80 to-[#0a1929]/80 backdrop-blur-xl p-1.5 shadow-2xl border border-white/10 gap-1.5">
+                <TabsTrigger 
+                  value="active" 
+                  data-testid="tab-active"
+                  className="relative inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#00d9ff] data-[state=active]:via-[#00b8e6] data-[state=active]:to-[#0099cc] data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/50 text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                >
+                  <Package className="h-4 w-4" />
+                  <span>{t('clientDashboard.tabs.active')}</span>
+                  {activeRequests.length > 0 && (
+                    <span className="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 text-xs font-bold rounded-full bg-gradient-to-br from-emerald-400 to-emerald-500 text-white shadow-md shadow-emerald-500/40 animate-pulse">
+                      {activeRequests.length}
+                    </span>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="completed" 
+                  data-testid="tab-completed"
+                  className="relative inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#a855f7] data-[state=active]:via-[#9333ea] data-[state=active]:to-[#7e22ce] data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-purple-500/50 text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  <span>{t('clientDashboard.tabs.completed')}</span>
+                  {completedRequests.length > 0 && (
+                    <span className="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 text-xs font-bold rounded-full bg-gradient-to-br from-purple-400 to-purple-500 text-white shadow-md">
+                      {completedRequests.length}
+                    </span>
+                  )}
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
             <TabsContent value="active" className="mt-6 space-y-6">
               {activeRequests.length > 0 ? (
