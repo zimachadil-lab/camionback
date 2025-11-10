@@ -21,6 +21,8 @@ L.Icon.Default.mergeOptions({
 interface RouteMapProps {
   departureCity: string;
   arrivalCity: string;
+  departureAddress?: string;
+  arrivalAddress?: string;
   distance?: number;
   className?: string;
   variant?: 'default' | 'compact';
@@ -120,7 +122,7 @@ function useContainerWidth() {
   return { containerRef, width };
 }
 
-export function RouteMap({ departureCity, arrivalCity, distance, className = '', variant = 'default' }: RouteMapProps) {
+export function RouteMap({ departureCity, arrivalCity, departureAddress, arrivalAddress, distance, className = '', variant = 'default' }: RouteMapProps) {
   const { t } = useTranslation();
   const mapRef = useRef<L.Map | null>(null);
   const shouldReduceMotion = useReducedMotion();
@@ -222,10 +224,21 @@ export function RouteMap({ departureCity, arrivalCity, distance, className = '',
               className="relative flex items-center justify-between gap-2 min-h-[24px]"
               aria-label={`${departureCity} vers ${arrivalCity}, ${distance} kilomètres`}
             >
-              {/* Departure city */}
+              {/* Departure city with neighborhood */}
               <div className="flex items-center gap-1.5 z-10">
                 <div className="w-3 h-3 rounded-full bg-[#10b981]"></div>
-                <span className="text-xs text-muted-foreground whitespace-nowrap">{departureCity}</span>
+                <div className="text-xs whitespace-nowrap">
+                  {departureAddress ? (
+                    <>
+                      <span className="font-bold">{departureAddress.split(',')[0]}</span>
+                      {departureAddress.includes(',') && (
+                        <span className="text-muted-foreground">, {departureAddress.split(',').slice(1).join(',').trim()}</span>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-muted-foreground">{departureCity}</span>
+                  )}
+                </div>
               </div>
               
               {/* Animated truck traveling from departure to arrival */}
@@ -257,10 +270,21 @@ export function RouteMap({ departureCity, arrivalCity, distance, className = '',
                 />
               </motion.div>
               
-              {/* Arrival city */}
+              {/* Arrival city with neighborhood */}
               <div className="flex items-center gap-1.5 z-10">
                 <div className="w-3 h-3 rounded-full bg-[#ef4444]"></div>
-                <span className="text-xs text-muted-foreground whitespace-nowrap">{arrivalCity}</span>
+                <div className="text-xs whitespace-nowrap">
+                  {arrivalAddress ? (
+                    <>
+                      <span className="font-bold">{arrivalAddress.split(',')[0]}</span>
+                      {arrivalAddress.includes(',') && (
+                        <span className="text-muted-foreground">, {arrivalAddress.split(',').slice(1).join(',').trim()}</span>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-muted-foreground">{arrivalCity}</span>
+                  )}
+                </div>
               </div>
             </div>
             

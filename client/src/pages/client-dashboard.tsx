@@ -491,51 +491,14 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
             </div>
           </div>
 
-          {/* Trajet et statut - stacked layout */}
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-2 flex-1">
-              {/* Departure location */}
-              <div className="flex-1 min-w-0">
-                <div className="bg-muted/50 rounded px-2 py-1">
-                  <div className="font-semibold text-xs leading-tight break-words">
-                    {request.departureAddress?.split(',')[0] || request.fromCity}
-                  </div>
-                  {request.departureAddress?.includes(',') && (
-                    <div className="text-[10px] text-muted-foreground leading-tight">
-                      {request.departureAddress.split(',').slice(1).join(',').trim()}
-                    </div>
-                  )}
-                </div>
-              </div>
-              {/* Arrow */}
-              <span className="text-[#17cfcf] text-sm flex-shrink-0">→</span>
-              {/* Arrival location */}
-              <div className="flex-1 min-w-0">
-                <div className="bg-muted/50 rounded px-2 py-1">
-                  <div className="font-semibold text-xs leading-tight break-words">
-                    {request.arrivalAddress?.split(',')[0] || request.toCity}
-                  </div>
-                  {request.arrivalAddress?.includes(',') && (
-                    <div className="text-[10px] text-muted-foreground leading-tight">
-                      {request.arrivalAddress.split(',').slice(1).join(',').trim()}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-            {isAccepted && (
-              <Badge variant="default" className="bg-green-600 flex-shrink-0">
-                Acceptée
-              </Badge>
-            )}
-          </div>
-
           {/* Carte de trajet avec distance */}
           {request.fromCity && request.toCity && (
             <div className="mt-2">
               <RouteMap
                 departureCity={request.fromCity}
                 arrivalCity={request.toCity}
+                departureAddress={request.departureAddress}
+                arrivalAddress={request.arrivalAddress}
                 distance={request.distance}
               />
             </div>
@@ -871,51 +834,14 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
 
             {/* Route et Prix */}
             <div className="space-y-2">
-              {/* Trajet - stacked layout */}
-              <div className="flex items-center gap-2 text-sm">
-                <Truck className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                <div className="flex items-center gap-3 flex-1">
-                  {/* Departure location */}
-                  <div className="flex-1 min-w-0">
-                    <div className="bg-muted/70 rounded-lg px-3 py-2">
-                      <div className="font-bold text-sm leading-tight break-words">
-                        {request.departureAddress?.split(',')[0] || request.fromCity}
-                      </div>
-                      {request.departureAddress?.includes(',') && (
-                        <div className="text-xs text-muted-foreground mt-0.5 leading-tight">
-                          {request.departureAddress.split(',').slice(1).join(',').trim()}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Arrow separator */}
-                  <div className="flex-shrink-0">
-                    <span className="text-[#17cfcf] text-xl">→</span>
-                  </div>
-
-                  {/* Arrival location */}
-                  <div className="flex-1 min-w-0">
-                    <div className="bg-muted/70 rounded-lg px-3 py-2">
-                      <div className="font-bold text-sm leading-tight break-words">
-                        {request.arrivalAddress?.split(',')[0] || request.toCity}
-                      </div>
-                      {request.arrivalAddress?.includes(',') && (
-                        <div className="text-xs text-muted-foreground mt-0.5 leading-tight">
-                          {request.arrivalAddress.split(',').slice(1).join(',').trim()}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               {/* Carte de trajet avec distance dans le dialogue */}
               {request.fromCity && request.toCity && (
                 <div className="mt-2">
                   <RouteMap
                     departureCity={request.fromCity}
                     arrivalCity={request.toCity}
+                    departureAddress={request.departureAddress}
+                    arrivalAddress={request.arrivalAddress}
                     distance={request.distance}
                   />
                 </div>
@@ -2286,34 +2212,6 @@ export default function ClientDashboard() {
                                 À facturer
                               </Badge>
                             </div>
-                            {/* Route - stacked compact layout */}
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 min-w-0">
-                                <div className="bg-muted/50 rounded px-2 py-1">
-                                  <div className="font-semibold text-xs leading-tight break-words">
-                                    {request.departureAddress?.split(',')[0] || request.fromCity}
-                                  </div>
-                                  {request.departureAddress?.includes(',') && (
-                                    <div className="text-[10px] text-muted-foreground leading-tight">
-                                      {request.departureAddress.split(',').slice(1).join(',').trim()}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                              <span className="text-[#17cfcf] text-sm flex-shrink-0">→</span>
-                              <div className="flex-1 min-w-0">
-                                <div className="bg-muted/50 rounded px-2 py-1">
-                                  <div className="font-semibold text-xs leading-tight break-words">
-                                    {request.arrivalAddress?.split(',')[0] || request.toCity}
-                                  </div>
-                                  {request.arrivalAddress?.includes(',') && (
-                                    <div className="text-[10px] text-muted-foreground leading-tight">
-                                      {request.arrivalAddress.split(',').slice(1).join(',').trim()}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
 
                             {/* Carte de trajet avec distance - To Pay */}
                             {request.fromCity && request.toCity && (
@@ -2321,6 +2219,8 @@ export default function ClientDashboard() {
                                 <RouteMap
                                   departureCity={request.fromCity}
                                   arrivalCity={request.toCity}
+                                  departureAddress={request.departureAddress}
+                                  arrivalAddress={request.arrivalAddress}
                                   distance={request.distance}
                                 />
                               </div>
@@ -2478,34 +2378,6 @@ export default function ClientDashboard() {
                               </Badge>
                             )}
                           </div>
-                          {/* Route - stacked compact layout */}
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 min-w-0">
-                              <div className="bg-muted/50 rounded px-2 py-1">
-                                <div className="font-semibold text-xs leading-tight break-words">
-                                  {request.departureAddress?.split(',')[0] || request.fromCity}
-                                </div>
-                                {request.departureAddress?.includes(',') && (
-                                  <div className="text-[10px] text-muted-foreground leading-tight">
-                                    {request.departureAddress.split(',').slice(1).join(',').trim()}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            <span className="text-[#17cfcf] text-sm flex-shrink-0">→</span>
-                            <div className="flex-1 min-w-0">
-                              <div className="bg-muted/50 rounded px-2 py-1">
-                                <div className="font-semibold text-xs leading-tight break-words">
-                                  {request.arrivalAddress?.split(',')[0] || request.toCity}
-                                </div>
-                                {request.arrivalAddress?.includes(',') && (
-                                  <div className="text-[10px] text-muted-foreground leading-tight">
-                                    {request.arrivalAddress.split(',').slice(1).join(',').trim()}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
 
                           {/* Carte de trajet avec distance - Completed */}
                           {request.fromCity && request.toCity && (
@@ -2513,6 +2385,8 @@ export default function ClientDashboard() {
                               <RouteMap
                                 departureCity={request.fromCity}
                                 arrivalCity={request.toCity}
+                                departureAddress={request.departureAddress}
+                                arrivalAddress={request.arrivalAddress}
                                 distance={request.distance}
                               />
                             </div>
