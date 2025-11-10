@@ -588,8 +588,8 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
             </div>
           )}
 
-          {/* Bouton Offres reçues / Transporteurs intéressés */}
-          {!isAccepted && (
+          {/* Bouton Offres reçues / Transporteurs intéressés OU Informations du transporteur */}
+          {!hasTransporter ? (
             <div className="relative">
               <Button
                 variant="outline"
@@ -624,6 +624,27 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                 </div>
               </Button>
             </div>
+          ) : (
+            <Button
+              variant="default"
+              className="w-full gap-3 h-14 border-2 border-[#1abc9c] bg-gradient-to-r from-[#1abc9c]/90 to-[#16a085]/90 hover:from-[#1abc9c] hover:to-[#16a085] text-white font-semibold shadow-md hover:shadow-lg transition-all duration-300"
+              onClick={() => onViewTransporter(request.id)}
+              data-testid={`button-transporter-info-${request.id}`}
+            >
+              <div className="flex items-center gap-3 w-full">
+                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+                  <Info className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="text-sm font-bold leading-tight">
+                    {t('clientDashboard.actions.transporterInfo')}
+                  </p>
+                  <p className="text-xs text-white/80">
+                    {t('clientDashboard.actions.viewTransporterDetails')}
+                  </p>
+                </div>
+              </div>
+            </Button>
           )}
 
           {/* Nouveaux boutons: CamioMatch et Coordinateur */}
@@ -2077,16 +2098,13 @@ export default function ClientDashboard() {
           />
         ) : (
           <Tabs defaultValue="active" className="w-full">
-            <TabsList className="grid w-full max-w-3xl grid-cols-3">
+            <TabsList className="grid w-full max-w-3xl grid-cols-2">
               <TabsTrigger value="active" data-testid="tab-active">
                 <Package className="mr-2 h-4 w-4" />
                 {t('clientDashboard.tabs.active')}
               </TabsTrigger>
-              <TabsTrigger value="to-pay" data-testid="tab-to-pay">
-                <CreditCard className="mr-2 h-4 w-4" />
-                {t('clientDashboard.tabs.toPay')} ({paymentPendingRequests.length})
-              </TabsTrigger>
               <TabsTrigger value="completed" data-testid="tab-completed">
+                <CheckCircle className="mr-2 h-4 w-4" />
                 {t('clientDashboard.tabs.completed')}
               </TabsTrigger>
             </TabsList>
@@ -2128,172 +2146,7 @@ export default function ClientDashboard() {
               )}
             </TabsContent>
 
-            <TabsContent value="to-pay" className="mt-6">
-              {paymentPendingRequests.length === 0 ? (
-                <div className="text-center py-12">
-                  <CreditCard className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">
-                    Aucune commande à payer
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {paymentPendingRequests.map((request: any) => {
-                    const acceptedOffer = request.acceptedOfferId 
-                      ? users.find((u: any) => {
-                          // Find the transporter through the accepted offer
-                          return u.role === "transporteur";
-                        })
-                      : null;
-                    
-                    const categoryConfig = getCategoryConfig(request.goodsType);
-
-                    return (
-                      <div key={request.id} className={`p-4 rounded-lg border-2 ${categoryConfig.borderColor} space-y-4`}>
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2 flex-wrap">
-                              <p className="font-semibold text-lg">{request.referenceId}</p>
-                              <Badge variant="default" className="bg-blue-600">
-                                À facturer
-                              </Badge>
-                            </div>
-
-                            {/* Carte de trajet avec distance - To Pay */}
-                            {request.fromCity && request.toCity && (
-                              <div className="mt-2">
-                                <RouteMap
-                                  departureCity={request.fromCity}
-                                  arrivalCity={request.toCity}
-                                  departureAddress={request.departureAddress}
-                                  arrivalAddress={request.arrivalAddress}
-                                  distance={request.distance}
-                                />
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <p className="text-muted-foreground">Type de marchandise</p>
-                            <p className="font-medium">{categoryConfig.label}</p>
-                          </div>
-                          {request.estimatedWeight && (
-                            <div>
-                              <p className="text-muted-foreground">Poids estimé</p>
-                              <p className="font-medium">{request.estimatedWeight}</p>
-                            </div>
-                          )}
-                        </div>
-
-                        {request.description && (
-                          <div>
-                            <p className="text-sm text-muted-foreground">Description</p>
-                            <p className="text-sm">{request.description}</p>
-                          </div>
-                        )}
-
-                        {/* Manutention détaillée */}
-                        {request.handlingRequired !== undefined && request.handlingRequired !== null && (
-                          <div className="p-3 rounded-lg border bg-muted/30 space-y-2">
-                            <div className="flex items-center gap-2 text-sm font-medium">
-                              <span>🏋️</span>
-                              <span>Manutention : {request.handlingRequired ? 'Oui' : 'Non'}</span>
-                            </div>
-                            {request.handlingRequired && (
-                              <div className="grid grid-cols-2 gap-4 pl-6">
-                                {/* Départ */}
-                                <div className="space-y-1">
-                                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                    <span>🏢</span>
-                                    <span className="font-medium">Départ</span>
-                                  </div>
-                                  <div className="text-sm">
-                                    {request.departureFloor !== undefined && request.departureFloor !== null ? (
-                                      <>
-                                        <div>{request.departureFloor === 0 ? 'RDC' : `${request.departureFloor}ᵉ étage`}</div>
-                                        <div className="text-xs text-muted-foreground">
-                                          Ascenseur {request.departureElevator ? '✅' : '❌'}
-                                        </div>
-                                      </>
-                                    ) : (
-                                      <span className="text-xs text-muted-foreground">Non spécifié</span>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Arrivée */}
-                                <div className="space-y-1">
-                                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                    <span>🏠</span>
-                                    <span className="font-medium">Arrivée</span>
-                                  </div>
-                                  <div className="text-sm">
-                                    {request.arrivalFloor !== undefined && request.arrivalFloor !== null ? (
-                                      <>
-                                        <div>{request.arrivalFloor === 0 ? 'RDC' : `${request.arrivalFloor}ᵉ étage`}</div>
-                                        <div className="text-xs text-muted-foreground">
-                                          Ascenseur {request.arrivalElevator ? '✅' : '❌'}
-                                        </div>
-                                      </>
-                                    ) : (
-                                      <span className="text-xs text-muted-foreground">Non spécifié</span>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Prix qualifié */}
-                        {request.clientTotal && request.qualifiedAt && (
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-[#00ff88]/10 via-[#00ff88]/5 to-transparent border-l-4 border-[#00ff88]">
-                              <div className="w-7 h-7 rounded-full bg-[#00ff88]/20 flex items-center justify-center flex-shrink-0">
-                                <DollarSign className="w-4 h-4 text-[#00ff88]" />
-                              </div>
-                              <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Prix Qualifié</span>
-                              <span className="text-lg font-bold text-[#00ff88] ml-auto">{Math.floor(request.clientTotal).toLocaleString()} Dhs</span>
-                            </div>
-                            <p className="text-xs text-muted-foreground px-1">
-                              Qualifié le {format(new Date(request.qualifiedAt), "dd MMM yyyy 'à' HH:mm", { locale: fr })}
-                            </p>
-                          </div>
-                        )}
-
-                        <div className="flex items-center gap-2 pt-2 border-t">
-                          {request.acceptedOfferId && (
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => handleViewTransporter(request.id)}
-                              data-testid={`button-view-transporter-payment-${request.id}`}
-                              className="gap-2"
-                            >
-                              <Info className="h-4 w-4" />
-                              <span className="hidden sm:inline">Infos transporteur</span>
-                              <span className="sm:hidden">Infos</span>
-                            </Button>
-                          )}
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => handleOpenPaymentDialog(request.id)}
-                            className="gap-2"
-                            data-testid={`button-mark-paid-${request.id}`}
-                          >
-                            <CheckCircle className="h-4 w-4" />
-                            Marquer comme payé
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </TabsContent>
+            {/* Onglet "À payer" supprimé - tout se gère sur la carte de commande dans l'onglet "Actives" */}
 
             <TabsContent value="completed" className="mt-6">
               {completedRequests.length === 0 ? (
