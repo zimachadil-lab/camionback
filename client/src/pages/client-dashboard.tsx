@@ -17,6 +17,7 @@ import { LoadingTruck } from "@/components/ui/loading-truck";
 import { StoriesBar } from "@/components/ui/stories-bar";
 import { MetaPixelEvents } from "@/lib/meta-pixel";
 import { RouteMap } from "@/components/route-map";
+import { GooglePlacesAutocomplete } from "@/components/google-places-autocomplete";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1237,22 +1238,16 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>{t('clientDashboard.dialogs.edit.fromCity')}</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger data-testid="edit-select-from-city">
-                            <SelectValue placeholder={t('clientDashboard.dialogs.edit.selectFromCity')} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {citiesLoading ? (
-                            <div className="p-2 text-sm text-muted-foreground">{t('common.loading')}</div>
-                          ) : (
-                            cities.map((city: any) => (
-                              <SelectItem key={city.id} value={city.name}>{city.name}</SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <GooglePlacesAutocomplete
+                          value={field.value}
+                          onChange={(address, placeDetails) => {
+                            field.onChange(address);
+                          }}
+                          placeholder={t('clientDashboard.dialogs.edit.selectFromCity')}
+                          dataTestId="edit-input-from-city"
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -1264,22 +1259,16 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>{t('clientDashboard.dialogs.edit.toCity')}</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger data-testid="edit-select-to-city">
-                            <SelectValue placeholder={t('clientDashboard.dialogs.edit.selectToCity')} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {citiesLoading ? (
-                            <div className="p-2 text-sm text-muted-foreground">{t('common.loading')}</div>
-                          ) : (
-                            cities.map((city: any) => (
-                              <SelectItem key={city.id} value={city.name}>{city.name}</SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <GooglePlacesAutocomplete
+                          value={field.value}
+                          onChange={(address, placeDetails) => {
+                            field.onChange(address);
+                          }}
+                          placeholder={t('clientDashboard.dialogs.edit.selectToCity')}
+                          dataTestId="edit-input-to-city"
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
