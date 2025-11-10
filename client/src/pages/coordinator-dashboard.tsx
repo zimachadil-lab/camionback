@@ -2149,14 +2149,34 @@ export default function CoordinatorDashboard() {
             )}
           </div>
           
-          {/* Route map visualization */}
+          {/* Route map visualization - Compact horizontal layout */}
           {request.distance && request.departureAddress && request.arrivalAddress && (
-            <div className="pl-6 mt-3">
-              <RouteMap
-                departureCity={request.departureAddress.split(',').pop()?.trim() || request.fromCity}
-                arrivalCity={request.arrivalAddress.split(',').pop()?.trim() || request.toCity}
-                distance={request.distance}
-              />
+            <div className="pl-6 mt-2">
+              <div className="flex flex-col md:flex-row gap-3 items-start md:items-center">
+                {/* Left: Route info */}
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-[#10b981]"></div>
+                    <span className="text-sm font-semibold">{request.departureAddress.split(',').pop()?.trim() || request.fromCity}</span>
+                  </div>
+                  <div className="flex items-center gap-2 pl-5">
+                    <span className="text-[#17cfcf] text-xl">→</span>
+                    <span className="text-lg font-bold text-[#17cfcf]">{request.distance} km</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-[#ef4444]"></div>
+                    <span className="text-sm font-semibold">{request.arrivalAddress.split(',').pop()?.trim() || request.toCity}</span>
+                  </div>
+                </div>
+                {/* Right: Compact map */}
+                <RouteMap
+                  variant="compact"
+                  departureCity={request.departureAddress.split(',').pop()?.trim() || request.fromCity}
+                  arrivalCity={request.arrivalAddress.split(',').pop()?.trim() || request.toCity}
+                  distance={request.distance}
+                  className="flex-shrink-0"
+                />
+              </div>
             </div>
           )}
           
