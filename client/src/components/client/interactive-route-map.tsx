@@ -115,6 +115,8 @@ export function InteractiveRouteMap({
       const geocoder = geocoderRef.current!;
       const map = mapInstanceRef.current!;
       
+      console.log('🗺️ Updating map with cities:', { fromCity, toCity });
+      
       // Clean up existing elements before creating new ones
       cleanupMapElements();
 
@@ -138,6 +140,7 @@ export function InteractiveRouteMap({
           });
 
           const fromLocation = fromResult.geometry.location;
+          console.log('✅ From city geocoded:', fromCity, fromLocation.lat(), fromLocation.lng());
           
           // Create classic marker with custom icon
           const fromMarker = new google.maps.Marker({
@@ -202,6 +205,7 @@ export function InteractiveRouteMap({
           });
 
           const toLocation = toResult.geometry.location;
+          console.log('✅ To city geocoded:', toCity, toLocation.lat(), toLocation.lng());
           
           // Create classic marker with custom icon
           const toMarker = new google.maps.Marker({
@@ -277,6 +281,7 @@ export function InteractiveRouteMap({
           });
 
           routePolylineRef.current = polyline;
+          console.log('✅ Route polyline created with arrow');
 
           // Fit bounds to show both markers
           const bounds = new google.maps.LatLngBounds();
@@ -285,7 +290,7 @@ export function InteractiveRouteMap({
           map.fitBounds(bounds, { top: 80, bottom: 80, left: 80, right: 80 });
         }
       } catch (error) {
-        console.error("Error updating map with cities:", error);
+        console.error("❌ Error updating map with cities:", error);
       }
     };
 
