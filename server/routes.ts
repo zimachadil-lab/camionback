@@ -5635,6 +5635,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         changes.photos = { before: currentRequest.photos?.length || 0, after: photos.length };
       }
 
+      // Calculate distance if addresses have changed
+      const addressesChanged = updates.departureAddress !== undefined || updates.arrivalAddress !== undefined;
+      if (addressesChanged) {
+        const originAddress = updates.departureAddress || currentRequest.departureAddress;
+        const destAddress = updates.arrivalAddress || currentRequest.arrivalAddress;
+        
+        if (originAddress && destAddress) {
+          console.log(`[PATCH /api/coordinator/requests/:id] Addresses changed, calculating distance...`);
+          const { calculateDistance } = await import('./distance.js');
+          const { distance, error } = await calculateDistance(originAddress, destAddress);
+          
+          if (distance !== null) {
+            updates.distance = distance;
+            changes.distance = { before: currentRequest.distance, after: distance };
+            console.log(`[PATCH /api/coordinator/requests/:id] Distance calculated: ${distance} km`);
+          } else {
+            console.warn(`[PATCH /api/coordinator/requests/:id] Could not calculate distance: ${error}`);
+          }
+        }
+      }
+
       // Update the request if there are changes
       console.log(`[PATCH /api/coordinator/requests/:id] Updates to apply:`, updates);
       console.log(`[PATCH /api/coordinator/requests/:id] Changes detected:`, changes);

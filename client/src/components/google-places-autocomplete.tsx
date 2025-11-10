@@ -56,9 +56,7 @@ export const GooglePlacesAutocomplete = forwardRef<HTMLInputElement, GooglePlace
 
           // Listen for place selection
           autocompleteRef.current.addListener("place_changed", () => {
-            console.log("✅ [GooglePlaces] place_changed déclenché!");
             const place = autocompleteRef.current?.getPlace();
-            console.log("📍 [GooglePlaces] Place:", place);
             
             if (place && place.address_components) {
               // Extract structured address components
@@ -81,16 +79,13 @@ export const GooglePlacesAutocomplete = forwardRef<HTMLInputElement, GooglePlace
               const formattedAddress = addressParts.join(", ");
 
               const finalValue = formattedAddress || city || place.formatted_address || "";
-              console.log("🎯 [GooglePlaces] Valeur finale:", finalValue);
 
               // Update input immediately
               if (inputRef.current) {
                 inputRef.current.value = finalValue;
-                console.log("📝 [GooglePlaces] DOM updated");
               }
 
               // Pass both formatted address and place object with structured data
-              console.log("🚀 [GooglePlaces] Calling onChange");
               onChange(finalValue, place);
             } else if (place && place.formatted_address) {
               // Fallback to formatted_address if no components
