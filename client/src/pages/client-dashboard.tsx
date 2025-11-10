@@ -2151,17 +2151,49 @@ export default function ClientDashboard() {
                   />
                 ))
               ) : (
-                <div className="text-center py-12">
-                  <Package className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">
-                    Vous n'avez pas encore de demandes
-                  </p>
-                  <Button 
-                    onClick={() => setShowNewRequest(true)} 
-                    className="mt-4"
-                  >
-                    Créer une demande
-                  </Button>
+                <div className="relative min-h-[500px] flex items-center justify-center px-4 py-16">
+                  {/* Subtle Background Gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-teal-500/10 to-emerald-500/10 rounded-3xl" />
+                  
+                  {/* Glassmorphism Card */}
+                  <div className="relative z-10 max-w-2xl w-full backdrop-blur-xl bg-gradient-to-br from-white/10 via-white/5 to-transparent border border-white/20 rounded-3xl p-12 shadow-2xl">
+                    {/* Animated Floating Package Icon - Single Animation */}
+                    <div className="relative mb-8">
+                      <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/20 to-teal-400/20 blur-3xl" />
+                      <div className="relative mx-auto w-24 h-24 bg-gradient-to-br from-[#17cfcf] to-[#0ea5a5] rounded-2xl shadow-2xl shadow-cyan-500/50 flex items-center justify-center animate-bounce">
+                        <Package className="w-12 h-12 text-white" strokeWidth={2} />
+                      </div>
+                    </div>
+
+                    {/* Title with Proper Contrast */}
+                    <h2 className="text-4xl font-bold mb-4 text-foreground">
+                      Prêt à expédier ?
+                    </h2>
+                    
+                    {/* Description */}
+                    <p className="text-lg text-foreground mb-3 leading-relaxed">
+                      Commandez maintenant votre <span className="font-semibold text-slate-900 dark:text-[#17cfcf]">camion de retour</span>
+                    </p>
+                    <p className="text-sm text-muted-foreground mb-8">
+                      Trouvez le transporteur idéal en quelques clics et suivez votre livraison en temps réel
+                    </p>
+
+                    {/* CTA Button - Using System Default for Guaranteed Contrast */}
+                    <Button 
+                      onClick={() => setShowNewRequest(true)} 
+                      size="lg"
+                      variant="default"
+                      className="font-bold shadow-xl"
+                      data-testid="button-create-request-empty"
+                    >
+                      <Package className="w-5 h-5 mr-2" />
+                      Créer ma première demande
+                    </Button>
+
+                    {/* Decorative Elements */}
+                    <div className="absolute top-4 right-4 w-32 h-32 bg-gradient-to-br from-cyan-400/20 to-transparent rounded-full blur-2xl" />
+                    <div className="absolute bottom-4 left-4 w-40 h-40 bg-gradient-to-tr from-teal-400/20 to-transparent rounded-full blur-2xl" />
+                  </div>
                 </div>
               )}
             </TabsContent>
