@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star, CreditCard, Upload, Eye, Edit, MessageSquare, Calendar, Flag, Truck, Users, Zap, X, ChevronLeft, ChevronRight, Target, ArrowDown, Camera, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, DollarSign, ImageIcon, Plus } from "lucide-react";
+import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star, CreditCard, Upload, Eye, Edit, MessageSquare, Calendar, Flag, Truck, Users, Zap, X, ChevronLeft, ChevronRight, Target, ArrowDown, Camera, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, DollarSign, ImageIcon, Plus, ArrowRight } from "lucide-react";
 import { getCategoryConfig } from "@/lib/goods-category-config";
 import { Header } from "@/components/layout/header";
 import { NewRequestForm } from "@/components/client/new-request-form";
@@ -497,16 +497,25 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
             </div>
           </div>
 
-          {/* Carte de trajet avec distance */}
+          {/* Trajet et distance - Une ligne compacte */}
           {request.fromCity && request.toCity && (
-            <div className="mt-2">
-              <RouteMap
-                departureCity={request.fromCity}
-                arrivalCity={request.toCity}
-                departureAddress={request.departureAddress}
-                arrivalAddress={request.arrivalAddress}
-                distance={request.distance}
-              />
+            <div className="flex items-center gap-2 px-3 py-2 bg-muted/30 rounded-lg border">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <div className="w-2 h-2 rounded-full bg-[#5BC0EB] flex-shrink-0"></div>
+                  <span className="text-sm font-medium truncate">{request.fromCity}</span>
+                </div>
+                <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <div className="w-2 h-2 rounded-full bg-[#e74c3c] flex-shrink-0"></div>
+                  <span className="text-sm font-medium truncate">{request.toCity}</span>
+                </div>
+              </div>
+              {request.distance && (
+                <div className="flex-shrink-0 px-2.5 py-1 bg-[#5BC0EB]/20 rounded-md border border-[#5BC0EB]/40">
+                  <span className="text-sm font-bold text-[#5BC0EB]">{request.distance} km</span>
+                </div>
+              )}
             </div>
           )}
 
