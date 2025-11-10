@@ -13,12 +13,12 @@ import { Calendar, Upload, MapPin, Loader2, Info, X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
-import { RecommendedTransportersDialog } from "./recommended-transporters-dialog";
 import { useAuth } from "@/lib/auth-context";
 import { MetaPixelEvents } from "@/lib/meta-pixel";
 import { GooglePlacesAutocomplete } from "@/components/google-places-autocomplete";
 import { extractCityFromAddress } from "@shared/utils";
 import { InteractiveRouteMap } from "./interactive-route-map";
+import { queryClient } from "@/lib/queryClient";
 
 // Schema will be created with translations in component
 const createRequestSchema = (t: (key: string) => string) => z.object({
@@ -59,12 +59,8 @@ const goodsTypesKeys = [
 
 export function NewRequestForm({ onSuccess, onClose }: { onSuccess?: () => void; onClose?: () => void }) {
   const [photos, setPhotos] = useState<File[]>([]);
-  const [showRecommendationsDialog, setShowRecommendationsDialog] = useState(false);
-  const [recommendedTransporters, setRecommendedTransporters] = useState<any[]>([]);
-  const [createdRequestId, setCreatedRequestId] = useState<string>("");
   const [fromCityConfirmed, setFromCityConfirmed] = useState(false);
   const [toCityConfirmed, setToCityConfirmed] = useState(false);
-  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   const { t, i18n } = useTranslation();
@@ -166,7 +162,6 @@ export function NewRequestForm({ onSuccess, onClose }: { onSuccess?: () => void;
       if (!response.ok) throw new Error();
       
       const createdRequest = await response.json();
-      setCreatedRequestId(createdRequest.id);
       
       toast({
         title: t('newRequestForm.requestCreated'),
@@ -181,29 +176,13 @@ export function NewRequestForm({ onSuccess, onClose }: { onSuccess?: () => void;
         budget: data.budget,
       });
       
-      // Open recommendations dialog immediately with loading state
-      setLoadingRecommendations(true);
-      setShowRecommendationsDialog(true);
+      // Invalidate requests cache to refresh dashboard
+      await queryClient.invalidateQueries({ queryKey: ['/api/requests'] });
       
-      // Fetch recommended transporters in background
-      try {
-        const recommendationsResponse = await fetch(
-          `/api/requests/${createdRequest.id}/recommended-transporters`
-        );
-        if (recommendationsResponse.ok) {
-          const recommendationsData = await recommendationsResponse.json();
-          setRecommendedTransporters(recommendationsData.transporters || []);
-        } else {
-          // If recommendations fail, show empty list
-          setRecommendedTransporters([]);
-        }
-      } catch (err) {
-        console.error("Failed to fetch recommendations:", err);
-        // If recommendations fail, show empty list
-        setRecommendedTransporters([]);
-      } finally {
-        setLoadingRecommendations(false);
-      }
+      // Reset form and close
+      form.reset();
+      setPhotos([]);
+      onSuccess?.();
     } catch (error) {
       toast({
         variant: "destructive",
@@ -550,22 +529,6 @@ export function NewRequestForm({ onSuccess, onClose }: { onSuccess?: () => void;
           </form>
         </Form>
       </CardContent>
-
-      <RecommendedTransportersDialog
-        open={showRecommendationsDialog}
-        onOpenChange={(open) => {
-          setShowRecommendationsDialog(open);
-          // Call onSuccess when dialog closes
-          if (!open) {
-            form.reset();
-            setPhotos([]);
-            onSuccess?.();
-          }
-        }}
-        requestId={createdRequestId}
-        transporters={recommendedTransporters}
-        isLoading={loadingRecommendations}
-      />
     </Card>
   );
 }
