@@ -203,30 +203,21 @@ export function NewRequestForm({ onSuccess, onClose }: { onSuccess?: () => void;
         <div className="absolute top-4 right-4 w-32 h-32 bg-gradient-to-br from-cyan-400/20 to-transparent rounded-full blur-2xl pointer-events-none" />
         <div className="absolute bottom-4 left-4 w-40 h-40 bg-gradient-to-tr from-teal-400/20 to-transparent rounded-full blur-2xl pointer-events-none" />
         
+        {/* Close Button */}
+        {onClose && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="absolute right-4 top-4 z-20 h-10 w-10 rounded-full hover:bg-accent/80 backdrop-blur-sm"
+            data-testid="button-close-new-request"
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        )}
+        
         {/* Content - Above decorative elements */}
         <div className="relative z-10">
-          {/* Header with Close Button */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-[#17cfcf] to-[#0ea5a5] rounded-xl shadow-lg shadow-cyan-500/50 flex items-center justify-center">
-                <MapPin className="w-6 h-6 text-white" strokeWidth={2} />
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
-                {t('newRequestForm.title')}
-              </h2>
-            </div>
-            {onClose && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onClose}
-                className="h-10 w-10 rounded-full hover:bg-accent"
-                data-testid="button-close-new-request"
-              >
-                <X className="h-5 w-5" />
-              </Button>
-            )}
-          </div>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2">
