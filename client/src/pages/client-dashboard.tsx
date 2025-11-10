@@ -16,6 +16,7 @@ import { useAuth } from "@/lib/auth-context";
 import { LoadingTruck } from "@/components/ui/loading-truck";
 import { StoriesBar } from "@/components/ui/stories-bar";
 import { MetaPixelEvents } from "@/lib/meta-pixel";
+import { RouteMap } from "@/components/route-map";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -529,6 +530,17 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
             )}
           </div>
 
+          {/* Carte de trajet avec distance */}
+          {request.fromCity && request.toCity && (
+            <div className="mt-2">
+              <RouteMap
+                departureCity={request.fromCity}
+                arrivalCity={request.toCity}
+                distance={request.distance}
+              />
+            </div>
+          )}
+
           {/* Statut logistique visible */}
           <div className="relative flex items-center gap-3 px-4 py-2.5 bg-gradient-to-r from-[#1abc9c]/20 via-[#16a085]/15 to-[#1abc9c]/20 rounded-lg border-2 border-[#1abc9c]/40 shadow-sm">
             <div className="relative">
@@ -897,6 +909,17 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                   </div>
                 </div>
               </div>
+
+              {/* Carte de trajet avec distance dans le dialogue */}
+              {request.fromCity && request.toCity && (
+                <div className="mt-2">
+                  <RouteMap
+                    departureCity={request.fromCity}
+                    arrivalCity={request.toCity}
+                    distance={request.distance}
+                  />
+                </div>
+              )}
 
               {/* Prix - Style transporteur */}
               {isQualifiedWorkflow && request.clientTotal && (
@@ -2291,6 +2314,17 @@ export default function ClientDashboard() {
                                 </div>
                               </div>
                             </div>
+
+                            {/* Carte de trajet avec distance - To Pay */}
+                            {request.fromCity && request.toCity && (
+                              <div className="mt-2">
+                                <RouteMap
+                                  departureCity={request.fromCity}
+                                  arrivalCity={request.toCity}
+                                  distance={request.distance}
+                                />
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -2472,6 +2506,18 @@ export default function ClientDashboard() {
                               </div>
                             </div>
                           </div>
+
+                          {/* Carte de trajet avec distance - Completed */}
+                          {request.fromCity && request.toCity && (
+                            <div className="mt-2">
+                              <RouteMap
+                                departureCity={request.fromCity}
+                                arrivalCity={request.toCity}
+                                distance={request.distance}
+                              />
+                            </div>
+                          )}
+
                           {request.status === "expired" && (
                             <div className="mt-2 p-2 rounded bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800">
                               <p className="text-sm text-orange-800 dark:text-orange-300">
