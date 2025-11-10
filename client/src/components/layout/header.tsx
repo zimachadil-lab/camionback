@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { Menu, User, LogOut, Package, Star, Receipt, CreditCard, HelpCircle, MessageCircle, Truck, Plus } from "lucide-react";
+import { Menu, User, LogOut, Package, Star, Receipt, CreditCard, HelpCircle, MessageCircle, Truck, Plus, CornerUpLeft } from "lucide-react";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { MessagesBadge } from "@/components/chat/messages-badge";
 import { ContactWhatsAppDialog } from "@/components/contact-whatsapp-dialog";
@@ -29,9 +29,10 @@ interface HeaderProps {
   };
   onLogout: () => void;
   onCreateRequest?: () => void;
+  onAnnounceReturn?: () => void;
 }
 
-export function Header({ user, onLogout, onCreateRequest }: HeaderProps) {
+export function Header({ user, onLogout, onCreateRequest, onAnnounceReturn }: HeaderProps) {
   const [location, navigate] = useLocation();
   const [showContactDialog, setShowContactDialog] = useState(false);
   const { t, i18n } = useTranslation();
@@ -152,6 +153,19 @@ export function Header({ user, onLogout, onCreateRequest }: HeaderProps) {
               data-testid="button-new-request-header"
             >
               <Package className="w-5 h-5" />
+            </Button>
+          )}
+
+          {/* Announce Return Button - Transporter Only */}
+          {user.role === "transporteur" && onAnnounceReturn && (
+            <Button
+              onClick={onAnnounceReturn}
+              size="icon"
+              variant="default"
+              className="bg-gradient-to-br from-[#00d4b2] to-[#00b396] hover:from-[#00c0a6] hover:to-[#009d84] text-white shadow-md"
+              data-testid="button-announce-return-header"
+            >
+              <CornerUpLeft className="w-5 h-5" />
             </Button>
           )}
           
