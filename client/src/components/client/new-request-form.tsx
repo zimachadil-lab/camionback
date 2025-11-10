@@ -218,7 +218,7 @@ export function NewRequestForm({ onSuccess, onClose }: { onSuccess?: () => void;
           variant="ghost"
           size="icon"
           onClick={onClose}
-          className="absolute right-4 top-4 h-9 w-9 rounded-full hover:bg-accent z-10"
+          className="absolute right-3 top-3 h-9 w-9 rounded-full hover:bg-accent z-10"
           data-testid="button-close-new-request"
         >
           <X className="h-5 w-5" />
