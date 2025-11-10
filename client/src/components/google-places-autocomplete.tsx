@@ -30,6 +30,8 @@ export const GooglePlacesAutocomplete = forwardRef<HTMLInputElement, GooglePlace
 
     // Initialize Google Places Autocomplete using shared loader
     useEffect(() => {
+      let mutationObserver: MutationObserver | null = null;
+      
       const initAutocomplete = async () => {
         if (!inputRef.current) return;
 
@@ -54,12 +56,12 @@ export const GooglePlacesAutocomplete = forwardRef<HTMLInputElement, GooglePlace
             strictBounds: false,
           });
 
-          // CRITICAL FIX: Use native DOM event listener instead of Google Maps listener
-          // This works even when the Dialog blocks the Google Maps event system
+          // CRITICAL FIX: Listen to clicks on Google Places suggestions directly
+          // This bypasses the Dialog's event blocking
           const handlePlaceSelect = () => {
-            console.log("✅ [GooglePlaces] DOM event captured!");
+            console.log("✅ [GooglePlaces] Checking for place...");
             
-            // Small delay to ensure Google has populated the place
+            // Longer delay to ensure Google has populated the place
             setTimeout(() => {
               const place = autocompleteRef.current?.getPlace();
               console.log("📍 [GooglePlaces] Place object:", place);
@@ -103,11 +105,34 @@ export const GooglePlacesAutocomplete = forwardRef<HTMLInputElement, GooglePlace
                 }
                 onChange(place.formatted_address, place);
               }
-            }, 50);
+            }, 200); // Increased delay
           };
 
-          // Listen to the input element directly for autocomplete selection
-          inputRef.current.addEventListener('input', handlePlaceSelect);
+          // Listen for clicks on Google Places suggestion items
+          const observeSuggestionClicks = () => {
+            // Use MutationObserver to detect when suggestions appear
+            const observer = new MutationObserver(() => {
+              const pacContainer = document.querySelector('.pac-container');
+              if (pacContainer) {
+                const items = pacContainer.querySelectorAll('.pac-item');
+                items.forEach((item) => {
+                  item.addEventListener('mousedown', () => {
+                    console.log("🖱️ [GooglePlaces] Click sur suggestion détecté!");
+                    handlePlaceSelect();
+                  });
+                });
+              }
+            });
+
+            observer.observe(document.body, {
+              childList: true,
+              subtree: true,
+            });
+
+            return observer;
+          };
+
+          mutationObserver = observeSuggestionClicks();
           
           // Also keep the Google Maps listener as backup
           autocompleteRef.current.addListener("place_changed", handlePlaceSelect);
@@ -126,6 +151,9 @@ export const GooglePlacesAutocomplete = forwardRef<HTMLInputElement, GooglePlace
       return () => {
         if (autocompleteRef.current) {
           google.maps.event.clearInstanceListeners(autocompleteRef.current);
+        }
+        if (mutationObserver) {
+          mutationObserver.disconnect();
         }
       };
     }, [i18n.language, onChange]);
