@@ -467,21 +467,16 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                 {request.referenceId}
               </h3>
               {/* Status badge with semantic colors */}
-              <div className={`inline-flex items-center gap-2.5 px-3 py-2 rounded-full text-sm border-0 ${
+              <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs border-0 whitespace-nowrap ${
                 clientStatus.isProcessing 
                   ? 'bg-[hsl(var(--status-processing))]' 
                   : 'bg-[hsl(var(--status-info))]'
               }`}>
-                <div className="relative flex-shrink-0">
-                  {clientStatus.isProcessing && (
-                    <div className="absolute inset-0 bg-white/30 rounded-full animate-ping"></div>
-                  )}
-                  <StatusIcon className={`relative w-4 h-4 ${
-                    clientStatus.isProcessing 
-                      ? 'text-[hsl(var(--status-processing-foreground))] animate-spin' 
-                      : 'text-[hsl(var(--status-info-foreground))]'
-                  }`} />
-                </div>
+                <StatusIcon className={`flex-shrink-0 w-3.5 h-3.5 ${
+                  clientStatus.isProcessing 
+                    ? 'text-[hsl(var(--status-processing-foreground))] animate-spin' 
+                    : 'text-[hsl(var(--status-info-foreground))]'
+                }`} />
                 <span className={`font-medium ${
                   clientStatus.isProcessing 
                     ? 'bg-[hsl(var(--status-processing))] text-[hsl(var(--status-processing-foreground))]' 
