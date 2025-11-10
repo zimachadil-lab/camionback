@@ -617,7 +617,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                   </div>
                   <Badge 
                     variant="default" 
-                    className="text-base sm:text-lg font-bold px-2.5 sm:px-3 py-0.5 sm:py-1 bg-blue-500 hover:bg-blue-500 flex-shrink-0"
+                    className="text-base sm:text-lg font-bold px-2.5 sm:px-3 py-0.5 sm:py-1 bg-blue-500 hover:bg-blue-500 flex-shrink-0 animate-pulse"
                   >
                     {displayCount}
                   </Badge>
