@@ -188,6 +188,10 @@
       "viewPhotos": "Voir les photos"
     },
     "dialogs": {
+      "deleteTitle": "Supprimer la demande",
+      "deleteDescription": "Êtes-vous sûr de vouloir supprimer cette demande ? Cette action est irréversible.",
+      "editTitle": "Modifier la demande",
+      "editDescription": "Modifiez les détails de votre demande de transport",
       "edit": {
         "title": "Modifier la demande",
         "fromCity": "Ville de départ",
