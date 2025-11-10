@@ -2079,177 +2079,159 @@ export default function CoordinatorDashboard() {
         </div>
       </div>
 
-      <CardHeader className="pb-3 space-y-3">
-        {/* Trajet et date avec bouton d'assignation */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between gap-2">
-            {/* Route - stacked layout */}
-            <div className="flex items-center gap-2 flex-1">
-              <MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-              <div className="flex items-center gap-2 flex-1">
-                <div className="flex-1 min-w-0">
-                  <div className="bg-muted/70 rounded-lg px-2 py-1.5">
-                    <div className="font-bold text-xs leading-tight break-words">
-                      {request.departureAddress?.split(',')[0] || request.fromCity}
-                    </div>
-                    {request.departureAddress?.includes(',') && (
-                      <div className="text-[10px] text-muted-foreground mt-0.5 leading-tight">
-                        {request.departureAddress.split(',').slice(1).join(',').trim()}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <span className="text-[#17cfcf] text-sm flex-shrink-0">→</span>
-                <div className="flex-1 min-w-0">
-                  <div className="bg-muted/70 rounded-lg px-2 py-1.5">
-                    <div className="font-bold text-xs leading-tight break-words">
-                      {request.arrivalAddress?.split(',')[0] || request.toCity}
-                    </div>
-                    {request.arrivalAddress?.includes(',') && (
-                      <div className="text-[10px] text-muted-foreground mt-0.5 leading-tight">
-                        {request.arrivalAddress.split(',').slice(1).join(',').trim()}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
+      <CardHeader className="pb-3">
+        {/* Layout horizontal : Carte à gauche, tout le reste à droite */}
+        <div className="flex gap-4">
+          {/* LEFT: Grande carte 360x360px */}
+          {request.distance && request.departureAddress && request.arrivalAddress && (
+            <div className="flex-shrink-0">
+              <RouteMap
+                variant="compact"
+                departureCity={request.departureAddress.split(',').pop()?.trim() || request.fromCity}
+                arrivalCity={request.arrivalAddress.split(',').pop()?.trim() || request.toCity}
+                distance={request.distance}
+              />
             </div>
-            {/* Bouton d'assignation coordinateur */}
-            {request.assignedTo ? (
-              request.assignedTo.id === user?.id ? (
+          )}
+          
+          {/* RIGHT: Toutes les infos */}
+          <div className="flex-1 space-y-3">
+            {/* Route info inline */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="w-3 h-3 rounded-full bg-[#10b981] flex-shrink-0"></div>
+              <span className="text-sm font-semibold">{request.departureAddress?.split(',').pop()?.trim() || request.fromCity}</span>
+              <span className="text-[#17cfcf] text-xl">→</span>
+              <span className="text-base font-bold text-[#17cfcf]">{request.distance} km</span>
+              <span className="text-[#17cfcf] text-xl">→</span>
+              <div className="w-3 h-3 rounded-full bg-[#ef4444] flex-shrink-0"></div>
+              <span className="text-sm font-semibold">{request.arrivalAddress?.split(',').pop()?.trim() || request.toCity}</span>
+              
+              {/* Bouton d'assignation coordinateur */}
+              {request.assignedTo ? (
+                request.assignedTo.id === user?.id ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs gap-1.5 ml-auto"
+                    onClick={() => unassignFromMeMutation.mutate(request.id)}
+                    disabled={unassignFromMeMutation.isPending}
+                    data-testid={`button-unassign-${request.id}`}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                    Se désassigner
+                  </Button>
+                ) : (
+                  <Badge variant="secondary" className="text-xs ml-auto">
+                    <Compass className="h-3 w-3 mr-1" />
+                    {request.assignedTo.name || request.assignedTo.phoneNumber}
+                  </Badge>
+                )
+              ) : (
                 <Button
                   size="sm"
-                  variant="outline"
-                  className="h-8 text-xs gap-1.5"
-                  onClick={() => unassignFromMeMutation.mutate(request.id)}
-                  disabled={unassignFromMeMutation.isPending}
-                  data-testid={`button-unassign-${request.id}`}
+                  variant="default"
+                  className="h-8 text-xs gap-1.5 bg-[#17cfcf] hover:bg-[#14b8b8] text-white ml-auto"
+                  onClick={() => assignToMeMutation.mutate(request.id)}
+                  disabled={assignToMeMutation.isPending}
+                  data-testid={`button-assign-to-me-${request.id}`}
                 >
-                  <X className="h-3.5 w-3.5" />
-                  Se désassigner
+                  <Compass className="h-3.5 w-3.5" />
+                  Me l'affecter
                 </Button>
-              ) : (
-                <Badge variant="secondary" className="text-xs">
-                  <Compass className="h-3 w-3 mr-1" />
-                  {request.assignedTo.name || request.assignedTo.phoneNumber}
-                </Badge>
-              )
-            ) : (
-              <Button
-                size="sm"
-                variant="default"
-                className="h-8 text-xs gap-1.5 bg-[#17cfcf] hover:bg-[#14b8b8] text-white"
-                onClick={() => assignToMeMutation.mutate(request.id)}
-                disabled={assignToMeMutation.isPending}
-                data-testid={`button-assign-to-me-${request.id}`}
-              >
-                <Compass className="h-3.5 w-3.5" />
-                Me l'affecter
-              </Button>
-            )}
-          </div>
-          
-          {/* Route map visualization - Carte à gauche, infos à droite */}
-          {request.distance && request.departureAddress && request.arrivalAddress && (
-            <div className="mt-2">
-              <div className="flex gap-3 items-center">
-                {/* Left: Carte carrée */}
-                <div className="flex-shrink-0">
-                  <RouteMap
-                    variant="compact"
-                    departureCity={request.departureAddress.split(',').pop()?.trim() || request.fromCity}
-                    arrivalCity={request.arrivalAddress.split(',').pop()?.trim() || request.toCity}
-                    distance={request.distance}
-                  />
-                </div>
-                {/* Right: Route info compacte */}
-                <div className="flex items-center gap-2 flex-1">
-                  <div className="w-3 h-3 rounded-full bg-[#10b981] flex-shrink-0"></div>
-                  <span className="text-sm font-semibold">{request.departureAddress.split(',').pop()?.trim() || request.fromCity}</span>
-                  <span className="text-[#17cfcf] text-xl mx-1">→</span>
-                  <span className="text-base font-bold text-[#17cfcf] mx-1">{request.distance} km</span>
-                  <span className="text-[#17cfcf] text-xl mx-1">→</span>
-                  <div className="w-3 h-3 rounded-full bg-[#ef4444] flex-shrink-0"></div>
-                  <span className="text-sm font-semibold">{request.arrivalAddress.split(',').pop()?.trim() || request.toCity}</span>
+              )}
+            </div>
+
+            {/* Statut logistique */}
+            <div className="relative flex items-center gap-3 px-3 py-2 bg-gradient-to-r from-[#1abc9c]/20 via-[#16a085]/15 to-[#1abc9c]/20 rounded-lg border-2 border-[#1abc9c]/40">
+              <div className="relative">
+                <div className="absolute inset-0 bg-[#1abc9c]/30 rounded-full animate-ping"></div>
+                <div className="relative w-7 h-7 rounded-full bg-[#1abc9c]/20 flex items-center justify-center border-2 border-[#1abc9c]/50">
+                  <StatusIcon className="w-3.5 h-3.5 text-[#1abc9c] animate-pulse" />
                 </div>
               </div>
+              <span className="text-sm font-semibold text-foreground">
+                {clientStatus.text}
+              </span>
             </div>
-          )}
-          
-          {/* Payment Status Selector - Only on Production tab */}
-          {showPaymentStatusSelector && (
-            <div className="flex items-center gap-3 pl-6">
-              <span className="text-xs text-muted-foreground font-medium">Statut paiement:</span>
-              <Select
-                value={request.paymentStatus || "a_facturer"}
-                onValueChange={(value) => {
-                  // If "paid_by_client" is selected, open payment dialog
-                  if (value === "paid_by_client") {
-                    setPaymentRequestId(request.id);
-                    setPaymentReceipt("");
-                    setShowPaymentDialog(true);
-                  } else {
-                    // For other statuses, update directly
-                    updatePaymentStatusMutation.mutate({
-                      requestId: request.id,
-                      paymentStatus: value
-                    });
-                  }
-                }}
-                disabled={updatePaymentStatusMutation.isPending}
+
+            {/* Info client */}
+            {request.client && (
+              <div className="flex items-center gap-2 text-sm">
+                <Phone className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Client:</span>
+                <a 
+                  href={`tel:${request.client.phoneNumber}`}
+                  className="text-[#5BC0EB] hover:underline font-medium"
+                  data-testid={`link-call-client-${request.id}`}
+                >
+                  {request.client.phoneNumber}
+                </a>
+              </div>
+            )}
+
+            {/* Bouton photos */}
+            {request.photos && request.photos.length > 0 && (
+              <Button
+                size="sm"
+                className="h-7 text-xs gap-1.5 bg-[#17cfcf]/20 hover:bg-[#17cfcf]/30 text-[#17cfcf] border border-[#17cfcf]/40 hover:border-[#17cfcf]/60 transition-all font-medium"
+                onClick={() => handleViewPhotos(request.photos)}
+                data-testid={`button-view-photos-${request.id}`}
               >
-                <SelectTrigger className="h-8 w-[200px]" data-testid={`select-payment-status-${request.id}`}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="a_facturer">À facturer</SelectItem>
-                  <SelectItem value="paid_by_client">Payé par client</SelectItem>
-                  <SelectItem value="paid_by_camionback">Payé par CamionBack</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          
-          <p className="text-xs text-muted-foreground pl-6">
-            Créée le {format(new Date(request.createdAt), "dd MMM yyyy 'à' HH:mm", { locale: fr })}
-          </p>
-        </div>
+                <ImageIcon className="w-3.5 h-3.5" />
+                <span>{request.photos.length} photo{request.photos.length > 1 ? 's' : ''}</span>
+              </Button>
+            )}
 
-        {/* Statut avec badges */}
-        <div className="flex flex-wrap items-center gap-2">
-          {showPaymentControls && getPaymentStatusBadge(request.paymentStatus)}
-          {request.isHidden && <Badge variant="secondary">Masqué</Badge>}
-        </div>
+            {/* Info manutention */}
+            {request.handlingRequired && (
+              <div className="p-2 rounded-lg border bg-muted/30 text-xs">
+                <div className="flex items-center gap-2 font-medium mb-1">
+                  <span>🏋️</span>
+                  <span>Manutention : Oui</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <span className="text-muted-foreground">🏢 Départ:</span> {request.departureFloor !== undefined ? (request.departureFloor === 0 ? 'RDC' : `${request.departureFloor}ᵉ`) : '-'} {request.departureElevator ? '✅' : '❌'}
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">🏠 Arrivée:</span> {request.arrivalFloor !== undefined ? (request.arrivalFloor === 0 ? 'RDC' : `${request.arrivalFloor}ᵉ`) : '-'} {request.arrivalElevator ? '✅' : '❌'}
+                  </div>
+                </div>
+              </div>
+            )}
 
-        {/* Statut logistique visible */}
-        <div className="relative flex items-center gap-3 px-4 py-2.5 bg-gradient-to-r from-[#1abc9c]/20 via-[#16a085]/15 to-[#1abc9c]/20 rounded-lg border-2 border-[#1abc9c]/40 shadow-sm">
-          <div className="relative">
-            <div className="absolute inset-0 bg-[#1abc9c]/30 rounded-full animate-ping"></div>
-            <div className="relative w-8 h-8 rounded-full bg-[#1abc9c]/20 flex items-center justify-center border-2 border-[#1abc9c]/50">
-              <StatusIcon className="w-4 h-4 text-[#1abc9c] animate-pulse" />
-            </div>
+            {/* Prix transporteur + cotisation + total */}
+            {(request.transporterPrice || request.clientTotal) && (
+              <div className="space-y-1.5">
+                {request.transporterPrice && (
+                  <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-gradient-to-r from-[#00ff88]/10 to-transparent border-l-4 border-[#00ff88]">
+                    <DollarSign className="w-4 h-4 text-[#00ff88]" />
+                    <span className="text-xs font-medium text-muted-foreground">Transporteur</span>
+                    <span className="text-base font-bold text-[#00ff88] ml-auto">{Math.floor(request.transporterPrice).toLocaleString()} Dhs</span>
+                  </div>
+                )}
+                {request.platformFee && (
+                  <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-gradient-to-r from-orange-500/10 to-transparent border-l-4 border-orange-500">
+                    <DollarSign className="w-4 h-4 text-orange-500" />
+                    <span className="text-xs font-medium text-muted-foreground">Cotisation</span>
+                    <span className="text-base font-bold text-orange-500 ml-auto">+{Math.floor(request.platformFee).toLocaleString()} Dhs</span>
+                  </div>
+                )}
+                {request.clientTotal && (
+                  <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-gradient-to-r from-blue-500/10 to-transparent border-l-4 border-blue-500">
+                    <DollarSign className="w-4 h-4 text-blue-500" />
+                    <span className="text-xs font-medium text-muted-foreground">Client Total</span>
+                    <span className="text-base font-bold text-blue-500 ml-auto">{Math.floor(request.clientTotal).toLocaleString()} Dhs</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-          <span className="text-sm font-semibold text-foreground">
-            {clientStatus.text}
-          </span>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
+        {/* Coordination status */}
         <div className="space-y-2 text-sm">
-          {request.client && (
-            <div className="flex items-center gap-2">
-              <Phone className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Client:</span>
-              <a 
-                href={`tel:${request.client.phoneNumber}`}
-                className="text-[#5BC0EB] hover:underline font-medium"
-                data-testid={`link-call-client-${request.id}`}
-              >
-                {request.client.phoneNumber}
-              </a>
-            </div>
-          )}
-
           {qualifiedBy && (
             <div className="flex items-center gap-2 bg-green-50 dark:bg-green-950 p-2 rounded-md border border-green-200 dark:border-green-800">
               <Users className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -2269,30 +2251,6 @@ export default function CoordinatorDashboard() {
               </span>
             </div>
           )}
-
-          {request.transporter && (
-            <div className="flex items-center gap-2">
-              <Phone className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Transporteur:</span>
-              <a 
-                href={`tel:${request.transporter.phoneNumber}`}
-                className="text-[#5BC0EB] hover:underline font-medium"
-                data-testid={`link-call-transporter-${request.id}`}
-              >
-                {request.transporter.phoneNumber}
-              </a>
-            </div>
-          )}
-
-          {showPaymentControls && request.acceptedAt && (
-            <div className="flex items-center gap-2 bg-green-50 dark:bg-green-950 p-2 rounded-md border border-green-200 dark:border-green-800">
-              <Calendar className="h-4 w-4 text-green-600 dark:text-green-400" />
-              <span className="text-muted-foreground">Date d'acceptation:</span>
-              <span className="font-semibold text-green-700 dark:text-green-300" data-testid={`text-accepted-date-${request.id}`}>
-                {format(new Date(request.acceptedAt), "dd MMM yyyy 'à' HH:mm", { locale: fr })}
-              </span>
-            </div>
-          )}
         </div>
 
         {/* Description/Services */}
@@ -2305,126 +2263,17 @@ export default function CoordinatorDashboard() {
             <p className={`text-sm pl-6 ${expandedDescriptions[request.id] ? '' : 'line-clamp-2'}`}>
               {request.description}
             </p>
-            <div className="flex items-center gap-3 pl-6">
-              {request.description.length > 100 && (
-                <button
-                  onClick={() => setExpandedDescriptions(prev => ({
-                    ...prev,
-                    [request.id]: !prev[request.id]
-                  }))}
-                  className="text-xs text-[#17cfcf] hover:underline"
-                  data-testid={`button-toggle-description-${request.id}`}
-                >
-                  {expandedDescriptions[request.id] ? 'Voir moins' : 'Plus de détails'}
-                </button>
-              )}
-              
-              {request.photos && request.photos.length > 0 && (
-                <Button
-                  size="sm"
-                  className="h-6 text-xs gap-1.5 bg-[#17cfcf]/20 hover:bg-[#17cfcf]/30 text-[#17cfcf] border border-[#17cfcf]/40 hover:border-[#17cfcf]/60 transition-all font-medium"
-                  onClick={() => handleViewPhotos(request.photos)}
-                  data-testid={`button-view-photos-inline-${request.id}`}
-                >
-                  <ImageIcon className="w-3.5 h-3.5" />
-                  <span>{request.photos.length} photo{request.photos.length > 1 ? 's' : ''}</span>
-                </Button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Handling/Manutention Information */}
-        {request.handlingRequired !== undefined && request.handlingRequired !== null && (
-          <div className="p-3 rounded-lg border bg-muted/30 space-y-2">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <span>🏋️</span>
-              <span>Manutention : {request.handlingRequired ? 'Oui' : 'Non'}</span>
-            </div>
-            {request.handlingRequired && (
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <span>🏢</span>
-                    <span className="font-medium">Départ</span>
-                  </div>
-                  <div className="pl-4">
-                    {request.departureFloor !== undefined && request.departureFloor !== null ? (
-                      <>
-                        <div>{request.departureFloor === 0 ? 'RDC' : `${request.departureFloor}ᵉ étage`}</div>
-                        <div className="text-muted-foreground">
-                          Ascenseur {request.departureElevator ? '✅' : '❌'}
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-muted-foreground">Non spécifié</div>
-                    )}
-                  </div>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <span>🏠</span>
-                    <span className="font-medium">Arrivée</span>
-                  </div>
-                  <div className="pl-4">
-                    {request.arrivalFloor !== undefined && request.arrivalFloor !== null ? (
-                      <>
-                        <div>{request.arrivalFloor === 0 ? 'RDC' : `${request.arrivalFloor}ᵉ étage`}</div>
-                        <div className="text-muted-foreground">
-                          Ascenseur {request.arrivalElevator ? '✅' : '❌'}
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-muted-foreground">Non spécifié</div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Section Prix - Style modernisé comme transporteur */}
-        {(request.transporterPrice || request.clientTotal || request.acceptedOffer) && (
-          <div className="space-y-2">
-            {request.transporterPrice && (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-[#00ff88]/10 via-[#00ff88]/5 to-transparent border-l-4 border-[#00ff88]">
-                <div className="w-7 h-7 rounded-full bg-[#00ff88]/20 flex items-center justify-center flex-shrink-0">
-                  <DollarSign className="w-4 h-4 text-[#00ff88]" />
-                </div>
-                <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Transporteur</span>
-                <span className="text-lg font-bold text-[#00ff88] ml-auto">{Math.floor(request.transporterPrice).toLocaleString()} Dhs</span>
-              </div>
-            )}
-            
-            {request.platformFee && (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-orange-500/10 via-orange-500/5 to-transparent border-l-4 border-orange-500">
-                <div className="w-7 h-7 rounded-full bg-orange-500/20 flex items-center justify-center flex-shrink-0">
-                  <DollarSign className="w-4 h-4 text-orange-500" />
-                </div>
-                <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Cotisation</span>
-                <span className="text-lg font-bold text-orange-500 ml-auto">+{Math.floor(request.platformFee).toLocaleString()} Dhs</span>
-              </div>
-            )}
-            
-            {request.clientTotal && (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-blue-500/10 via-blue-500/5 to-transparent border-l-4 border-blue-500">
-                <div className="w-7 h-7 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                  <DollarSign className="w-4 h-4 text-blue-500" />
-                </div>
-                <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Client Total</span>
-                <span className="text-lg font-bold text-blue-500 ml-auto">{Math.floor(request.clientTotal).toLocaleString()} Dhs</span>
-              </div>
-            )}
-
-            {request.acceptedOffer && !request.transporterPrice && (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-[#5BC0EB]/10 via-[#5BC0EB]/5 to-transparent border-l-4 border-[#5BC0EB]">
-                <div className="w-7 h-7 rounded-full bg-[#5BC0EB]/20 flex items-center justify-center flex-shrink-0">
-                  <DollarSign className="w-4 h-4 text-[#5BC0EB]" />
-                </div>
-                <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Montant accepté</span>
-                <span className="text-lg font-bold text-[#5BC0EB] ml-auto">{Math.floor(request.acceptedOffer.amount).toLocaleString()} Dhs</span>
-              </div>
+            {request.description.length > 100 && (
+              <button
+                onClick={() => setExpandedDescriptions(prev => ({
+                  ...prev,
+                  [request.id]: !prev[request.id]
+                }))}
+                className="text-xs text-[#17cfcf] hover:underline pl-6"
+                data-testid={`button-toggle-description-${request.id}`}
+              >
+                {expandedDescriptions[request.id] ? 'Voir moins' : 'Plus de détails'}
+              </button>
             )}
           </div>
         )}
