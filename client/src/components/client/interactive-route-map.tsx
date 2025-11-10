@@ -103,10 +103,16 @@ export function InteractiveRouteMap({
 
   // Update markers and route when cities change
   useEffect(() => {
-    if (!mapInstanceRef.current || !geocoderRef.current) return;
+    console.log('🔄 useEffect triggered:', { fromCity, toCity, hasMap: !!mapInstanceRef.current, hasGeocoder: !!geocoderRef.current });
+    
+    if (!mapInstanceRef.current || !geocoderRef.current) {
+      console.log('⚠️ Map or geocoder not ready yet');
+      return;
+    }
     
     // If either city is empty, cleanup and return
     if (!fromCity || !toCity) {
+      console.log('⚠️ Missing city:', { fromCity, toCity });
       cleanupMapElements();
       return;
     }
