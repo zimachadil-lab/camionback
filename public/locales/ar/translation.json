@@ -381,6 +381,13 @@
       "handlingFieldsRequired": "معلومات الطابق والمصعد مطلوبة إذا كانت المناولة مطلوبة"
     }
   },
+  "interactiveMap": {
+    "loading": "تحميل الخريطة...",
+    "error": "خطأ في تحميل الخريطة",
+    "dragToAdjust": "اسحب العلامات للضبط",
+    "departure": "المغادرة",
+    "arrival": "الوصول"
+  },
   "transporterDashboard": {
     "datePickerDialog": {
       "title": "اختر تاريخ توفرك",

@@ -18,6 +18,7 @@ import { useAuth } from "@/lib/auth-context";
 import { MetaPixelEvents } from "@/lib/meta-pixel";
 import { GooglePlacesAutocomplete } from "@/components/google-places-autocomplete";
 import { extractCityFromAddress } from "@shared/utils";
+import { InteractiveRouteMap } from "./interactive-route-map";
 
 // Schema will be created with translations in component
 const createRequestSchema = (t: (key: string) => string) => z.object({
@@ -268,12 +269,26 @@ export function NewRequestForm({ onSuccess }: { onSuccess?: () => void }) {
               />
             </div>
 
-            <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-md">
-              <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-blue-800 dark:text-blue-300">
-                {t('newRequestForm.addressPrivacyNote')}
-              </p>
-            </div>
+            {/* Interactive map visualization */}
+            {form.watch('fromCity') && form.watch('toCity') && (
+              <InteractiveRouteMap
+                fromCity={form.watch('fromCity')}
+                toCity={form.watch('toCity')}
+                onFromCityChange={(address, location) => {
+                  // Extract city from the full address returned by Google
+                  const city = extractCityFromAddress(address);
+                  form.setValue('departureAddress', address);
+                  form.setValue('fromCity', city);
+                }}
+                onToCityChange={(address, location) => {
+                  // Extract city from the full address returned by Google
+                  const city = extractCityFromAddress(address);
+                  form.setValue('arrivalAddress', address);
+                  form.setValue('toCity', city);
+                }}
+                className="my-4"
+              />
+            )}
 
             <FormField
               control={form.control}

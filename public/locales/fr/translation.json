@@ -381,6 +381,13 @@
       "handlingFieldsRequired": "Les informations d'étage et d'ascenseur sont obligatoires si manutention requise"
     }
   },
+  "interactiveMap": {
+    "loading": "Chargement de la carte...",
+    "error": "Erreur de chargement de la carte",
+    "dragToAdjust": "Déplacez les marqueurs pour ajuster",
+    "departure": "Départ",
+    "arrival": "Arrivée"
+  },
   "transporterDashboard": {
     "datePickerDialog": {
       "title": "Choisir votre date de disponibilité",
