@@ -2149,33 +2149,29 @@ export default function CoordinatorDashboard() {
             )}
           </div>
           
-          {/* Route map visualization - Compact horizontal layout */}
+          {/* Route map visualization - Carte à gauche, infos à droite */}
           {request.distance && request.departureAddress && request.arrivalAddress && (
-            <div className="pl-6 mt-2">
-              <div className="flex flex-col md:flex-row gap-3 items-start md:items-center">
-                {/* Left: Route info */}
-                <div className="flex-1 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-[#10b981]"></div>
-                    <span className="text-sm font-semibold">{request.departureAddress.split(',').pop()?.trim() || request.fromCity}</span>
-                  </div>
-                  <div className="flex items-center gap-2 pl-5">
-                    <span className="text-[#17cfcf] text-xl">→</span>
-                    <span className="text-lg font-bold text-[#17cfcf]">{request.distance} km</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-[#ef4444]"></div>
-                    <span className="text-sm font-semibold">{request.arrivalAddress.split(',').pop()?.trim() || request.toCity}</span>
-                  </div>
+            <div className="mt-2">
+              <div className="flex gap-3 items-center">
+                {/* Left: Carte carrée */}
+                <div className="flex-shrink-0">
+                  <RouteMap
+                    variant="compact"
+                    departureCity={request.departureAddress.split(',').pop()?.trim() || request.fromCity}
+                    arrivalCity={request.arrivalAddress.split(',').pop()?.trim() || request.toCity}
+                    distance={request.distance}
+                  />
                 </div>
-                {/* Right: Compact map */}
-                <RouteMap
-                  variant="compact"
-                  departureCity={request.departureAddress.split(',').pop()?.trim() || request.fromCity}
-                  arrivalCity={request.arrivalAddress.split(',').pop()?.trim() || request.toCity}
-                  distance={request.distance}
-                  className="flex-shrink-0"
-                />
+                {/* Right: Route info compacte */}
+                <div className="flex items-center gap-2 flex-1">
+                  <div className="w-3 h-3 rounded-full bg-[#10b981] flex-shrink-0"></div>
+                  <span className="text-sm font-semibold">{request.departureAddress.split(',').pop()?.trim() || request.fromCity}</span>
+                  <span className="text-[#17cfcf] text-xl mx-1">→</span>
+                  <span className="text-base font-bold text-[#17cfcf] mx-1">{request.distance} km</span>
+                  <span className="text-[#17cfcf] text-xl mx-1">→</span>
+                  <div className="w-3 h-3 rounded-full bg-[#ef4444] flex-shrink-0"></div>
+                  <span className="text-sm font-semibold">{request.arrivalAddress.split(',').pop()?.trim() || request.toCity}</span>
+                </div>
               </div>
             </div>
           )}
@@ -2828,33 +2824,29 @@ export default function CoordinatorDashboard() {
                           </div>
                         </div>
                         
-                        {/* Route map visualization - Compact horizontal layout */}
+                        {/* Route map visualization - Carte à gauche, infos à droite */}
                         {request.distance && request.departureAddress && request.arrivalAddress && (
                           <div className="mb-2">
-                            <div className="flex flex-col md:flex-row gap-3 items-start md:items-center">
-                              {/* Left: Route info */}
-                              <div className="flex-1 space-y-1">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-3 h-3 rounded-full bg-[#10b981]"></div>
-                                  <span className="text-sm font-semibold">{request.departureAddress.split(',').pop()?.trim() || request.fromCity}</span>
-                                </div>
-                                <div className="flex items-center gap-2 pl-5">
-                                  <span className="text-[#17cfcf] text-xl">→</span>
-                                  <span className="text-lg font-bold text-[#17cfcf]">{request.distance} km</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <div className="w-3 h-3 rounded-full bg-[#ef4444]"></div>
-                                  <span className="text-sm font-semibold">{request.arrivalAddress.split(',').pop()?.trim() || request.toCity}</span>
-                                </div>
+                            <div className="flex gap-3 items-center">
+                              {/* Left: Carte carrée */}
+                              <div className="flex-shrink-0">
+                                <RouteMap
+                                  variant="compact"
+                                  departureCity={request.departureAddress.split(',').pop()?.trim() || request.fromCity}
+                                  arrivalCity={request.arrivalAddress.split(',').pop()?.trim() || request.toCity}
+                                  distance={request.distance}
+                                />
                               </div>
-                              {/* Right: Compact map */}
-                              <RouteMap
-                                variant="compact"
-                                departureCity={request.departureAddress.split(',').pop()?.trim() || request.fromCity}
-                                arrivalCity={request.arrivalAddress.split(',').pop()?.trim() || request.toCity}
-                                distance={request.distance}
-                                className="flex-shrink-0"
-                              />
+                              {/* Right: Route info compacte */}
+                              <div className="flex items-center gap-2 flex-1">
+                                <div className="w-3 h-3 rounded-full bg-[#10b981] flex-shrink-0"></div>
+                                <span className="text-sm font-semibold">{request.departureAddress.split(',').pop()?.trim() || request.fromCity}</span>
+                                <span className="text-[#17cfcf] text-xl mx-1">→</span>
+                                <span className="text-base font-bold text-[#17cfcf] mx-1">{request.distance} km</span>
+                                <span className="text-[#17cfcf] text-xl mx-1">→</span>
+                                <div className="w-3 h-3 rounded-full bg-[#ef4444] flex-shrink-0"></div>
+                                <span className="text-sm font-semibold">{request.arrivalAddress.split(',').pop()?.trim() || request.toCity}</span>
+                              </div>
                             </div>
                           </div>
                         )}
