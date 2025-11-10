@@ -899,7 +899,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                               )}
                             </div>
                             {transporter.isVerified && (
-                              <Badge className="bg-[#17cfcf] text-[10px] px-2 py-0">{t('shared.labels.verified')}</Badge>
+                              <Badge className="bg-[hsl(var(--status-success))] text-[hsl(var(--status-success-foreground))] text-[10px] px-2 py-0 border-0">{t('shared.labels.verified')}</Badge>
                             )}
                           </div>
                           
@@ -928,9 +928,9 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                                 <Badge 
                                   className={`${
                                     new Date(transporter.availabilityDate).toDateString() === new Date(request.dateTime).toDateString()
-                                      ? 'bg-green-500 hover:bg-green-600' 
-                                      : 'bg-orange-500 hover:bg-orange-600'
-                                  } text-white border-0 text-sm font-bold px-3 py-1`}
+                                      ? 'bg-[hsl(var(--status-success))] hover:bg-[hsl(var(--status-success))]/90 text-[hsl(var(--status-success-foreground))]' 
+                                      : 'bg-[hsl(var(--status-warning))] hover:bg-[hsl(var(--status-warning))]/90 text-[hsl(var(--status-warning-foreground))]'
+                                  } border-0 text-sm font-bold px-3 py-1`}
                                 >
                                   📅 {format(new Date(transporter.availabilityDate), "dd MMMM yyyy", { locale: fr })}
                                 </Badge>
@@ -1057,7 +1057,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                             {matches[currentMatchIndex]?.name || `Transporteur ${matches[currentMatchIndex]?.id?.substring(0, 8)}`}
                           </h3>
                           {matches[currentMatchIndex]?.priority && (
-                            <Badge className="bg-[#17cfcf] text-white font-semibold flex items-center gap-1">
+                            <Badge className="bg-[hsl(var(--status-info))] text-[hsl(var(--status-info-foreground))] border-0 font-semibold flex items-center gap-1">
                               {matches[currentMatchIndex].priority === 'empty_return' && (
                                 <>
                                   <Target className="w-3 h-3" />
@@ -1072,7 +1072,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                               )}
                               {matches[currentMatchIndex].priority === 'rating' && (
                                 <>
-                                  <Star className="w-3 h-3 fill-white" />
+                                  <Star className="w-3 h-3 fill-current" />
                                   {t('clientDashboard.dialogs.offers.topRated')}
                                 </>
                               )}
@@ -2167,11 +2167,11 @@ export default function ClientDashboard() {
                           <div className="flex items-center gap-2 mb-2 flex-wrap">
                             <p className="font-semibold">{request.referenceId}</p>
                             {request.status === "expired" ? (
-                              <Badge variant="destructive" className="bg-orange-600">
+                              <Badge className="bg-[hsl(var(--status-warning))] text-[hsl(var(--status-warning-foreground))] border-0">
                                 Expirée
                               </Badge>
                             ) : (
-                              <Badge variant="default" className="bg-gray-600">
+                              <Badge className="bg-[hsl(var(--status-success))] text-[hsl(var(--status-success-foreground))] border-0">
                                 Terminée
                               </Badge>
                             )}
