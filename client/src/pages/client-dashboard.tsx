@@ -201,16 +201,16 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
   const hasTransporter = isAccepted || !!request.assignedTransporterId;
   const { toast } = useToast();
   
-  // Create goodsTypes array using translations
+  // Create goodsTypes array with keys and labels
   const goodsTypes = [
-    t('shared.goodsTypes.furniture'),
-    t('shared.goodsTypes.appliances'),
-    t('shared.goodsTypes.goods'),
-    t('shared.goodsTypes.moving'),
-    t('shared.goodsTypes.construction'),
-    t('shared.goodsTypes.parcels'),
-    t('shared.goodsTypes.vehicle'),
-    t('shared.goodsTypes.other')
+    { key: 'furniture', label: t('shared.goodsTypes.furniture') },
+    { key: 'appliances', label: t('shared.goodsTypes.appliances') },
+    { key: 'goods', label: t('shared.goodsTypes.goods') },
+    { key: 'moving', label: t('shared.goodsTypes.moving') },
+    { key: 'construction', label: t('shared.goodsTypes.construction') },
+    { key: 'parcel', label: t('shared.goodsTypes.parcel') },
+    { key: 'vehicle', label: t('shared.goodsTypes.vehicle') },
+    { key: 'other', label: t('shared.goodsTypes.other') }
   ];
   
   // Create schemas with useMemo
@@ -522,20 +522,26 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
             </span>
           </div>
 
-          {/* Infos compactes: Vues et Date */}
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            {request.viewCount !== undefined && (
-              <span className="flex items-center gap-1">
-                <Eye className="w-3 h-3" />
-                {request.viewCount} vue{request.viewCount > 1 ? 's' : ''}
-              </span>
-            )}
-            {createdAt && (
-              <span className="flex items-center gap-1">
-                <Calendar className="w-3 h-3" />
-                Créée le {format(createdAt, "d MMM yyyy", { locale: fr })}
-              </span>
-            )}
+          {/* Catégorie et infos compactes */}
+          <div className="space-y-2">
+            <div>
+              <p className="text-muted-foreground text-xs mb-1">{t('clientDashboard.dialogs.edit.goodsType')}</p>
+              <p className="text-sm font-medium">{categoryConfig.label}</p>
+            </div>
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              {request.viewCount !== undefined && (
+                <span className="flex items-center gap-1">
+                  <Eye className="w-3 h-3" />
+                  {request.viewCount} vue{request.viewCount > 1 ? 's' : ''}
+                </span>
+              )}
+              {createdAt && (
+                <span className="flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  Créée le {format(createdAt, "d MMM yyyy", { locale: fr })}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Description */}
@@ -1289,7 +1295,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                       </FormControl>
                       <SelectContent>
                         {goodsTypes.map((type) => (
-                          <SelectItem key={type} value={type}>{type}</SelectItem>
+                          <SelectItem key={type.key} value={type.key}>{type.label}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
