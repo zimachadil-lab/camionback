@@ -54,51 +54,63 @@ export const GooglePlacesAutocomplete = forwardRef<HTMLInputElement, GooglePlace
             strictBounds: false,
           });
 
-          // Listen for place selection
-          autocompleteRef.current.addListener("place_changed", () => {
-            console.log("✅ [GooglePlaces] place_changed EVENT DÉCLENCHÉ !");
-            const place = autocompleteRef.current?.getPlace();
-            console.log("📍 [GooglePlaces] Place object:", place);
+          // CRITICAL FIX: Use native DOM event listener instead of Google Maps listener
+          // This works even when the Dialog blocks the Google Maps event system
+          const handlePlaceSelect = () => {
+            console.log("✅ [GooglePlaces] DOM event captured!");
             
-            if (place && place.address_components) {
-              // Extract structured address components
-              let city = "";
-              let neighborhood = "";
+            // Small delay to ensure Google has populated the place
+            setTimeout(() => {
+              const place = autocompleteRef.current?.getPlace();
+              console.log("📍 [GooglePlaces] Place object:", place);
+              
+              if (place && place.address_components) {
+                // Extract structured address components
+                let city = "";
+                let neighborhood = "";
 
-              place.address_components.forEach((component: google.maps.GeocoderAddressComponent) => {
-                if (component.types.includes("locality")) {
-                  city = component.long_name;
-                } else if (component.types.includes("sublocality") || component.types.includes("sublocality_level_1")) {
-                  neighborhood = component.long_name;
-                } else if (!city && component.types.includes("administrative_area_level_1")) {
-                  // Fallback to province/region if no locality found
-                  city = component.long_name;
+                place.address_components.forEach((component: google.maps.GeocoderAddressComponent) => {
+                  if (component.types.includes("locality")) {
+                    city = component.long_name;
+                  } else if (component.types.includes("sublocality") || component.types.includes("sublocality_level_1")) {
+                    neighborhood = component.long_name;
+                  } else if (!city && component.types.includes("administrative_area_level_1")) {
+                    // Fallback to province/region if no locality found
+                    city = component.long_name;
+                  }
+                });
+
+                // Create formatted address with neighborhood and city
+                const addressParts = [neighborhood, city].filter(Boolean);
+                const formattedAddress = addressParts.join(", ");
+
+                const finalValue = formattedAddress || city || place.formatted_address || "";
+                console.log("🎯 [GooglePlaces] Valeur finale à appliquer:", finalValue);
+
+                // Update input immediately
+                if (inputRef.current) {
+                  inputRef.current.value = finalValue;
+                  console.log("📝 [GooglePlaces] Input DOM mis à jour avec:", inputRef.current.value);
                 }
-              });
 
-              // Create formatted address with neighborhood and city
-              const addressParts = [neighborhood, city].filter(Boolean);
-              const formattedAddress = addressParts.join(", ");
-
-              const finalValue = formattedAddress || city || place.formatted_address || "";
-              console.log("🎯 [GooglePlaces] Valeur finale à appliquer:", finalValue);
-
-              // Update input immediately before calling onChange to avoid race conditions
-              if (inputRef.current) {
-                inputRef.current.value = finalValue;
-                console.log("📝 [GooglePlaces] Input DOM mis à jour avec:", inputRef.current.value);
+                // Pass both formatted address and place object with structured data
+                console.log("🚀 [GooglePlaces] Appel onChange avec:", finalValue);
+                onChange(finalValue, place);
+              } else if (place && place.formatted_address) {
+                // Fallback to formatted_address if no components
+                if (inputRef.current) {
+                  inputRef.current.value = place.formatted_address;
+                }
+                onChange(place.formatted_address, place);
               }
+            }, 50);
+          };
 
-              // Pass both formatted address and place object with structured data
-              console.log("🚀 [GooglePlaces] Appel onChange avec:", finalValue);
-              onChange(finalValue, place);
-            } else {
-              if (inputRef.current) {
-                inputRef.current.value = "";
-              }
-              onChange("", undefined);
-            }
-          });
+          // Listen to the input element directly for autocomplete selection
+          inputRef.current.addEventListener('input', handlePlaceSelect);
+          
+          // Also keep the Google Maps listener as backup
+          autocompleteRef.current.addListener("place_changed", handlePlaceSelect);
 
           setIsLoading(false);
         } catch (error) {
