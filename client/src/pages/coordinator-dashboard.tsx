@@ -30,6 +30,16 @@ import { useForceFrenchLayout } from "@/hooks/use-force-french-layout";
 import { useTranslation } from "react-i18next";
 import { getCategoryConfig } from "@/lib/goods-category-config";
 
+// Helper function to get payment status label in French
+function getPaymentStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    'a_facturer': 'À facturer',
+    'paid_by_client': 'Payé par le client',
+    'paid_by_camionback': 'Payé par CamionBack'
+  };
+  return labels[status] || status;
+}
+
 // Helper function to get client-friendly status with color
 function getClientStatus(request: any, interestedCount: number = 0) {
   // 11. Commande terminée - Paiement validé
@@ -654,6 +664,7 @@ export default function CoordinatorDashboard() {
   const [ratingValue, setRatingValue] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [ratingRequestId, setRatingRequestId] = useState<string>("");
+  const [targetPaymentStatus, setTargetPaymentStatus] = useState<string>("paid_by_client"); // Track desired payment status after rating
   
   const { toast} = useToast();
 
@@ -945,10 +956,10 @@ export default function CoordinatorDashboard() {
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/payment-requests"] });
       setShowRatingDialog(false);
       
-      // Update payment status to "paid_by_client" after rating
+      // Update payment status to the target status (either paid_by_client or paid_by_camionback)
       updatePaymentStatusMutation.mutate({
         requestId: ratingRequestId,
-        paymentStatus: "paid_by_client"
+        paymentStatus: targetPaymentStatus
       });
     },
     onError: () => {
@@ -2136,38 +2147,62 @@ export default function CoordinatorDashboard() {
               </div>
             )}
 
-            {/* Statut de paiement */}
+            {/* Statut de paiement - Sélecteur pour coordinateur */}
             {showPaymentStatusSelector && request.paymentStatus && (
-              <div className={`flex items-center gap-2 p-2 rounded-lg border ${
-                request.paymentStatus === 'paid' || request.paymentStatus === 'pending_admin_validation' 
-                  ? 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800'
-                  : request.paymentStatus === 'awaiting_payment'
-                  ? 'bg-orange-50 dark:bg-orange-950 border-orange-200 dark:border-orange-800'
-                  : 'bg-gray-50 dark:bg-gray-950 border-gray-200 dark:border-gray-800'
-              }`}>
-                <DollarSign className={`h-4 w-4 ${
-                  request.paymentStatus === 'paid' || request.paymentStatus === 'pending_admin_validation'
-                    ? 'text-green-600 dark:text-green-400'
-                    : request.paymentStatus === 'awaiting_payment'
-                    ? 'text-orange-600 dark:text-orange-400'
-                    : 'text-gray-600 dark:text-gray-400'
-                }`} />
-                <span className="text-xs font-medium text-muted-foreground">Paiement:</span>
-                <span 
-                  className={`text-sm font-semibold ${
-                    request.paymentStatus === 'paid' || request.paymentStatus === 'pending_admin_validation'
-                      ? 'text-green-700 dark:text-green-300'
-                      : request.paymentStatus === 'awaiting_payment'
-                      ? 'text-orange-700 dark:text-orange-300'
-                      : 'text-gray-700 dark:text-gray-300'
-                  }`}
-                  data-testid={`text-payment-status-${request.id}`}
-                >
-                  {request.paymentStatus === 'paid' ? 'Payé' 
-                    : request.paymentStatus === 'awaiting_payment' ? 'En attente'
-                    : request.paymentStatus === 'pending_admin_validation' ? 'Validation admin'
-                    : request.paymentStatus}
-                </span>
+              <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
+                <DollarSign className="h-5 w-5 text-[#17cfcf]" />
+                <div className="flex-1">
+                  <Label htmlFor={`payment-status-${request.id}`} className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                    Statut de paiement
+                  </Label>
+                  <Select
+                    value={request.paymentStatus}
+                    onValueChange={(newStatus) => {
+                      // Handle workflow-specific actions before updating status
+                      if (newStatus === 'paid_by_client') {
+                        // Open dialog to upload receipt
+                        setTargetPaymentStatus('paid_by_client');
+                        setPaymentRequestId(request.id);
+                        setPaymentReceipt("");
+                        setShowPaymentDialog(true);
+                      } else if (newStatus === 'paid_by_camionback') {
+                        // Open rating dialog first, then update to paid_by_camionback
+                        setTargetPaymentStatus('paid_by_camionback');
+                        setRatingRequestId(request.id);
+                        setRatingValue(0);
+                        setHoverRating(0);
+                        setShowRatingDialog(true);
+                      } else {
+                        // Direct status update for other transitions (e.g., a_facturer)
+                        updatePaymentStatusMutation.mutate({
+                          requestId: request.id,
+                          paymentStatus: newStatus
+                        });
+                      }
+                    }}
+                  >
+                    <SelectTrigger 
+                      id={`payment-status-${request.id}`}
+                      className="h-9 w-full bg-background"
+                      data-testid={`select-payment-status-${request.id}`}
+                    >
+                      <SelectValue>
+                        {getPaymentStatusLabel(request.paymentStatus)}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="a_facturer" data-testid="option-a-facturer">
+                        À facturer
+                      </SelectItem>
+                      <SelectItem value="paid_by_client" data-testid="option-paid-by-client">
+                        Payé par le client
+                      </SelectItem>
+                      <SelectItem value="paid_by_camionback" data-testid="option-paid-by-camionback">
+                        Payé par CamionBack
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             )}
 
