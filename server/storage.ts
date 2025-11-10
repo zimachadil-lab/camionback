@@ -3474,7 +3474,10 @@ export class DbStorage implements IStorage {
 
   async getMatchingRequests(filters?: { assignedToId?: string; searchQuery?: string }): Promise<any[]> {
     const whereConditions = [
-      eq(transportRequests.coordinationStatus, 'matching'),
+      or(
+        eq(transportRequests.coordinationStatus, 'matching'),
+        eq(transportRequests.coordinationStatus, 'qualified')
+      ),
       or(
         eq(transportRequests.status, 'open'),
         eq(transportRequests.status, 'published_for_matching')
