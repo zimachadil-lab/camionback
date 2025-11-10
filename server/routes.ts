@@ -1317,6 +1317,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("Request body received:", JSON.stringify(req.body, null, 2));
       const requestData = insertTransportRequestSchema.parse(req.body);
+      
+      // Calculate distance if both addresses are provided
+      if (requestData.departureAddress && requestData.arrivalAddress) {
+        console.log(`[POST /api/requests] Calculating distance for new request...`);
+        const { calculateDistance } = await import('./distance.js');
+        const { distance, error } = await calculateDistance(
+          requestData.departureAddress,
+          requestData.arrivalAddress
+        );
+        
+        if (distance !== null) {
+          requestData.distance = distance;
+          console.log(`[POST /api/requests] Distance calculated: ${distance} km`);
+        } else {
+          console.warn(`[POST /api/requests] Could not calculate distance: ${error}`);
+        }
+      }
+      
       const request = await storage.createTransportRequest(requestData);
       
       // Send email notification to admin (non-blocking)
