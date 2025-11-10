@@ -2166,29 +2166,28 @@ export default function ClientDashboard() {
                     </div>
 
                     {/* Title with Proper Contrast */}
-                    <h2 className="text-4xl font-bold mb-4 text-foreground">
+                    <h2 className="text-4xl font-bold mb-6 text-foreground">
                       Prêt à expédier ?
                     </h2>
                     
                     {/* Description */}
-                    <p className="text-lg text-foreground mb-3 leading-relaxed">
-                      Commandez maintenant votre <span className="font-semibold text-slate-900 dark:text-[#17cfcf]">camion de retour</span>
-                    </p>
-                    <p className="text-sm text-muted-foreground mb-8">
-                      Trouvez le transporteur idéal en quelques clics et suivez votre livraison en temps réel
+                    <p className="text-lg text-foreground mb-8 leading-relaxed">
+                      Commandez maintenant votre <span className="font-semibold text-[#17cfcf]">camion de retour</span>
                     </p>
 
                     {/* CTA Button - Using System Default for Guaranteed Contrast */}
-                    <Button 
-                      onClick={() => setShowNewRequest(true)} 
-                      size="lg"
-                      variant="default"
-                      className="font-bold shadow-xl"
-                      data-testid="button-create-request-empty"
-                    >
-                      <Package className="w-5 h-5 mr-2" />
-                      Créer ma première demande
-                    </Button>
+                    <div className="w-full max-w-md mx-auto">
+                      <Button 
+                        onClick={() => setShowNewRequest(true)} 
+                        size="lg"
+                        variant="default"
+                        className="w-full font-bold shadow-xl"
+                        data-testid="button-create-request-empty"
+                      >
+                        <Package className="w-5 h-5 mr-2" />
+                        Créer ma première demande
+                      </Button>
+                    </div>
 
                     {/* Decorative Elements */}
                     <div className="absolute top-4 right-4 w-32 h-32 bg-gradient-to-br from-cyan-400/20 to-transparent rounded-full blur-2xl" />
