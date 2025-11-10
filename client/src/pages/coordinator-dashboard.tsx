@@ -2952,23 +2952,9 @@ export default function CoordinatorDashboard() {
 
       {/* Edit Request Dialog */}
       {editFormData && (
-        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen} modal={false}>
           <DialogContent 
             className="max-w-2xl max-h-[80vh] overflow-y-auto"
-            onPointerDownOutside={(e) => {
-              // Allow interactions with Google Places suggestions
-              const target = e.target as HTMLElement;
-              if (target.closest('.pac-container')) {
-                e.preventDefault();
-              }
-            }}
-            onInteractOutside={(e) => {
-              // Allow interactions with Google Places suggestions
-              const target = e.target as HTMLElement;
-              if (target.closest('.pac-container')) {
-                e.preventDefault();
-              }
-            }}
           >
             <DialogHeader>
               <DialogTitle>Modifier la commande</DialogTitle>
