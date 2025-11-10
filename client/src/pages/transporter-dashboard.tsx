@@ -805,7 +805,7 @@ export default function TransporterDashboard() {
                 {filteredAcceptedRequests.map((request: any) => {
                   // Client info comes from request object in new workflow
                   const isMarkedForBilling = request.paymentStatus === "awaiting_payment";
-                  const categoryConfig = getCategoryConfig(request.goodsType, t);
+                  const categoryConfig = getCategoryConfig(request.goodsType);
 
                   return (
                     <Card key={request.id} className="hover-elevate">

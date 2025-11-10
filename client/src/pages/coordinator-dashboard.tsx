@@ -27,90 +27,8 @@ import { GooglePlacesAutocomplete } from "@/components/google-places-autocomplet
 import { format, isSameDay } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useForceFrenchLayout } from "@/hooks/use-force-french-layout";
-
-// Configuration des catégories avec icônes et couleurs (même logique que transporteur)
-const getCategoryConfig = (goodsType: string): { icon: LucideIcon; color: string; bgColor: string; borderColor: string; label: string } => {
-  const type = goodsType.toLowerCase();
-  
-  if (type.includes('déménagement')) {
-    return {
-      icon: Home,
-      color: 'text-white',
-      bgColor: 'bg-gradient-to-br from-emerald-500 to-emerald-600',
-      borderColor: 'border-emerald-500',
-      label: 'Électroménager'
-    };
-  }
-  
-  if (type.includes('meuble') || type.includes('mobilier')) {
-    return {
-      icon: Sofa,
-      color: 'text-white',
-      bgColor: 'bg-gradient-to-br from-blue-500 to-blue-600',
-      borderColor: 'border-blue-500',
-      label: 'Meubles'
-    };
-  }
-  
-  if (type.includes('matériau') || type.includes('construction')) {
-    return {
-      icon: Boxes,
-      color: 'text-white',
-      bgColor: 'bg-gradient-to-br from-orange-500 to-orange-600',
-      borderColor: 'border-orange-500',
-      label: 'Matériaux'
-    };
-  }
-  
-  if (type.includes('équipement') || type.includes('machine')) {
-    return {
-      icon: Wrench,
-      color: 'text-white',
-      bgColor: 'bg-gradient-to-br from-purple-500 to-purple-600',
-      borderColor: 'border-purple-500',
-      label: 'Équipements'
-    };
-  }
-  
-  if (type.includes('marchandise') || type.includes('produit')) {
-    return {
-      icon: ShoppingCart,
-      color: 'text-white',
-      bgColor: 'bg-gradient-to-br from-pink-500 to-pink-600',
-      borderColor: 'border-pink-500',
-      label: 'Marchandises'
-    };
-  }
-  
-  if (type.includes('colis')) {
-    return {
-      icon: Package,
-      color: 'text-white',
-      bgColor: 'bg-gradient-to-br from-amber-500 to-amber-600',
-      borderColor: 'border-amber-500',
-      label: 'Colis'
-    };
-  }
-  
-  if (type.includes('matériel')) {
-    return {
-      icon: Wrench,
-      color: 'text-white',
-      bgColor: 'bg-gradient-to-br from-indigo-500 to-indigo-600',
-      borderColor: 'border-indigo-500',
-      label: 'Matériel'
-    };
-  }
-  
-  // Default: Transport général
-  return {
-    icon: Truck,
-    color: 'text-white',
-    bgColor: 'bg-gradient-to-br from-slate-500 to-slate-600',
-    borderColor: 'border-slate-500',
-    label: goodsType
-  };
-};
+import { useTranslation } from "react-i18next";
+import { getCategoryConfig } from "@/lib/goods-category-config";
 
 // Helper function to get client-friendly status with color
 function getClientStatus(request: any, interestedCount: number = 0) {
@@ -676,6 +594,7 @@ function InterestedTransportersView({ request, onAssignTransporter, isPending }:
 export default function CoordinatorDashboard() {
   const [, setLocation] = useLocation();
   const { user, loading: authLoading, logout } = useAuth();
+  const { t } = useTranslation();
 
   // Force French language and LTR direction for Coordinator dashboard
   useForceFrenchLayout();

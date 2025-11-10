@@ -1,4 +1,5 @@
 import { LucideIcon, Truck, Sofa, Home, Boxes, ShoppingCart, Package, Wrench, Car } from 'lucide-react';
+import i18next from 'i18next';
 
 export interface CategoryConfig {
   icon: LucideIcon;
@@ -8,7 +9,7 @@ export interface CategoryConfig {
   label: string;
 }
 
-export const getCategoryConfig = (goodsType: string, t: any): CategoryConfig => {
+export const getCategoryConfig = (goodsType: string): CategoryConfig => {
   const type = goodsType.toLowerCase();
   
   const categoryKeyMap: Record<string, { icon: LucideIcon; color: string; bgColor: string; borderColor: string; translationKey: string }> = {
@@ -100,15 +101,19 @@ export const getCategoryConfig = (goodsType: string, t: any): CategoryConfig => 
     const config = categoryKeyMap[categoryKey];
     return {
       ...config,
-      label: t(config.translationKey)
+      label: i18next.t(config.translationKey)
     };
   }
+  
+  // If goodsType looks like a translation key (contains a dot), translate it
+  // Otherwise, use it as-is (free text)
+  const label = goodsType.includes('.') ? i18next.t(goodsType) : goodsType;
   
   return {
     icon: Truck,
     color: 'text-white',
     bgColor: 'bg-gradient-to-br from-slate-500 to-slate-600',
     borderColor: 'border-slate-500',
-    label: goodsType
+    label
   };
 };

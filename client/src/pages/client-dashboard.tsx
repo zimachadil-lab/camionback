@@ -270,7 +270,7 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
     : null;
 
   // Get category config for colored border
-  const categoryConfig = getCategoryConfig(request.goodsType, t);
+  const categoryConfig = getCategoryConfig(request.goodsType);
 
   // Format datetime for input
   const formatDateTimeForInput = (dateStr: string | Date | null) => {
@@ -2187,7 +2187,7 @@ export default function ClientDashboard() {
                         })
                       : null;
                     
-                    const categoryConfig = getCategoryConfig(request.goodsType, t);
+                    const categoryConfig = getCategoryConfig(request.goodsType);
 
                     return (
                       <div key={request.id} className={`p-4 rounded-lg border-2 ${categoryConfig.borderColor} space-y-4`}>
@@ -2347,7 +2347,7 @@ export default function ClientDashboard() {
               ) : (
                 <div className="space-y-4">
                   {completedRequests.map((request: any) => {
-                    const categoryConfig = getCategoryConfig(request.goodsType, t);
+                    const categoryConfig = getCategoryConfig(request.goodsType);
                     
                     return (
                     <div key={request.id} className={`p-4 rounded-lg border-2 ${categoryConfig.borderColor} space-y-3`}>

@@ -126,7 +126,7 @@ export function RequestCard({
     }
   }, [request.id, onTrackView]);
 
-  const categoryConfig = getCategoryConfig(request.goodsType, t);
+  const categoryConfig = getCategoryConfig(request.goodsType);
   const CategoryIcon = categoryConfig.icon;
 
   return (

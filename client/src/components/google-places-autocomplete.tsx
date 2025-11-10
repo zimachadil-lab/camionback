@@ -72,9 +72,17 @@ export const GooglePlacesAutocomplete = forwardRef<HTMLInputElement, GooglePlace
               const addressParts = [neighborhood, city].filter(Boolean);
               const formattedAddress = addressParts.join(", ");
 
+              // Update input value immediately for controlled behavior
+              if (inputRef.current) {
+                inputRef.current.value = formattedAddress || city || place.formatted_address || "";
+              }
+
               // Pass both formatted address and place object with structured data
               onChange(formattedAddress || city || place.formatted_address || "", place);
             } else {
+              if (inputRef.current) {
+                inputRef.current.value = "";
+              }
               onChange("", undefined);
             }
           });
