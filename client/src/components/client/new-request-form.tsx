@@ -212,20 +212,19 @@ export function NewRequestForm({ onSuccess, onClose }: { onSuccess?: () => void;
   };
 
   return (
-    <Card key={i18n.language}>
-      <CardContent className="relative pt-12">
-        {onClose && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="absolute right-4 top-4 h-9 w-9 rounded-full hover:bg-accent z-10"
-            data-testid="button-close-new-request"
-          >
-            <X className="h-5 w-5" />
-          </Button>
-        )}
-
+    <Card key={i18n.language} className="relative">
+      {onClose && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onClose}
+          className="absolute right-4 top-4 h-9 w-9 rounded-full hover:bg-accent z-10"
+          data-testid="button-close-new-request"
+        >
+          <X className="h-5 w-5" />
+        </Button>
+      )}
+      <CardContent className="pt-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2">
