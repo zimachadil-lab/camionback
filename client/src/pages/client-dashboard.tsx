@@ -467,18 +467,26 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
                 {request.referenceId}
               </h3>
               {/* Status badge with semantic colors */}
-              <div className={`inline-flex items-center gap-2.5 px-3 py-2 rounded-full text-sm font-medium ${
+              <div className={`inline-flex items-center gap-2.5 px-3 py-2 rounded-full text-sm border-0 ${
                 clientStatus.isProcessing 
-                  ? 'bg-[hsl(var(--status-processing))]/15 text-[hsl(var(--status-processing))] border border-[hsl(var(--status-processing))]/30' 
-                  : 'bg-[hsl(var(--status-info))]/15 text-[hsl(var(--status-info))] border border-[hsl(var(--status-info))]/30'
+                  ? 'bg-[hsl(var(--status-processing))]' 
+                  : 'bg-[hsl(var(--status-info))]'
               }`}>
                 <div className="relative flex-shrink-0">
                   {clientStatus.isProcessing && (
-                    <div className="absolute inset-0 bg-[hsl(var(--status-processing))]/50 rounded-full animate-ping"></div>
+                    <div className="absolute inset-0 bg-white/30 rounded-full animate-ping"></div>
                   )}
-                  <StatusIcon className={`relative w-4 h-4 ${clientStatus.isProcessing ? 'animate-spin' : ''}`} />
+                  <StatusIcon className={`relative w-4 h-4 ${
+                    clientStatus.isProcessing 
+                      ? 'text-[hsl(var(--status-processing-foreground))] animate-spin' 
+                      : 'text-[hsl(var(--status-info-foreground))]'
+                  }`} />
                 </div>
-                <span className="font-medium">{clientStatus.text}</span>
+                <span className={`font-medium ${
+                  clientStatus.isProcessing 
+                    ? 'bg-[hsl(var(--status-processing))] text-[hsl(var(--status-processing-foreground))]' 
+                    : 'bg-[hsl(var(--status-info))] text-[hsl(var(--status-info-foreground))]'
+                }`}>{clientStatus.text}</span>
               </div>
             </div>
             
