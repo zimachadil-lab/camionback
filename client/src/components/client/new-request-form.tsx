@@ -193,19 +193,40 @@ export function NewRequestForm({ onSuccess, onClose }: { onSuccess?: () => void;
   };
 
   return (
-    <Card key={i18n.language} className="relative">
-      {onClose && (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onClose}
-          className="absolute right-3 top-3 h-9 w-9 rounded-full hover:bg-accent z-10"
-          data-testid="button-close-new-request"
-        >
-          <X className="h-5 w-5" />
-        </Button>
-      )}
-      <CardContent className="pt-6">
+    <div key={i18n.language} className="relative min-h-screen flex items-start justify-center px-4 py-8">
+      {/* Subtle Background Gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-teal-500/10 to-emerald-500/10 rounded-3xl" />
+      
+      {/* Glassmorphism Card */}
+      <div className="relative z-10 w-full max-w-4xl backdrop-blur-xl bg-gradient-to-br from-white/10 via-white/5 to-transparent border border-white/20 rounded-3xl p-6 sm:p-8 shadow-2xl">
+        {/* Decorative Elements - Behind content */}
+        <div className="absolute top-4 right-4 w-32 h-32 bg-gradient-to-br from-cyan-400/20 to-transparent rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute bottom-4 left-4 w-40 h-40 bg-gradient-to-tr from-teal-400/20 to-transparent rounded-full blur-2xl pointer-events-none" />
+        
+        {/* Content - Above decorative elements */}
+        <div className="relative z-10">
+          {/* Header with Close Button */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-[#17cfcf] to-[#0ea5a5] rounded-xl shadow-lg shadow-cyan-500/50 flex items-center justify-center">
+                <MapPin className="w-6 h-6 text-white" strokeWidth={2} />
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
+                {t('newRequestForm.title')}
+              </h2>
+            </div>
+            {onClose && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                className="h-10 w-10 rounded-full hover:bg-accent"
+                data-testid="button-close-new-request"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            )}
+          </div>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2">
@@ -528,7 +549,8 @@ export function NewRequestForm({ onSuccess, onClose }: { onSuccess?: () => void;
             </Button>
           </form>
         </Form>
-      </CardContent>
-    </Card>
+        </div>
+      </div>
+    </div>
   );
 }
