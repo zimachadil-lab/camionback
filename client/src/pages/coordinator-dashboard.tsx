@@ -2582,38 +2582,75 @@ export default function CoordinatorDashboard() {
         </div>
 
         <Tabs defaultValue="nouveau" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-6">
-            <TabsTrigger value="nouveau" data-testid="tab-nouveau" className="gap-1 px-2">
-              <span className="text-xs sm:text-sm">Nouveau</span>
-              <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white text-xs px-1.5 py-0">
-                {nouveauLoading ? "..." : filterRequests(nouveauRequests).length}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="qualifies" data-testid="tab-qualifies" className="gap-1 px-2">
-              <span className="text-xs sm:text-sm">Qualifiés</span>
-              <Badge className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-1.5 py-0">
-                {matchingLoading ? "..." : filterRequests(matchingRequests).length}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="interesses" data-testid="tab-interesses" className="gap-1 px-2">
-              <span className="text-xs sm:text-sm">Intéressés</span>
-              <Badge className="bg-purple-500 hover:bg-purple-600 text-white text-xs px-1.5 py-0">
-                {matchingLoading ? "..." : filterRequests(matchingRequests.filter((r: any) => r.transporterInterests && r.transporterInterests.length > 0)).length}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="production" data-testid="tab-production" className="gap-1 px-2">
-              <span className="text-xs sm:text-sm">En Production</span>
-              <Badge className="bg-green-500 hover:bg-green-600 text-white text-xs px-1.5 py-0">
-                {(activeLoading || paymentLoading) ? "..." : filterRequests([...activeRequests, ...paymentRequests]).length}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="archives" data-testid="tab-archives" className="gap-1 px-2">
-              <span className="text-xs sm:text-sm">Archives</span>
-              <Badge className="bg-gray-500 hover:bg-gray-600 text-white text-xs px-1.5 py-0">
-                {archivesLoading ? "..." : filterRequests(archivesRequests).length}
-              </Badge>
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex justify-center mb-8">
+            <TabsList className="inline-flex h-14 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0a1929]/80 via-[#1a2942]/80 to-[#0a1929]/80 backdrop-blur-xl p-1.5 shadow-2xl border border-white/10 gap-1">
+              <TabsTrigger 
+                value="nouveau" 
+                data-testid="tab-nouveau"
+                className="relative inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-3 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#fbbf24] data-[state=active]:via-[#f59e0b] data-[state=active]:to-[#d97706] data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-yellow-500/50 text-slate-400 hover:text-slate-200 hover:bg-white/5"
+              >
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">Nouveau</span>
+                {!nouveauLoading && filterRequests(nouveauRequests).length > 0 && (
+                  <span className="inline-flex items-center justify-center min-w-[20px] h-[20px] px-1 text-xs font-bold rounded-full bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-md shadow-yellow-500/40 animate-pulse">
+                    {filterRequests(nouveauRequests).length}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="qualifies" 
+                data-testid="tab-qualifies"
+                className="relative inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-3 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#3b82f6] data-[state=active]:via-[#2563eb] data-[state=active]:to-[#1d4ed8] data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-500/50 text-slate-400 hover:text-slate-200 hover:bg-white/5"
+              >
+                <ClipboardCheck className="h-4 w-4" />
+                <span className="hidden sm:inline">Qualifiés</span>
+                {!matchingLoading && filterRequests(matchingRequests).length > 0 && (
+                  <span className="inline-flex items-center justify-center min-w-[20px] h-[20px] px-1 text-xs font-bold rounded-full bg-gradient-to-br from-blue-400 to-blue-500 text-white shadow-md">
+                    {filterRequests(matchingRequests).length}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="interesses" 
+                data-testid="tab-interesses"
+                className="relative inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-3 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#a855f7] data-[state=active]:via-[#9333ea] data-[state=active]:to-[#7e22ce] data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-purple-500/50 text-slate-400 hover:text-slate-200 hover:bg-white/5"
+              >
+                <Users className="h-4 w-4" />
+                <span className="hidden sm:inline">Intéressés</span>
+                {!matchingLoading && filterRequests(matchingRequests.filter((r: any) => r.transporterInterests && r.transporterInterests.length > 0)).length > 0 && (
+                  <span className="inline-flex items-center justify-center min-w-[20px] h-[20px] px-1 text-xs font-bold rounded-full bg-gradient-to-br from-purple-400 to-purple-500 text-white shadow-md">
+                    {filterRequests(matchingRequests.filter((r: any) => r.transporterInterests && r.transporterInterests.length > 0)).length}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="production" 
+                data-testid="tab-production"
+                className="relative inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-3 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#10b981] data-[state=active]:via-[#059669] data-[state=active]:to-[#047857] data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-green-500/50 text-slate-400 hover:text-slate-200 hover:bg-white/5"
+              >
+                <Truck className="h-4 w-4" />
+                <span className="hidden sm:inline">Production</span>
+                {!(activeLoading || paymentLoading) && filterRequests([...activeRequests, ...paymentRequests]).length > 0 && (
+                  <span className="inline-flex items-center justify-center min-w-[20px] h-[20px] px-1 text-xs font-bold rounded-full bg-gradient-to-br from-green-400 to-green-500 text-white shadow-md">
+                    {filterRequests([...activeRequests, ...paymentRequests]).length}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="archives" 
+                data-testid="tab-archives"
+                className="relative inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-3 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#6b7280] data-[state=active]:via-[#4b5563] data-[state=active]:to-[#374151] data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-gray-500/50 text-slate-400 hover:text-slate-200 hover:bg-white/5"
+              >
+                <Package className="h-4 w-4" />
+                <span className="hidden sm:inline">Archives</span>
+                {!archivesLoading && filterRequests(archivesRequests).length > 0 && (
+                  <span className="inline-flex items-center justify-center min-w-[20px] h-[20px] px-1 text-xs font-bold rounded-full bg-gradient-to-br from-gray-400 to-gray-500 text-white shadow-md">
+                    {filterRequests(archivesRequests).length}
+                  </span>
+                )}
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* ONGLET 1: NOUVEAU - Demandes en attente de qualification */}
           <TabsContent value="nouveau" className="space-y-4">

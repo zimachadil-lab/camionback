@@ -609,20 +609,49 @@ export default function TransporterDashboard() {
       
       <div className="container mx-auto p-4 md:p-6 max-w-7xl space-y-6">
         <Tabs defaultValue="available" className="w-full">
-          <TabsList className="grid w-full max-w-3xl grid-cols-3">
-            <TabsTrigger value="available" data-testid="tab-available">
-              <Search className="mr-2 h-4 w-4" />
-              {t('transporterDashboard.tabs.available')}
-            </TabsTrigger>
-            <TabsTrigger value="interested" data-testid="tab-interested">
-              <Package className="mr-2 h-4 w-4" />
-              {t('transporterDashboard.tabs.myInterests')}
-            </TabsTrigger>
-            <TabsTrigger value="to-process" data-testid="tab-to-process">
-              <CheckCircle className="mr-2 h-4 w-4" />
-              {t('transporterDashboard.tabs.accepted')}
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex justify-center mb-8">
+            <TabsList className="inline-flex h-14 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0a1929]/80 via-[#1a2942]/80 to-[#0a1929]/80 backdrop-blur-xl p-1.5 shadow-2xl border border-white/10 gap-1.5">
+              <TabsTrigger 
+                value="available" 
+                data-testid="tab-available"
+                className="relative inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#06b6d4] data-[state=active]:via-[#0891b2] data-[state=active]:to-[#0e7490] data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-cyan-500/50 text-slate-400 hover:text-slate-200 hover:bg-white/5"
+              >
+                <Search className="h-4 w-4" />
+                <span>{t('transporterDashboard.tabs.available')}</span>
+                {filteredRequests.length > 0 && (
+                  <span className="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 text-xs font-bold rounded-full bg-gradient-to-br from-cyan-400 to-cyan-500 text-white shadow-md shadow-cyan-500/40 animate-pulse">
+                    {filteredRequests.length}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="interested" 
+                data-testid="tab-interested"
+                className="relative inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#f59e0b] data-[state=active]:via-[#d97706] data-[state=active]:to-[#b45309] data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-orange-500/50 text-slate-400 hover:text-slate-200 hover:bg-white/5"
+              >
+                <Package className="h-4 w-4" />
+                <span>{t('transporterDashboard.tabs.myInterests')}</span>
+                {myInterests.length > 0 && (
+                  <span className="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 text-xs font-bold rounded-full bg-gradient-to-br from-orange-400 to-orange-500 text-white shadow-md">
+                    {myInterests.length}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="to-process" 
+                data-testid="tab-to-process"
+                className="relative inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#10b981] data-[state=active]:via-[#059669] data-[state=active]:to-[#047857] data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-green-500/50 text-slate-400 hover:text-slate-200 hover:bg-white/5"
+              >
+                <CheckCircle className="h-4 w-4" />
+                <span>{t('transporterDashboard.tabs.accepted')}</span>
+                {acceptedRequests.length > 0 && (
+                  <span className="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 text-xs font-bold rounded-full bg-gradient-to-br from-green-400 to-green-500 text-white shadow-md">
+                    {acceptedRequests.length}
+                  </span>
+                )}
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="available" className="mt-6 space-y-6">
             <div className="flex justify-center">
