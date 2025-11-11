@@ -2006,53 +2006,39 @@ export default function CoordinatorDashboard() {
         )}
 
         {/* Statut logistique */}
-        <div className={`relative flex items-center gap-2.5 px-3 py-2 rounded-lg border-2 shadow-sm ${
-          clientStatus.isProcessing 
-            ? 'bg-gradient-to-r from-emerald-400/30 via-green-400/25 to-emerald-400/30 border-emerald-400/80' 
-            : 'bg-gradient-to-r from-[#1abc9c]/20 via-[#16a085]/15 to-[#1abc9c]/20 border-[#1abc9c]/40'
-        }`}>
+        <div className="relative flex items-center gap-2.5 px-3 py-2 rounded-lg border-2 bg-gradient-to-r from-[#1abc9c]/20 via-[#16a085]/15 to-[#1abc9c]/20 border-[#1abc9c]/40 shadow-sm">
           <div className="relative flex-shrink-0">
-            {clientStatus.isProcessing && (
-              <div className="absolute inset-0 bg-emerald-400/50 rounded-full animate-ping"></div>
-            )}
-            <div className={`relative w-7 h-7 rounded-full flex items-center justify-center border-2 ${
-              clientStatus.isProcessing 
-                ? 'bg-emerald-400/40 border-emerald-400/90' 
-                : 'bg-[#1abc9c]/20 border-[#1abc9c]/50'
-            }`}>
-              <StatusIcon className={`w-4 h-4 ${
-                clientStatus.isProcessing 
-                  ? 'text-emerald-400 animate-spin' 
-                  : 'text-[#1abc9c]'
-              }`} />
+            <div className="absolute inset-0 bg-[#1abc9c]/30 rounded-full animate-ping"></div>
+            <div className="relative w-7 h-7 rounded-full bg-[#1abc9c]/20 flex items-center justify-center border-2 border-[#1abc9c]/50">
+              <StatusIcon className="w-4 h-4 text-[#1abc9c]" />
             </div>
           </div>
-          <span className={`text-sm font-semibold whitespace-nowrap ${
-            clientStatus.isProcessing ? 'text-emerald-300' : 'text-foreground'
-          }`}>
+          <span className="text-sm font-semibold text-foreground whitespace-nowrap">
             {clientStatus.text}
           </span>
         </div>
 
         {/* Info client et tonnage */}
-        <div className="space-y-2 text-sm">
+        <div className="space-y-2">
           {request.client && (
-            <div className="flex items-center gap-2">
-              <Phone className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Client:</span>
-              <a 
-                href={`tel:${request.client.phoneNumber}`}
-                className="text-[#17cfcf] hover:underline font-medium"
-                data-testid={`link-call-client-${request.id}`}
-              >
-                {request.client.phoneNumber}
-              </a>
-            </div>
+            <a 
+              href={`tel:${request.client.phoneNumber}`}
+              className="group flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-gradient-to-r from-[#17cfcf]/10 via-[#17cfcf]/5 to-transparent border border-[#17cfcf]/20 hover:border-[#17cfcf]/40 hover:shadow-sm transition-all"
+              data-testid={`link-call-client-${request.id}`}
+            >
+              <div className="w-8 h-8 rounded-full bg-[#17cfcf]/15 flex items-center justify-center flex-shrink-0 group-hover:bg-[#17cfcf]/25 transition-colors">
+                <Phone className="h-4 w-4 text-[#17cfcf]" />
+              </div>
+              <div className="flex flex-col min-w-0 flex-1">
+                <span className="text-xs text-muted-foreground">Client</span>
+                <span className="text-sm font-semibold text-[#17cfcf] truncate">{request.client.phoneNumber}</span>
+              </div>
+            </a>
           )}
           
           {request.weight && (
-            <div className="flex items-center gap-2">
-              <Package className="h-4 w-4 text-muted-foreground" />
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/30 text-sm">
+              <Package className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               <span className="text-muted-foreground">Tonnage:</span>
               <span className="font-medium">{request.weight} tonnes</span>
             </div>
