@@ -76,7 +76,7 @@ export function PhotoGalleryDialog({ open, onClose, photos, referenceId }: Photo
             )}
           </div>
 
-          <div className="mt-3 sm:mt-4 grid grid-cols-4 gap-2">
+          <div className="mt-3 sm:mt-4 grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-[180px] sm:max-h-[200px] overflow-y-auto">
             {photos.map((photo, idx) => (
               <button
                 key={idx}
