@@ -17,6 +17,14 @@ The platform features a mobile-first, dark teal design with full French/Arabic b
 - Contact popup automatically displays transporter's phone number after selection, encouraging direct contact
 - Two-tab layout: "Actives" and "Terminées" for streamlined navigation
 
+**Coordinator Dashboard Adaptive Filters (Nov 2025):**
+- Intelligent Sheet-based filter system that adapts to each tab (nouveau, qualifiés, intéressés, production, archives)
+- Filter state normalized per tab with persistent filters across tab switches
+- Tab-specific filters: nouveau (Search, City, Date, Coordinator), qualifiés (Search, City, Date), intéressés (Search, City, Min Interested), production (Search, City, Payment Status, Date), archives (Search, City, Archive Reason, Date)
+- Visual filter badge displays count of active (non-default) filters for immediate feedback
+- Clean UI with single filter button (SlidersHorizontal icon) replacing old unified search bar
+- Apply/Reset buttons for explicit filter management
+
 ### Technical Implementations
 The backend is an Express.js and TypeScript application providing RESTful JSON APIs. Authentication is phone number-based with 6-digit PIN verification and bcrypt hashing. User roles (Client, Transporter, Admin, Coordinator) define access control. Real-time chat uses WebSockets, and an in-app notification system provides alerts. PostgreSQL (Neon Serverless) with Drizzle ORM is used for data storage. Key features include a multi-status client request progression and transporter offer workflow, advanced user management (transporter rating, contract management, account blocking/deletion), multi-channel notification system (in-app, SMS, email, PWA push), dynamic dashboards for Admin and Coordinators (request management, reporting, dispute resolution, payment status management), public order sharing with WhatsApp integration, CamioMatch for intelligent transporter matching, and robust file management for photos. Performance is optimized with pre-calculated offer counts, lazy loading, and optimized SQL queries. Coordinators can manage and requalify production orders. Google Maps integration uses a shared loader (`google-maps-loader.ts`) with `region=MA` parameter to display Western Sahara as part of Morocco across all map components (InteractiveRouteMap, GooglePlacesAutocomplete), ensuring territorial consistency with Morocco's perspective.
 
