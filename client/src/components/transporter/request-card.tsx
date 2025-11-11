@@ -139,9 +139,16 @@ export function RequestCard({
             <CategoryIcon className={`w-5 h-5 ${categoryConfig.color}`} />
           </div>
         </div>
-        <Badge className="bg-slate-900/90 text-white border-0 font-mono text-xs" data-testid={`text-reference-${request.id}`}>
-          {request.referenceId}
-        </Badge>
+        <div className="flex items-center gap-2">
+          {/* Indicateur de disponibilité animé */}
+          <div className="relative flex items-center justify-center" data-testid={`status-available-${request.id}`}>
+            <span className="absolute h-3 w-3 rounded-full bg-green-400 opacity-75 animate-ping"></span>
+            <span className="relative h-2.5 w-2.5 rounded-full bg-green-500"></span>
+          </div>
+          <Badge className="bg-slate-900/90 text-white border-0 font-mono text-xs" data-testid={`text-reference-${request.id}`}>
+            {request.referenceId}
+          </Badge>
+        </div>
       </div>
 
       <CardContent className="p-4 space-y-3">
@@ -178,18 +185,6 @@ export function RequestCard({
                 </div>
               )}
             </div>
-
-            {/* Badge Disponible */}
-            <Badge 
-              className="w-full justify-center bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold px-3 py-1.5 shadow-lg animate-pulse border-0"
-              data-testid={`badge-available-${request.id}`}
-            >
-              <span className="relative flex items-center gap-1.5">
-                <span className="absolute -start-1 h-2 w-2 rounded-full bg-white opacity-75 animate-ping"></span>
-                <span className="relative h-2 w-2 rounded-full bg-white"></span>
-                {t('requestCard.available')}
-              </span>
-            </Badge>
           </div>
         )}
 
