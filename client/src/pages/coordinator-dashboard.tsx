@@ -2018,7 +2018,7 @@ export default function CoordinatorDashboard() {
           </span>
         </div>
 
-        {/* Info client et date */}
+        {/* Info client et tonnage */}
         <div className="space-y-2 text-sm">
           {request.client && (
             <div className="flex items-center gap-2">
@@ -2033,12 +2033,6 @@ export default function CoordinatorDashboard() {
               </a>
             </div>
           )}
-          
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground">Départ:</span>
-            <span className="font-medium">{format(new Date(request.dateTime), "dd MMM yyyy 'à' HH:mm", { locale: fr })}</span>
-          </div>
           
           {request.weight && (
             <div className="flex items-center gap-2">
