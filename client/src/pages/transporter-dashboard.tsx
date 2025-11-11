@@ -8,7 +8,6 @@ import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare,
 import { Header } from "@/components/layout/header";
 import { RequestCard } from "@/components/transporter/request-card";
 // OfferForm removed - new workflow uses interest-based matching instead of price offers
-import { InteractiveCalendar } from "@/components/transporter/interactive-calendar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { ChatWindow } from "@/components/chat/chat-window";
@@ -79,7 +78,6 @@ export default function TransporterDashboard() {
   const [editOfferDialogOpen, setEditOfferDialogOpen] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState<any>(null);
   const [notValidatedDialogOpen, setNotValidatedDialogOpen] = useState(false);
-  const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | null>(null);
 
   const { toast } = useToast();
 
@@ -178,22 +176,6 @@ export default function TransporterDashboard() {
   const completedPayments = allTransporterRequests.filter((req: any) => 
     req.status === 'completed' && req.paymentStatus === 'paid'
   );
-
-  // Filter accepted requests by selected calendar date
-  const filteredAcceptedRequests = useMemo(() => {
-    if (!selectedCalendarDate) return acceptedRequests;
-
-    return acceptedRequests.filter((request: any) => {
-      const requestDate = request.pickupDate || request.deliveryDate;
-      if (!requestDate) return false;
-      
-      try {
-        return isSameDay(parseISO(requestDate), selectedCalendarDate);
-      } catch (error) {
-        return false;
-      }
-    });
-  }, [acceptedRequests, selectedCalendarDate]);
 
   // handleMakeOffer removed - new workflow uses express interest instead
 
@@ -824,39 +806,9 @@ export default function TransporterDashboard() {
           </TabsContent>
 
           <TabsContent value="to-process" className="mt-6 space-y-6">
-            {/* Interactive Calendar */}
-            {acceptedRequests.length > 0 && (
-              <InteractiveCalendar
-                requests={acceptedRequests}
-                selectedDate={selectedCalendarDate}
-                onDateSelect={setSelectedCalendarDate}
-              />
-            )}
-
-            {/* Display message when date is selected but no requests match */}
-            {selectedCalendarDate && filteredAcceptedRequests.length === 0 && acceptedRequests.length > 0 && (
-              <Card>
-                <CardContent className="py-8 text-center">
-                  <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">
-                    Aucune commande prévue pour le {format(selectedCalendarDate, "d MMMM yyyy", { locale: fr })}
-                  </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setSelectedCalendarDate(null)}
-                    className="mt-4"
-                    data-testid="button-clear-date-filter-empty"
-                  >
-                    Voir toutes les commandes
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-
-            {filteredAcceptedRequests.length > 0 ? (
+            {acceptedRequests.length > 0 ? (
               <div className="space-y-4">
-                {filteredAcceptedRequests.map((request: any) => {
+                {acceptedRequests.map((request: any) => {
                   // Client info comes from request object in new workflow
                   const isMarkedForBilling = request.paymentStatus === "awaiting_payment";
                   const categoryConfig = getCategoryConfig(request.goodsType);
