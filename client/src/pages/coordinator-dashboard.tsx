@@ -1987,7 +1987,7 @@ export default function CoordinatorDashboard() {
           {isUrgent && (
             <Badge className="bg-red-500 text-white hover:bg-red-600 border-0 gap-1.5 animate-pulse">
               <AlertCircle className="w-3 h-3" />
-              Départ < 24h
+              Départ {'<'} 24h
             </Badge>
           )}
         </div>
@@ -2093,6 +2093,8 @@ export default function CoordinatorDashboard() {
           </div>
         )}
 
+        {/* Infos supplémentaires */}
+        <div className="space-y-2">
           {qualifiedBy && (
             <div className="flex items-center gap-2 text-xs">
               <Users className="h-3.5 w-3.5 text-green-600" />
