@@ -10,6 +10,7 @@ import { RequestCard } from "@/components/transporter/request-card";
 // OfferForm removed - new workflow uses interest-based matching instead of price offers
 import { MissionCard } from "@/components/transporter/mission-card";
 import { MissionDetailsDialog } from "@/components/transporter/mission-details-dialog";
+import { PaidInvoiceCard } from "@/components/transporter/paid-invoice-card";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { ChatWindow } from "@/components/chat/chat-window";
@@ -839,86 +840,12 @@ export default function TransporterDashboard() {
                 <LoadingTruck />
               </div>
             ) : completedPayments.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-4 px-4">
                 {completedPayments.map((payment: any) => (
-                  <Card key={payment.id} className="hover-elevate">
-                    <CardContent className="p-6 space-y-4">
-                      <div className="flex items-start justify-between flex-wrap gap-4">
-                        <div className="space-y-2">
-                          <div>
-                            <h3 className="text-lg font-semibold">{payment.referenceId}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              <MapPin className="inline w-4 h-4 mr-1" />
-                              {payment.fromCity} → {payment.toCity}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-4 text-sm">
-                            <div>
-                              <span className="text-muted-foreground">Montant: </span>
-                              <span className="font-semibold text-emerald-600">
-                                {payment.transporterAmount || payment.clientTotal || payment.budget || 'N/A'} MAD
-                              </span>
-                            </div>
-                            {payment.paymentDate && (
-                              <div>
-                                <span className="text-muted-foreground">Payé le: </span>
-                                <span className="font-medium">
-                                  {format(new Date(payment.paymentDate), "d MMM yyyy", { locale: fr })}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        
-                        {/* Rating received */}
-                        {payment.transporterRating && (
-                          <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 rounded-lg p-4 border border-amber-200 dark:border-amber-800">
-                            <p className="text-xs text-muted-foreground mb-1">Évaluation reçue</p>
-                            <div className="flex items-center gap-1">
-                              {[1, 2, 3, 4, 5].map((star) => (
-                                <Star
-                                  key={star}
-                                  className={`w-5 h-5 ${
-                                    star <= payment.transporterRating
-                                      ? "fill-amber-500 text-amber-500"
-                                      : "text-gray-300 dark:text-gray-600"
-                                  }`}
-                                />
-                              ))}
-                              <span className="ml-2 font-bold text-lg">{payment.transporterRating}/5</span>
-                            </div>
-                            {payment.transporterRatingComment && (
-                              <p className="text-sm text-muted-foreground mt-2 italic">
-                                "{payment.transporterRatingComment}"
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Request details */}
-                      <div className="pt-4 border-t space-y-2 text-sm">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <span className="text-muted-foreground">Type: </span>
-                            <span className="font-medium">{payment.goodsType || 'N/A'}</span>
-                          </div>
-                          {payment.distance && (
-                            <div>
-                              <span className="text-muted-foreground">Distance: </span>
-                              <span className="font-medium">{payment.distance} km</span>
-                            </div>
-                          )}
-                        </div>
-                        {payment.description && (
-                          <div>
-                            <span className="text-muted-foreground">Description: </span>
-                            <span className="font-medium">{payment.description}</span>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <PaidInvoiceCard
+                    key={payment.id}
+                    request={payment}
+                  />
                 ))}
               </div>
             ) : (
