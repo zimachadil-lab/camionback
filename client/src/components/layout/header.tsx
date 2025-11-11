@@ -201,8 +201,12 @@ export function Header({ user, onLogout, onCreateRequest, onAnnounceReturn }: He
                 data-testid="button-user-menu"
               >
                 <Avatar className="h-9 w-9">
-                  <AvatarFallback className={`${getRoleColor()} text-white font-semibold text-sm`}>
-                    {getUserInitials()}
+                  <AvatarFallback className={`${getRoleColor()} text-white font-semibold text-sm flex items-center justify-center`}>
+                    {user.role === "client" ? (
+                      <User className="h-5 w-5" />
+                    ) : (
+                      getUserInitials()
+                    )}
                   </AvatarFallback>
                 </Avatar>
               </Button>
@@ -212,8 +216,12 @@ export function Header({ user, onLogout, onCreateRequest, onAnnounceReturn }: He
                 <DropdownMenuLabel>
                   <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10">
-                      <AvatarFallback className={`${getRoleColor()} text-white font-semibold`}>
-                        {getUserInitials()}
+                      <AvatarFallback className={`${getRoleColor()} text-white font-semibold flex items-center justify-center`}>
+                        {user.role === "client" ? (
+                          <User className="h-5 w-5" />
+                        ) : (
+                          getUserInitials()
+                        )}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col">
