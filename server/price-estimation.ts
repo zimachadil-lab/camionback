@@ -89,8 +89,8 @@ function getHeuristicEstimate(distance: number | null, category: string, handlin
   }
   
   const traditionalPrice = (baseFare + distanceCost + handlingFee) * categoryMultiplier;
-  // CamionBack advantage: -40% using empty returns
-  const camionbackPrice = Math.round(traditionalPrice * 0.6);
+  // CamionBack advantage: -60% using empty returns
+  const camionbackPrice = Math.round(traditionalPrice * 0.4);
   
   const split = computeCamionBackSplit(camionbackPrice);
   
@@ -106,7 +106,7 @@ function getHeuristicEstimate(distance: number | null, category: string, handlin
   }
   
   reasoningParts.push(
-    `Réduction CamionBack (retours à vide) : -40% → ${split.totalClientMAD} MAD`,
+    `Réduction CamionBack (retours à vide) : -60% → ${split.totalClientMAD} MAD`,
     `Répartition garantie 60/40 : Transporteur ${split.transporterFeeMAD} MAD (60%), Plateforme ${split.platformFeeMAD} MAD (40%)`
   );
   
@@ -158,7 +158,7 @@ export async function estimatePriceForRequest(request: TransportRequest): Promis
     const prompt = `Tu es un expert en tarification logistique au Maroc avec 15 ans d'expérience, spécialisé dans la plateforme CamionBack.
 
 CONCEPT CAMIONBACK - IMPORTANT :
-CamionBack utilise les RETOURS À VIDE des transporteurs, ce qui réduit les coûts de -40% par rapport aux prix traditionnels.
+CamionBack utilise les RETOURS À VIDE des transporteurs, ce qui réduit les coûts de -60% par rapport aux prix traditionnels.
 Pour les PETITS VOLUMES, nous proposons le GROUPAGE avec d'autres clients, réduisant encore plus les coûts.
 
 MISSION : Estimer le coût de transport pour cette demande en tenant compte du concept CamionBack.
@@ -179,29 +179,29 @@ MÉTHODE DE CALCUL :
    ${!request.handlingRequired ? 'ATTENTION : Le client n\'a PAS demandé de manutention - ne l\'ajoute PAS au calcul !' : ''}
 
 2. Applique la réduction CamionBack :
-   - Retours à vide : -40%
+   - Retours à vide : -60%
    - Si petit volume (< 5m³) : Mentionne l'avantage du groupage (prix encore plus avantageux)
    
-3. Prix final CamionBack = Prix traditionnel × 0.6 (minimum 300 MAD)
+3. Prix final CamionBack = Prix traditionnel × 0.4 (minimum 500 MAD pour garantir 200 MAD minimum cotisation plateforme)
 
 CONSIGNES :
 1. Analyse la description pour ESTIMER le poids et volume
 2. Identifie si manutention spéciale est requise
-3. Calcule le prix traditionnel puis applique -40% pour CamionBack
+3. Calcule le prix traditionnel puis applique -60% pour CamionBack
 4. Mentionne EXPLICITEMENT dans ton raisonnement : retours à vide ET groupage (si applicable)
-5. Prix minimum : 300 MAD, maximum raisonnable : 9000 MAD
+5. Prix minimum : 500 MAD (garantit 200 MAD minimum cotisation plateforme), maximum raisonnable : 9000 MAD
 
 RÉPONSE REQUISE (JSON strict) :
 {
   "traditional_price_mad": <nombre: prix marché traditionnel>,
-  "camionback_price_mad": <nombre: prix final CamionBack après -40%>,
+  "camionback_price_mad": <nombre: prix final CamionBack après -60%>,
   "confidence": <0.0 à 1.0>,
   "reasoning": [
     "DOIT mentionner 'retours à vide' ou 'empty returns'",
     "DOIT mentionner 'groupage' si petit volume",
     "Estimation poids/volume",
     "Calcul détaillé du prix traditionnel",
-    "Application réduction CamionBack -40%"
+    "Application réduction CamionBack -60%"
   ],
   "modeled_inputs": {
     "estimated_weight": "ex: 500 kg",

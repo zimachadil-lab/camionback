@@ -48,11 +48,11 @@ The platform features a mobile-first, dark teal design with full French/Arabic b
 - All emojis removed from status text per architecture rules, replaced with Lucide icon components
 
 **AI-Powered Price Estimation with CamionBack Model (Nov 2025):**
-- **Core Concept**: CamionBack uses empty returns (-40% vs traditional pricing) and groupage for small volumes
+- **Core Concept**: CamionBack uses empty returns (-60% vs traditional pricing) and groupage for small volumes
 - Intelligent price estimation system using GPT-5 via Replit AI Integrations for coordinator dashboard
 - Ultra-modern purple-pink-blue gradient "Estimer Prix" button with Sparkles icon
 - Backend service (`server/price-estimation.ts`) with CamionBack-aware pricing prompt teaching GPT-5 about:
-  - Empty returns advantage (retours à vide) = -40% discount
+  - Empty returns advantage (retours à vide) = -60% discount
   - Groupage for small volumes (<5m³) = even lower costs
   - Traditional price calculation + automatic CamionBack discount application
   - **Conditional handling fees**: Manutention charges ONLY added if client explicitly requested (handlingRequired = true)
@@ -63,7 +63,7 @@ The platform features a mobile-first, dark teal design with full French/Arabic b
   - Helper function `computeCamionBackSplit()` ensures proper 60/40 split with platform fee ≥200 MAD
 - 12-hour in-memory cache system to prevent duplicate AI calls (key: fromCity|toCity|distance|goodsType|description)
 - Rate limiting: 10 estimations per minute per coordinator
-- Heuristic fallback: traditional price ×0.6 with 60/40 split if GPT-5 fails (also respects handlingRequired flag)
+- Heuristic fallback: traditional price ×0.4 with 60/40 split if GPT-5 fails (also respects handlingRequired flag)
 - Response structure: {totalClientMAD, transporterFeeMAD, platformFeeMAD, confidence, reasoning, modeledInputs}
 - Price clamping: min 500 MAD (enforced by split function), max 9000 MAD
 - Premium dialog displaying: single CamionBack price, financial breakdown table (Total client, Frais transporteur 60%, Cotisation 40% min 200 MAD), confidence score, modeled inputs, reasoning explicitly mentioning empty returns + groupage concepts, and disclaimer
