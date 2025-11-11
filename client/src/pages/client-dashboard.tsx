@@ -270,7 +270,6 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
 
   // Get client-friendly status
   const clientStatus = getClientStatus(request, displayCount, t);
-  const StatusIcon = clientStatus.icon;
 
   const createdAt = request.createdAt 
     ? (typeof request.createdAt === 'string' ? new Date(request.createdAt) : request.createdAt)
