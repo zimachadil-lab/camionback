@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, MessageCircle, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck, Trash2, Share2, Copy, Send, RotateCcw, Info, Users, CreditCard, Calendar, X, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, FileText, MoreVertical, Image as ImageIcon, ClipboardCheck, Award, StickyNote, Plus, ChevronDown, ChevronUp, Upload } from "lucide-react";
+import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, MessageCircle, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck, Trash2, Share2, Copy, Send, RotateCcw, Info, Users, CreditCard, Calendar, X, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, FileText, MoreVertical, Image as ImageIcon, ClipboardCheck, Award, StickyNote, Plus, ChevronDown, ChevronUp, Upload, SlidersHorizontal } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -20,6 +20,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { ManualAssignmentDialog } from "@/components/coordinator/manual-assignment-dialog";
 import { QualificationDialog } from "@/components/coordinator/qualification-dialog";
 import { RouteMap } from "@/components/route-map";
@@ -30,6 +31,72 @@ import { fr } from "date-fns/locale";
 import { useForceFrenchLayout } from "@/hooks/use-force-french-layout";
 import { useTranslation } from "react-i18next";
 import { getCategoryConfig } from "@/lib/goods-category-config";
+
+// Types for adaptive filters by tab
+type TabId = 'nouveau' | 'qualifies' | 'interesses' | 'production' | 'archives';
+
+interface TabFilters {
+  searchQuery: string;
+  selectedCity: string;
+  selectedStatus?: string;
+  selectedDateFilter?: string;
+  selectedCoordinator?: string;
+  minInterested?: number;
+  selectedPaymentStatus?: string;
+  selectedArchiveReason?: string;
+}
+
+type FiltersByTab = Record<TabId, TabFilters>;
+
+// Helper function to get default filters for each tab
+function getDefaultFilters(tab: TabId): TabFilters {
+  const baseFilters = {
+    searchQuery: '',
+    selectedCity: 'Toutes les villes',
+  };
+
+  switch (tab) {
+    case 'nouveau':
+      return {
+        ...baseFilters,
+        selectedDateFilter: 'all',
+        selectedCoordinator: 'Tous les coordinateurs',
+      };
+    case 'qualifies':
+      return {
+        ...baseFilters,
+        selectedDateFilter: 'all',
+      };
+    case 'interesses':
+      return {
+        ...baseFilters,
+        minInterested: 1,
+      };
+    case 'production':
+      return {
+        ...baseFilters,
+        selectedPaymentStatus: 'Tous les statuts',
+        selectedDateFilter: 'all',
+      };
+    case 'archives':
+      return {
+        ...baseFilters,
+        selectedArchiveReason: 'Toutes les raisons',
+        selectedDateFilter: 'all',
+      };
+    default:
+      return baseFilters;
+  }
+}
+
+// Count active filters (non-default values)
+function countActiveFilters(filters: TabFilters, tab: TabId): number {
+  const defaults = getDefaultFilters(tab);
+  return Object.entries(filters).filter(([key, value]) => {
+    const defaultValue = defaults[key as keyof TabFilters];
+    return value !== defaultValue && value !== '' && value !== undefined;
+  }).length;
+}
 
 // Helper function to get payment status label in French
 function getPaymentStatusLabel(status: string): string {
@@ -610,11 +677,16 @@ export default function CoordinatorDashboard() {
   // Force French language and LTR direction for Coordinator dashboard
   useForceFrenchLayout();
 
-  const [selectedCity, setSelectedCity] = useState("Toutes les villes");
-  const [selectedStatus, setSelectedStatus] = useState("Tous les statuts");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedDateFilter, setSelectedDateFilter] = useState("all");
-  const [selectedCoordinator, setSelectedCoordinator] = useState("Tous les coordinateurs");
+  // Adaptive filters state by tab
+  const [activeTab, setActiveTab] = useState<TabId>('nouveau');
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const [filters, setFilters] = useState<FiltersByTab>({
+    nouveau: getDefaultFilters('nouveau'),
+    qualifies: getDefaultFilters('qualifies'),
+    interesses: getDefaultFilters('interesses'),
+    production: getDefaultFilters('production'),
+    archives: getDefaultFilters('archives'),
+  });
   const [chatOpen, setChatOpen] = useState(false);
   const [selectedParticipants, setSelectedParticipants] = useState<{ client: any; transporter: any } | null>(null);
   const [chatRequestId, setChatRequestId] = useState<string>("");
@@ -1443,31 +1515,31 @@ export default function CoordinatorDashboard() {
     });
   };
 
-  const filterRequests = (requests: any[], applyStatusFilter = true) => {
+  const filterRequests = (requests: any[], tabFilters: TabFilters = filters[activeTab], applyStatusFilter = true) => {
     if (!requests || !Array.isArray(requests)) {
       return [];
     }
     // Deduplicate before filtering
     const uniqueRequests = deduplicateRequests(requests);
     return uniqueRequests.filter((request) => {
-      const matchesCity = selectedCity === "Toutes les villes" || 
-        request.fromCity === selectedCity || 
-        request.toCity === selectedCity;
-      const matchesStatus = !applyStatusFilter || selectedStatus === "Tous les statuts" || 
-        request.status === selectedStatus;
-      const matchesSearch = searchQuery === "" ||
-        request.referenceId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (request.client?.name && request.client.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (request.transporter?.name && request.transporter.name.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchesCity = tabFilters.selectedCity === "Toutes les villes" || 
+        request.fromCity === tabFilters.selectedCity || 
+        request.toCity === tabFilters.selectedCity;
+      const matchesStatus = !applyStatusFilter || !tabFilters.selectedStatus || tabFilters.selectedStatus === "Tous les statuts" || 
+        request.status === tabFilters.selectedStatus;
+      const matchesSearch = tabFilters.searchQuery === "" ||
+        request.referenceId.toLowerCase().includes(tabFilters.searchQuery.toLowerCase()) ||
+        (request.client?.name && request.client.name.toLowerCase().includes(tabFilters.searchQuery.toLowerCase())) ||
+        (request.transporter?.name && request.transporter.name.toLowerCase().includes(tabFilters.searchQuery.toLowerCase()));
       
       // Date filtering
       const matchesDate = (() => {
-        if (selectedDateFilter === "all") return true;
+        if (!tabFilters.selectedDateFilter || tabFilters.selectedDateFilter === "all") return true;
         const requestDate = new Date(request.createdAt);
         const now = new Date();
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         
-        switch (selectedDateFilter) {
+        switch (tabFilters.selectedDateFilter) {
           case "today":
             return requestDate >= today;
           case "week": {
@@ -1485,18 +1557,30 @@ export default function CoordinatorDashboard() {
         }
       })();
 
-      // Coordinator filtering (for qualified requests or assigned coordinators)
-      const matchesCoordinator = selectedCoordinator === "Tous les coordinateurs" || 
+      // Coordinator filtering (for nouveau tab)
+      const matchesCoordinator = !tabFilters.selectedCoordinator || tabFilters.selectedCoordinator === "Tous les coordinateurs" || 
         (request.coordinationUpdatedBy && (
-          request.coordinationUpdatedBy.name === selectedCoordinator ||
-          request.coordinationUpdatedBy.phoneNumber === selectedCoordinator
+          request.coordinationUpdatedBy.name === tabFilters.selectedCoordinator ||
+          request.coordinationUpdatedBy.phoneNumber === tabFilters.selectedCoordinator
         )) ||
         (request.assignedTo && (
-          request.assignedTo.name === selectedCoordinator ||
-          request.assignedTo.phoneNumber === selectedCoordinator
+          request.assignedTo.name === tabFilters.selectedCoordinator ||
+          request.assignedTo.phoneNumber === tabFilters.selectedCoordinator
         ));
+
+      // Min interested filtering (for interesses tab)
+      const matchesMinInterested = !tabFilters.minInterested || 
+        (request.transporterInterests && request.transporterInterests.length >= tabFilters.minInterested);
+
+      // Payment status filtering (for production tab)
+      const matchesPaymentStatus = !tabFilters.selectedPaymentStatus || tabFilters.selectedPaymentStatus === "Tous les statuts" ||
+        request.paymentMethod === tabFilters.selectedPaymentStatus;
+
+      // Archive reason filtering (for archives tab)
+      const matchesArchiveReason = !tabFilters.selectedArchiveReason || tabFilters.selectedArchiveReason === "Toutes les raisons" ||
+        request.archiveReason === tabFilters.selectedArchiveReason;
       
-      return matchesCity && matchesStatus && matchesSearch && matchesDate && matchesCoordinator;
+      return matchesCity && matchesStatus && matchesSearch && matchesDate && matchesCoordinator && matchesMinInterested && matchesPaymentStatus && matchesArchiveReason;
     });
   };
 
@@ -2344,6 +2428,199 @@ export default function CoordinatorDashboard() {
     );
   };
 
+  // Adaptive FilterSheet Component
+  const FilterSheet = () => {
+    const activeFilters = filters[activeTab];
+    const activeFilterCount = countActiveFilters(activeFilters, activeTab);
+    const [tempFilters, setTempFilters] = useState(activeFilters);
+
+    const handleApply = () => {
+      setFilters({ ...filters, [activeTab]: tempFilters });
+      setFilterSheetOpen(false);
+    };
+
+    const handleReset = () => {
+      const defaultFilters = getDefaultFilters(activeTab);
+      setTempFilters(defaultFilters);
+      setFilters({ ...filters, [activeTab]: defaultFilters });
+    };
+
+    return (
+      <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
+        <SheetTrigger asChild>
+          <Button variant="outline" size="default" className="gap-2" data-testid="button-filter-trigger">
+            <SlidersHorizontal className="h-4 w-4" />
+            <span className="hidden sm:inline">Filtres</span>
+            {activeFilterCount > 0 && (
+              <Badge variant="default" className="ml-1" data-testid="badge-filter-count">
+                {activeFilterCount}
+              </Badge>
+            )}
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto" data-testid="sheet-filters">
+          <SheetHeader>
+            <SheetTitle>Filtrer les commandes</SheetTitle>
+            <SheetDescription>
+              Affinez votre recherche selon vos critères
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Search - All tabs */}
+            <div className="space-y-2">
+              <Label htmlFor="filter-search">Recherche</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="filter-search"
+                  placeholder="Référence, client, transporteur..."
+                  value={tempFilters.searchQuery}
+                  onChange={(e) => setTempFilters({ ...tempFilters, searchQuery: e.target.value })}
+                  className="pl-10"
+                  data-testid="input-filter-search"
+                />
+              </div>
+            </div>
+
+            {/* City - All tabs */}
+            <div className="space-y-2">
+              <Label htmlFor="filter-city">Ville</Label>
+              <Select
+                value={tempFilters.selectedCity}
+                onValueChange={(value) => setTempFilters({ ...tempFilters, selectedCity: value })}
+              >
+                <SelectTrigger id="filter-city" data-testid="select-filter-city">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Toutes les villes">Toutes les villes</SelectItem>
+                  {cities.map((city: any) => (
+                    <SelectItem key={city.id} value={city.name}>
+                      {city.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Date - nouveau, qualifies, production, archives */}
+            {(activeTab === 'nouveau' || activeTab === 'qualifies' || activeTab === 'production' || activeTab === 'archives') && (
+              <div className="space-y-2">
+                <Label htmlFor="filter-date">Période</Label>
+                <Select
+                  value={tempFilters.selectedDateFilter || 'all'}
+                  onValueChange={(value) => setTempFilters({ ...tempFilters, selectedDateFilter: value })}
+                >
+                  <SelectTrigger id="filter-date" data-testid="select-filter-date">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Toutes les dates</SelectItem>
+                    <SelectItem value="today">Aujourd'hui</SelectItem>
+                    <SelectItem value="week">7 derniers jours</SelectItem>
+                    <SelectItem value="month">30 derniers jours</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Coordinator - nouveau only */}
+            {activeTab === 'nouveau' && (
+              <div className="space-y-2">
+                <Label htmlFor="filter-coordinator">Coordinateur</Label>
+                <Select
+                  value={tempFilters.selectedCoordinator || 'Tous les coordinateurs'}
+                  onValueChange={(value) => setTempFilters({ ...tempFilters, selectedCoordinator: value })}
+                >
+                  <SelectTrigger id="filter-coordinator" data-testid="select-filter-coordinator">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Tous les coordinateurs">Tous les coordinateurs</SelectItem>
+                    {allCoordinators.map((coordinator: any) => (
+                      <SelectItem key={coordinator.id} value={coordinator.name || coordinator.phoneNumber}>
+                        {coordinator.name || coordinator.phoneNumber}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Min Interested - interesses only */}
+            {activeTab === 'interesses' && (
+              <div className="space-y-2">
+                <Label htmlFor="filter-min-interested">Minimum transporteurs intéressés</Label>
+                <Input
+                  id="filter-min-interested"
+                  type="number"
+                  min="1"
+                  value={tempFilters.minInterested || 1}
+                  onChange={(e) => setTempFilters({ ...tempFilters, minInterested: parseInt(e.target.value) || 1 })}
+                  data-testid="input-filter-min-interested"
+                />
+              </div>
+            )}
+
+            {/* Payment Status - production only */}
+            {activeTab === 'production' && (
+              <div className="space-y-2">
+                <Label htmlFor="filter-payment-status">Statut de paiement</Label>
+                <Select
+                  value={tempFilters.selectedPaymentStatus || 'Tous les statuts'}
+                  onValueChange={(value) => setTempFilters({ ...tempFilters, selectedPaymentStatus: value })}
+                >
+                  <SelectTrigger id="filter-payment-status" data-testid="select-filter-payment-status">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Tous les statuts">Tous les statuts</SelectItem>
+                    <SelectItem value="a_facturer">À facturer</SelectItem>
+                    <SelectItem value="paid_by_client">Payé par le client</SelectItem>
+                    <SelectItem value="paid_by_camionback">Payé par CamionBack</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Archive Reason - archives only */}
+            {activeTab === 'archives' && (
+              <div className="space-y-2">
+                <Label htmlFor="filter-archive-reason">Raison d'archivage</Label>
+                <Select
+                  value={tempFilters.selectedArchiveReason || 'Toutes les raisons'}
+                  onValueChange={(value) => setTempFilters({ ...tempFilters, selectedArchiveReason: value })}
+                >
+                  <SelectTrigger id="filter-archive-reason" data-testid="select-filter-archive-reason">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Toutes les raisons">Toutes les raisons</SelectItem>
+                    <SelectItem value="completed">Terminé</SelectItem>
+                    <SelectItem value="cancelled">Annulé</SelectItem>
+                    <SelectItem value="no_response">Pas de réponse</SelectItem>
+                    <SelectItem value="other">Autre</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
+          <SheetFooter className="gap-2">
+            <Button variant="outline" onClick={handleReset} data-testid="button-filter-reset">
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Réinitialiser
+            </Button>
+            <Button onClick={handleApply} data-testid="button-filter-apply">
+              Appliquer
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header 
@@ -2356,101 +2633,12 @@ export default function CoordinatorDashboard() {
       />
 
       <main className="container mx-auto p-4 max-w-7xl">
-        {/* Unified Search Bar with Filters */}
-        <div className="mb-6 space-y-3">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher par référence, client, transporteur..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-                data-testid="input-search"
-              />
-            </div>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Select value={selectedCity} onValueChange={setSelectedCity}>
-              <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-city">
-                <MapPin className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Ville" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Toutes les villes">Toutes les villes</SelectItem>
-                {cities.map((city: any) => (
-                  <SelectItem key={city.id} value={city.name}>
-                    {city.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-              <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-status">
-                <ListFilter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Statut" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Tous les statuts">Tous les statuts</SelectItem>
-                <SelectItem value="open">Ouvert</SelectItem>
-                <SelectItem value="accepted">Accepté</SelectItem>
-                <SelectItem value="completed">Terminé</SelectItem>
-                <SelectItem value="cancelled">Annulé</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Select value={selectedDateFilter} onValueChange={setSelectedDateFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-date">
-                <Calendar className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Période" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Toutes les dates</SelectItem>
-                <SelectItem value="today">Aujourd'hui</SelectItem>
-                <SelectItem value="week">7 derniers jours</SelectItem>
-                <SelectItem value="month">30 derniers jours</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Select value={selectedCoordinator} onValueChange={setSelectedCoordinator}>
-              <SelectTrigger className="w-full sm:w-[200px]" data-testid="select-coordinator">
-                <Users className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Coordinateur" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Tous les coordinateurs">Tous les coordinateurs</SelectItem>
-                {allCoordinators.map((coordinator: any) => (
-                  <SelectItem key={coordinator.id} value={coordinator.name || coordinator.phoneNumber}>
-                    {coordinator.name || coordinator.phoneNumber}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            {(searchQuery || selectedCity !== "Toutes les villes" || selectedStatus !== "Tous les statuts" || selectedDateFilter !== "all" || selectedCoordinator !== "Tous les coordinateurs") && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setSearchQuery("");
-                  setSelectedCity("Toutes les villes");
-                  setSelectedStatus("Tous les statuts");
-                  setSelectedDateFilter("all");
-                  setSelectedCoordinator("Tous les coordinateurs");
-                }}
-                className="whitespace-nowrap"
-                data-testid="button-clear-filters"
-              >
-                <X className="h-4 w-4 mr-2" />
-                Réinitialiser
-              </Button>
-            )}
-          </div>
+        {/* Filter Button */}
+        <div className="mb-6 flex justify-end">
+          <FilterSheet />
         </div>
 
-        <Tabs defaultValue="nouveau" className="w-full">
+        <Tabs defaultValue="nouveau" className="w-full" onValueChange={(value) => setActiveTab(value as TabId)}>
           <div className="flex justify-center mb-8">
             <TabsList className="inline-flex h-14 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0a1929]/80 via-[#1a2942]/80 to-[#0a1929]/80 backdrop-blur-xl p-1.5 shadow-2xl border border-white/10 gap-1">
               <TabsTrigger 
@@ -2460,9 +2648,9 @@ export default function CoordinatorDashboard() {
               >
                 <Plus className="h-4 w-4" />
                 <span className="hidden sm:inline">Nouveau</span>
-                {!nouveauLoading && filterRequests(nouveauRequests).length > 0 && (
+                {!nouveauLoading && filterRequests(nouveauRequests, filters.nouveau).length > 0 && (
                   <span className="inline-flex items-center justify-center min-w-[20px] h-[20px] px-1 text-xs font-bold rounded-full bg-gradient-to-br from-yellow-400 to-yellow-500 text-white shadow-md shadow-yellow-500/40 animate-pulse">
-                    {filterRequests(nouveauRequests).length}
+                    {filterRequests(nouveauRequests, filters.nouveau).length}
                   </span>
                 )}
               </TabsTrigger>
@@ -2473,9 +2661,9 @@ export default function CoordinatorDashboard() {
               >
                 <ClipboardCheck className="h-4 w-4" />
                 <span className="hidden sm:inline">Qualifiés</span>
-                {!matchingLoading && filterRequests(matchingRequests).length > 0 && (
+                {!matchingLoading && filterRequests(matchingRequests, filters.qualifies).length > 0 && (
                   <span className="inline-flex items-center justify-center min-w-[20px] h-[20px] px-1 text-xs font-bold rounded-full bg-gradient-to-br from-blue-400 to-blue-500 text-white shadow-md">
-                    {filterRequests(matchingRequests).length}
+                    {filterRequests(matchingRequests, filters.qualifies).length}
                   </span>
                 )}
               </TabsTrigger>
@@ -2486,9 +2674,9 @@ export default function CoordinatorDashboard() {
               >
                 <Users className="h-4 w-4" />
                 <span className="hidden sm:inline">Intéressés</span>
-                {!matchingLoading && filterRequests(matchingRequests.filter((r: any) => r.transporterInterests && r.transporterInterests.length > 0)).length > 0 && (
+                {!matchingLoading && filterRequests(matchingRequests.filter((r: any) => r.transporterInterests && r.transporterInterests.length > 0), filters.interesses).length > 0 && (
                   <span className="inline-flex items-center justify-center min-w-[20px] h-[20px] px-1 text-xs font-bold rounded-full bg-gradient-to-br from-purple-400 to-purple-500 text-white shadow-md">
-                    {filterRequests(matchingRequests.filter((r: any) => r.transporterInterests && r.transporterInterests.length > 0)).length}
+                    {filterRequests(matchingRequests.filter((r: any) => r.transporterInterests && r.transporterInterests.length > 0), filters.interesses).length}
                   </span>
                 )}
               </TabsTrigger>
@@ -2499,9 +2687,9 @@ export default function CoordinatorDashboard() {
               >
                 <Truck className="h-4 w-4" />
                 <span className="hidden sm:inline">Production</span>
-                {!(activeLoading || paymentLoading) && filterRequests([...activeRequests, ...paymentRequests]).length > 0 && (
+                {!(activeLoading || paymentLoading) && filterRequests([...activeRequests, ...paymentRequests], filters.production).length > 0 && (
                   <span className="inline-flex items-center justify-center min-w-[20px] h-[20px] px-1 text-xs font-bold rounded-full bg-gradient-to-br from-green-400 to-green-500 text-white shadow-md">
-                    {filterRequests([...activeRequests, ...paymentRequests]).length}
+                    {filterRequests([...activeRequests, ...paymentRequests], filters.production).length}
                   </span>
                 )}
               </TabsTrigger>
@@ -2512,9 +2700,9 @@ export default function CoordinatorDashboard() {
               >
                 <Package className="h-4 w-4" />
                 <span className="hidden sm:inline">Archives</span>
-                {!archivesLoading && filterRequests(archivesRequests).length > 0 && (
+                {!archivesLoading && filterRequests(archivesRequests, filters.archives).length > 0 && (
                   <span className="inline-flex items-center justify-center min-w-[20px] h-[20px] px-1 text-xs font-bold rounded-full bg-gradient-to-br from-gray-400 to-gray-500 text-white shadow-md">
-                    {filterRequests(archivesRequests).length}
+                    {filterRequests(archivesRequests, filters.archives).length}
                   </span>
                 )}
               </TabsTrigger>
@@ -2527,7 +2715,7 @@ export default function CoordinatorDashboard() {
               <div className="flex justify-center py-12">
                 <LoadingTruck />
               </div>
-            ) : filterRequests(nouveauRequests).length === 0 ? (
+            ) : filterRequests(nouveauRequests, filters.nouveau).length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center text-muted-foreground">
                   <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
@@ -2535,7 +2723,7 @@ export default function CoordinatorDashboard() {
                 </CardContent>
               </Card>
             ) : (
-              filterRequests(nouveauRequests).map((request) => renderRequestCard(request, true, false, false, true))
+              filterRequests(nouveauRequests, filters.nouveau).map((request) => renderRequestCard(request, true, false, false, true))
             )}
           </TabsContent>
 
@@ -2545,7 +2733,7 @@ export default function CoordinatorDashboard() {
               <div className="flex justify-center py-12">
                 <LoadingTruck />
               </div>
-            ) : filterRequests(matchingRequests).length === 0 ? (
+            ) : filterRequests(matchingRequests, filters.qualifies).length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center text-muted-foreground">
                   <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
@@ -2553,7 +2741,7 @@ export default function CoordinatorDashboard() {
                 </CardContent>
               </Card>
             ) : (
-              filterRequests(matchingRequests).map((request) => renderRequestCard(request, true, false, false, false, true))
+              filterRequests(matchingRequests, filters.qualifies).map((request) => renderRequestCard(request, true, false, false, false, true))
             )}
           </TabsContent>
 
@@ -2563,7 +2751,7 @@ export default function CoordinatorDashboard() {
               <div className="flex justify-center py-12">
                 <LoadingTruck />
               </div>
-            ) : filterRequests(matchingRequests.filter((r: any) => r.transporterInterests && r.transporterInterests.length > 0)).length === 0 ? (
+            ) : filterRequests(matchingRequests.filter((r: any) => r.transporterInterests && r.transporterInterests.length > 0), filters.interesses).length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center text-muted-foreground">
                   <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
@@ -2571,7 +2759,7 @@ export default function CoordinatorDashboard() {
                 </CardContent>
               </Card>
             ) : (
-              filterRequests(matchingRequests.filter((r: any) => r.transporterInterests && r.transporterInterests.length > 0)).map((request) => (
+              filterRequests(matchingRequests.filter((r: any) => r.transporterInterests && r.transporterInterests.length > 0), filters.interesses).map((request) => (
                 <Card key={request.id} className="overflow-hidden border-l-4 border-purple-500" data-testid={`card-interested-request-${request.id}`}>
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between gap-4 mb-4">
@@ -2763,7 +2951,7 @@ export default function CoordinatorDashboard() {
               <div className="flex justify-center py-12">
                 <LoadingTruck />
               </div>
-            ) : filterRequests([...activeRequests, ...paymentRequests]).length === 0 ? (
+            ) : filterRequests([...activeRequests, ...paymentRequests], filters.production).length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center text-muted-foreground">
                   <Truck className="h-12 w-12 mx-auto mb-3 opacity-50" />
@@ -2771,7 +2959,7 @@ export default function CoordinatorDashboard() {
                 </CardContent>
               </Card>
             ) : (
-              filterRequests([...activeRequests, ...paymentRequests]).map((request) => 
+              filterRequests([...activeRequests, ...paymentRequests], filters.production).map((request) => 
                 renderRequestCard(request, false, true, false, false, false, false, true)
               )
             )}
@@ -2783,7 +2971,7 @@ export default function CoordinatorDashboard() {
               <div className="flex justify-center py-12">
                 <LoadingTruck />
               </div>
-            ) : filterRequests(archivesRequests).length === 0 ? (
+            ) : filterRequests(archivesRequests, filters.archives).length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center text-muted-foreground">
                   <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
@@ -2791,7 +2979,7 @@ export default function CoordinatorDashboard() {
                 </CardContent>
               </Card>
             ) : (
-              filterRequests(archivesRequests).map((request) => renderRequestCard(request, false, false, false, false, false, true))
+              filterRequests(archivesRequests, filters.archives).map((request) => renderRequestCard(request, false, false, false, false, false, true))
             )}
           </TabsContent>
         </Tabs>
