@@ -159,12 +159,19 @@ RÉPONSE REQUISE (JSON strict) :
         }
       ],
       response_format: { type: "json_object" },
-      max_completion_tokens: 2000
+      max_completion_tokens: 8192  // GPT-5 uses reasoning tokens internally, need higher limit
       // Note: GPT-5 only supports default temperature (1.0), custom values not allowed
     });
     
+    console.log('[Price Estimation] GPT-5 Response:', JSON.stringify({
+      choices: response.choices?.length || 0,
+      hasContent: !!response.choices?.[0]?.message?.content,
+      fullResponse: response
+    }));
+    
     const content = response.choices[0]?.message?.content;
     if (!content) {
+      console.error('[Price Estimation] No content in response:', response);
       throw new Error("No response from AI");
     }
     
