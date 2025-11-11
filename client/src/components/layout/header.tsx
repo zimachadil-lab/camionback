@@ -280,7 +280,7 @@ export function Header({ user, onLogout, onCreateRequest, onAnnounceReturn }: He
                 {/* Logout */}
                 <DropdownMenuItem
                   onClick={onLogout}
-                  className="gap-3 cursor-pointer text-destructive focus:text-destructive hover:bg-destructive/10 transition-all duration-200 font-medium py-2.5"
+                  className="gap-3 cursor-pointer py-2.5"
                   data-testid="button-logout"
                 >
                   <LogOut className="h-4 w-4" />
