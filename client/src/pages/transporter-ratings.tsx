@@ -1,10 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import { Star, Package } from "lucide-react";
+import { Star, Package, X, ArrowLeft } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { LoadingTruck } from "@/components/ui/loading-truck";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useAuth } from "@/lib/auth-context";
+import { useLocation } from "wouter";
 
 interface RatingSummary {
   averageRating: string;
@@ -27,6 +29,7 @@ interface RatingsResponse {
 
 export default function TransporterRatings() {
   const { user, loading: authLoading } = useAuth();
+  const [, navigate] = useLocation();
 
   const { data, isLoading } = useQuery<RatingsResponse>({
     queryKey: ["/api/transporters", user?.id, "ratings"],
@@ -65,9 +68,21 @@ export default function TransporterRatings() {
   return (
     <div className="min-h-screen bg-[#0a2540] p-4">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-white mb-6" data-testid="heading-ratings">
-          Mes avis clients
-        </h1>
+        {/* Header avec bouton retour */}
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold text-white" data-testid="heading-ratings">
+            Mes avis clients
+          </h1>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/")}
+            className="text-white hover:bg-white/10"
+            data-testid="button-close-ratings"
+          >
+            <X className="h-6 w-6" />
+          </Button>
+        </div>
 
         {/* Summary Card */}
         <Card className="mb-6 bg-white/10 border-white/20" data-testid="card-summary">
