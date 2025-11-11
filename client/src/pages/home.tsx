@@ -15,8 +15,6 @@ export default function Home() {
     if (!loading && user) {
       if (!user.role) {
         setLocation("/select-role");
-      } else if (user.role === "coordinateur") {
-        setLocation("/coordinator-dashboard");
       }
     }
   }, [user, loading, setLocation]);
