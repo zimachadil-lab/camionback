@@ -148,18 +148,18 @@ export function RequestCard({
             <span className="absolute inset-0 bg-green-300 rounded-md opacity-40 animate-pulse"></span>
             {/* Effet de brillance */}
             <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent rounded-md animate-pulse"></span>
-            <div className="relative flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-white drop-shadow-sm" />
-              <span className="text-xs font-bold text-white drop-shadow-sm">
+            <div className="relative flex items-center gap-1">
+              <Calendar className="w-3 h-3 text-white drop-shadow-sm" />
+              <span className="text-[10px] font-bold text-white drop-shadow-sm whitespace-nowrap">
                 {format(dateTime, "dd MMM yyyy", { locale: dateLocale })}
               </span>
             </div>
           </div>
           {/* Numéro de commande modernisé */}
           <div className="bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] px-3.5 py-1.5 rounded-md shadow-md border border-white/20" data-testid={`text-reference-${request.id}`}>
-            <div className="flex items-center gap-1.5">
-              <Hash className="w-3.5 h-3.5 text-white drop-shadow-sm" />
-              <span className="text-xs font-mono font-bold text-white drop-shadow-sm">
+            <div className="flex items-center gap-1">
+              <Hash className="w-3 h-3 text-white drop-shadow-sm" />
+              <span className="text-[10px] font-bold text-white drop-shadow-sm whitespace-nowrap">
                 {request.referenceId}
               </span>
             </div>
