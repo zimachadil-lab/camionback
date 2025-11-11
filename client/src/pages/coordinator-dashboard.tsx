@@ -1814,6 +1814,12 @@ export default function CoordinatorDashboard() {
     const categoryConfig = getCategoryConfig(request.goodsType);
     const CategoryIcon = categoryConfig.icon;
 
+    // Check if departure is within 24 hours
+    const departureDate = new Date(request.dateTime);
+    const now = new Date();
+    const hoursUntilDeparture = (departureDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+    const isUrgent = hoursUntilDeparture > 0 && hoursUntilDeparture <= 24;
+
     return (
     <Card key={request.id} className={`hover-elevate overflow-hidden border-2 ${categoryConfig.borderColor}`} data-testid={`card-request-${request.id}`}>
       {/* En-tête avec catégorie colorée - même style que transporteur */}
@@ -1972,457 +1978,193 @@ export default function CoordinatorDashboard() {
         </div>
       </div>
 
-      <CardHeader className="pb-3">
-        {/* Layout horizontal : Carte à gauche, tout le reste à droite */}
-        <div className="flex gap-4">
-          {/* LEFT: Grande carte 360x360px */}
-          {request.distance && request.departureAddress && request.arrivalAddress && (
-            <div className="flex-shrink-0">
-              <RouteMap
-                variant="compact"
-                departureCity={request.fromCity}
-                arrivalCity={request.toCity}
-                departureAddress={request.departureAddress}
-                arrivalAddress={request.arrivalAddress}
-                distance={request.distance}
-              />
+      <CardContent className="p-4 space-y-3">
+        {/* Header avec référence */}
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="text-lg font-semibold" data-testid={`text-reference-${request.id}`}>
+            {request.referenceId}
+          </h3>
+          {isUrgent && (
+            <Badge className="bg-red-500 text-white hover:bg-red-600 border-0 gap-1.5 animate-pulse">
+              <AlertCircle className="w-3 h-3" />
+              Départ < 24h
+            </Badge>
+          )}
+        </div>
+
+        {/* Carte de trajet avec distance */}
+        {request.fromCity && request.toCity && (
+          <div className="space-y-2">
+            <RouteMap
+              departureCity={request.fromCity}
+              arrivalCity={request.toCity}
+              departureAddress={request.departureAddress}
+              arrivalAddress={request.arrivalAddress}
+              distance={request.distance}
+              variant="compact"
+            />
+            
+            {/* Ligne compacte récapitulative */}
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/20 rounded-md">
+              <div className="flex items-center gap-2 flex-1 min-w-0 text-xs">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#5BC0EB] flex-shrink-0"></div>
+                  <span className="font-medium truncate">{request.fromCity}</span>
+                </div>
+                <ArrowRight className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#e74c3c] flex-shrink-0"></div>
+                  <span className="font-medium truncate">{request.toCity}</span>
+                </div>
+              </div>
+              {request.distance && (
+                <div className="flex-shrink-0 px-2 py-0.5 bg-[#17cfcf]/20 rounded border border-[#17cfcf]/40">
+                  <span className="text-xs font-bold text-[#17cfcf]">{request.distance} km</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Statut logistique */}
+        <div className="relative flex items-center gap-2.5 px-3 py-2 rounded-lg border-2 bg-gradient-to-r from-[#1abc9c]/20 via-[#16a085]/15 to-[#1abc9c]/20 border-[#1abc9c]/40">
+          <div className="relative flex-shrink-0">
+            <div className="absolute inset-0 bg-[#1abc9c]/30 rounded-full animate-ping"></div>
+            <div className="relative w-7 h-7 rounded-full bg-[#1abc9c]/20 flex items-center justify-center border-2 border-[#1abc9c]/50">
+              <StatusIcon className="w-4 h-4 text-[#1abc9c]" />
+            </div>
+          </div>
+          <span className="text-sm font-semibold text-foreground whitespace-nowrap">
+            {clientStatus.text}
+          </span>
+        </div>
+
+        {/* Info client et date */}
+        <div className="space-y-2 text-sm">
+          {request.client && (
+            <div className="flex items-center gap-2">
+              <Phone className="h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">Client:</span>
+              <a 
+                href={`tel:${request.client.phoneNumber}`}
+                className="text-[#17cfcf] hover:underline font-medium"
+                data-testid={`link-call-client-${request.id}`}
+              >
+                {request.client.phoneNumber}
+              </a>
             </div>
           )}
           
-          {/* RIGHT: Toutes les infos */}
-          <div className="flex-1 space-y-3">
-            {/* Route info inline */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="w-3 h-3 rounded-full bg-[#10b981] flex-shrink-0"></div>
-              <div className="text-sm">
-                {request.departureAddress?.includes(',') ? (
-                  <>
-                    <span className="font-bold">{request.departureAddress.split(',')[0]}</span>
-                    <span className="text-muted-foreground">, {request.departureAddress.split(',').slice(1).join(',').trim()}</span>
-                  </>
-                ) : (
-                  <span className="text-muted-foreground">{request.fromCity}</span>
-                )}
-              </div>
-              <span className="text-[#17cfcf] text-xl">→</span>
-              <span className="text-base font-bold text-[#17cfcf]">{request.distance} km</span>
-              <span className="text-[#17cfcf] text-xl">→</span>
-              <div className="w-3 h-3 rounded-full bg-[#ef4444] flex-shrink-0"></div>
-              <div className="text-sm">
-                {request.arrivalAddress?.includes(',') ? (
-                  <>
-                    <span className="font-bold">{request.arrivalAddress.split(',')[0]}</span>
-                    <span className="text-muted-foreground">, {request.arrivalAddress.split(',').slice(1).join(',').trim()}</span>
-                  </>
-                ) : (
-                  <span className="text-muted-foreground">{request.toCity}</span>
-                )}
-              </div>
-              
-              {/* Bouton d'assignation coordinateur */}
-              {request.assignedTo ? (
-                request.assignedTo.id === user?.id ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-8 text-xs gap-1.5 ml-auto"
-                    onClick={() => unassignFromMeMutation.mutate(request.id)}
-                    disabled={unassignFromMeMutation.isPending}
-                    data-testid={`button-unassign-${request.id}`}
-                  >
-                    <X className="h-3.5 w-3.5" />
-                    Se désassigner
-                  </Button>
-                ) : (
-                  <Badge variant="secondary" className="text-xs ml-auto">
-                    <Compass className="h-3 w-3 mr-1" />
-                    {request.assignedTo.name || request.assignedTo.phoneNumber}
-                  </Badge>
-                )
-              ) : (
-                <Button
-                  size="sm"
-                  variant="default"
-                  className="h-8 text-xs gap-1.5 bg-[#17cfcf] hover:bg-[#14b8b8] text-white ml-auto"
-                  onClick={() => assignToMeMutation.mutate(request.id)}
-                  disabled={assignToMeMutation.isPending}
-                  data-testid={`button-assign-to-me-${request.id}`}
-                >
-                  <Compass className="h-3.5 w-3.5" />
-                  Me l'affecter
-                </Button>
-              )}
-            </div>
-
-            {/* Statut logistique */}
-            <div className="relative flex items-center gap-3 px-3 py-2 bg-gradient-to-r from-[#1abc9c]/20 via-[#16a085]/15 to-[#1abc9c]/20 rounded-lg border-2 border-[#1abc9c]/40">
-              <div className="relative">
-                <div className="absolute inset-0 bg-[#1abc9c]/30 rounded-full animate-ping"></div>
-                <div className="relative w-7 h-7 rounded-full bg-[#1abc9c]/20 flex items-center justify-center border-2 border-[#1abc9c]/50">
-                  <StatusIcon className="w-3.5 h-3.5 text-[#1abc9c] animate-pulse" />
-                </div>
-              </div>
-              <span className="text-sm font-semibold text-foreground">
-                {clientStatus.text}
-              </span>
-            </div>
-
-            {/* Info client */}
-            {request.client && (
-              <div className="flex items-center gap-2 text-sm">
-                <Phone className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Client:</span>
-                <a 
-                  href={`tel:${request.client.phoneNumber}`}
-                  className="text-[#5BC0EB] hover:underline font-medium"
-                  data-testid={`link-call-client-${request.id}`}
-                >
-                  {request.client.phoneNumber}
-                </a>
-              </div>
-            )}
-
-            {/* Info transporteur */}
-            {request.transporter && (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-gradient-to-r from-[#17cfcf]/10 to-transparent border border-[#17cfcf]/30">
-                <Truck className="h-5 w-5 text-[#17cfcf]" />
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-muted-foreground">Transporteur:</span>
-                    <span className="font-semibold text-foreground" data-testid={`text-transporter-name-${request.id}`}>
-                      {request.transporter.name || "Non renseigné"}
-                    </span>
-                  </div>
-                  {request.transporter.phoneNumber && (
-                    <a 
-                      href={`tel:${request.transporter.phoneNumber}`}
-                      className="text-[#17cfcf] hover:underline font-medium text-sm flex items-center gap-1 mt-1"
-                      data-testid={`link-call-transporter-${request.id}`}
-                    >
-                      <Phone className="h-3.5 w-3.5" />
-                      {request.transporter.phoneNumber}
-                    </a>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Statut de paiement - Sélecteur pour coordinateur */}
-            {showPaymentStatusSelector && request.paymentStatus && (
-              <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
-                <DollarSign className="h-5 w-5 text-[#17cfcf]" />
-                <div className="flex-1">
-                  <Label htmlFor={`payment-status-${request.id}`} className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                    Statut de paiement
-                  </Label>
-                  <Select
-                    value={request.paymentStatus}
-                    onValueChange={(newStatus) => {
-                      // Handle workflow-specific actions before updating status
-                      if (newStatus === 'paid_by_client' || newStatus === 'paid_by_camionback') {
-                        // Open unified payment dialog for both client and CamionBack payments
-                        handleCoordinatorPayment(request.id);
-                      } else {
-                        // Direct status update for other transitions (e.g., a_facturer)
-                        updatePaymentStatusMutation.mutate({
-                          requestId: request.id,
-                          paymentStatus: newStatus
-                        });
-                      }
-                    }}
-                  >
-                    <SelectTrigger 
-                      id={`payment-status-${request.id}`}
-                      className="h-9 w-full bg-background"
-                      data-testid={`select-payment-status-${request.id}`}
-                    >
-                      <SelectValue>
-                        {getPaymentStatusLabel(request.paymentStatus)}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="a_facturer" data-testid="option-a-facturer">
-                        À facturer
-                      </SelectItem>
-                      <SelectItem value="paid_by_client" data-testid="option-paid-by-client">
-                        Payé par le client
-                      </SelectItem>
-                      <SelectItem value="paid_by_camionback" data-testid="option-paid-by-camionback">
-                        Payé par CamionBack
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            )}
-
-            {/* Bouton photos */}
-            {request.photos && request.photos.length > 0 && (
-              <Button
-                size="sm"
-                className="h-7 text-xs gap-1.5 bg-[#17cfcf]/20 hover:bg-[#17cfcf]/30 text-[#17cfcf] border border-[#17cfcf]/40 hover:border-[#17cfcf]/60 transition-all font-medium"
-                onClick={() => handleViewPhotos(request.photos)}
-                data-testid={`button-view-photos-${request.id}`}
-              >
-                <ImageIcon className="w-3.5 h-3.5" />
-                <span>{request.photos.length} photo{request.photos.length > 1 ? 's' : ''}</span>
-              </Button>
-            )}
-
-            {/* Info manutention */}
-            {request.handlingRequired && (
-              <div className="p-2 rounded-lg border bg-muted/30 text-xs">
-                <div className="flex items-center gap-2 font-medium mb-1">
-                  <span>🏋️</span>
-                  <span>Manutention : Oui</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <span className="text-muted-foreground">🏢 Départ:</span> {request.departureFloor !== undefined ? (request.departureFloor === 0 ? 'RDC' : `${request.departureFloor}ᵉ`) : '-'} {request.departureElevator ? '✅' : '❌'}
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">🏠 Arrivée:</span> {request.arrivalFloor !== undefined ? (request.arrivalFloor === 0 ? 'RDC' : `${request.arrivalFloor}ᵉ`) : '-'} {request.arrivalElevator ? '✅' : '❌'}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Prix transporteur + cotisation + total */}
-            {(request.transporterPrice || request.clientTotal) && (
-              <div className="space-y-1.5">
-                {request.transporterPrice && (
-                  <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-gradient-to-r from-[#00ff88]/10 to-transparent border-l-4 border-[#00ff88]">
-                    <DollarSign className="w-4 h-4 text-[#00ff88]" />
-                    <span className="text-xs font-medium text-muted-foreground">Transporteur</span>
-                    <span className="text-base font-bold text-[#00ff88] ml-auto">{Math.floor(request.transporterPrice).toLocaleString()} Dhs</span>
-                  </div>
-                )}
-                {request.platformFee && (
-                  <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-gradient-to-r from-orange-500/10 to-transparent border-l-4 border-orange-500">
-                    <DollarSign className="w-4 h-4 text-orange-500" />
-                    <span className="text-xs font-medium text-muted-foreground">Cotisation</span>
-                    <span className="text-base font-bold text-orange-500 ml-auto">+{Math.floor(request.platformFee).toLocaleString()} Dhs</span>
-                  </div>
-                )}
-                {request.clientTotal && (
-                  <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-gradient-to-r from-blue-500/10 to-transparent border-l-4 border-blue-500">
-                    <DollarSign className="w-4 h-4 text-blue-500" />
-                    <span className="text-xs font-medium text-muted-foreground">Client Total</span>
-                    <span className="text-base font-bold text-blue-500 ml-auto">{Math.floor(request.clientTotal).toLocaleString()} Dhs</span>
-                  </div>
-                )}
-              </div>
-            )}
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <span className="text-muted-foreground">Départ:</span>
+            <span className="font-medium">{format(new Date(request.dateTime), "dd MMM yyyy 'à' HH:mm", { locale: fr })}</span>
           </div>
+          
+          {request.weight && (
+            <div className="flex items-center gap-2">
+              <Package className="h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">Tonnage:</span>
+              <span className="font-medium">{request.weight} tonnes</span>
+            </div>
+          )}
         </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {/* Coordination status */}
-        <div className="space-y-2 text-sm">
+
+        {/* Description */}
+        {request.description && (
+          <div className="relative pl-9 pr-3 py-2.5 rounded-lg border border-border/50 bg-gradient-to-br from-muted/40 to-muted/20">
+            <div className="absolute left-2.5 top-2.5">
+              <div className="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center">
+                <FileText className="w-3 h-3 text-primary" />
+              </div>
+            </div>
+            <p className="text-sm leading-relaxed line-clamp-2">{request.description}</p>
+          </div>
+        )}
+
+        {/* Prix qualifié */}
+        {request.clientTotal && request.qualifiedAt && (
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-[#00ff88]/10 via-[#00ff88]/5 to-transparent border-l-4 border-[#00ff88]">
+            <div className="w-7 h-7 rounded-full bg-[#00ff88]/20 flex items-center justify-center flex-shrink-0">
+              <DollarSign className="w-4 h-4 text-[#00ff88]" />
+            </div>
+            <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Prix Qualifié</span>
+            <span className="text-lg font-bold text-[#00ff88] ml-auto">{Math.floor(request.clientTotal).toLocaleString()} Dhs</span>
+          </div>
+        )}
+
           {qualifiedBy && (
-            <div className="flex items-center gap-2 bg-green-50 dark:bg-green-950 p-2 rounded-md border border-green-200 dark:border-green-800">
-              <Users className="h-4 w-4 text-green-600 dark:text-green-400" />
+            <div className="flex items-center gap-2 text-xs">
+              <Users className="h-3.5 w-3.5 text-green-600" />
               <span className="text-muted-foreground">Qualifiée par:</span>
-              <span className="font-semibold text-green-700 dark:text-green-300" data-testid={`text-qualified-by-${request.id}`}>
+              <span className="font-medium text-green-700 dark:text-green-400">
                 {qualifiedBy.name || qualifiedBy.phoneNumber}
               </span>
             </div>
           )}
-
-          {isCoordination && request.assignedTo && (
-            <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950 p-2 rounded-md border border-blue-200 dark:border-blue-800">
-              <Compass className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              <span className="text-muted-foreground">Assignée à:</span>
-              <span className="font-semibold text-blue-700 dark:text-blue-300" data-testid={`text-assigned-to-${request.id}`}>
-                {request.assignedTo.name}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Description/Services */}
-        {request.description && (
-          <div className="space-y-2 border-t pt-3">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <FileText className="w-4 h-4" />
-              <span className="font-medium">Descriptif</span>
-            </div>
-            <p className={`text-sm pl-6 ${expandedDescriptions[request.id] ? '' : 'line-clamp-2'}`}>
-              {request.description}
-            </p>
-            {request.description.length > 100 && (
-              <button
-                onClick={() => setExpandedDescriptions(prev => ({
-                  ...prev,
-                  [request.id]: !prev[request.id]
-                }))}
-                className="text-xs text-[#17cfcf] hover:underline pl-6"
-                data-testid={`button-toggle-description-${request.id}`}
-              >
-                {expandedDescriptions[request.id] ? 'Voir moins' : 'Plus de détails'}
-              </button>
-            )}
-          </div>
-        )}
-
-        <div className="space-y-2 text-sm">
-          {/* Show interested transporters count for qualified workflow */}
+          
           {interestedCount > 0 && request.qualifiedAt && (
             <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <Users className="h-4 w-4 text-[#17cfcf]" />
               <span className="text-muted-foreground">Transporteurs intéressés:</span>
               <Badge variant="outline" className="bg-[#17cfcf]/10 text-[#17cfcf] border-[#17cfcf]/30">
                 {interestedCount}
               </Badge>
             </div>
           )}
-
-          {/* Show offers for old workflow */}
-          {request.offers && request.offers.length > 0 && (
-            <div className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Offres reçues:</span>
-              <Badge variant="outline">{request.offers.length}</Badge>
-            </div>
-          )}
         </div>
 
-        <div className="flex flex-wrap gap-2 pt-2 border-t">
-          {/* Actions Principales Visibles */}
-          
-          {/* Qualify button - Action principale */}
+        {/* Actions Principales du Coordinateur */}
+        <div className="flex flex-wrap gap-2">
+          {/* Qualifier */}
           {showQualifyButton && (
             <Button
-              size="default"
-              variant="default"
-              className="bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] hover:from-[#13b3b3] hover:to-[#0f9999] text-white font-semibold shadow-lg hover:shadow-xl transition-all"
+              className="flex-1 min-w-[140px] gap-2 bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] hover:from-[#13b3b3] hover:to-[#0f9999] text-white font-semibold shadow-md hover:shadow-lg transition-all"
               onClick={() => handleOpenQualificationDialog(request)}
               data-testid={`button-qualify-${request.id}`}
             >
-              <ClipboardCheck className="h-5 w-5 mr-2" />
-              Qualifier cette demande
+              <ClipboardCheck className="h-4 w-4" />
+              Qualifier
             </Button>
           )}
 
-          {/* Requalify button */}
-          {showQualifiedBy && (
-            <Button
-              size="default"
-              variant="default"
-              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
-              onClick={() => handleOpenQualificationDialog(request)}
-              data-testid={`button-requalify-${request.id}`}
-            >
-              <RotateCcw className="h-5 w-5 mr-2" />
-              Requalifier
-            </Button>
-          )}
-
-          {/* Transporteurs intéressés */}
+          {/* Voir transporteurs intéressés */}
           {interestedCount > 0 && request.qualifiedAt && !request.assignedTransporterId && (
             <Button
-              size="default"
               variant="default"
-              className="bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] hover:from-[#13b3b3] hover:to-[#0f9999] text-white font-semibold shadow-lg hover:shadow-xl transition-all"
+              className="flex-1 min-w-[140px] gap-2 bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] hover:from-[#13b3b3] hover:to-[#0f9999] text-white font-semibold shadow-md hover:shadow-lg transition-all"
               onClick={() => handleViewInterestedTransporters(request)}
               data-testid={`button-view-interested-${request.id}`}
             >
-              <Users className="h-5 w-5 mr-2" />
+              <Users className="h-4 w-4" />
               {interestedCount} Intéressé{interestedCount > 1 ? 's' : ''}
             </Button>
           )}
 
-          {/* Offres (old workflow) */}
-          {showVisibilityToggle && request.offers && request.offers.length > 0 && (
-            <Button
-              size="default"
-              variant="default"
-              className="bg-gradient-to-r from-[#5BC0EB] to-[#4AA8D8] hover:from-[#4AA8D8] hover:to-[#3997C5] text-white font-semibold shadow-lg hover:shadow-xl transition-all"
-              onClick={() => handleViewOffers(request)}
-              data-testid={`button-view-offers-${request.id}`}
-            >
-              <CheckCircle className="h-5 w-5 mr-2" />
-              {request.offers.length} Offre{request.offers.length > 1 ? 's' : ''}
-            </Button>
-          )}
-
           {/* Missionner transporteur */}
-          {isCoordination && !request.transporter && request.status !== 'accepted' && (
+          {!request.transporter && (
             <Button
-              size="default"
               variant="default"
-              className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
+              className="flex-1 min-w-[140px] gap-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold shadow-md hover:shadow-lg transition-all"
               onClick={() => handleOpenManualAssignment(request)}
               data-testid={`button-manual-assignment-${request.id}`}
             >
-              <Truck className="h-5 w-5 mr-2" />
+              <Truck className="h-4 w-4" />
               Missionner
             </Button>
           )}
 
-          {/* Republier - Pour les demandes archivées */}
-          {showRepublishButton && (
-            <Button
-              size="default"
-              variant="default"
-              className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
-              onClick={() => handleRepublishRequest(request.id)}
-              data-testid={`button-republish-${request.id}`}
-            >
-              <RotateCcw className="h-5 w-5 mr-2" />
-              Republier
-            </Button>
-          )}
-
-          {/* Annuler la commande - Pour les commandes en production */}
-          {showPaymentControls && (
-            <>
-              {/* Bouton Payer - Si transporteur défini et en cours */}
-              {request.status === 'in_progress' && (request.assignedTransporterId || request.acceptedOfferId) && (
-                <Button
-                  size="default"
-                  className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold shadow-lg hover:shadow-xl hover:shadow-emerald-500/30 transition-all"
-                  onClick={() => handleCoordinatorPayment(request.id)}
-                  data-testid={`button-pay-coordinator-${request.id}`}
-                >
-                  <CreditCard className="h-5 w-5 mr-2" />
-                  Payer
-                </Button>
-              )}
-
-              <Button
-                size="default"
-                variant="destructive"
-                onClick={() => {
-                  setCancelRequestData(request);
-                  setCancelDialogOpen(true);
-                }}
-                data-testid={`button-cancel-production-${request.id}`}
-              >
-                <X className="h-5 w-5 mr-2" />
-                Annuler la commande
-              </Button>
-              
-              {/* Annuler et requalifier - Republier immédiatement pour matching */}
-              <Button
-                size="default"
-                variant="default"
-                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
-                onClick={() => {
-                  setRequalifyRequestData(request);
-                  setRequalifyDialogOpen(true);
-                }}
-                data-testid={`button-cancel-requalify-${request.id}`}
-              >
-                <RotateCcw className="h-5 w-5 mr-2" />
-                Annuler et requalifier
-              </Button>
-            </>
-          )}
+          {/* Voir détails */}
+          <Button
+            variant="secondary"
+            onClick={() => handleViewDetails(request)}
+            data-testid={`button-view-details-${request.id}`}
+            className="gap-2"
+          >
+            <Eye className="h-4 w-4" />
+            Détails
+          </Button>
         </div>
-
-        {/* Notes internes coordinateur */}
-        <RequestNotes requestId={request.id} />
       </CardContent>
     </Card>
     );
@@ -2726,7 +2468,9 @@ export default function CoordinatorDashboard() {
                 </CardContent>
               </Card>
             ) : (
-              filterRequests(nouveauRequests, filters.nouveau).map((request) => renderRequestCard(request, true, false, false, true))
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {filterRequests(nouveauRequests, filters.nouveau).map((request) => renderRequestCard(request, true, false, false, true))}
+              </div>
             )}
           </TabsContent>
 
@@ -2744,7 +2488,9 @@ export default function CoordinatorDashboard() {
                 </CardContent>
               </Card>
             ) : (
-              filterRequests(matchingRequests, filters.qualifies).map((request) => renderRequestCard(request, true, false, false, false, true))
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {filterRequests(matchingRequests, filters.qualifies).map((request) => renderRequestCard(request, true, false, false, false, true))}
+              </div>
             )}
           </TabsContent>
 
