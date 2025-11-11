@@ -2633,14 +2633,11 @@ export default function CoordinatorDashboard() {
       />
 
       <main className="container mx-auto p-4 max-w-7xl">
-        {/* Filter Button */}
-        <div className="mb-6 flex justify-end">
-          <FilterSheet />
-        </div>
-
         <Tabs defaultValue="nouveau" className="w-full" onValueChange={(value) => setActiveTab(value as TabId)}>
-          <div className="flex justify-center mb-8">
-            <TabsList className="inline-flex h-14 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0a1929]/80 via-[#1a2942]/80 to-[#0a1929]/80 backdrop-blur-xl p-1.5 shadow-2xl border border-white/10 gap-1">
+          {/* Tabs and Filter aligned on same line for desktop */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+            <div className="flex justify-center md:flex-1">
+              <TabsList className="inline-flex h-14 items-center justify-center rounded-2xl bg-gradient-to-r from-[#0a1929]/80 via-[#1a2942]/80 to-[#0a1929]/80 backdrop-blur-xl p-1.5 shadow-2xl border border-white/10 gap-1">
               <TabsTrigger 
                 value="nouveau" 
                 data-testid="tab-nouveau"
@@ -2707,6 +2704,12 @@ export default function CoordinatorDashboard() {
                 )}
               </TabsTrigger>
             </TabsList>
+            </div>
+            
+            {/* Filter button aligned on the right for desktop */}
+            <div className="flex justify-end md:justify-start">
+              <FilterSheet />
+            </div>
           </div>
 
           {/* ONGLET 1: NOUVEAU - Demandes en attente de qualification */}
