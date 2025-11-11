@@ -106,10 +106,10 @@ export function Header({ user, onLogout, onCreateRequest, onAnnounceReturn }: He
         {/* Left Section: Logo + Brand */}
         <div 
           onClick={() => navigate("/")}
-          className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity min-w-fit"
+          className="flex items-center gap-3 cursor-pointer hover:scale-105 active:scale-95 transition-all duration-200 min-w-fit"
           data-testid="link-home"
         >
-          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-[#17cfcf] to-[#0ea5a5] shadow-md">
+          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-[#17cfcf] to-[#0ea5a5] shadow-md hover:shadow-lg transition-shadow">
             <Truck className="w-5 h-5 text-white" strokeWidth={2.5} />
           </div>
           <div className="hidden sm:flex flex-col">
