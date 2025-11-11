@@ -1845,9 +1845,6 @@ export default function CoordinatorDashboard() {
             <Calendar className="w-3.5 h-3.5" />
             {format(new Date(request.dateTime), "dd MMM yyyy", { locale: fr })}
           </Badge>
-          <Badge className="bg-slate-800/80 text-white hover:bg-slate-800 border-0 font-mono text-xs">
-            {request.referenceId}
-          </Badge>
           
           {/* Menu Actions Secondaires - En haut à droite */}
           <DropdownMenu>
