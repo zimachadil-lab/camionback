@@ -368,10 +368,10 @@ export function NewRequestForm({ onSuccess, onClose }: { onSuccess?: () => void;
               name="dateTime"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Date et heure souhaitées (optionnel)</FormLabel>
+                  <FormLabel>Date souhaitée (optionnel)</FormLabel>
                   <FormControl>
                     <Input 
-                      type="datetime-local" 
+                      type="date" 
                       data-testid="input-datetime"
                       {...field} 
                     />
