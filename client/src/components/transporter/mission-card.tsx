@@ -19,7 +19,7 @@ export function MissionCard({ request, onViewDetails }: MissionCardProps) {
   const missionDate = request.pickupDate || request.deliveryDate;
 
   return (
-    <Card className="overflow-hidden hover-elevate border-2 border-[#0d9488]/30 shadow-lg">
+    <Card className="overflow-hidden hover-elevate shadow-lg">
       {/* Header avec numéro de commande */}
       <CardHeader className="bg-gradient-to-br from-[#0d9488] via-[#0f766e] to-[#115e59] text-white p-4">
         <div className="flex items-center justify-between">
@@ -40,19 +40,19 @@ export function MissionCard({ request, onViewDetails }: MissionCardProps) {
         </div>
       </CardHeader>
 
-      <CardContent className="p-5 space-y-4">
-        {/* Date de mission - Très visible */}
+      <CardContent className="p-4 space-y-3">
+        {/* Date de mission */}
         {missionDate && (
-          <div className="bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-teal-950/40 dark:to-emerald-950/40 border-2 border-teal-200 dark:border-teal-800 rounded-xl p-4" data-testid={`mission-date-${request.id}`}>
+          <div className="bg-primary/10 border border-primary/20 rounded-lg p-3" data-testid={`mission-date-${request.id}`}>
             <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-teal-600 rounded-lg">
-                <Calendar className="h-5 w-5 text-white" />
+              <div className="p-2 bg-primary rounded-lg">
+                <Calendar className="h-4 w-4 text-primary-foreground" />
               </div>
               <div className="flex-1">
-                <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">
+                <p className="text-xs font-semibold uppercase tracking-wide text-foreground/70">
                   Date de la mission
                 </p>
-                <p className="text-lg font-bold text-teal-700 dark:text-teal-300 mt-0.5">
+                <p className="text-base font-bold text-foreground mt-0.5">
                   {format(new Date(missionDate), "EEEE d MMMM yyyy", { 
                     locale: i18n.language === 'ar' ? undefined : fr 
                   })}
@@ -62,48 +62,48 @@ export function MissionCard({ request, onViewDetails }: MissionCardProps) {
           </div>
         )}
 
-        {/* Itinéraire - Départ et Arrivée */}
-        <div className="bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-950/40 dark:to-gray-950/40 border border-slate-200 dark:border-slate-800 rounded-xl p-4" data-testid={`mission-itinerary-${request.id}`}>
-          <div className="flex items-center gap-3">
+        {/* Itinéraire */}
+        <div className="bg-muted/50 border border-border rounded-lg p-3" data-testid={`mission-itinerary-${request.id}`}>
+          <div className="flex items-center gap-2">
             <div className="flex items-center gap-2 flex-1">
-              <div className="p-2 bg-[#0d9488] rounded-lg flex-shrink-0">
-                <MapPin className="h-4 w-4 text-white" />
+              <div className="p-1.5 bg-primary rounded-md flex-shrink-0">
+                <MapPin className="h-3.5 w-3.5 text-primary-foreground" />
               </div>
               <div className="min-w-0">
-                <p className="text-xs text-muted-foreground font-medium">Départ</p>
-                <p className="text-sm font-bold text-foreground truncate">{request.fromCity}</p>
+                <p className="text-xs text-foreground/60 font-medium">Départ</p>
+                <p className="text-sm font-semibold text-foreground truncate">{request.fromCity}</p>
               </div>
             </div>
             
-            <ArrowRight className="h-5 w-5 text-[#0d9488] flex-shrink-0" />
+            <ArrowRight className="h-4 w-4 text-primary flex-shrink-0" />
             
             <div className="flex items-center gap-2 flex-1">
-              <div className="p-2 bg-orange-600 rounded-lg flex-shrink-0">
-                <MapPin className="h-4 w-4 text-white" />
+              <div className="p-1.5 bg-orange-600 rounded-md flex-shrink-0">
+                <MapPin className="h-3.5 w-3.5 text-white" />
               </div>
               <div className="min-w-0">
-                <p className="text-xs text-muted-foreground font-medium">Arrivée</p>
-                <p className="text-sm font-bold text-foreground truncate">{request.toCity}</p>
+                <p className="text-xs text-foreground/60 font-medium">Arrivée</p>
+                <p className="text-sm font-semibold text-foreground truncate">{request.toCity}</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Téléphone du client - Très visible */}
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4" data-testid={`mission-client-phone-${request.id}`}>
+        {/* Téléphone du client */}
+        <div className="bg-card border border-border rounded-lg p-3" data-testid={`mission-client-phone-${request.id}`}>
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 flex-1 min-w-0">
-              <div className="p-2.5 bg-blue-600 rounded-lg flex-shrink-0">
-                <Phone className="h-5 w-5 text-white" />
+            <div className="flex items-center gap-2.5 flex-1 min-w-0">
+              <div className="p-2 bg-blue-600 rounded-lg flex-shrink-0">
+                <Phone className="h-4 w-4 text-white" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">
+                <p className="text-xs font-semibold uppercase tracking-wide text-foreground/70">
                   Téléphone client
                 </p>
-                <p className="text-lg font-bold text-blue-700 dark:text-blue-300 truncate">
+                <p className="text-base font-bold text-foreground truncate">
                   {clientPhone}
                 </p>
-                <p className="text-xs text-muted-foreground">{clientName}</p>
+                <p className="text-xs text-foreground/60">{clientName}</p>
               </div>
             </div>
             {clientPhone !== "N/A" && (
@@ -111,9 +111,9 @@ export function MissionCard({ request, onViewDetails }: MissionCardProps) {
                 <Button
                   size="icon"
                   variant="default"
-                  className="flex-shrink-0 h-12 w-12 bg-blue-600"
+                  className="flex-shrink-0 h-11 w-11 bg-blue-600"
                 >
-                  <Phone className="h-5 w-5" />
+                  <Phone className="h-4 w-4" />
                 </Button>
               </a>
             )}
@@ -121,10 +121,10 @@ export function MissionCard({ request, onViewDetails }: MissionCardProps) {
         </div>
 
         {/* Message d'incitation */}
-        <div className="bg-amber-50 dark:bg-amber-950/20 border-l-4 border-amber-500 p-3 rounded-r-lg" data-testid={`mission-contact-reminder-${request.id}`}>
+        <div className="bg-warning/10 border border-warning/30 rounded-lg p-3" data-testid={`mission-contact-reminder-${request.id}`}>
           <div className="flex items-center gap-2">
-            <PhoneCall className="h-4 w-4 text-amber-600" />
-            <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+            <PhoneCall className="h-4 w-4 text-warning-foreground flex-shrink-0" />
+            <p className="text-sm font-medium text-warning-foreground">
               Veuillez contacter le client pour organiser la prise en charge
             </p>
           </div>
@@ -134,11 +134,11 @@ export function MissionCard({ request, onViewDetails }: MissionCardProps) {
         <Button 
           onClick={onViewDetails}
           variant="default"
-          className="w-full h-12 bg-gradient-to-r from-[#0d9488] to-[#0f766e] text-white font-semibold shadow-lg"
+          className="w-full h-11 bg-primary font-semibold"
           data-testid={`button-view-mission-details-${request.id}`}
         >
-          <FileText className="h-5 w-5 me-2" />
-          Voir les détails de la mission
+          <FileText className="h-4 w-4 me-2" />
+          Voir les détails
         </Button>
       </CardContent>
     </Card>

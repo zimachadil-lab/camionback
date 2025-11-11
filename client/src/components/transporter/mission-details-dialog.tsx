@@ -56,20 +56,20 @@ export function MissionDetailsDialog({
         </DialogHeader>
 
         <ScrollArea className="max-h-[calc(90vh-120px)]">
-          <div className="p-6 space-y-4">
+          <div className="p-4 space-y-3">
             {/* Date de mission */}
             {missionDate && (
-              <Card className="border-2 border-teal-200 dark:border-teal-800">
-                <CardContent className="p-4" data-testid="mission-details-date">
+              <Card className="border border-border">
+                <CardContent className="p-3" data-testid="mission-details-date">
                   <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-gradient-to-br from-teal-600 to-emerald-600 rounded-lg">
-                      <Calendar className="h-5 w-5 text-white" />
+                    <div className="p-2 bg-primary rounded-lg">
+                      <Calendar className="h-4 w-4 text-primary-foreground" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-xs text-muted-foreground font-semibold uppercase">
+                      <p className="text-xs font-semibold uppercase text-foreground/70">
                         Date de la mission
                       </p>
-                      <p className="text-lg font-bold text-teal-700 dark:text-teal-300">
+                      <p className="text-base font-bold text-foreground">
                         {format(new Date(missionDate), "EEEE d MMMM yyyy", { 
                           locale: i18n.language === 'ar' ? undefined : fr 
                         })}
@@ -81,58 +81,58 @@ export function MissionDetailsDialog({
             )}
 
             {/* Itinéraire */}
-            <Card className="border-2 border-blue-200 dark:border-blue-800">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2 text-blue-700 dark:text-blue-300">
-                  <MapPin className="h-5 w-5" />
+            <Card className="border border-border">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2 text-foreground">
+                  <MapPin className="h-4 w-4" />
                   Itinéraire
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3" data-testid="mission-details-itinerary">
-                <div className="flex items-start gap-3 p-3 bg-teal-50 dark:bg-teal-950/20 rounded-lg">
-                  <div className="p-2 bg-teal-600 rounded-lg mt-0.5">
-                    <MapPin className="h-4 w-4 text-white" />
+              <CardContent className="space-y-2" data-testid="mission-details-itinerary">
+                <div className="flex items-start gap-2.5 p-2.5 bg-muted/50 rounded-lg">
+                  <div className="p-1.5 bg-primary rounded-md mt-0.5">
+                    <MapPin className="h-3.5 w-3.5 text-primary-foreground" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs text-muted-foreground font-medium">Ville de départ</p>
-                    <p className="font-bold text-base">{request.fromCity}</p>
+                    <p className="text-xs font-medium text-foreground/60">Ville de départ</p>
+                    <p className="font-bold text-sm text-foreground">{request.fromCity}</p>
                     {request.fromAddress && (
-                      <p className="text-sm text-muted-foreground mt-1">{request.fromAddress}</p>
+                      <p className="text-xs text-foreground/60 mt-0.5">{request.fromAddress}</p>
                     )}
                   </div>
                 </div>
-                <div className="flex items-start gap-3 p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg">
-                  <div className="p-2 bg-orange-600 rounded-lg mt-0.5">
-                    <MapPin className="h-4 w-4 text-white" />
+                <div className="flex items-start gap-2.5 p-2.5 bg-muted/50 rounded-lg">
+                  <div className="p-1.5 bg-orange-600 rounded-md mt-0.5">
+                    <MapPin className="h-3.5 w-3.5 text-white" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs text-muted-foreground font-medium">Ville d'arrivée</p>
-                    <p className="font-bold text-base">{request.toCity}</p>
+                    <p className="text-xs font-medium text-foreground/60">Ville d'arrivée</p>
+                    <p className="font-bold text-sm text-foreground">{request.toCity}</p>
                     {request.toAddress && (
-                      <p className="text-sm text-muted-foreground mt-1">{request.toAddress}</p>
+                      <p className="text-xs text-foreground/60 mt-0.5">{request.toAddress}</p>
                     )}
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Informations client */}
-            <Card className="border-2 border-blue-200 dark:border-blue-800">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2 text-blue-700 dark:text-blue-300">
-                  <User className="h-5 w-5" />
+            {/* Contact client */}
+            <Card className="border border-border">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2 text-foreground">
+                  <User className="h-4 w-4" />
                   Contact Client
                 </CardTitle>
               </CardHeader>
               <CardContent data-testid="mission-details-client-contact">
-                <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-                  <div className="flex items-center gap-3 flex-1">
-                    <div className="p-2 bg-blue-600 rounded-lg">
-                      <Phone className="h-5 w-5 text-white" />
+                <div className="flex items-center justify-between p-2.5 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-2.5 flex-1">
+                    <div className="p-1.5 bg-blue-600 rounded-lg">
+                      <Phone className="h-4 w-4 text-white" />
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground font-medium">{clientName}</p>
-                      <p className="text-lg font-bold text-blue-700 dark:text-blue-300">
+                      <p className="text-xs font-medium text-foreground/60">{clientName}</p>
+                      <p className="text-base font-bold text-foreground">
                         {clientPhone}
                       </p>
                     </div>
@@ -145,7 +145,7 @@ export function MissionDetailsDialog({
                         className="bg-blue-600"
                         data-testid="button-call-client-dialog"
                       >
-                        <Phone className="h-4 w-4 me-2" />
+                        <Phone className="h-3.5 w-3.5 me-1.5" />
                         Appeler
                       </Button>
                     </a>
@@ -155,58 +155,59 @@ export function MissionDetailsDialog({
             </Card>
 
             {/* Détails de la marchandise */}
-            <Card className="border-2 border-purple-200 dark:border-purple-800">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2 text-purple-700 dark:text-purple-300">
-                  <Package className="h-5 w-5" />
+            <Card className="border border-border">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2 text-foreground">
+                  <Package className="h-4 w-4" />
                   Détails de la marchandise
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3" data-testid="mission-details-goods">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 bg-slate-50 dark:bg-slate-950/20 rounded-lg">
-                    <p className="text-xs text-muted-foreground font-medium mb-1">Type</p>
-                    <div className="flex items-center gap-2">
-                      <categoryConfig.icon className="h-6 w-6 text-primary" />
-                      <p className="font-semibold text-sm">{categoryConfig.label}</p>
+              <CardContent className="space-y-2" data-testid="mission-details-goods">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="p-2.5 bg-muted/50 rounded-lg">
+                    <p className="text-xs font-medium mb-1 text-foreground/60">Type</p>
+                    <div className="flex items-center gap-1.5">
+                      <categoryConfig.icon className="h-5 w-5 text-primary" />
+                      <p className="font-semibold text-xs text-foreground">{categoryConfig.label}</p>
                     </div>
                   </div>
                   {request.estimatedWeight && (
-                    <div className="p-3 bg-slate-50 dark:bg-slate-950/20 rounded-lg">
-                      <p className="text-xs text-muted-foreground font-medium mb-1">Poids estimé</p>
-                      <div className="flex items-center gap-2">
-                        <Ruler className="h-4 w-4 text-muted-foreground" />
-                        <p className="font-semibold">{request.estimatedWeight}</p>
+                    <div className="p-2.5 bg-muted/50 rounded-lg">
+                      <p className="text-xs font-medium mb-1 text-foreground/60">Poids estimé</p>
+                      <div className="flex items-center gap-1.5">
+                        <Ruler className="h-3.5 w-3.5 text-foreground/60" />
+                        <p className="font-semibold text-xs text-foreground">{request.estimatedWeight}</p>
                       </div>
                     </div>
                   )}
                 </div>
 
                 {request.manutention && (
-                  <div className="p-3 bg-slate-50 dark:bg-slate-950/20 rounded-lg">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Warehouse className="h-4 w-4 text-muted-foreground" />
-                      <p className="text-xs text-muted-foreground font-medium">Manutention</p>
+                  <div className="p-2.5 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Warehouse className="h-3.5 w-3.5 text-foreground/60" />
+                      <p className="text-xs font-medium text-foreground/60">Manutention</p>
                     </div>
-                    <p className="font-semibold">{request.manutention}</p>
+                    <p className="font-semibold text-xs text-foreground">{request.manutention}</p>
                   </div>
                 )}
 
                 {request.description && (
-                  <div className="p-3 bg-slate-50 dark:bg-slate-950/20 rounded-lg">
-                    <p className="text-xs text-muted-foreground font-medium mb-2">Description</p>
-                    <p className="text-sm leading-relaxed">{request.description}</p>
+                  <div className="p-2.5 bg-muted/50 rounded-lg">
+                    <p className="text-xs font-medium mb-1.5 text-foreground/60">Description</p>
+                    <p className="text-xs leading-relaxed text-foreground">{request.description}</p>
                   </div>
                 )}
 
                 {request.photos && request.photos.length > 0 && (
                   <Button
                     variant="outline"
+                    size="sm"
                     onClick={() => onViewPhotos?.(request.photos, request.referenceId)}
                     className="w-full gap-2"
                     data-testid="button-view-photos-dialog"
                   >
-                    <ImageIcon className="h-4 w-4" />
+                    <ImageIcon className="h-3.5 w-3.5" />
                     Voir les photos ({request.photos.length})
                   </Button>
                 )}
@@ -214,14 +215,14 @@ export function MissionDetailsDialog({
             </Card>
 
             {/* Message important */}
-            <div className="bg-amber-50 dark:bg-amber-950/20 border-l-4 border-amber-500 p-4 rounded-r-lg" data-testid="mission-action-required">
+            <div className="bg-warning/10 border border-warning/30 rounded-lg p-3" data-testid="mission-action-required">
               <div className="flex items-center gap-2 mb-1">
-                <PhoneCall className="h-4 w-4 text-amber-600" />
-                <p className="font-semibold text-amber-800 dark:text-amber-200">
+                <PhoneCall className="h-4 w-4 text-warning-foreground flex-shrink-0" />
+                <p className="font-semibold text-sm text-warning-foreground">
                   Action requise
                 </p>
               </div>
-              <p className="text-sm text-amber-700 dark:text-amber-300">
+              <p className="text-xs text-warning-foreground/90">
                 Contactez le client pour organiser la prise en charge de la marchandise. Le coordinateur suit l'avancement de cette mission.
               </p>
             </div>
