@@ -70,7 +70,9 @@ export function RequestCard({
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [showValidationWarning, setShowValidationWarning] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
+  const [isDescriptionTruncated, setIsDescriptionTruncated] = useState(false);
   const hasTrackedView = useRef(false);
+  const descriptionRef = useRef<HTMLParagraphElement>(null);
   
   const dateTime = typeof request.dateTime === 'string' 
     ? new Date(request.dateTime) 
@@ -125,6 +127,33 @@ export function RequestCard({
       onTrackView();
     }
   }, [request.id, onTrackView]);
+
+  // Detect if description is truncated (with resize observation)
+  useEffect(() => {
+    const element = descriptionRef.current;
+    if (!element || !request.description) return;
+
+    const checkTruncation = () => {
+      // Check if content is truncated by comparing scrollHeight with clientHeight
+      const isTruncated = element.scrollHeight > element.clientHeight;
+      setIsDescriptionTruncated(isTruncated);
+    };
+
+    // Initial check
+    checkTruncation();
+
+    // Create ResizeObserver to detect layout changes
+    const resizeObserver = new ResizeObserver(() => {
+      checkTruncation();
+    });
+
+    resizeObserver.observe(element);
+
+    // Cleanup
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [request.description, showFullDescription, i18n.language]);
 
   const categoryConfig = getCategoryConfig(request.goodsType);
   const CategoryIcon = categoryConfig.icon;
@@ -220,7 +249,10 @@ export function RequestCard({
               
               {/* Contenu de la description */}
               <div className="pl-14 pr-4 py-3">
-                <p className={`text-sm leading-relaxed text-foreground ${showFullDescription ? '' : 'line-clamp-2'}`}>
+                <p 
+                  ref={descriptionRef}
+                  className={`text-sm leading-relaxed text-foreground ${showFullDescription ? '' : 'line-clamp-2'}`}
+                >
                   <span className="font-bold text-primary">{categoryConfig.label}:</span>{' '}
                   <span className="text-muted-foreground">{request.description}</span>
                 </p>
@@ -229,7 +261,7 @@ export function RequestCard({
             
             {/* Actions sous la description */}
             <div className="flex items-center gap-3 px-1">
-              {request.description.length > 50 && (
+              {(isDescriptionTruncated || showFullDescription) && (
                 <button
                   onClick={() => setShowFullDescription(!showFullDescription)}
                   className="text-xs text-[#17cfcf] hover:text-[#13b3b3] font-semibold transition-colors flex items-center gap-1"
