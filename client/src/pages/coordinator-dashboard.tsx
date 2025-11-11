@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, MessageCircle, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck, Trash2, Share2, Copy, Send, RotateCcw, Info, Users, CreditCard, Calendar, X, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, FileText, MoreVertical, Image as ImageIcon, ClipboardCheck, Award, StickyNote, Plus, ChevronDown, ChevronUp, Upload, SlidersHorizontal, ArrowRight, AlertCircle } from "lucide-react";
+import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, MessageCircle, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck, Trash2, Share2, Copy, Send, RotateCcw, Info, Users, CreditCard, Calendar, X, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, FileText, MoreVertical, Image as ImageIcon, ClipboardCheck, Award, StickyNote, Plus, ChevronDown, ChevronUp, Upload, SlidersHorizontal, ArrowRight, AlertCircle, UserCheck } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -2118,16 +2118,17 @@ export default function CoordinatorDashboard() {
             </Button>
           )}
 
-          {/* Missionner transporteur */}
+          {/* Me l'affecter */}
           {!request.transporter && (
             <Button
               variant="default"
               className="flex-1 min-w-[140px] gap-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold shadow-md hover:shadow-lg transition-all"
-              onClick={() => handleOpenManualAssignment(request)}
-              data-testid={`button-manual-assignment-${request.id}`}
+              onClick={() => assignToMeMutation.mutate(request.id)}
+              disabled={assignToMeMutation.isPending}
+              data-testid={`button-self-assign-${request.id}`}
             >
-              <Truck className="h-4 w-4" />
-              Missionner
+              <UserCheck className="h-4 w-4" />
+              Me l'affecter
             </Button>
           )}
 
@@ -2142,6 +2143,9 @@ export default function CoordinatorDashboard() {
             Détails
           </Button>
         </div>
+
+        {/* Notes internes coordinateur */}
+        <RequestNotes requestId={request.id} />
       </CardContent>
     </Card>
     );
