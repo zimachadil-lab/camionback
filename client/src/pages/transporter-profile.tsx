@@ -43,14 +43,19 @@ export default function TransporterProfile() {
   const [newPin, setNewPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
 
-  // Use currentUser from AuthContext (already loaded via /api/auth/me)
-  // No need for separate query - data is already available
+  // Query to fetch truck photos separately
+  const { data: photosData } = useQuery({
+    queryKey: [`/api/users/${currentUser?.id}/photos`],
+    enabled: !!currentUser?.id,
+  });
+
+  // Use currentUser from AuthContext + photos from separate query
   const profile: UserProfile | null = currentUser ? {
     id: currentUser.id,
     name: currentUser.name || "",
     phoneNumber: currentUser.phoneNumber,
     city: currentUser.city || "",
-    truckPhotos: [], // TODO: Add truckPhotos to currentUser type if needed
+    truckPhotos: photosData?.truckPhotos || [],
     role: currentUser.role || "",
   } : null;
 
@@ -84,6 +89,7 @@ export default function TransporterProfile() {
       });
       refreshUser();
       queryClient.invalidateQueries({ queryKey: [`/api/users/${currentUser?.id}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${currentUser?.id}/photos`] });
       setIsEditing(false);
       setTruckPhotoFile(null);
       setPreviewUrl("");
