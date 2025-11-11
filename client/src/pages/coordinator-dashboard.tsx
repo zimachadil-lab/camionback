@@ -1805,9 +1805,10 @@ export default function CoordinatorDashboard() {
     const clientStatus = getClientStatus(request, interestedCount);
     const StatusIcon = clientStatus.icon;
     
-    // Get coordinator who qualified this request
-    const qualifiedBy = showQualifiedBy && request.coordinationUpdatedBy 
-      ? allCoordinators.find((c: any) => c.id === request.coordinationUpdatedBy)
+    // Get coordinator who qualified/assigned this request
+    // The coordinator data is already in request.coordinationUpdatedBy or request.assignedTo as an object
+    const qualifiedBy = showQualifiedBy 
+      ? (request.coordinationUpdatedBy || request.assignedTo)
       : null;
 
     // Get category config
