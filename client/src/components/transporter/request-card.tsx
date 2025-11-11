@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { MapPin, Package, Calendar, DollarSign, Image as ImageIcon, AlertCircle, Eye, FileText, X, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown } from "lucide-react";
+import { MapPin, Package, Calendar, DollarSign, Image as ImageIcon, AlertCircle, Eye, FileText, X, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown, ArrowRight, Camera, Warehouse, Building2, Home } from "lucide-react";
 import { format } from "date-fns";
 import { fr, ar } from "date-fns/locale";
 import { PhotoGalleryDialog } from "./photo-gallery-dialog";
@@ -145,16 +145,43 @@ export function RequestCard({
       </div>
 
       <CardContent className="p-4 space-y-3">
-        {/* Trajet avec badge Disponible aligné */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <MapPin className="w-4 h-4" />
-              <span className="font-medium">{t('requestCard.route')}</span>
+        {/* Carte de trajet avec distance - Style client */}
+        {request.fromCity && request.toCity && (
+          <div className="space-y-2">
+            {request.distance && request.departureAddress && request.arrivalAddress && (
+              <RouteMap
+                departureCity={request.fromCity}
+                arrivalCity={request.toCity}
+                departureAddress={request.departureAddress}
+                arrivalAddress={request.arrivalAddress}
+                distance={request.distance}
+                variant="compact"
+              />
+            )}
+            
+            {/* Ligne compacte récapitulative */}
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/20 rounded-md">
+              <div className="flex items-center gap-2 flex-1 min-w-0 text-xs">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#5BC0EB] flex-shrink-0"></div>
+                  <span className="font-medium truncate">{request.fromCity}</span>
+                </div>
+                <ArrowRight className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#e74c3c] flex-shrink-0"></div>
+                  <span className="font-medium truncate">{request.toCity}</span>
+                </div>
+              </div>
+              {request.distance && (
+                <div className="flex-shrink-0 px-2 py-0.5 bg-[#5BC0EB]/20 rounded border border-[#5BC0EB]/40">
+                  <span className="text-xs font-bold text-[#5BC0EB]">{request.distance} km</span>
+                </div>
+              )}
             </div>
-            {/* Badge "Disponible" animé aligné avec Trajet */}
+
+            {/* Badge Disponible */}
             <Badge 
-              className="bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold px-3 py-1 shadow-lg animate-pulse border-0"
+              className="w-full justify-center bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold px-3 py-1.5 shadow-lg animate-pulse border-0"
               data-testid={`badge-available-${request.id}`}
             >
               <span className="relative flex items-center gap-1.5">
@@ -164,42 +191,36 @@ export function RequestCard({
               </span>
             </Badge>
           </div>
-          {/* Distance display with map visualization */}
-          {request.distance && request.departureAddress && request.arrivalAddress && (
-            <RouteMap
-              departureCity={request.departureAddress.split(',').pop()?.trim() || request.fromCity}
-              arrivalCity={request.arrivalAddress.split(',').pop()?.trim() || request.toCity}
-              distance={request.distance}
-              departureAddress={request.departureAddress}
-              arrivalAddress={request.arrivalAddress}
-            />
-          )}
-        </div>
+        )}
 
         {/* Date de mission */}
-        <div className="flex items-center gap-2 text-sm">
-          <Calendar className="w-4 h-4 text-muted-foreground" />
-          <span className="font-medium text-muted-foreground">{t('requestCard.availability')}:</span>
-          <span className="font-semibold">
-            {format(dateTime, "dd MMMM yyyy", { locale: dateLocale })}
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/30 border border-border/50">
+          <Calendar className="w-4 h-4 text-primary" />
+          <span className="text-xs font-medium text-muted-foreground">{t('requestCard.availability')}:</span>
+          <span className="text-sm font-semibold ms-auto">
+            {format(dateTime, "dd MMM yyyy", { locale: dateLocale })}
           </span>
         </div>
 
-        {/* Services requis */}
+        {/* Description - Style client */}
         {request.description && (
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <FileText className="w-4 h-4" />
-              <span className="font-medium">{t('requestCard.description')}</span>
+          <div className="space-y-2">
+            <div className="relative pl-9 pr-3 py-2.5 rounded-lg border border-border/50 bg-gradient-to-br from-muted/40 to-muted/20">
+              <div className="absolute left-2.5 top-2.5">
+                <div className="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center">
+                  <FileText className="w-3 h-3 text-primary" />
+                </div>
+              </div>
+              <p className={`text-sm leading-relaxed ${showFullDescription ? '' : 'line-clamp-2'}`}>
+                {request.description}
+              </p>
             </div>
-            <p className={`text-sm ps-6 ${showFullDescription ? '' : 'line-clamp-2'}`}>
-              {request.description}
-            </p>
-            <div className="flex items-center gap-3 ps-6">
+            
+            <div className="flex items-center gap-2 px-1">
               {request.description.length > 100 && (
                 <button
                   onClick={() => setShowFullDescription(!showFullDescription)}
-                  className="text-xs text-[#17cfcf] hover:underline"
+                  className="text-xs text-[#17cfcf] hover:underline font-medium"
                   data-testid={`button-toggle-description-${request.id}`}
                 >
                   {showFullDescription ? t('requestCard.seeLess') : t('requestCard.moreDetails')}
@@ -208,13 +229,14 @@ export function RequestCard({
               
               {request.photos && request.photos.length > 0 && (
                 <Button
+                  variant="ghost"
                   size="sm"
-                  className="h-6 text-xs gap-1.5 bg-[#17cfcf]/20 hover:bg-[#17cfcf]/30 text-[#17cfcf] border border-[#17cfcf]/40 hover:border-[#17cfcf]/60 transition-all font-medium"
                   onClick={handleViewPhotos}
                   data-testid={`button-view-photos-${request.id}`}
+                  className="h-7 px-2 gap-1.5 text-[#3498db]"
                 >
-                  <ImageIcon className="w-3.5 h-3.5" />
-                  <span>{request.photos.length} {request.photos.length > 1 ? t('requestCard.photosPlural') : t('requestCard.photos')}</span>
+                  <Camera className="h-4 w-4" />
+                  <span className="text-xs font-medium">{request.photos.length}</span>
                 </Button>
               )}
             </div>
@@ -235,14 +257,14 @@ export function RequestCard({
         {request.handlingRequired && (
           <div className="space-y-3 pt-3 border-t">
             <div className="flex items-center gap-2 text-sm font-medium">
-              <span>🏋️</span>
+              <Warehouse className="w-4 h-4 text-primary" />
               <span>{t('requestCard.handlingYes')}</span>
             </div>
             <div className="grid grid-cols-2 gap-4 ps-6">
               {/* Départ */}
               <div className="space-y-1">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <span>🏢</span>
+                  <Building2 className="w-3.5 h-3.5" />
                   <span className="font-medium">{t('requestCard.departureLocation')}</span>
                 </div>
                 <div className="text-sm">
@@ -250,7 +272,7 @@ export function RequestCard({
                     <>
                       <div>{request.departureFloor === 0 ? t('requestCard.groundFloor') : t('requestCard.floor_ordinal', { floor: request.departureFloor })}</div>
                       <div className="text-xs text-muted-foreground">
-                        {t('requestCard.elevator')} {request.departureElevator ? '✅' : '❌'}
+                        {t('requestCard.elevator')}: <Badge variant={request.departureElevator ? "default" : "secondary"} className="text-[10px] px-1.5 py-0">{request.departureElevator ? 'Oui' : 'Non'}</Badge>
                       </div>
                     </>
                   ) : (
@@ -262,7 +284,7 @@ export function RequestCard({
               {/* Arrivée */}
               <div className="space-y-1">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <span>🏠</span>
+                  <Home className="w-3.5 h-3.5" />
                   <span className="font-medium">{t('requestCard.arrivalLocation')}</span>
                 </div>
                 <div className="text-sm">
@@ -270,7 +292,7 @@ export function RequestCard({
                     <>
                       <div>{request.arrivalFloor === 0 ? t('requestCard.groundFloor') : t('requestCard.floor_ordinal', { floor: request.arrivalFloor })}</div>
                       <div className="text-xs text-muted-foreground">
-                        {t('requestCard.elevator')} {request.arrivalElevator ? '✅' : '❌'}
+                        {t('requestCard.elevator')}: <Badge variant={request.arrivalElevator ? "default" : "secondary"} className="text-[10px] px-1.5 py-0">{request.arrivalElevator ? 'Oui' : 'Non'}</Badge>
                       </div>
                     </>
                   ) : (
@@ -322,64 +344,100 @@ export function RequestCard({
       </CardContent>
 
       {showOfferButton && (request.status === "open" || request.status === "published_for_matching") && (
-        <CardFooter className="p-4 pt-0 grid grid-cols-2 gap-3">
+        <CardFooter className="p-4 pt-0 flex flex-col gap-2.5">
           {/* New interest-based workflow */}
           {onExpressInterest && onWithdrawInterest ? (
             isInterested ? (
               <Button 
                 onClick={handleWithdrawInterest} 
                 disabled={isPendingInterest}
-                className="col-span-2 h-12 font-semibold bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] hover:from-[#17cfcf]/90 hover:to-[#13b3b3]/90 text-white border-0 shadow-md hover:shadow-lg transition-shadow"
+                className="w-full gap-3 h-14 border-2 border-emerald-500 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold shadow-md transition-all duration-300"
                 data-testid={`button-withdraw-interest-${request.id}`}
               >
-                <ThumbsUp className="w-5 h-5 me-2" />
-                {isPendingInterest ? t('requestCard.withdrawing') : t('requestCard.interested_action')}
+                <div className="flex items-center gap-3 w-full">
+                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+                    <ThumbsUp className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-sm font-bold leading-tight">
+                      {isPendingInterest ? t('requestCard.withdrawing') : t('requestCard.interested_action')}
+                    </p>
+                    <p className="text-xs text-white/80">
+                      Cliquer pour retirer l'intérêt
+                    </p>
+                  </div>
+                </div>
               </Button>
             ) : (
               <>
+                <Button 
+                  onClick={handleExpressInterest} 
+                  disabled={isPendingInterest}
+                  className="w-full gap-3 h-14 border-2 border-[#17cfcf] bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] text-white font-semibold shadow-md transition-all duration-300"
+                  data-testid={`button-express-interest-${request.id}`}
+                >
+                  <div className="flex items-center gap-3 w-full">
+                    <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+                      <ThumbsUp className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="text-sm font-bold leading-tight">
+                        {isPendingInterest ? t('requestCard.sending') : t('requestCard.interested_action')}
+                      </p>
+                      <p className="text-xs text-white/80">
+                        Déclarer votre disponibilité
+                      </p>
+                    </div>
+                  </div>
+                </Button>
                 {onDecline && (
                   <Button 
                     onClick={() => onDecline(request.id)} 
                     disabled={isPendingInterest}
-                    className="h-12 font-medium bg-muted/50 hover:bg-muted border-2 border-border hover:border-muted-foreground/30 transition-all"
+                    variant="outline"
+                    className="w-full h-11 font-medium border-2 border-destructive/40 text-destructive transition-all"
                     data-testid={`button-not-available-${request.id}`}
                   >
-                    <ThumbsDown className="w-5 h-5 me-2" />
+                    <ThumbsDown className="w-4 h-4 me-2" />
                     <span>{t('requestCard.notAvailable')}</span>
                   </Button>
                 )}
-                <Button 
-                  onClick={handleExpressInterest} 
-                  disabled={isPendingInterest}
-                  className={`h-12 font-semibold bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] hover:from-[#17cfcf]/90 hover:to-[#13b3b3]/90 text-white border-0 shadow-md hover:shadow-lg transition-shadow ${!onDecline ? 'col-span-2' : ''}`}
-                  data-testid={`button-express-interest-${request.id}`}
-                >
-                  <ThumbsUp className="w-5 h-5 me-2" />
-                  <span>{isPendingInterest ? t('requestCard.sending') : t('requestCard.interested_action')}</span>
-                </Button>
               </>
             )
           ) : (
             /* Old offer-based workflow (backward compatibility) */
             <>
-              {onDecline && (
-                <Button 
-                  onClick={() => onDecline(request.id)} 
-                  className="h-12 font-medium bg-muted/50 hover:bg-muted border-2 border-border hover:border-muted-foreground/30"
-                  data-testid={`button-decline-${request.id}`}
-                >
-                  <X className="w-5 h-5 me-2" />
-                  Décliner
-                </Button>
-              )}
               <Button 
                 onClick={handleOfferClick} 
-                className={`h-12 font-semibold bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] hover:from-[#17cfcf]/90 hover:to-[#13b3b3]/90 text-white border-0 shadow-md hover:shadow-lg ${!onDecline ? 'col-span-2' : ''}`}
+                className="w-full gap-3 h-14 border-2 border-[#17cfcf] bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] text-white font-semibold shadow-md transition-all duration-300"
                 variant={!isUserValidated ? "secondary" : "default"}
                 data-testid={`button-make-offer-${request.id}`}
               >
-                Faire une offre
+                <div className="flex items-center gap-3 w-full">
+                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+                    <DollarSign className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-sm font-bold leading-tight">
+                      Faire une offre
+                    </p>
+                    <p className="text-xs text-white/80">
+                      Proposer un prix
+                    </p>
+                  </div>
+                </div>
               </Button>
+              {onDecline && (
+                <Button 
+                  onClick={() => onDecline(request.id)} 
+                  variant="outline"
+                  className="w-full h-11 font-medium border-2 border-destructive/40 text-destructive transition-all"
+                  data-testid={`button-decline-${request.id}`}
+                >
+                  <X className="w-4 h-4 me-2" />
+                  Décliner
+                </Button>
+              )}
             </>
           )}
         </CardFooter>
