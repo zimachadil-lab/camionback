@@ -229,7 +229,7 @@ export function RequestCard({
             
             {/* Actions sous la description */}
             <div className="flex items-center gap-3 px-1">
-              {request.description.length > 100 && (
+              {request.description.length > 50 && (
                 <button
                   onClick={() => setShowFullDescription(!showFullDescription)}
                   className="text-xs text-[#17cfcf] hover:text-[#13b3b3] font-semibold transition-colors flex items-center gap-1"
