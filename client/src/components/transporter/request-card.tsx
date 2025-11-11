@@ -146,7 +146,7 @@ export function RequestCard({
             <span className="relative h-2.5 w-2.5 rounded-full bg-green-500"></span>
           </div>
           {/* Date de disponibilité */}
-          <div className="bg-white/10 px-2.5 py-1 rounded-md backdrop-blur-sm border border-white/20">
+          <div className="bg-white/10 px-2.5 py-1 rounded-md backdrop-blur-sm border border-white/20" data-testid={`text-availability-date-${request.id}`}>
             <span className="text-[10px] font-medium text-white/90">
               {format(dateTime, "dd MMM yyyy", { locale: dateLocale })}
             </span>
