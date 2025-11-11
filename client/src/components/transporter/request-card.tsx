@@ -70,9 +70,7 @@ export function RequestCard({
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [showValidationWarning, setShowValidationWarning] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
-  const [isDescriptionTruncated, setIsDescriptionTruncated] = useState(false);
   const hasTrackedView = useRef(false);
-  const descriptionRef = useRef<HTMLParagraphElement>(null);
   
   const dateTime = typeof request.dateTime === 'string' 
     ? new Date(request.dateTime) 
@@ -127,33 +125,6 @@ export function RequestCard({
       onTrackView();
     }
   }, [request.id, onTrackView]);
-
-  // Detect if description is truncated (with resize observation)
-  useEffect(() => {
-    const element = descriptionRef.current;
-    if (!element || !request.description) return;
-
-    const checkTruncation = () => {
-      // Check if content is truncated by comparing scrollHeight with clientHeight
-      const isTruncated = element.scrollHeight > element.clientHeight;
-      setIsDescriptionTruncated(isTruncated);
-    };
-
-    // Initial check
-    checkTruncation();
-
-    // Create ResizeObserver to detect layout changes
-    const resizeObserver = new ResizeObserver(() => {
-      checkTruncation();
-    });
-
-    resizeObserver.observe(element);
-
-    // Cleanup
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, [request.description, showFullDescription, i18n.language]);
 
   const categoryConfig = getCategoryConfig(request.goodsType);
   const CategoryIcon = categoryConfig.icon;
@@ -250,7 +221,6 @@ export function RequestCard({
               {/* Contenu de la description */}
               <div className="pl-14 pr-4 py-3">
                 <p 
-                  ref={descriptionRef}
                   className={`text-sm leading-relaxed text-foreground ${showFullDescription ? '' : 'line-clamp-2'}`}
                 >
                   <span className="font-bold text-primary">{categoryConfig.label}:</span>{' '}
@@ -261,25 +231,23 @@ export function RequestCard({
             
             {/* Actions sous la description */}
             <div className="flex items-center gap-3 px-1">
-              {(isDescriptionTruncated || showFullDescription) && (
-                <button
-                  onClick={() => setShowFullDescription(!showFullDescription)}
-                  className="text-xs text-[#17cfcf] hover:text-[#13b3b3] font-semibold transition-colors flex items-center gap-1"
-                  data-testid={`button-toggle-description-${request.id}`}
-                >
-                  {showFullDescription ? (
-                    <>
-                      <ChevronUp className="w-3 h-3" />
-                      <span>{t('requestCard.seeLess')}</span>
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown className="w-3 h-3" />
-                      <span>{t('requestCard.moreDetails')}</span>
-                    </>
-                  )}
-                </button>
-              )}
+              <button
+                onClick={() => setShowFullDescription(!showFullDescription)}
+                className="text-xs text-[#17cfcf] hover:text-[#13b3b3] font-semibold transition-colors flex items-center gap-1"
+                data-testid={`button-toggle-description-${request.id}`}
+              >
+                {showFullDescription ? (
+                  <>
+                    <ChevronUp className="w-3 h-3" />
+                    <span>{t('requestCard.seeLess')}</span>
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="w-3 h-3" />
+                    <span>{t('requestCard.moreDetails')}</span>
+                  </>
+                )}
+              </button>
               
               {request.photos && request.photos.length > 0 && (
                 <Button
@@ -307,63 +275,68 @@ export function RequestCard({
           </div>
         )}
 
-        {/* Manutention détaillée */}
-        {request.handlingRequired && (
-          <div className="space-y-3 pt-3 border-t">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <Warehouse className="w-4 h-4 text-primary" />
-              <span>{t('requestCard.handlingYes')}</span>
-            </div>
-            <div className="grid grid-cols-2 gap-4 ps-6">
-              {/* Départ */}
-              <div className="space-y-1">
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Building2 className="w-3.5 h-3.5" />
-                  <span className="font-medium">{t('requestCard.departureLocation')}</span>
+        {/* Section manutention - visible seulement quand "Plus de détails" est ouvert */}
+        {showFullDescription && (
+          <>
+            {/* Manutention détaillée */}
+            {request.handlingRequired && (
+              <div className="space-y-3 pt-3 border-t">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Warehouse className="w-4 h-4 text-primary" />
+                  <span>{t('requestCard.handlingYes')}</span>
                 </div>
-                <div className="text-sm">
-                  {request.departureFloor !== undefined && request.departureFloor !== null ? (
-                    <>
-                      <div>{request.departureFloor === 0 ? t('requestCard.groundFloor') : t('requestCard.floor_ordinal', { floor: request.departureFloor })}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {t('requestCard.elevator')}: <Badge variant={request.departureElevator ? "default" : "secondary"} className="text-[10px] px-1.5 py-0">{request.departureElevator ? 'Oui' : 'Non'}</Badge>
-                      </div>
-                    </>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">{t('requestCard.notSpecified')}</span>
-                  )}
+                <div className="grid grid-cols-2 gap-4 ps-6">
+                  {/* Départ */}
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Building2 className="w-3.5 h-3.5" />
+                      <span className="font-medium">{t('requestCard.departureLocation')}</span>
+                    </div>
+                    <div className="text-sm">
+                      {request.departureFloor !== undefined && request.departureFloor !== null ? (
+                        <>
+                          <div>{request.departureFloor === 0 ? t('requestCard.groundFloor') : t('requestCard.floor_ordinal', { floor: request.departureFloor })}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {t('requestCard.elevator')}: <Badge variant={request.departureElevator ? "default" : "secondary"} className="text-[10px] px-1.5 py-0">{request.departureElevator ? 'Oui' : 'Non'}</Badge>
+                          </div>
+                        </>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">{t('requestCard.notSpecified')}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Arrivée */}
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Home className="w-3.5 h-3.5" />
+                      <span className="font-medium">{t('requestCard.arrivalLocation')}</span>
+                    </div>
+                    <div className="text-sm">
+                      {request.arrivalFloor !== undefined && request.arrivalFloor !== null ? (
+                        <>
+                          <div>{request.arrivalFloor === 0 ? t('requestCard.groundFloor') : t('requestCard.floor_ordinal', { floor: request.arrivalFloor })}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {t('requestCard.elevator')}: <Badge variant={request.arrivalElevator ? "default" : "secondary"} className="text-[10px] px-1.5 py-0">{request.arrivalElevator ? 'Oui' : 'Non'}</Badge>
+                          </div>
+                        </>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">{t('requestCard.notSpecified')}</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
+            )}
 
-              {/* Arrivée */}
-              <div className="space-y-1">
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Home className="w-3.5 h-3.5" />
-                  <span className="font-medium">{t('requestCard.arrivalLocation')}</span>
-                </div>
-                <div className="text-sm">
-                  {request.arrivalFloor !== undefined && request.arrivalFloor !== null ? (
-                    <>
-                      <div>{request.arrivalFloor === 0 ? t('requestCard.groundFloor') : t('requestCard.floor_ordinal', { floor: request.arrivalFloor })}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {t('requestCard.elevator')}: <Badge variant={request.arrivalElevator ? "default" : "secondary"} className="text-[10px] px-1.5 py-0">{request.arrivalElevator ? 'Oui' : 'Non'}</Badge>
-                      </div>
-                    </>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">{t('requestCard.notSpecified')}</span>
-                  )}
-                </div>
+            {request.handlingRequired === false && (
+              <div className="pt-2 border-t">
+                <Badge variant="outline" className="text-xs">
+                  {t('requestCard.handlingNo')}
+                </Badge>
               </div>
-            </div>
-          </div>
-        )}
-
-        {request.handlingRequired === false && (
-          <div className="pt-2 border-t">
-            <Badge variant="outline" className="text-xs">
-              {t('requestCard.handlingNo')}
-            </Badge>
-          </div>
+            )}
+          </>
         )}
 
         {/* Prix - Zone compacte */}
