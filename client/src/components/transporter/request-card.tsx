@@ -444,7 +444,7 @@ export function RequestCard({
                   data-testid={`button-express-interest-${request.id}`}
                 >
                   {/* Shimmer effect animé */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none" />
                   
                   {/* Contenu du bouton */}
                   <div className="relative flex items-center gap-2 justify-center">
