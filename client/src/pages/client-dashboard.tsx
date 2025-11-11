@@ -19,6 +19,7 @@ import { StoriesBar } from "@/components/ui/stories-bar";
 import { MetaPixelEvents } from "@/lib/meta-pixel";
 import { RouteMap } from "@/components/route-map";
 import { GooglePlacesAutocomplete } from "@/components/google-places-autocomplete";
+import { StatusIndicator } from "@/components/shared/status-indicator";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -537,33 +538,11 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
           )}
 
           {/* Statut logistique visible */}
-          <div className={`relative flex items-center gap-2.5 px-3 py-2 rounded-lg border-2 shadow-sm ${
-            clientStatus.isProcessing 
-              ? 'bg-gradient-to-r from-emerald-400/30 via-green-400/25 to-emerald-400/30 border-emerald-400/80' 
-              : 'bg-gradient-to-r from-[#1abc9c]/20 via-[#16a085]/15 to-[#1abc9c]/20 border-[#1abc9c]/40'
-          }`}>
-            <div className="relative flex-shrink-0">
-              {clientStatus.isProcessing && (
-                <div className="absolute inset-0 bg-emerald-400/50 rounded-full animate-ping"></div>
-              )}
-              <div className={`relative w-7 h-7 rounded-full flex items-center justify-center border-2 ${
-                clientStatus.isProcessing 
-                  ? 'bg-emerald-400/40 border-emerald-400/90' 
-                  : 'bg-[#1abc9c]/20 border-[#1abc9c]/50'
-              }`}>
-                <StatusIcon className={`w-4 h-4 ${
-                  clientStatus.isProcessing 
-                    ? 'text-emerald-400 animate-spin' 
-                    : 'text-[#1abc9c]'
-                }`} />
-              </div>
-            </div>
-            <span className={`text-sm font-semibold whitespace-nowrap ${
-              clientStatus.isProcessing ? 'text-emerald-300' : 'text-foreground'
-            }`}>
-              {clientStatus.text}
-            </span>
-          </div>
+          <StatusIndicator 
+            text={clientStatus.text}
+            icon={clientStatus.icon}
+            isProcessing={clientStatus.isProcessing}
+          />
 
           {/* Description */}
           {request.description && (
