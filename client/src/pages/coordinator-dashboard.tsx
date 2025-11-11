@@ -2051,16 +2051,18 @@ export default function CoordinatorDashboard() {
           {request.client && (
             <a 
               href={`tel:${request.client.phoneNumber}`}
-              className="group flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-gradient-to-r from-[#17cfcf]/10 via-[#17cfcf]/5 to-transparent border border-[#17cfcf]/20 hover:border-[#17cfcf]/40 hover:shadow-sm transition-all"
+              className="group flex items-center gap-2 px-3 py-2.5 rounded-lg bg-gradient-to-r from-[#17cfcf]/10 via-[#17cfcf]/5 to-transparent border border-[#17cfcf]/20 hover:border-[#17cfcf]/40 hover:shadow-sm transition-all"
               data-testid={`link-call-client-${request.id}`}
             >
-              <div className="w-8 h-8 rounded-full bg-[#17cfcf]/15 flex items-center justify-center flex-shrink-0 group-hover:bg-[#17cfcf]/25 transition-colors">
-                <Phone className="h-4 w-4 text-[#17cfcf]" />
+              <div className="w-7 h-7 rounded-full bg-[#17cfcf]/15 flex items-center justify-center flex-shrink-0 group-hover:bg-[#17cfcf]/25 transition-colors">
+                <Phone className="h-3.5 w-3.5 text-[#17cfcf]" />
               </div>
-              <div className="flex flex-col min-w-0 flex-1">
-                <span className="text-xs text-muted-foreground">Client</span>
-                <span className="text-sm font-semibold text-[#17cfcf] truncate">{request.client.phoneNumber}</span>
-              </div>
+              <span className="text-sm text-muted-foreground">
+                Coordonnez avec le client via
+              </span>
+              <span className="text-sm font-semibold text-[#17cfcf] truncate">
+                {request.client.phoneNumber}
+              </span>
             </a>
           )}
           
