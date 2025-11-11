@@ -40,7 +40,6 @@ export function Header({ user, onLogout, onCreateRequest, onAnnounceReturn }: He
   const getMenuItems = () => {
     if (user.role === "client") {
       return [
-        { label: t('header.client.orders'), icon: Package, href: "/", priority: "primary" },
         { label: t('header.client.howItWorks'), icon: HelpCircle, href: "/how-it-works-client", priority: "secondary" },
         { label: t('header.client.contact'), icon: MessageCircle, onClick: () => setShowContactDialog(true), priority: "secondary" },
       ];
