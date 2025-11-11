@@ -6759,6 +6759,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // AI Price Estimation for Coordinator
+  app.post("/api/coordinator/estimate-price", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
+    try {
+      const { requestId } = req.body;
+      
+      if (!requestId) {
+        return res.status(400).json({ error: "ID de demande requis" });
+      }
+      
+      // Get the request
+      const request = await storage.getRequest(requestId);
+      if (!request) {
+        return res.status(404).json({ error: "Demande non trouvée" });
+      }
+      
+      // Import and call the price estimation service
+      const { estimatePriceForRequest } = await import('./price-estimation');
+      const estimation = await estimatePriceForRequest(request);
+      
+      res.json(estimation);
+    } catch (error) {
+      console.error("Erreur estimation prix:", error);
+      res.status(500).json({ 
+        error: "Erreur lors de l'estimation du prix",
+        message: error instanceof Error ? error.message : "Erreur inconnue"
+      });
+    }
+  });
+
   // ===== Admin - Coordinator Management Routes =====
   
   // Get all coordinators (Admin only)
