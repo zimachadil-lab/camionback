@@ -139,17 +139,22 @@ export function RequestCard({
             <CategoryIcon className={`w-4 h-4 ${categoryConfig.color}`} />
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-1 justify-end">
-          {/* Date de disponibilité avec animation verte */}
-          <div className="relative bg-gradient-to-r from-green-500 to-green-600 px-2.5 py-1 rounded-md shadow-sm" data-testid={`text-availability-date-${request.id}`}>
-            <span className="absolute inset-0 bg-green-400 rounded-md opacity-75 animate-pulse"></span>
-            <span className="relative text-[10px] font-semibold text-white">
+        <div className="flex items-center gap-2.5 flex-1 justify-end">
+          {/* Date de disponibilité avec animation verte intense */}
+          <div className="relative bg-gradient-to-r from-green-500 to-green-600 px-3.5 py-1.5 rounded-md shadow-md" data-testid={`text-availability-date-${request.id}`}>
+            {/* Animation ping externe */}
+            <span className="absolute -inset-0.5 bg-green-400 rounded-md opacity-60 animate-ping"></span>
+            {/* Animation pulse interne */}
+            <span className="absolute inset-0 bg-green-300 rounded-md opacity-40 animate-pulse"></span>
+            {/* Effet de brillance */}
+            <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent rounded-md animate-pulse"></span>
+            <span className="relative text-xs font-bold text-white drop-shadow-sm">
               {format(dateTime, "dd MMM yyyy", { locale: dateLocale })}
             </span>
           </div>
           {/* Numéro de commande modernisé */}
-          <div className="bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] px-2.5 py-1 rounded-md shadow-sm border border-white/20" data-testid={`text-reference-${request.id}`}>
-            <span className="text-[10px] font-mono font-bold text-white">
+          <div className="bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] px-3.5 py-1.5 rounded-md shadow-md border border-white/20" data-testid={`text-reference-${request.id}`}>
+            <span className="text-xs font-mono font-bold text-white drop-shadow-sm">
               {request.referenceId}
             </span>
           </div>
