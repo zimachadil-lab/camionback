@@ -674,8 +674,8 @@ export default function TransporterDashboard() {
                 </h3>
               </div>
               
-              <div className="relative">
-                <div className="flex gap-2 overflow-x-auto pb-2 px-4 scrollbar-hide">
+              <div className="relative px-4">
+                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
                   {/* All Cities Badge */}
                   <button
                     onClick={() => setSelectedCity("allCities")}
