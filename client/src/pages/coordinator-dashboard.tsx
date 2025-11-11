@@ -1326,10 +1326,15 @@ export default function CoordinatorDashboard() {
       return await apiRequest("POST", "/api/coordinator/estimate-price", { requestId });
     },
     onSuccess: (data) => {
+      console.log('[Frontend] Price estimation received:', data);
+      console.log('[Frontend] priceMinMAD:', data?.priceMinMAD);
+      console.log('[Frontend] priceMaxMAD:', data?.priceMaxMAD);
+      console.log('[Frontend] confidence:', data?.confidence);
       setPriceEstimation(data);
       setPriceEstimationDialogOpen(true);
     },
     onError: (error: any) => {
+      console.error('[Frontend] Price estimation error:', error);
       toast({
         variant: "destructive",
         title: "Erreur d'estimation",
