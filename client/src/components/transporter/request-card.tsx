@@ -140,21 +140,19 @@ export function RequestCard({
           </div>
         </div>
         <div className="flex items-center gap-2 flex-1 justify-end">
-          {/* Indicateur de disponibilité animé */}
-          <div className="relative flex items-center justify-center" data-testid={`status-available-${request.id}`}>
-            <span className="absolute h-3 w-3 rounded-full bg-green-400 opacity-75 animate-ping"></span>
-            <span className="relative h-2.5 w-2.5 rounded-full bg-green-500"></span>
-          </div>
-          {/* Date de disponibilité */}
-          <div className="bg-white/10 px-2.5 py-1 rounded-md backdrop-blur-sm border border-white/20" data-testid={`text-availability-date-${request.id}`}>
-            <span className="text-[10px] font-medium text-white/90">
+          {/* Date de disponibilité avec animation verte */}
+          <div className="relative bg-gradient-to-r from-green-500 to-green-600 px-2.5 py-1 rounded-md shadow-sm" data-testid={`text-availability-date-${request.id}`}>
+            <span className="absolute inset-0 bg-green-400 rounded-md opacity-75 animate-pulse"></span>
+            <span className="relative text-[10px] font-semibold text-white">
               {format(dateTime, "dd MMM yyyy", { locale: dateLocale })}
             </span>
           </div>
-          {/* Numéro de commande */}
-          <Badge className="bg-slate-900/90 text-white border-0 font-mono text-xs px-2.5 py-1" data-testid={`text-reference-${request.id}`}>
-            {request.referenceId}
-          </Badge>
+          {/* Numéro de commande modernisé */}
+          <div className="bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] px-2.5 py-1 rounded-md shadow-sm border border-white/20" data-testid={`text-reference-${request.id}`}>
+            <span className="text-[10px] font-mono font-bold text-white">
+              {request.referenceId}
+            </span>
+          </div>
         </div>
       </div>
 
