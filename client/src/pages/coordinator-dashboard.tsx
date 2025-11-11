@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, MessageCircle, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck, Trash2, Share2, Copy, Send, RotateCcw, Info, Users, CreditCard, Calendar, X, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, FileText, MoreVertical, Image as ImageIcon, ClipboardCheck, Award, StickyNote, Plus, ChevronDown, ChevronUp, Upload, SlidersHorizontal } from "lucide-react";
+import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, MessageCircle, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck, Trash2, Share2, Copy, Send, RotateCcw, Info, Users, CreditCard, Calendar, X, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, FileText, MoreVertical, Image as ImageIcon, ClipboardCheck, Award, StickyNote, Plus, ChevronDown, ChevronUp, Upload, SlidersHorizontal, ArrowRight, AlertCircle } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
