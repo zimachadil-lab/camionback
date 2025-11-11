@@ -3031,15 +3031,15 @@ export default function CoordinatorDashboard() {
             </DialogHeader>
 
             <div className="space-y-6 py-4 overflow-y-auto flex-1">
-              {/* Price Range Display */}
+              {/* Single Price Display */}
               <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 rounded-xl p-6 space-y-3">
                 <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <TrendingUp className="h-4 w-4" />
-                  Fourchette de prix estimée
+                  Prix estimé CamionBack
                 </p>
                 <div className="flex items-baseline gap-2">
                   <span className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                    {priceEstimation.priceMinMAD} - {priceEstimation.priceMaxMAD}
+                    {priceEstimation.totalClientMAD}
                   </span>
                   <span className="text-2xl font-semibold text-muted-foreground">MAD</span>
                 </div>
@@ -3053,6 +3053,43 @@ export default function CoordinatorDashboard() {
                     <Star className="h-3 w-3" />
                     Confiance: {Math.round(priceEstimation.confidence * 100)}%
                   </Badge>
+                </div>
+              </div>
+
+              {/* Financial Breakdown Table */}
+              <div className="space-y-3">
+                <p className="text-sm font-semibold text-muted-foreground uppercase">Répartition financière</p>
+                <div className="border rounded-lg overflow-hidden">
+                  <table className="w-full">
+                    <tbody className="divide-y">
+                      <tr className="hover-elevate">
+                        <td className="px-4 py-3 text-sm font-medium">Total client</td>
+                        <td className="px-4 py-3 text-sm font-bold text-right">{priceEstimation.totalClientMAD} MAD</td>
+                      </tr>
+                      <tr className="hover-elevate bg-muted/30">
+                        <td className="px-4 py-3 text-sm">
+                          <div className="flex items-center gap-2">
+                            <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                            Frais transporteur (60%)
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-sm font-semibold text-emerald-600 dark:text-emerald-400 text-right">
+                          {priceEstimation.transporterFeeMAD} MAD
+                        </td>
+                      </tr>
+                      <tr className="hover-elevate bg-muted/30">
+                        <td className="px-4 py-3 text-sm">
+                          <div className="flex items-center gap-2">
+                            <div className="h-2 w-2 rounded-full bg-purple-500" />
+                            Cotisation CamionBack {priceEstimation.platformFeeMAD === 200 ? '(min)' : '(40%)'}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-sm font-semibold text-purple-600 dark:text-purple-400 text-right">
+                          {priceEstimation.platformFeeMAD} MAD
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
 

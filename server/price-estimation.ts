@@ -8,8 +8,9 @@ const openai = new OpenAI({
 });
 
 interface PriceEstimation {
-  priceMinMAD: number;
-  priceMaxMAD: number;
+  totalClientMAD: number;
+  transporterFeeMAD: number;
+  platformFeeMAD: number;
   confidence: number;
   reasoning: string[];
   modeledInputs: {
@@ -47,7 +48,27 @@ function cleanExpiredCache() {
   }
 }
 
-// Heuristic fallback estimation
+// Helper: Calculate CamionBack 60/40 split with 200 MAD minimum platform fee
+function computeCamionBackSplit(totalClientMAD: number): {
+  totalClientMAD: number;
+  transporterFeeMAD: number;
+  platformFeeMAD: number;
+} {
+  // Enforce minimum 500 MAD total to guarantee 60/40 split with 200 MAD minimum platform fee
+  // Calculation: if 40% must be ≥200 MAD, then total must be ≥500 MAD (200/0.4 = 500)
+  const adjustedTotal = Math.max(totalClientMAD, 500);
+  
+  const platformFeeMAD = Math.round(adjustedTotal * 0.4); // Always 40%
+  const transporterFeeMAD = adjustedTotal - platformFeeMAD; // Always 60%
+  
+  if (adjustedTotal > totalClientMAD) {
+    console.log(`[CamionBack Split] Total price increased from ${totalClientMAD} to ${adjustedTotal} MAD to maintain 60/40 split with 200 MAD minimum platform fee`);
+  }
+  
+  return { totalClientMAD: adjustedTotal, transporterFeeMAD, platformFeeMAD };
+}
+
+// Heuristic fallback estimation with CamionBack discount (-40%)
 function getHeuristicEstimate(distance: number | null, category: string): PriceEstimation {
   const baseFare = 700; // MAD
   const distanceMultiplier = 3.5; // MAD per km
@@ -67,19 +88,22 @@ function getHeuristicEstimate(distance: number | null, category: string): PriceE
     categoryMultiplier = 0.9;
   }
   
-  const basePrice = (baseFare + distanceCost + handlingFee) * categoryMultiplier;
-  const margin = basePrice * 0.25; // ±25% margin
+  const traditionalPrice = (baseFare + distanceCost + handlingFee) * categoryMultiplier;
+  // CamionBack advantage: -40% using empty returns
+  const camionbackPrice = Math.round(traditionalPrice * 0.6);
+  
+  const split = computeCamionBackSplit(camionbackPrice);
   
   return {
-    priceMinMAD: Math.round(basePrice - margin),
-    priceMaxMAD: Math.round(basePrice + margin),
+    totalClientMAD: split.totalClientMAD,
+    transporterFeeMAD: split.transporterFeeMAD,
+    platformFeeMAD: split.platformFeeMAD,
     confidence: 0.3,
     reasoning: [
       "Estimation heuristique (IA temporairement indisponible)",
-      `Forfait de base : ${baseFare} MAD`,
-      `Distance : ${distanceKm} km × ${distanceMultiplier} MAD/km = ${Math.round(distanceCost)} MAD`,
-      `Manutention estimée : ${handlingFee} MAD`,
-      `Ajustement catégorie : ${Math.round((categoryMultiplier - 1) * 100)}%`
+      `Prix traditionnel : ${Math.round(traditionalPrice)} MAD`,
+      `Réduction CamionBack (retours à vide) : -40% → ${split.totalClientMAD} MAD`,
+      `Répartition garantie 60/40 : Transporteur ${split.transporterFeeMAD} MAD (60%), Plateforme ${split.platformFeeMAD} MAD (40%)`
     ],
     modeledInputs: {
       goodsType: category,
@@ -106,10 +130,14 @@ export async function estimatePriceForRequest(request: TransportRequest): Promis
   try {
     console.log(`[Price Estimation] Calling GPT-5 for request ${request.id}`);
     
-    // Build intelligent prompt
-    const prompt = `Tu es un expert en tarification logistique au Maroc avec 15 ans d'expérience.
+    // Build intelligent prompt with CamionBack concept
+    const prompt = `Tu es un expert en tarification logistique au Maroc avec 15 ans d'expérience, spécialisé dans la plateforme CamionBack.
 
-MISSION : Estimer le coût de transport en Dirham marocain (MAD) pour cette demande.
+CONCEPT CAMIONBACK - IMPORTANT :
+CamionBack utilise les RETOURS À VIDE des transporteurs, ce qui réduit les coûts de -40% par rapport aux prix traditionnels.
+Pour les PETITS VOLUMES, nous proposons le GROUPAGE avec d'autres clients, réduisant encore plus les coûts.
+
+MISSION : Estimer le coût de transport pour cette demande en tenant compte du concept CamionBack.
 
 INFORMATIONS DISPONIBLES :
 - Description du client : "${request.description || 'Non spécifié'}"
@@ -118,25 +146,34 @@ INFORMATIONS DISPONIBLES :
 - Trajet : ${request.fromCity} → ${request.toCity}
 ${request.photos && request.photos.length > 0 ? `- Photos fournies : ${request.photos.length} image(s)` : ''}
 
-FORMULE DE TARIFICATION MAROC :
-Prix = Forfait base (500-1000 MAD) + (Distance × 2-5 MAD/km) + (Volume × 50-150 MAD/m³) + (Poids × 0.5-2 MAD/kg) + Manutention (200-800 MAD)
+MÉTHODE DE CALCUL :
+1. Calcule d'abord le prix TRADITIONNEL avec cette formule :
+   Prix traditionnel = Forfait base (500-1000 MAD) + (Distance × 2-5 MAD/km) + (Volume × 50-150 MAD/m³) + (Poids × 0.5-2 MAD/kg) + Manutention (200-800 MAD)
+
+2. Applique la réduction CamionBack :
+   - Retours à vide : -40%
+   - Si petit volume (< 5m³) : Mentionne l'avantage du groupage (prix encore plus avantageux)
+   
+3. Prix final CamionBack = Prix traditionnel × 0.6 (minimum 300 MAD)
 
 CONSIGNES :
-1. Analyse la description pour ESTIMER le poids et volume (même sans info exacte)
-2. Identifie si manutention spéciale est requise (fragile, lourd, encombrant)
-3. Calcule une fourchette réaliste (prix_min et prix_max) avec ±30-40% de marge
-4. Prix minimum : 300 MAD, maximum raisonnable : 15000 MAD (sauf très longue distance)
-5. Sois transparent sur tes hypothèses
+1. Analyse la description pour ESTIMER le poids et volume
+2. Identifie si manutention spéciale est requise
+3. Calcule le prix traditionnel puis applique -40% pour CamionBack
+4. Mentionne EXPLICITEMENT dans ton raisonnement : retours à vide ET groupage (si applicable)
+5. Prix minimum : 300 MAD, maximum raisonnable : 9000 MAD
 
 RÉPONSE REQUISE (JSON strict) :
 {
-  "price_min_mad": <nombre>,
-  "price_max_mad": <nombre>,
+  "traditional_price_mad": <nombre: prix marché traditionnel>,
+  "camionback_price_mad": <nombre: prix final CamionBack après -40%>,
   "confidence": <0.0 à 1.0>,
   "reasoning": [
-    "Hypothèse 1 (ex: Volume estimé à 3m³ d'après 'cartons')",
-    "Hypothèse 2",
-    "Calcul détaillé"
+    "DOIT mentionner 'retours à vide' ou 'empty returns'",
+    "DOIT mentionner 'groupage' si petit volume",
+    "Estimation poids/volume",
+    "Calcul détaillé du prix traditionnel",
+    "Application réduction CamionBack -40%"
   ],
   "modeled_inputs": {
     "estimated_weight": "ex: 500 kg",
@@ -178,42 +215,30 @@ RÉPONSE REQUISE (JSON strict) :
     // Parse AI response
     const aiResult = JSON.parse(content);
     
-    // Validate and normalize response
-    let priceMin = Math.round(aiResult.price_min_mad || 0);
-    let priceMax = Math.round(aiResult.price_max_mad || 0);
+    // Extract CamionBack price and confidence
+    let camionbackPrice = Math.round(aiResult.camionback_price_mad || 0);
     const confidence = Math.max(0, Math.min(1, aiResult.confidence || 0.5));
     
-    // Clamp prices to reasonable ranges
-    priceMin = Math.max(300, Math.min(20000, priceMin));
-    priceMax = Math.max(300, Math.min(20000, priceMax));
+    // Clamp price to reasonable range
+    camionbackPrice = Math.min(9000, camionbackPrice);
     
-    // Ensure max >= min
-    if (priceMax < priceMin) {
-      [priceMin, priceMax] = [priceMax, priceMin];
-    }
-    
-    // Ensure some minimum spread
-    if (priceMax - priceMin < 100) {
-      const avg = (priceMin + priceMax) / 2;
-      priceMin = Math.round(avg * 0.85);
-      priceMax = Math.round(avg * 1.15);
-    }
+    // Apply 60/40 split with 200 MAD minimum platform fee (also enforces 500 MAD minimum total)
+    const split = computeCamionBackSplit(camionbackPrice);
     
     const result: PriceEstimation = {
-      priceMinMAD: priceMin,
-      priceMaxMAD: priceMax,
+      totalClientMAD: split.totalClientMAD,
+      transporterFeeMAD: split.transporterFeeMAD,
+      platformFeeMAD: split.platformFeeMAD,
       confidence,
-      reasoning: Array.isArray(aiResult.reasoning) ? aiResult.reasoning : ["Estimation basée sur l'analyse IA"],
+      reasoning: Array.isArray(aiResult.reasoning) ? aiResult.reasoning : ["Estimation basée sur l'analyse IA CamionBack"],
       modeledInputs: aiResult.modeled_inputs || {}
     };
     
     // Validate against heuristic (reject if too far off)
     const heuristic = getHeuristicEstimate(request.distance, request.goodsType || '');
-    const heuristicAvg = (heuristic.priceMinMAD + heuristic.priceMaxMAD) / 2;
-    const aiAvg = (priceMin + priceMax) / 2;
-    const deviation = Math.abs(aiAvg - heuristicAvg) / heuristicAvg;
+    const deviation = Math.abs(camionbackPrice - heuristic.totalClientMAD) / heuristic.totalClientMAD;
     
-    if (deviation > 0.5 && confidence < 0.7) {
+    if (deviation > 0.6 && confidence < 0.65) {
       // AI deviates too much from heuristic with low confidence - use heuristic
       console.log(`[Price Estimation] AI deviated ${Math.round(deviation * 100)}% from heuristic, using heuristic fallback`);
       return heuristic;
@@ -226,7 +251,7 @@ RÉPONSE REQUISE (JSON strict) :
       timestamp: Date.now()
     });
     
-    console.log(`[Price Estimation] Success: ${priceMin}-${priceMax} MAD (confidence: ${confidence})`);
+    console.log(`[Price Estimation] Success: ${result.totalClientMAD} MAD total (Transporteur: ${result.transporterFeeMAD} MAD 60%, Plateforme: ${result.platformFeeMAD} MAD 40%, confidence: ${confidence})`);
     return result;
     
   } catch (error) {

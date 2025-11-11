@@ -47,16 +47,25 @@ The platform features a mobile-first, dark teal design with full French/Arabic b
 - Coordinator getClientStatus updated with `isProcessing` flags for workflow states: qualification, finalization, publication, offers received, transporter selection
 - All emojis removed from status text per architecture rules, replaced with Lucide icon components
 
-**AI-Powered Price Estimation (Nov 2025):**
+**AI-Powered Price Estimation with CamionBack Model (Nov 2025):**
+- **Core Concept**: CamionBack uses empty returns (-40% vs traditional pricing) and groupage for small volumes
 - Intelligent price estimation system using GPT-5 via Replit AI Integrations for coordinator dashboard
-- Ultra-modern purple-pink-blue gradient "Estimer Prix" button with Sparkles icon replacing old "Détails" button
-- Backend service (`server/price-estimation.ts`) with intelligent Morocco logistics pricing prompt in French
-- 12-hour in-memory cache system to prevent duplicate AI calls for identical requests (key: fromCity|toCity|distance|goodsType|description)
-- Rate limiting: 10 estimations per minute per coordinator to control AI API costs
-- Deterministic heuristic fallback (base 700 MAD + distance×3.5 MAD/km + handling) if GPT-5 fails or is unavailable
-- Response validation and normalization with price clamping (min 300 MAD, max 15000 MAD)
-- Premium dialog displaying: price range in MAD, confidence score (0-100%), modeled inputs (weight/volume/handling), reasoning bullets, and disclaimer
-- GPT-5 compatibility: Uses default temperature (1.0) as custom values not supported by model
+- Ultra-modern purple-pink-blue gradient "Estimer Prix" button with Sparkles icon
+- Backend service (`server/price-estimation.ts`) with CamionBack-aware pricing prompt teaching GPT-5 about:
+  - Empty returns advantage (retours à vide) = -40% discount
+  - Groupage for small volumes (<5m³) = even lower costs
+  - Traditional price calculation + automatic CamionBack discount application
+- **Financial Split (server-enforced)**: 
+  - Transporteur: 60% of total price
+  - Cotisation plateforme: 40% of total price (minimum 200 MAD enforced)
+  - Helper function `computeCamionBackSplit()` ensures platform fee ≥200 MAD
+- 12-hour in-memory cache system to prevent duplicate AI calls (key: fromCity|toCity|distance|goodsType|description)
+- Rate limiting: 10 estimations per minute per coordinator
+- Heuristic fallback: traditional price ×0.6 with 60/40 split if GPT-5 fails
+- Response structure: {totalClientMAD, transporterFeeMAD, platformFeeMAD, confidence, reasoning, modeledInputs}
+- Price clamping: min 300 MAD, max 9000 MAD
+- Premium dialog displaying: single CamionBack price, financial breakdown table (Total client, Frais transporteur 60%, Cotisation ≥200 MAD), confidence score, modeled inputs, reasoning explicitly mentioning empty returns + groupage concepts, and disclaimer
+- GPT-5 reasoning model: Uses max_completion_tokens=8192 to accommodate internal reasoning tokens
 - API endpoint: POST /api/coordinator/estimate-price (coordinator auth required)
 
 ### Technical Implementations
