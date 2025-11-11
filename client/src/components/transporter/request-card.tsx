@@ -11,6 +11,7 @@ import { PhotoGalleryDialog } from "./photo-gallery-dialog";
 import { DatePickerDialog } from "./date-picker-dialog";
 import { getCategoryConfig } from "@/lib/goods-category-config";
 import { RouteMap } from "@/components/route-map";
+import { extractCityFromAddress } from "@shared/utils";
 
 interface RequestCardProps {
   request: {
@@ -185,17 +186,17 @@ export function RequestCard({
               />
             )}
             
-            {/* Ligne compacte récapitulative */}
+            {/* Ligne compacte récapitulative - Villes uniquement */}
             <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/20 rounded-md">
               <div className="flex items-center gap-2 flex-1 min-w-0 text-xs">
                 <div className="flex items-center gap-1.5 min-w-0">
                   <div className="w-1.5 h-1.5 rounded-full bg-[#5BC0EB] flex-shrink-0"></div>
-                  <span className="font-medium truncate">{request.fromCity}</span>
+                  <span className="font-medium truncate">{extractCityFromAddress(request.fromCity)}</span>
                 </div>
                 <ArrowRight className="w-3 h-3 text-muted-foreground flex-shrink-0" />
                 <div className="flex items-center gap-1.5 min-w-0">
                   <div className="w-1.5 h-1.5 rounded-full bg-[#e74c3c] flex-shrink-0"></div>
-                  <span className="font-medium truncate">{request.toCity}</span>
+                  <span className="font-medium truncate">{extractCityFromAddress(request.toCity)}</span>
                 </div>
               </div>
               {request.distance && (
@@ -334,6 +335,43 @@ export function RequestCard({
                 <div className="flex items-center gap-2 text-sm font-medium">
                   <Warehouse className="w-4 h-4 text-primary" />
                   <span>{t('requestCard.handlingNo')}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Adresses détaillées - Affiche quartier + ville si disponible */}
+            {(request.departureAddress || request.arrivalAddress) && (
+              <div className="space-y-3 pt-3 border-t">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <MapPin className="w-4 h-4 text-primary" />
+                  <span>Adresses détaillées</span>
+                </div>
+                <div className="grid grid-cols-2 gap-4 ps-6">
+                  {/* Départ détaillé */}
+                  {request.departureAddress && (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#5BC0EB] flex-shrink-0"></div>
+                        <span className="font-medium">Départ</span>
+                      </div>
+                      <div className="text-sm text-foreground">
+                        {request.departureAddress}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Arrivée détaillée */}
+                  {request.arrivalAddress && (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#e74c3c] flex-shrink-0"></div>
+                        <span className="font-medium">Arrivée</span>
+                      </div>
+                      <div className="text-sm text-foreground">
+                        {request.arrivalAddress}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
