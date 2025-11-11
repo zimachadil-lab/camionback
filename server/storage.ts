@@ -174,6 +174,10 @@ export interface IStorage {
   searchTransporters(query: string): Promise<User[]>;
   assignTransporterManually(requestId: string, transporterId: string, transporterAmount: number, platformFee: number, coordinatorId: string): Promise<TransportRequest | undefined>;
   
+  // Coordinator self-assignment
+  assignCoordinatorToRequest(requestId: string, coordinatorId: string): Promise<TransportRequest | undefined>;
+  unassignCoordinatorFromRequest(requestId: string, coordinatorId: string): Promise<TransportRequest | undefined>;
+  
   // Coordinator management (Admin)
   getAllCoordinators(): Promise<User[]>;
   getCoordinatorById(id: string): Promise<User | undefined>;
@@ -3792,6 +3796,65 @@ export class DbStorage implements IStorage {
         coordinationUpdatedAt: new Date(),
         coordinationUpdatedBy: coordinatorId,
       })
+      .where(eq(transportRequests.id, requestId))
+      .returning();
+    
+    return result[0];
+  }
+
+  // Coordinator self-assignment (with atomic race protection)
+  async assignCoordinatorToRequest(requestId: string, coordinatorId: string): Promise<TransportRequest | undefined> {
+    // Atomic UPDATE with conditional WHERE to prevent race conditions
+    // Only succeeds if request is either unassigned OR already assigned to this coordinator (idempotent)
+    const result = await db.update(transportRequests)
+      .set({ assignedToId: coordinatorId })
+      .where(
+        and(
+          eq(transportRequests.id, requestId),
+          or(
+            sql`${transportRequests.assignedToId} IS NULL`,
+            eq(transportRequests.assignedToId, coordinatorId)
+          )
+        )
+      )
+      .returning();
+    
+    // If no rows updated, request is either missing or assigned to another coordinator
+    if (!result[0]) {
+      // Check if request exists
+      const request = await db.select()
+        .from(transportRequests)
+        .where(eq(transportRequests.id, requestId))
+        .limit(1);
+      
+      if (!request[0]) {
+        throw new Error("Commande introuvable");
+      }
+      
+      // Request exists but is assigned to another coordinator
+      throw new Error("Cette commande est déjà assignée à un autre coordinateur");
+    }
+    
+    return result[0];
+  }
+
+  async unassignCoordinatorFromRequest(requestId: string, coordinatorId: string): Promise<TransportRequest | undefined> {
+    // Verify request exists and is assigned to this coordinator
+    const request = await db.select()
+      .from(transportRequests)
+      .where(eq(transportRequests.id, requestId))
+      .limit(1);
+    
+    if (!request[0]) {
+      throw new Error("Commande introuvable");
+    }
+    
+    if (request[0].assignedToId !== coordinatorId) {
+      throw new Error("Vous n'êtes pas assigné à cette commande");
+    }
+    
+    const result = await db.update(transportRequests)
+      .set({ assignedToId: null })
       .where(eq(transportRequests.id, requestId))
       .returning();
     

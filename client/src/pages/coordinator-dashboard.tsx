@@ -1811,6 +1811,11 @@ export default function CoordinatorDashboard() {
       ? (request.coordinationUpdatedBy || request.assignedTo)
       : null;
 
+    // Calculate coordinator assignment state
+    const isAssignedToMe = request.assignedToId === user?.id;
+    const isAssignedToOther = request.assignedToId && request.assignedToId !== user?.id;
+    const isUnassigned = !request.assignedToId;
+
     // Get category config
     const categoryConfig = getCategoryConfig(request.goodsType);
     const CategoryIcon = categoryConfig.icon;
@@ -2119,8 +2124,8 @@ export default function CoordinatorDashboard() {
             </Button>
           )}
 
-          {/* Me l'affecter */}
-          {!request.transporter && (
+          {/* Auto-assignation coordinateur */}
+          {isUnassigned && !request.transporter && (
             <Button
               variant="default"
               className="flex-1 min-w-[140px] gap-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold shadow-md hover:shadow-lg transition-all"
@@ -2131,6 +2136,26 @@ export default function CoordinatorDashboard() {
               <UserCheck className="h-4 w-4" />
               Me l'affecter
             </Button>
+          )}
+
+          {isAssignedToMe && !request.transporter && (
+            <Button
+              variant="destructive"
+              className="flex-1 min-w-[140px] gap-2 font-semibold shadow-md hover:shadow-lg transition-all"
+              onClick={() => unassignFromMeMutation.mutate(request.id)}
+              disabled={unassignFromMeMutation.isPending}
+              data-testid={`button-self-unassign-${request.id}`}
+            >
+              <X className="h-4 w-4" />
+              Désaffecter
+            </Button>
+          )}
+
+          {isAssignedToOther && request.assignedTo && (
+            <Badge className="flex-1 min-w-[140px] gap-2 bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-700 dark:text-green-400 border-green-500/40 hover:bg-green-500/30 text-sm font-semibold py-2 justify-center" data-testid={`badge-assigned-coordinator-${request.id}`}>
+              <Users className="h-4 w-4" />
+              {request.assignedTo.name || request.assignedTo.phoneNumber}
+            </Badge>
           )}
 
           {/* Voir détails */}

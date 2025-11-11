@@ -6257,10 +6257,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Commande introuvable" });
       }
       
-      // Update assignedToId
-      await db.update(transportRequests)
-        .set({ assignedToId: coordinatorId })
-        .where(eq(transportRequests.id, requestId));
+      // Assign coordinator using storage method
+      await storage.assignCoordinatorToRequest(requestId, coordinatorId);
       
       // Create coordinator log
       await storage.createCoordinatorLog({
@@ -6275,8 +6273,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       res.json({ success: true });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erreur auto-assignation coordinateur:", error);
+      
+      // Handle specific error cases
+      if (error.message === "Commande introuvable") {
+        return res.status(404).json({ error: error.message });
+      }
+      if (error.message === "Cette commande est déjà assignée à un autre coordinateur") {
+        return res.status(409).json({ error: error.message });
+      }
+      
       res.status(500).json({ error: "Erreur lors de l'auto-assignation" });
     }
   });
@@ -6287,21 +6294,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const coordinatorId = req.user!.id;
       const { requestId } = req.params;
       
-      // Get request
+      // Get request for logging
       const request = await storage.getTransportRequest(requestId);
       if (!request) {
         return res.status(404).json({ error: "Commande introuvable" });
       }
       
-      // Check if current user is assigned
-      if (request.assignedToId !== coordinatorId) {
-        return res.status(403).json({ error: "Vous n'êtes pas assigné à cette commande" });
-      }
-      
-      // Remove assignment
-      await db.update(transportRequests)
-        .set({ assignedToId: null })
-        .where(eq(transportRequests.id, requestId));
+      // Unassign coordinator using storage method (includes ownership validation)
+      await storage.unassignCoordinatorFromRequest(requestId, coordinatorId);
       
       // Create coordinator log
       await storage.createCoordinatorLog({
