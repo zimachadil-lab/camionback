@@ -1547,55 +1547,6 @@ export default function CoordinatorDashboard() {
   };
 
   // Handler for payment receipt upload
-  const handleReceiptUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Le fichier doit être une image (JPEG, PNG, WebP)",
-      });
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "La taille du fichier ne doit pas dépasser 5 Mo",
-      });
-      return;
-    }
-
-    // Convert to base64
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPaymentReceipt(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  // Handler for confirming payment
-  const handleConfirmPayment = () => {
-    if (!paymentReceipt || !paymentRequestId) return;
-
-    markAsPaidByClientMutation.mutate({
-      requestId: paymentRequestId,
-      receipt: paymentReceipt,
-    });
-  };
-
-  // Handler for submitting rating
-  const handleSubmitRating = () => {
-    if (ratingValue > 0 && ratingRequestId) {
-      completeWithRatingMutation.mutate({ requestId: ratingRequestId, rating: ratingValue });
-    }
-  };
-
   const handleOpenManualAssignment = (request: any) => {
     setSelectedRequestForAssignment(request);
     setManualAssignmentDialogOpen(true);
@@ -2084,19 +2035,9 @@ export default function CoordinatorDashboard() {
                     value={request.paymentStatus}
                     onValueChange={(newStatus) => {
                       // Handle workflow-specific actions before updating status
-                      if (newStatus === 'paid_by_client') {
-                        // Open dialog to upload receipt
-                        setTargetPaymentStatus('paid_by_client');
-                        setPaymentRequestId(request.id);
-                        setPaymentReceipt("");
-                        setShowPaymentDialog(true);
-                      } else if (newStatus === 'paid_by_camionback') {
-                        // Open rating dialog first, then update to paid_by_camionback
-                        setTargetPaymentStatus('paid_by_camionback');
-                        setRatingRequestId(request.id);
-                        setRatingValue(0);
-                        setHoverRating(0);
-                        setShowRatingDialog(true);
+                      if (newStatus === 'paid_by_client' || newStatus === 'paid_by_camionback') {
+                        // Open unified payment dialog for both client and CamionBack payments
+                        handleCoordinatorPayment(request.id);
                       } else {
                         // Direct status update for other transitions (e.g., a_facturer)
                         updatePaymentStatusMutation.mutate({
@@ -2415,16 +2356,6 @@ export default function CoordinatorDashboard() {
       />
 
       <main className="container mx-auto p-4 max-w-7xl">
-        <div className="mb-6 flex items-center gap-3">
-          <div className="bg-[#5BC0EB]/10 p-3 rounded-lg">
-            <Compass className="h-8 w-8 text-[#5BC0EB]" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold">Tableau de bord Coordinateur</h1>
-            <p className="text-muted-foreground">Gestion et supervision des commandes</p>
-          </div>
-        </div>
-
         {/* Unified Search Bar with Filters */}
         <div className="mb-6 space-y-3">
           <div className="flex flex-col sm:flex-row gap-3">
