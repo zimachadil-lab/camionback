@@ -160,7 +160,10 @@ export function RequestCard({
             <div className="flex items-center gap-1">
               <Hash className="w-3 h-3 text-white drop-shadow-sm" />
               <span className="text-[10px] font-bold text-white drop-shadow-sm whitespace-nowrap">
-                {request.referenceId}
+                {(() => {
+                  const parts = request.referenceId.split('-');
+                  return parts.length >= 3 ? `${parts[0]}-${parts[2]}` : request.referenceId;
+                })()}
               </span>
             </div>
           </div>
