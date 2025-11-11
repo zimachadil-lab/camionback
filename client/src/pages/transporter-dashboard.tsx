@@ -667,23 +667,23 @@ export default function TransporterDashboard() {
           </div>
 
           <TabsContent value="available" className="mt-6 space-y-6">
-            {/* City Filter Button with Sheet */}
+            {/* City Filter Button with Sheet - Compact on mobile */}
             <div className="px-4">
               <Sheet open={cityFilterOpen} onOpenChange={setCityFilterOpen}>
                 <SheetTrigger asChild>
                   <button
-                    className="w-full flex items-center justify-between p-4 rounded-xl bg-gradient-to-br from-[#0d9488]/10 via-[#0f766e]/10 to-[#115e59]/10 border-2 border-[#0d9488]/30 hover-elevate active-elevate-2 transition-all duration-300"
+                    className="w-full flex items-center justify-between p-2.5 sm:p-4 rounded-xl bg-gradient-to-br from-[#0d9488]/10 via-[#0f766e]/10 to-[#115e59]/10 border-2 border-[#0d9488]/30 hover-elevate active-elevate-2 transition-all duration-300"
                     data-testid="button-city-filter"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-gradient-to-br from-[#0d9488] via-[#0f766e] to-[#115e59] shadow-lg shadow-teal-500/20">
-                        <MapPin className="h-4 w-4 text-white" />
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                      <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-[#0d9488] via-[#0f766e] to-[#115e59] shadow-lg shadow-teal-500/20 flex-shrink-0">
+                        <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white" />
                       </div>
-                      <div className="flex flex-col items-start">
-                        <span className="text-xs text-muted-foreground font-medium">
+                      <div className="flex flex-col items-start min-w-0 flex-1">
+                        <span className="text-[10px] sm:text-xs text-muted-foreground font-medium hidden sm:block">
                           {t('transporterDashboard.filters.filterByCity')}
                         </span>
-                        <span className="font-bold text-base text-foreground">
+                        <span className="font-bold text-sm sm:text-base text-foreground truncate w-full">
                           {selectedCity === "allCities" 
                             ? t('transporterDashboard.filters.allCities')
                             : selectedCity
@@ -692,7 +692,7 @@ export default function TransporterDashboard() {
                       </div>
                     </div>
                     <Badge 
-                      className="bg-gradient-to-br from-[#0d9488] via-[#0f766e] to-[#115e59] text-white border-0 text-base font-bold px-3 py-1.5"
+                      className="bg-gradient-to-br from-[#0d9488] via-[#0f766e] to-[#115e59] text-white border-0 text-sm sm:text-base font-bold px-2 sm:px-3 py-1 sm:py-1.5 flex-shrink-0"
                     >
                       {selectedCity === "allCities" 
                         ? requests.filter((req: any) => 
