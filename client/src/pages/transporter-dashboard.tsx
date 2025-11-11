@@ -671,21 +671,29 @@ export default function TransporterDashboard() {
             <div className="px-4">
               <Sheet open={cityFilterOpen} onOpenChange={setCityFilterOpen}>
                 <SheetTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-between h-auto py-3"
+                  <button
+                    className="w-full flex items-center justify-between p-4 rounded-xl bg-gradient-to-br from-[#0d9488]/10 via-[#0f766e]/10 to-[#115e59]/10 border-2 border-[#0d9488]/30 hover-elevate active-elevate-2 transition-all duration-300"
                     data-testid="button-city-filter"
                   >
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-primary" />
-                      <span className="font-medium">
-                        {selectedCity === "allCities" 
-                          ? t('transporterDashboard.filters.allCities')
-                          : selectedCity
-                        }
-                      </span>
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-gradient-to-br from-[#0d9488] via-[#0f766e] to-[#115e59] shadow-lg shadow-teal-500/20">
+                        <MapPin className="h-4 w-4 text-white" />
+                      </div>
+                      <div className="flex flex-col items-start">
+                        <span className="text-xs text-muted-foreground font-medium">
+                          {t('transporterDashboard.filters.filterByCity')}
+                        </span>
+                        <span className="font-bold text-base text-foreground">
+                          {selectedCity === "allCities" 
+                            ? t('transporterDashboard.filters.allCities')
+                            : selectedCity
+                          }
+                        </span>
+                      </div>
                     </div>
-                    <Badge variant="secondary" className="ml-2">
+                    <Badge 
+                      className="bg-gradient-to-br from-[#0d9488] via-[#0f766e] to-[#115e59] text-white border-0 text-base font-bold px-3 py-1.5"
+                    >
                       {selectedCity === "allCities" 
                         ? requests.filter((req: any) => 
                             (!req.declinedBy || !req.declinedBy.includes(user.id)) &&
@@ -698,16 +706,18 @@ export default function TransporterDashboard() {
                           ).length
                       }
                     </Badge>
-                  </Button>
+                  </button>
                 </SheetTrigger>
-                <SheetContent side="bottom" className="h-[80vh]">
-                  <SheetHeader>
-                    <SheetTitle className="flex items-center gap-2">
-                      <ListFilter className="h-5 w-5" />
+                <SheetContent side="bottom" className="h-[85vh] pt-4">
+                  <SheetHeader className="pb-3">
+                    <SheetTitle className="flex items-center gap-2 text-xl">
+                      <div className="p-2 rounded-lg bg-gradient-to-br from-[#0d9488] via-[#0f766e] to-[#115e59] shadow-lg">
+                        <ListFilter className="h-5 w-5 text-white" />
+                      </div>
                       {t('transporterDashboard.filters.filterByCity')}
                     </SheetTitle>
                   </SheetHeader>
-                  <div className="mt-6 space-y-2 overflow-y-auto max-h-[calc(80vh-100px)]">
+                  <div className="mt-4 space-y-2 overflow-y-auto max-h-[calc(85vh-80px)] pb-4">
                     {/* All Cities Option */}
                     <button
                       onClick={() => {
