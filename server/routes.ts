@@ -2259,6 +2259,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymentDate: new Date(),
         transporterRating: rating,
         transporterRatingComment: comment || null,
+        // Coordinator workflow: move to admin payment validation queue
+        coordinationStatus: 'pending_admin_payment_validation',
+        coordinationUpdatedAt: new Date(),
+        coordinationUpdatedBy: req.user!.id,
         // Status stays 'in_progress' - admin will change to 'completed' after validation
       });
 
@@ -2309,6 +2313,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Payment error:", error);
       res.status(500).json({ error: "Failed to process payment" });
+    }
+  });
+
+  // COORDINATOR: Requalify request - cancel production and return to qualified matching
+  app.patch("/api/requests/:id/requalify", requireAuth, requireRole(['coordinateur']), async (req, res) => {
+    try {
+      const request = await storage.getTransportRequest(req.params.id);
+      
+      if (!request) {
+        return res.status(404).json({ error: "Request not found" });
+      }
+
+      // Check if request is in a state that can be requalified
+      if (request.coordinationStatus !== 'production_in_progress') {
+        return res.status(400).json({ error: "Only requests in production can be requalified" });
+      }
+
+      const { reason } = req.body;
+
+      // Reset all execution fields and return to qualified matching state
+      const updatedRequest = await storage.updateTransportRequest(req.params.id, {
+        // Clear assignment and payment fields
+        assignedTransporterId: null,
+        acceptedOfferId: null,
+        assignedManually: false,
+        assignedAt: null,
+        assignedByCoordinatorId: null,
+        transporterAmount: null,
+        platformFee: null,
+        clientTotal: null,
+        paymentReceipt: null,
+        paymentDate: null,
+        transporterRating: null,
+        transporterRatingComment: null,
+        paymentRejectionReason: null,
+        paymentValidatedAt: null,
+        paymentValidatedBy: null,
+        // Reset statuses to beginning of coordinator workflow
+        status: 'published_for_matching',
+        paymentStatus: 'a_facturer',
+        coordinationStatus: 'qualification_pending',
+        coordinationUpdatedAt: new Date(),
+        coordinationUpdatedBy: req.user!.id,
+        coordinationReason: null,
+        coordinationReminderDate: null,
+      });
+
+      // Notify client
+      try {
+        await storage.createNotification({
+          userId: request.clientId,
+          type: "request_requalified",
+          title: "Commande requalifiée",
+          message: `Votre commande ${request.referenceId} a été requalifiée et remise en matching avec des transporteurs. ${reason ? `Raison : ${reason}` : ''}`,
+          relatedId: request.id,
+        });
+      } catch (notifError) {
+        console.error("Failed to create requalification notification:", notifError);
+      }
+
+      res.json({ 
+        success: true, 
+        request: updatedRequest
+      });
+    } catch (error) {
+      console.error("Requalify error:", error);
+      res.status(500).json({ error: "Failed to requalify request" });
     }
   });
 

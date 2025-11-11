@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, MessageCircle, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck, Trash2, Share2, Copy, Send, RotateCcw, Info, Users, CreditCard, Calendar, X, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, FileText, MoreVertical, Image as ImageIcon, ClipboardCheck, Award, StickyNote, Plus, ChevronDown, ChevronUp, Upload, SlidersHorizontal, ArrowRight, AlertCircle, UserCheck } from "lucide-react";
 import { Header } from "@/components/layout/header";
+import { TwoColumnGrid } from "@/components/layout/two-column-grid";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ChatWindow } from "@/components/chat/chat-window";
@@ -2515,189 +2516,38 @@ export default function CoordinatorDashboard() {
                 </CardContent>
               </Card>
             ) : (
-              filterRequests(matchingRequests.filter((r: any) => r.transporterInterests && r.transporterInterests.length > 0), filters.interesses).map((request) => (
-                <Card key={request.id} className="overflow-hidden border-l-4 border-purple-500" data-testid={`card-interested-request-${request.id}`}>
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between gap-4 mb-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge className="bg-purple-500 text-white">
-                            {request.transporterInterests.length} intéressé{request.transporterInterests.length > 1 ? 's' : ''}
-                          </Badge>
-                          <h3 className="text-lg font-bold" data-testid={`text-ref-${request.id}`}>
-                            {request.referenceId}
-                          </h3>
-                        </div>
-                        {/* Route - stacked compact layout */}
-                        <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                          <MapPin className="h-4 w-4 flex-shrink-0" />
-                          <div className="flex items-center gap-2 flex-1">
-                            <div className="flex-1 min-w-0">
-                              <div className="bg-muted/50 rounded px-2 py-1">
-                                <div className="font-semibold text-xs leading-tight break-words">
-                                  {request.departureAddress?.split(',')[0] || request.fromCity}
-                                </div>
-                                {request.departureAddress?.includes(',') && (
-                                  <div className="text-[10px] text-muted-foreground leading-tight">
-                                    {request.departureAddress.split(',').slice(1).join(',').trim()}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            <span className="text-[#17cfcf] text-sm flex-shrink-0">→</span>
-                            <div className="flex-1 min-w-0">
-                              <div className="bg-muted/50 rounded px-2 py-1">
-                                <div className="font-semibold text-xs leading-tight break-words">
-                                  {request.arrivalAddress?.split(',')[0] || request.toCity}
-                                </div>
-                                {request.arrivalAddress?.includes(',') && (
-                                  <div className="text-[10px] text-muted-foreground leading-tight">
-                                    {request.arrivalAddress.split(',').slice(1).join(',').trim()}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {/* Route map visualization - Carte à gauche, infos à droite */}
-                        {request.distance && request.departureAddress && request.arrivalAddress && (
-                          <div className="mb-2">
-                            <div className="flex gap-3 items-center">
-                              {/* Left: Carte carrée */}
-                              <div className="flex-shrink-0 relative z-0">
-                                <RouteMap
-                                  variant="compact"
-                                  departureCity={request.fromCity}
-                                  arrivalCity={request.toCity}
-                                  departureAddress={request.departureAddress}
-                                  arrivalAddress={request.arrivalAddress}
-                                  distance={request.distance}
-                                />
-                              </div>
-                              {/* Right: Route info compacte */}
-                              <div className="flex items-center gap-2 flex-1">
-                                <div className="w-3 h-3 rounded-full bg-[#10b981] flex-shrink-0"></div>
-                                <span className="text-sm font-semibold">{request.departureAddress.split(',').pop()?.trim() || request.fromCity}</span>
-                                <span className="text-[#17cfcf] text-xl mx-1">→</span>
-                                <span className="text-base font-bold text-[#17cfcf] mx-1">{request.distance} km</span>
-                                <span className="text-[#17cfcf] text-xl mx-1">→</span>
-                                <div className="w-3 h-3 rounded-full bg-[#ef4444] flex-shrink-0"></div>
-                                <span className="text-sm font-semibold">{request.arrivalAddress.split(',').pop()?.trim() || request.toCity}</span>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                        
-                        {request.dateTime && (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Calendar className="h-4 w-4" />
-                            {format(new Date(request.dateTime), "dd MMMM yyyy 'à' HH:mm", { locale: fr })}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="lg"
-                          className="bg-purple-600 hover:bg-purple-700"
-                          onClick={() => {
-                            setSelectedRequestForInterested(request);
-                            setInterestedTransportersDialogOpen(true);
-                          }}
-                          data-testid={`button-view-interested-${request.id}`}
-                        >
-                          <Eye className="h-5 w-5 mr-2" />
-                          Voir détails & Assigner
-                        </Button>
-                        <Button
-                          size="lg"
-                          variant="destructive"
-                          onClick={() => {
-                            setCancelRequestData(request);
-                            setCancelDialogOpen(true);
-                          }}
-                          data-testid={`button-cancel-request-${request.id}`}
-                        >
-                          <X className="h-5 w-5 mr-2" />
-                          Annuler la commande
-                        </Button>
-                        
-                        {/* Menu dropdown pour suppression */}
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button 
-                              size="lg" 
-                              variant="ghost"
-                              data-testid={`button-menu-${request.id}`}
-                            >
-                              <MoreVertical className="h-5 w-5" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" data-testid={`menu-${request.id}`}>
-                            <DropdownMenuItem
-                              onClick={() => setDeleteRequestId(request.id)}
-                              data-testid={`menu-delete-request-${request.id}`}
-                              className="text-red-600 focus:text-red-600"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Supprimer
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
+              <TwoColumnGrid testId="grid-interested-requests">
+                {filterRequests(matchingRequests.filter((r: any) => r.transporterInterests && r.transporterInterests.length > 0), filters.interesses).map((request) => (
+                  <div key={request.id}>
+                    {renderRequestCard(request, true, false, false, false, true)}
+                    {/* Actions footer pour Intéressés */}
+                    <div className="flex gap-2 px-4 pb-4">
+                      <Button
+                        className="flex-1 gap-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700"
+                        onClick={() => {
+                          setSelectedRequestForInterested(request);
+                          setInterestedTransportersDialogOpen(true);
+                        }}
+                        data-testid={`button-view-assign-${request.id}`}
+                      >
+                        <Eye className="h-4 w-4" />
+                        Voir détails & Assigner
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={() => {
+                          setCancelRequestData(request);
+                          setCancelDialogOpen(true);
+                        }}
+                        data-testid={`button-cancel-request-${request.id}`}
+                      >
+                        <X className="h-4 w-4" />
+                        Annuler
+                      </Button>
                     </div>
-                    
-                    {/* Contact Client */}
-                    {request.client && request.client.phoneNumber && (
-                      <div className="bg-gradient-to-r from-blue-600 to-cyan-600 dark:from-blue-700 dark:to-cyan-700 rounded-lg p-3 border border-blue-500 shadow-md mb-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="bg-white/20 backdrop-blur-sm text-white p-2 rounded-full">
-                              <Phone className="h-4 w-4" />
-                            </div>
-                            <div>
-                              <p className="text-xs text-white/80 font-medium uppercase tracking-wide">Client</p>
-                              <p className="font-bold text-base text-white">{request.client.name || 'Client'}</p>
-                            </div>
-                          </div>
-                          <a
-                            href={`tel:${request.client.phoneNumber}`}
-                            className="flex items-center gap-2 bg-white hover:bg-blue-50 text-blue-700 px-4 py-2 rounded-md font-bold text-sm transition-colors shadow-sm"
-                            data-testid={`link-call-client-${request.id}`}
-                          >
-                            <Phone className="h-4 w-4" />
-                            {request.client.phoneNumber}
-                          </a>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Prix qualifiés */}
-                    <div className="bg-gradient-to-br from-slate-800 to-slate-900 dark:from-slate-900 dark:to-black rounded-lg p-5 border border-slate-700 shadow-lg">
-                      <div className="grid grid-cols-3 gap-4">
-                        <div className="text-center p-3 rounded-md bg-slate-700/30 border border-slate-600/50">
-                          <p className="text-xs font-medium text-slate-300 mb-2">Transporteur</p>
-                          <p className="text-2xl font-bold text-white">{request.transporterAmount || 0} DH</p>
-                        </div>
-                        <div className="text-center p-3 rounded-md bg-orange-500/20 border border-orange-500/50">
-                          <p className="text-xs font-medium text-orange-200 mb-2">Commission</p>
-                          <p className="text-2xl font-bold text-orange-400">+{request.platformFee || 0} DH</p>
-                        </div>
-                        <div className="text-center p-3 rounded-md bg-[#17cfcf]/20 border border-[#17cfcf]/50">
-                          <p className="text-xs font-medium text-cyan-200 mb-2">Total client</p>
-                          <p className="text-2xl font-bold text-[#17cfcf]">{request.clientTotal || 0} DH</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {request.description && (
-                      <div className="mt-4 p-3 bg-muted/50 rounded-lg">
-                        <p className="text-sm text-muted-foreground">{request.description}</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))
+                  </div>
+                ))}
+              </TwoColumnGrid>
             )}
           </TabsContent>
 
@@ -2715,13 +2565,65 @@ export default function CoordinatorDashboard() {
                 </CardContent>
               </Card>
             ) : (
-              filterRequests([...activeRequests, ...paymentRequests], filters.production).map((request) => 
-                renderRequestCard(request, false, true, false, false, false, false, true)
-              )
+              <TwoColumnGrid testId="grid-production-requests">
+                {filterRequests([...activeRequests, ...paymentRequests], filters.production).map((request) => (
+                  <div key={request.id}>
+                    {renderRequestCard(request, false, false, false, false, true, false, true)}
+                    {/* Actions footer pour Production */}
+                    <div className="flex gap-2 px-4 pb-4">
+                      <Button
+                        variant="outline"
+                        className="flex-1 gap-2"
+                        onClick={() => {
+                          // TODO: Implémenter requalify dialog
+                          if (confirm(`Voulez-vous vraiment annuler et requalifier la commande ${request.referenceId} ?`)) {
+                            fetch(`/api/requests/${request.id}/requalify`, {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              credentials: 'include',
+                              body: JSON.stringify({ reason: 'Annulé par coordinateur' }),
+                            }).then(async (res) => {
+                              if (res.ok) {
+                                toast({
+                                  title: "Commande requalifiée",
+                                  description: "La commande a été remise en matching.",
+                                });
+                                queryClient.invalidateQueries({ queryKey: ['/api/coordinator/active-requests'] });
+                                queryClient.invalidateQueries({ queryKey: ['/api/coordinator/matching-requests'] });
+                              } else {
+                                const error = await res.json();
+                                toast({
+                                  variant: "destructive",
+                                  title: "Erreur",
+                                  description: error.error || "Impossible de requalifier",
+                                });
+                              }
+                            });
+                          }
+                        }}
+                        data-testid={`button-requalify-${request.id}`}
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                        Annuler & Requalifier
+                      </Button>
+                      <Button
+                        className="flex-1 gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
+                        onClick={() => {
+                          handleCoordinatorPayment(request.id);
+                        }}
+                        data-testid={`button-pay-${request.id}`}
+                      >
+                        <CreditCard className="h-4 w-4" />
+                        Prise en charge / Payer
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </TwoColumnGrid>
             )}
           </TabsContent>
 
-          {/* ONGLET 4: ARCHIVES - Commandes archivées */}
+          {/* ONGLET 5: ARCHIVES - Commandes archivées */}
           <TabsContent value="archives" className="space-y-4">
             {archivesLoading ? (
               <div className="flex justify-center py-12">
@@ -2735,7 +2637,13 @@ export default function CoordinatorDashboard() {
                 </CardContent>
               </Card>
             ) : (
-              filterRequests(archivesRequests, filters.archives).map((request) => renderRequestCard(request, false, false, false, false, false, true))
+              <TwoColumnGrid testId="grid-archived-requests">
+                {filterRequests(archivesRequests, filters.archives).map((request) => (
+                  <div key={request.id}>
+                    {renderRequestCard(request, false, false, false, false, false, true)}
+                  </div>
+                ))}
+              </TwoColumnGrid>
             )}
           </TabsContent>
         </Tabs>
