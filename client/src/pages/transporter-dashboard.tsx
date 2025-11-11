@@ -221,8 +221,8 @@ export default function TransporterDashboard() {
     setClientDetailsOpen(true);
   };
 
-  // Fetch cities from API
-  const { data: cities = [], isLoading: citiesLoading } = useQuery({
+  // Fetch all cities from API for return announcement dialog
+  const { data: allCities = [], isLoading: citiesLoading } = useQuery({
     queryKey: ["/api/cities"],
     queryFn: async () => {
       const response = await fetch("/api/cities");
@@ -555,6 +555,16 @@ export default function TransporterDashboard() {
     }
   };
 
+  // Extract unique cities from available requests (Google Maps cities)
+  const availableCities = useMemo(() => {
+    const citiesSet = new Set<string>();
+    requests.forEach((req: any) => {
+      if (req.fromCity) citiesSet.add(req.fromCity);
+      if (req.toCity) citiesSet.add(req.toCity);
+    });
+    return Array.from(citiesSet).sort((a, b) => a.localeCompare(b, 'fr'));
+  }, [requests]);
+
   const filteredRequests = requests
     .filter((req: any) => {
       // Exclude requests declined by this transporter
@@ -663,13 +673,9 @@ export default function TransporterDashboard() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="allCities">{t('transporterDashboard.filters.allCities')}</SelectItem>
-                  {citiesLoading ? (
-                    <div className="p-2 text-sm text-muted-foreground">{t('common.loading')}</div>
-                  ) : (
-                    cities.map((city: any) => (
-                      <SelectItem key={city.id} value={city.name}>{city.name}</SelectItem>
-                    ))
-                  )}
+                  {availableCities.map((city: string) => (
+                    <SelectItem key={city} value={city}>{city}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -1059,7 +1065,7 @@ export default function TransporterDashboard() {
                   {citiesLoading ? (
                     <div className="p-2 text-sm text-muted-foreground">{t('common.loading')}</div>
                   ) : (
-                    cities.map((city: any) => (
+                    allCities.map((city: any) => (
                       <SelectItem key={city.id} value={city.name}>
                         {city.name}
                       </SelectItem>
@@ -1079,7 +1085,7 @@ export default function TransporterDashboard() {
                   {citiesLoading ? (
                     <div className="p-2 text-sm text-muted-foreground">{t('common.loading')}</div>
                   ) : (
-                    cities.map((city: any) => (
+                    allCities.map((city: any) => (
                       <SelectItem key={city.id} value={city.name}>
                         {city.name}
                       </SelectItem>
