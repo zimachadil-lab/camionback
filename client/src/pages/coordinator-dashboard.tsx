@@ -3017,8 +3017,8 @@ export default function CoordinatorDashboard() {
       {/* AI Price Estimation Dialog */}
       {priceEstimation && (
         <Dialog open={priceEstimationDialogOpen} onOpenChange={setPriceEstimationDialogOpen}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
+          <DialogContent className="max-w-lg max-h-[90vh] sm:max-h-[85vh] mx-4 sm:mx-0 flex flex-col">
+            <DialogHeader className="shrink-0">
               <DialogTitle className="flex items-center gap-2">
                 <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500">
                   <Sparkles className="h-5 w-5 text-white" />
@@ -3030,7 +3030,7 @@ export default function CoordinatorDashboard() {
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-6 py-4">
+            <div className="space-y-6 py-4 overflow-y-auto flex-1">
               {/* Price Range Display */}
               <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 rounded-xl p-6 space-y-3">
                 <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -3098,9 +3098,9 @@ export default function CoordinatorDashboard() {
                   </p>
                   <div className="space-y-2">
                     {priceEstimation.reasoning.map((reason: string, idx: number) => (
-                      <div key={idx} className="flex items-start gap-2 text-sm">
-                        <div className="h-1.5 w-1.5 rounded-full bg-purple-500 mt-1.5 shrink-0" />
-                        <p className="text-muted-foreground">{reason}</p>
+                      <div key={idx} className="flex items-start gap-2 text-xs">
+                        <div className="h-1.5 w-1.5 rounded-full bg-purple-500 mt-1 shrink-0" />
+                        <p className="text-muted-foreground leading-relaxed">{reason}</p>
                       </div>
                     ))}
                   </div>
@@ -3119,7 +3119,7 @@ export default function CoordinatorDashboard() {
               </div>
             </div>
 
-            <DialogFooter>
+            <DialogFooter className="shrink-0">
               <Button 
                 onClick={() => setPriceEstimationDialogOpen(false)}
                 className="gap-2"
