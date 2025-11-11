@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Header } from "@/components/layout/header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/lib/auth-context";
-import { User, Phone, MapPin, Camera, KeyRound, Truck } from "lucide-react";
+import { User, Phone, MapPin, Camera, KeyRound, Truck, X, Edit } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -223,73 +222,91 @@ export default function TransporterProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header user={userForHeader} onLogout={handleLogout} />
-      
-      <div className="container max-w-3xl py-8 px-4">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="w-5 h-5" />
-                  Mon Profil
-                </CardTitle>
-                <CardDescription>
-                  Gérez vos informations personnelles
-                </CardDescription>
-              </div>
-              {!isEditing && (
-                <Button
-                  onClick={() => {
-                    setIsEditing(true);
-                    setPhoneNumber(profile.phoneNumber);
-                    setName(profile.name);
-                  }}
-                  data-testid="button-edit-profile"
-                >
-                  Modifier
-                </Button>
+    <div className="min-h-screen bg-[#0a2540]">
+      {/* Header avec bouton retour */}
+      <div className="bg-[#0a2540] border-b border-white/10 sticky top-0 z-50">
+        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-white">Mon Profil</h1>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setLocation("/")}
+            className="text-white hover:bg-white/10"
+            data-testid="button-close-profile"
+          >
+            <X className="h-6 w-6" />
+          </Button>
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+        {/* Photo du camion - Section principale */}
+        <Card className="bg-white/10 border-white/20 overflow-hidden">
+          <CardContent className="p-0">
+            <div className="relative h-48 bg-gradient-to-br from-[#0d9488] via-[#0f766e] to-[#115e59]">
+              {(previewUrl || (profile.truckPhotos && profile.truckPhotos.length > 0)) ? (
+                <img
+                  src={previewUrl || profile.truckPhotos[0]}
+                  alt="Camion"
+                  className="w-full h-full object-cover"
+                  data-testid="img-truck-preview"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <Truck className="w-20 h-20 text-white/40" />
+                </div>
+              )}
+              
+              {isEditing && (
+                <label className="absolute bottom-4 right-4 cursor-pointer">
+                  <div className="bg-white/90 hover:bg-white p-3 rounded-full shadow-lg transition-all">
+                    <Camera className="w-5 h-5 text-[#0d9488]" />
+                  </div>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleTruckPhotoChange}
+                    className="hidden"
+                    data-testid="input-truck-photo"
+                  />
+                </label>
               )}
             </div>
-          </CardHeader>
-
-          <CardContent className="space-y-6">
-            {/* Truck Photo Section */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <Truck className="w-4 h-4" />
-                Photo du camion
-              </Label>
-              <div className="flex items-center gap-4">
-                {(previewUrl || (profile.truckPhotos && profile.truckPhotos.length > 0)) && (
-                  <img
-                    src={previewUrl || profile.truckPhotos[0]}
-                    alt="Camion"
-                    className="w-32 h-32 object-cover rounded-lg border"
-                    data-testid="img-truck-preview"
-                  />
-                )}
-                {isEditing && (
-                  <div className="flex-1">
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleTruckPhotoChange}
-                      data-testid="input-truck-photo"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Maximum 5 MB - Formats: JPG, PNG
-                    </p>
-                  </div>
-                )}
+            
+            {isEditing && (
+              <div className="p-3 bg-white/5">
+                <p className="text-xs text-gray-300 text-center">
+                  Maximum 5 MB - Formats: JPG, PNG
+                </p>
               </div>
-            </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Bouton Modifier */}
+        {!isEditing && (
+          <Button
+            onClick={() => {
+              setIsEditing(true);
+              setPhoneNumber(profile.phoneNumber);
+              setName(profile.name);
+            }}
+            className="w-full bg-gradient-to-r from-[#17cfcf] to-[#0ea5a5] hover:from-[#15b8b8] hover:to-[#0c8f8f] text-white font-semibold h-12"
+            data-testid="button-edit-profile"
+          >
+            <Edit className="w-4 h-4 mr-2" />
+            Modifier le profil
+          </Button>
+        )}
+
+        {/* Informations personnelles */}
+        <Card className="bg-white/10 border-white/20">
+          <CardContent className="p-6 space-y-6">
 
             {/* Name Field */}
-            <div className="space-y-2">
-              <Label htmlFor="name" className="flex items-center gap-2">
-                <User className="w-4 h-4" />
+            <div className="space-y-3">
+              <Label htmlFor="name" className="flex items-center gap-2 text-gray-300">
+                <User className="w-4 h-4 text-[#17cfcf]" />
                 Nom complet ou nom de société
               </Label>
               {isEditing ? (
@@ -298,17 +315,18 @@ export default function TransporterProfile() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Votre nom"
+                  className="bg-white/5 border-white/20 text-white placeholder:text-gray-500"
                   data-testid="input-name"
                 />
               ) : (
-                <p className="text-base py-2" data-testid="text-name">{profile.name}</p>
+                <p className="text-lg font-semibold text-white" data-testid="text-name">{profile.name}</p>
               )}
             </div>
 
             {/* Phone Number Field */}
-            <div className="space-y-2">
-              <Label htmlFor="phone" className="flex items-center gap-2">
-                <Phone className="w-4 h-4" />
+            <div className="space-y-3">
+              <Label htmlFor="phone" className="flex items-center gap-2 text-gray-300">
+                <Phone className="w-4 h-4 text-[#17cfcf]" />
                 Numéro de téléphone
               </Label>
               {isEditing ? (
@@ -317,39 +335,41 @@ export default function TransporterProfile() {
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   placeholder="+212XXXXXXXXX"
+                  className="bg-white/5 border-white/20 text-white placeholder:text-gray-500"
                   data-testid="input-phone"
                 />
               ) : (
-                <p className="text-base py-2" data-testid="text-phone">{profile.phoneNumber}</p>
+                <p className="text-lg font-semibold text-white" data-testid="text-phone">{profile.phoneNumber}</p>
               )}
             </div>
 
             {/* City Field (Read-only) */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <MapPin className="w-4 h-4" />
+            <div className="space-y-3">
+              <Label className="flex items-center gap-2 text-gray-300">
+                <MapPin className="w-4 h-4 text-[#17cfcf]" />
                 Ville de résidence
               </Label>
-              <p className="text-base py-2 text-muted-foreground" data-testid="text-city">
+              <p className="text-lg font-semibold text-white" data-testid="text-city">
                 {profile.city}
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-gray-400 italic">
                 Non modifiable - Contactez l'administrateur pour changer
               </p>
             </div>
 
             {/* PIN Section */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <KeyRound className="w-4 h-4" />
+            <div className="space-y-3">
+              <Label className="flex items-center gap-2 text-gray-300">
+                <KeyRound className="w-4 h-4 text-[#17cfcf]" />
                 Code PIN
               </Label>
-              <div className="flex items-center gap-4">
-                <p className="text-base py-2" data-testid="text-pin">••••••</p>
+              <div className="flex items-center justify-between">
+                <p className="text-lg font-semibold text-white tracking-widest" data-testid="text-pin">••••••</p>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setShowPinDialog(true)}
+                  className="border-white/20 text-white hover:bg-white/10"
                   data-testid="button-change-pin"
                 >
                   Réinitialiser le PIN
@@ -357,33 +377,34 @@ export default function TransporterProfile() {
               </div>
             </div>
 
-            {/* Action Buttons */}
-            {isEditing && (
-              <div className="flex gap-3 pt-4">
-                <Button
-                  onClick={handleSaveProfile}
-                  disabled={updateProfileMutation.isPending}
-                  className="flex-1"
-                  style={{ backgroundColor: "#17cfcf" }}
-                  data-testid="button-save-profile"
-                >
-                  {updateProfileMutation.isPending ? "Enregistrement..." : "Enregistrer les modifications"}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setIsEditing(false);
-                    setTruckPhotoFile(null);
-                    setPreviewUrl("");
-                  }}
-                  data-testid="button-cancel-edit"
-                >
-                  Annuler
-                </Button>
-              </div>
-            )}
           </CardContent>
         </Card>
+
+        {/* Action Buttons */}
+        {isEditing && (
+          <div className="flex gap-3">
+            <Button
+              onClick={handleSaveProfile}
+              disabled={updateProfileMutation.isPending}
+              className="flex-1 bg-gradient-to-r from-[#17cfcf] to-[#0ea5a5] hover:from-[#15b8b8] hover:to-[#0c8f8f] text-white font-semibold h-12"
+              data-testid="button-save-profile"
+            >
+              {updateProfileMutation.isPending ? "Enregistrement..." : "Enregistrer"}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsEditing(false);
+                setTruckPhotoFile(null);
+                setPreviewUrl("");
+              }}
+              className="border-white/20 text-white hover:bg-white/10 h-12 px-8"
+              data-testid="button-cancel-edit"
+            >
+              Annuler
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* PIN Change Dialog */}
