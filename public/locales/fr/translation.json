@@ -442,6 +442,7 @@
     "dialogs": {
       "notValidated": {
         "title": "Compte non validé",
+        "description": "Votre compte est en cours de validation par notre équipe. Vous pourrez accéder à toutes les fonctionnalités une fois validé.",
         "message1": "Votre compte CamionBack n'est pas encore validé par notre équipe.",
         "message2": "Vous pourrez annoncer vos retours et bénéficier de toutes les fonctionnalités dès que votre compte sera activé.",
         "thanks": "Merci pour votre patience."
