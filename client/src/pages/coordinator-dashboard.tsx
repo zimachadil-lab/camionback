@@ -2022,12 +2022,16 @@ export default function CoordinatorDashboard() {
               <div className="flex items-center gap-2 flex-1 min-w-0 text-xs">
                 <div className="flex items-center gap-1.5 min-w-0">
                   <div className="w-1.5 h-1.5 rounded-full bg-[#5BC0EB] flex-shrink-0"></div>
-                  <span className="font-medium truncate">{request.fromCity}</span>
+                  <span className="font-medium truncate">
+                    {request.departureAddress ? `${request.departureAddress}, ${request.fromCity}` : request.fromCity}
+                  </span>
                 </div>
                 <ArrowRight className="w-3 h-3 text-muted-foreground flex-shrink-0" />
                 <div className="flex items-center gap-1.5 min-w-0">
                   <div className="w-1.5 h-1.5 rounded-full bg-[#e74c3c] flex-shrink-0"></div>
-                  <span className="font-medium truncate">{request.toCity}</span>
+                  <span className="font-medium truncate">
+                    {request.arrivalAddress ? `${request.arrivalAddress}, ${request.toCity}` : request.toCity}
+                  </span>
                 </div>
               </div>
               {request.distance && (
