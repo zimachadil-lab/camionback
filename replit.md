@@ -55,16 +55,18 @@ The platform features a mobile-first, dark teal design with full French/Arabic b
   - Empty returns advantage (retours à vide) = -40% discount
   - Groupage for small volumes (<5m³) = even lower costs
   - Traditional price calculation + automatic CamionBack discount application
+  - **Conditional handling fees**: Manutention charges ONLY added if client explicitly requested (handlingRequired = true)
+  - Handling details (floors, elevators) passed to GPT-5 for accurate pricing when applicable
 - **Financial Split (server-enforced)**: 
   - Transporteur: 60% of total price
-  - Cotisation plateforme: 40% of total price (minimum 200 MAD enforced)
-  - Helper function `computeCamionBackSplit()` ensures platform fee ≥200 MAD
+  - Cotisation plateforme: 40% of total price (minimum 200 MAD enforced via 500 MAD minimum total)
+  - Helper function `computeCamionBackSplit()` ensures proper 60/40 split with platform fee ≥200 MAD
 - 12-hour in-memory cache system to prevent duplicate AI calls (key: fromCity|toCity|distance|goodsType|description)
 - Rate limiting: 10 estimations per minute per coordinator
-- Heuristic fallback: traditional price ×0.6 with 60/40 split if GPT-5 fails
+- Heuristic fallback: traditional price ×0.6 with 60/40 split if GPT-5 fails (also respects handlingRequired flag)
 - Response structure: {totalClientMAD, transporterFeeMAD, platformFeeMAD, confidence, reasoning, modeledInputs}
-- Price clamping: min 300 MAD, max 9000 MAD
-- Premium dialog displaying: single CamionBack price, financial breakdown table (Total client, Frais transporteur 60%, Cotisation ≥200 MAD), confidence score, modeled inputs, reasoning explicitly mentioning empty returns + groupage concepts, and disclaimer
+- Price clamping: min 500 MAD (enforced by split function), max 9000 MAD
+- Premium dialog displaying: single CamionBack price, financial breakdown table (Total client, Frais transporteur 60%, Cotisation 40% min 200 MAD), confidence score, modeled inputs, reasoning explicitly mentioning empty returns + groupage concepts, and disclaimer
 - GPT-5 reasoning model: Uses max_completion_tokens=8192 to accommodate internal reasoning tokens
 - API endpoint: POST /api/coordinator/estimate-price (coordinator auth required)
 
