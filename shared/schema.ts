@@ -47,6 +47,8 @@ export const transportRequests = pgTable("transport_requests", {
   departureAddress: text("departure_address"), // Full address from Google Places (city + neighborhood) - shown to client only
   arrivalAddress: text("arrival_address"), // Full address from Google Places (city + neighborhood) - shown to client only
   distance: integer("distance"), // Distance in km between departure and arrival (calculated via Google Distance Matrix API)
+  distanceSource: text("distance_source"), // 'address' or 'city' - indicates if distance was calculated from full addresses or just cities
+  distanceError: text("distance_error"), // Last error message if distance calculation failed
   description: text("description").notNull(),
   goodsType: text("goods_type").notNull(),
   dateTime: timestamp("date_time").notNull(),

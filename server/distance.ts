@@ -11,6 +11,32 @@ interface DistanceResult {
   error?: string;
 }
 
+interface EnhancedDistanceResult {
+  distanceKm: number | null;
+  source: 'address' | 'city' | null;
+  error?: string;
+  wasCached?: boolean;
+}
+
+// Simple in-memory cache for city-to-city distances
+const distanceCache = new Map<string, { km: number; timestamp: number }>();
+
+// Normalize city name for cache key (remove accents, trim, lowercase)
+function normalizeCityName(city: string): string {
+  return city
+    .toLowerCase()
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+// Generate cache key for city pair
+function getCacheKey(fromCity: string, toCity: string): string {
+  const from = normalizeCityName(fromCity);
+  const to = normalizeCityName(toCity);
+  return `${from}|${to}`;
+}
+
 /**
  * Calculate road distance between two addresses using Google Distance Matrix API
  * @param origin - Origin address (e.g., "Hay Hassani, Casablanca")
@@ -84,4 +110,82 @@ export async function calculateDistance(
       error: error instanceof Error ? error.message : "Unknown error" 
     };
   }
+}
+
+/**
+ * Calculate distance for a transport request with fallback to city-level calculation
+ * @param request - Transport request with addresses and cities
+ * @returns Enhanced distance result with source tracking and caching
+ */
+export async function calculateDistanceForRequest(request: {
+  fromCity: string;
+  toCity: string;
+  departureAddress?: string | null;
+  arrivalAddress?: string | null;
+  referenceId?: string;
+}): Promise<EnhancedDistanceResult> {
+  const { fromCity, toCity, departureAddress, arrivalAddress, referenceId } = request;
+
+  // Try address-level calculation first if both addresses available
+  if (departureAddress && arrivalAddress) {
+    const origin = `${departureAddress}, ${fromCity}`;
+    const destination = `${arrivalAddress}, ${toCity}`;
+    
+    const result = await calculateDistance(origin, destination);
+    
+    if (result.distance !== null) {
+      console.log(`[Distance] ${referenceId || 'Request'}: ✓ Address-level distance: ${result.distance} km`);
+      return {
+        distanceKm: result.distance,
+        source: 'address',
+        wasCached: false
+      };
+    }
+    
+    console.warn(`[Distance] ${referenceId || 'Request'}: Address-level failed, falling back to city-level`);
+  }
+
+  // Fallback to city-level calculation
+  const cacheKey = getCacheKey(fromCity, toCity);
+  
+  // Check cache first
+  const cached = distanceCache.get(cacheKey);
+  if (cached) {
+    // Cache valid for 30 days
+    const age = Date.now() - cached.timestamp;
+    if (age < 30 * 24 * 60 * 60 * 1000) {
+      console.log(`[Distance] ${referenceId || 'Request'}: ✓ Cached city distance: ${cached.km} km`);
+      return {
+        distanceKm: cached.km,
+        source: 'city',
+        wasCached: true
+      };
+    }
+  }
+
+  // Calculate city-to-city distance
+  const result = await calculateDistance(fromCity, toCity);
+  
+  if (result.distance !== null) {
+    // Store in cache
+    distanceCache.set(cacheKey, {
+      km: result.distance,
+      timestamp: Date.now()
+    });
+    
+    console.log(`[Distance] ${referenceId || 'Request'}: ✓ City-level distance: ${result.distance} km (cached)`);
+    return {
+      distanceKm: result.distance,
+      source: 'city',
+      wasCached: false
+    };
+  }
+
+  // All attempts failed
+  console.error(`[Distance] ${referenceId || 'Request'}: ✗ All distance calculations failed:`, result.error);
+  return {
+    distanceKm: null,
+    source: null,
+    error: result.error
+  };
 }

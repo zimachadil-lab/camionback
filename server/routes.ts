@@ -6910,6 +6910,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Recalculate missing distances for requests
+  app.post("/api/admin/distance/recalculate", requireAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const { batchSize = 50, requestIds } = req.body;
+
+      // Validate batch size
+      if (batchSize > 200) {
+        return res.status(400).json({ error: "Batch size cannot exceed 200" });
+      }
+
+      let requestsToProcess;
+
+      if (requestIds && Array.isArray(requestIds)) {
+        // Process specific requests
+        requestsToProcess = await db.select()
+          .from(transportRequests)
+          .where(sql`${transportRequests.id} = ANY(${requestIds})`);
+      } else {
+        // Process all requests with missing distance
+        requestsToProcess = await db.select()
+          .from(transportRequests)
+          .where(sql`${transportRequests.distance} IS NULL`)
+          .limit(batchSize);
+      }
+
+      let updated = 0;
+      let cachedHits = 0;
+      const errors: Array<{ requestId: string; referenceId: string; reason: string }> = [];
+
+      console.log(`[Distance Recalculation] Processing ${requestsToProcess.length} requests...`);
+
+      for (const request of requestsToProcess) {
+        try {
+          const { calculateDistanceForRequest } = await import('./distance.js');
+          
+          const result = await calculateDistanceForRequest({
+            fromCity: request.fromCity,
+            toCity: request.toCity,
+            departureAddress: request.departureAddress,
+            arrivalAddress: request.arrivalAddress,
+            referenceId: request.referenceId
+          });
+
+          if (result.distanceKm !== null) {
+            // Update database with distance
+            await db.update(transportRequests)
+              .set({
+                distance: result.distanceKm,
+                distanceSource: result.source,
+                distanceError: null // Clear any previous error
+              })
+              .where(eq(transportRequests.id, request.id));
+
+            updated++;
+            if (result.wasCached) {
+              cachedHits++;
+            }
+
+            console.log(`[Distance Recalculation] ✓ ${request.referenceId}: ${result.distanceKm} km (${result.source})`);
+          } else {
+            // Store error
+            await db.update(transportRequests)
+              .set({
+                distanceError: result.error || "Unknown error"
+              })
+              .where(eq(transportRequests.id, request.id));
+
+            errors.push({
+              requestId: request.id,
+              referenceId: request.referenceId,
+              reason: result.error || "Unknown error"
+            });
+
+            console.error(`[Distance Recalculation] ✗ ${request.referenceId}: ${result.error}`);
+          }
+
+          // Rate limiting: wait 100ms between requests to avoid quota issues
+          await new Promise(resolve => setTimeout(resolve, 100));
+
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : "Unknown error";
+          errors.push({
+            requestId: request.id,
+            referenceId: request.referenceId,
+            reason: errorMessage
+          });
+          console.error(`[Distance Recalculation] Error processing ${request.referenceId}:`, error);
+        }
+      }
+
+      res.json({
+        success: true,
+        message: `Recalculation completed: ${updated} distances calculated`,
+        updated,
+        cachedHits,
+        errors,
+        processed: requestsToProcess.length
+      });
+
+    } catch (error) {
+      console.error("Error recalculating distances:", error);
+      res.status(500).json({ error: "Error during distance recalculation" });
+    }
+  });
+
   // MIGRATION: Fix missing requests in coordinator views
   app.post("/api/admin/migrate-coordination-status", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
