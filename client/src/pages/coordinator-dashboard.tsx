@@ -2451,7 +2451,7 @@ export default function CoordinatorDashboard() {
               </Card>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {filterRequests(nouveauRequests, filters.nouveau).map((request) => renderRequestCard(request, true, false, false, true))}
+                {filterRequests(nouveauRequests, filters.nouveau).map((request) => renderRequestCard(request, true, false, false, true, true))}
               </div>
             )}
           </TabsContent>
