@@ -217,7 +217,7 @@ export function RequestCard({
                 </div>
               </div>
               <p className={`text-sm leading-relaxed ${showFullDescription ? '' : 'line-clamp-2'}`}>
-                {request.description}
+                <span className="font-semibold">{categoryConfig.label}:</span> {request.description}
               </p>
             </div>
             
