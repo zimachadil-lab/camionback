@@ -138,7 +138,6 @@ export function RequestCard({
           <div className="bg-white/20 rounded-md p-1.5 backdrop-blur-sm">
             <CategoryIcon className={`w-5 h-5 ${categoryConfig.color}`} />
           </div>
-          <h3 className="font-semibold text-white text-base">{categoryConfig.label}</h3>
         </div>
         <Badge className="bg-slate-900/90 text-white border-0 font-mono text-xs" data-testid={`text-reference-${request.id}`}>
           {request.referenceId}
