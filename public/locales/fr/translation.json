@@ -416,6 +416,7 @@
       "payments": "Paiements"
     },
     "filters": {
+      "filterByCity": "Filtrer par ville",
       "allCities": "Toutes les villes",
       "searchPlaceholder": "Rechercher une commande..."
     },

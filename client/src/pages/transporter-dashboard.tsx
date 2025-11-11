@@ -665,19 +665,91 @@ export default function TransporterDashboard() {
           </div>
 
           <TabsContent value="available" className="mt-6 space-y-6">
-            <div className="flex justify-center">
-              <Select value={selectedCity} onValueChange={setSelectedCity}>
-                <SelectTrigger className="w-full sm:w-64" data-testid="select-city-filter">
-                  <ListFilter className="mr-2 h-4 w-4" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="allCities">{t('transporterDashboard.filters.allCities')}</SelectItem>
-                  {availableCities.map((city: string) => (
-                    <SelectItem key={city} value={city}>{city}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            {/* Modern City Filter with Badges */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 px-4">
+                <ListFilter className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <h3 className="text-sm font-medium text-muted-foreground">
+                  {t('transporterDashboard.filters.filterByCity')}
+                </h3>
+              </div>
+              
+              <div className="relative">
+                <div className="flex gap-2 overflow-x-auto pb-2 px-4 scrollbar-hide">
+                  {/* All Cities Badge */}
+                  <button
+                    onClick={() => setSelectedCity("allCities")}
+                    data-testid="filter-city-all"
+                    className={`
+                      relative inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 whitespace-nowrap flex-shrink-0
+                      ${selectedCity === "allCities" 
+                        ? "bg-gradient-to-br from-[#0d9488] via-[#0f766e] to-[#115e59] text-white shadow-lg shadow-teal-500/30 scale-105" 
+                        : "bg-card text-muted-foreground hover:bg-accent hover:text-accent-foreground hover-elevate"
+                      }
+                    `}
+                  >
+                    <MapPin className="h-4 w-4" />
+                    <span>{t('transporterDashboard.filters.allCities')}</span>
+                    <Badge 
+                      variant="secondary" 
+                      className={`
+                        min-w-[24px] h-6 px-2 text-xs font-bold rounded-full
+                        ${selectedCity === "allCities" 
+                          ? "bg-white/20 text-white" 
+                          : "bg-primary/10 text-primary"
+                        }
+                      `}
+                    >
+                      {requests.filter((req: any) => 
+                        (!req.declinedBy || !req.declinedBy.includes(user.id)) &&
+                        (!req.transporterInterests?.includes(user.id))
+                      ).length}
+                    </Badge>
+                  </button>
+
+                  {/* City Badges with Request Counts */}
+                  {availableCities.map((city: string) => {
+                    const cityRequestCount = requests.filter((req: any) => 
+                      (req.fromCity === city || req.toCity === city) &&
+                      (!req.declinedBy || !req.declinedBy.includes(user.id)) &&
+                      (!req.transporterInterests?.includes(user.id))
+                    ).length;
+
+                    return (
+                      <button
+                        key={city}
+                        onClick={() => setSelectedCity(city)}
+                        data-testid={`filter-city-${city}`}
+                        className={`
+                          relative inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 whitespace-nowrap flex-shrink-0
+                          ${selectedCity === city 
+                            ? "bg-gradient-to-br from-[#0d9488] via-[#0f766e] to-[#115e59] text-white shadow-lg shadow-teal-500/30 scale-105" 
+                            : "bg-card text-muted-foreground hover:bg-accent hover:text-accent-foreground hover-elevate"
+                          }
+                        `}
+                      >
+                        <MapPin className="h-4 w-4" />
+                        <span>{city}</span>
+                        <Badge 
+                          variant="secondary" 
+                          className={`
+                            min-w-[24px] h-6 px-2 text-xs font-bold rounded-full
+                            ${selectedCity === city 
+                              ? "bg-white/20 text-white" 
+                              : "bg-primary/10 text-primary"
+                            }
+                          `}
+                        >
+                          {cityRequestCount}
+                        </Badge>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Gradient fade on right for scroll indication */}
+                <div className="absolute right-0 top-0 bottom-2 w-12 bg-gradient-to-l from-background to-transparent pointer-events-none" />
+              </div>
             </div>
 
             {filteredRequests.length > 0 ? (

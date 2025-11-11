@@ -416,6 +416,7 @@
       "payments": "المدفوعات"
     },
     "filters": {
+      "filterByCity": "تصفية حسب المدينة",
       "allCities": "جميع المدن",
       "searchPlaceholder": "ابحث عن طلب..."
     },
