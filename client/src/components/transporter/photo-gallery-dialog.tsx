@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useState } from "react";
@@ -36,19 +36,13 @@ export function PhotoGalleryDialog({ open, onClose, photos, referenceId }: Photo
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] p-0 overflow-hidden" data-testid="dialog-photo-gallery">
-        <DialogHeader className="p-4 sm:p-6 pb-3 sm:pb-4">
-          <DialogTitle className="text-base sm:text-lg">
-            {t('transporterDashboard.photoGalleryDialog.title')} {referenceId}
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="relative px-4 sm:px-6 pb-4 sm:pb-6">
+      <DialogContent className="max-w-[92vw] sm:max-w-4xl max-h-[85vh] p-3 sm:p-6 overflow-hidden" data-testid="dialog-photo-gallery">
+        <div className="relative">
           <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
             <img
               src={photos[currentIndex]}
               alt={`${t('transporterDashboard.photoGalleryDialog.photo')} ${currentIndex + 1}`}
-              className="w-full h-full object-cover sm:object-contain cursor-pointer"
+              className="w-full h-full object-contain cursor-pointer"
               onClick={handleImageClick}
               data-testid={`img-gallery-${currentIndex}`}
             />
