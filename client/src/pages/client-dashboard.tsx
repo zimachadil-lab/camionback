@@ -151,6 +151,7 @@ function getClientStatus(request: any, interestedCount: number = 0, t: any) {
       text: t('clientDashboard.status.chooseTransporter'),
       variant: "outline" as const,
       icon: Users,
+      isProcessing: true,
     };
   }
 
@@ -160,6 +161,7 @@ function getClientStatus(request: any, interestedCount: number = 0, t: any) {
       text: t('clientDashboard.status.offersReceived'),
       variant: "outline" as const,
       icon: Truck,
+      isProcessing: true,
     };
   }
 
@@ -169,6 +171,7 @@ function getClientStatus(request: any, interestedCount: number = 0, t: any) {
       text: t('clientDashboard.status.waitingForOffers'),
       variant: "secondary" as const,
       icon: Package,
+      isProcessing: true,
     };
   }
 
@@ -178,6 +181,7 @@ function getClientStatus(request: any, interestedCount: number = 0, t: any) {
       text: t('clientDashboard.status.requestFinalization'),
       variant: "secondary" as const,
       icon: Info,
+      isProcessing: true,
     };
   }
 
