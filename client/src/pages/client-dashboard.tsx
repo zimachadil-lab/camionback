@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star, CreditCard, Upload, Eye, Edit, MessageSquare, Calendar, Flag, Truck, Users, Zap, X, ChevronLeft, ChevronRight, Target, ArrowDown, Camera, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, DollarSign, ImageIcon, Plus, ArrowRight, FileText } from "lucide-react";
+import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star, CreditCard, Upload, Eye, Edit, MessageSquare, Calendar, Flag, Truck, Users, Zap, X, ChevronLeft, ChevronRight, Target, ArrowDown, Camera, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, DollarSign, ImageIcon, Plus, ArrowRight, FileText, AlertCircle } from "lucide-react";
 import { getCategoryConfig } from "@/lib/goods-category-config";
 import { Header } from "@/components/layout/header";
 import { NewRequestForm } from "@/components/client/new-request-form";
@@ -1649,6 +1649,10 @@ export default function ClientDashboard() {
   const [reportRequestId, setReportRequestId] = useState<string>("");
   const [showPhotosDialog, setShowPhotosDialog] = useState(false);
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
+  const [showReceiptDialog, setShowReceiptDialog] = useState(false);
+  const [selectedReceipt, setSelectedReceipt] = useState<string>("");
+  const [showArchiveReasonDialog, setShowArchiveReasonDialog] = useState(false);
+  const [selectedArchiveReason, setSelectedArchiveReason] = useState<string>("");
 
   const handleLogout = () => {
     logout();
@@ -2365,50 +2369,60 @@ export default function ClientDashboard() {
                           </div>
                         )}
 
-                        <div className="flex items-center gap-2">
-                          {request.acceptedOfferId && (
-                            <>
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => handleViewTransporter(request.id)}
-                                data-testid={`button-view-transporter-completed-${request.id}`}
-                                className="gap-2"
-                              >
-                                <Info className="h-4 w-4" />
-                                <span className="hidden sm:inline">Infos transporteur</span>
-                                <span className="sm:hidden">Infos</span>
-                              </Button>
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => handleUpdateStatus(request.id, "republish")}
-                                data-testid={`button-republish-completed-${request.id}`}
-                                className="gap-2"
-                              >
-                                <RotateCcw className="h-4 w-4" />
-                                Republier
-                              </Button>
-                            </>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {/* Bouton "Payé" si commande payée avec reçu */}
+                          {request.paymentStatus === "paid" && request.paymentReceipt && (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedReceipt(request.paymentReceipt);
+                                setShowReceiptDialog(true);
+                              }}
+                              data-testid={`button-view-receipt-${request.id}`}
+                              className="gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white border-0"
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                              <span>Payé</span>
+                            </Button>
                           )}
+
+                          {/* Bouton "Expirée" si commande archivée */}
+                          {request.coordinationStatus === "archive" && request.coordinationReason && (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedArchiveReason(request.coordinationReason);
+                                setShowArchiveReasonDialog(true);
+                              }}
+                              data-testid={`button-view-archive-reason-${request.id}`}
+                              className="gap-2"
+                            >
+                              <AlertCircle className="h-4 w-4" />
+                              <span>Expirée</span>
+                            </Button>
+                          )}
+
+                          {/* Bouton Coordinateur - toujours visible */}
                           <Button
-                            variant="destructive"
+                            variant="outline"
                             size="sm"
-                            onClick={() => handleOpenReportDialog(request.id)}
-                            data-testid={`button-report-completed-${request.id}`}
+                            onClick={() => {
+                              setChatOpen(true);
+                              setSelectedTransporter({
+                                id: "coordinator",
+                                name: "Coordinateur CamionBack",
+                                role: "coordinator"
+                              });
+                              setChatRequestId(request.id);
+                            }}
+                            data-testid={`button-contact-coordinator-completed-${request.id}`}
                             className="gap-2"
                           >
-                            <Flag className="h-4 w-4" />
-                            <span className="hidden sm:inline">Signaler</span>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDeleteRequest(request.id)}
-                            data-testid={`button-delete-completed-${request.id}`}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
+                            <MessageSquare className="h-4 w-4" />
+                            <span className="hidden sm:inline">Coordinateur</span>
+                            <span className="sm:hidden">Coord</span>
                           </Button>
                         </div>
                       </div>
@@ -2829,6 +2843,93 @@ export default function ClientDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog pour afficher le reçu de paiement */}
+      <AlertDialog open={showReceiptDialog} onOpenChange={setShowReceiptDialog}>
+        <AlertDialogContent className="max-w-[90vw] sm:max-w-2xl">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-white" />
+              </div>
+              <AlertDialogTitle className="text-xl">Reçu de paiement</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="space-y-4">
+              <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3">
+                <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">
+                  ✅ Votre paiement a été validé avec succès
+                </p>
+              </div>
+              
+              {selectedReceipt && (
+                <div className="mt-4">
+                  <p className="text-sm font-medium text-foreground mb-2">Reçu téléversé :</p>
+                  <div className="border-2 border-border rounded-lg overflow-hidden">
+                    <img
+                      src={selectedReceipt}
+                      alt="Reçu de paiement"
+                      className="w-full h-auto"
+                    />
+                  </div>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction
+              className="w-full"
+              data-testid="button-close-receipt"
+            >
+              Fermer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog pour afficher la raison d'archivage */}
+      <AlertDialog open={showArchiveReasonDialog} onOpenChange={setShowArchiveReasonDialog}>
+        <AlertDialogContent className="max-w-[90vw] sm:max-w-md">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-12 h-12 rounded-full bg-destructive flex items-center justify-center">
+                <AlertCircle className="w-6 h-6 text-destructive-foreground" />
+              </div>
+              <AlertDialogTitle className="text-xl">Commande expirée</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="space-y-4">
+              <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4">
+                <p className="text-sm font-semibold text-foreground mb-2">
+                  ⚠️ Information importante
+                </p>
+                <p className="text-sm text-foreground">
+                  Cette commande a été marquée comme expirée par l'équipe CamionBack.
+                </p>
+              </div>
+              
+              {selectedArchiveReason && (
+                <div className="bg-muted/50 border border-border rounded-lg p-3">
+                  <p className="text-sm font-medium text-foreground/70 mb-1">Raison :</p>
+                  <p className="text-base font-semibold text-foreground">
+                    {selectedArchiveReason}
+                  </p>
+                </div>
+              )}
+
+              <p className="text-sm text-muted-foreground italic">
+                Pour plus d'informations, contactez le coordinateur via le bouton "Coordinateur"
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction
+              className="w-full"
+              data-testid="button-close-archive-reason"
+            >
+              Compris
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
