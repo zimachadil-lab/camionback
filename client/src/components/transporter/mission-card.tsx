@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Phone, FileText, ArrowRight } from "lucide-react";
+import { Calendar, MapPin, Phone, FileText, ArrowRight, PhoneCall } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
@@ -23,7 +23,7 @@ export function MissionCard({ request, onViewDetails }: MissionCardProps) {
       {/* Header avec numéro de commande */}
       <CardHeader className="bg-gradient-to-br from-[#0d9488] via-[#0f766e] to-[#115e59] text-white p-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" data-testid={`mission-reference-${request.id}`}>
             <div className="p-2 bg-white/20 backdrop-blur-sm rounded-lg">
               <FileText className="h-5 w-5" />
             </div>
@@ -43,7 +43,7 @@ export function MissionCard({ request, onViewDetails }: MissionCardProps) {
       <CardContent className="p-5 space-y-4">
         {/* Date de mission - Très visible */}
         {missionDate && (
-          <div className="bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-teal-950/40 dark:to-emerald-950/40 border-2 border-teal-200 dark:border-teal-800 rounded-xl p-4">
+          <div className="bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-teal-950/40 dark:to-emerald-950/40 border-2 border-teal-200 dark:border-teal-800 rounded-xl p-4" data-testid={`mission-date-${request.id}`}>
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-teal-600 rounded-lg">
                 <Calendar className="h-5 w-5 text-white" />
@@ -63,7 +63,7 @@ export function MissionCard({ request, onViewDetails }: MissionCardProps) {
         )}
 
         {/* Itinéraire - Départ et Arrivée */}
-        <div className="bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-950/40 dark:to-gray-950/40 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
+        <div className="bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-950/40 dark:to-gray-950/40 border border-slate-200 dark:border-slate-800 rounded-xl p-4" data-testid={`mission-itinerary-${request.id}`}>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 flex-1">
               <div className="p-2 bg-[#0d9488] rounded-lg flex-shrink-0">
@@ -90,7 +90,7 @@ export function MissionCard({ request, onViewDetails }: MissionCardProps) {
         </div>
 
         {/* Téléphone du client - Très visible */}
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4">
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4" data-testid={`mission-client-phone-${request.id}`}>
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <div className="p-2.5 bg-blue-600 rounded-lg flex-shrink-0">
@@ -107,31 +107,34 @@ export function MissionCard({ request, onViewDetails }: MissionCardProps) {
               </div>
             </div>
             {clientPhone !== "N/A" && (
-              <Button
-                size="icon"
-                className="flex-shrink-0 h-12 w-12 bg-blue-600 hover:bg-blue-700 text-white"
-                asChild
-                data-testid={`button-call-client-${request.id}`}
-              >
-                <a href={`tel:${clientPhone}`}>
+              <a href={`tel:${clientPhone}`} data-testid={`button-call-client-${request.id}`}>
+                <Button
+                  size="icon"
+                  variant="default"
+                  className="flex-shrink-0 h-12 w-12 bg-blue-600"
+                >
                   <Phone className="h-5 w-5" />
-                </a>
-              </Button>
+                </Button>
+              </a>
             )}
           </div>
         </div>
 
         {/* Message d'incitation */}
-        <div className="bg-amber-50 dark:bg-amber-950/20 border-l-4 border-amber-500 p-3 rounded-r-lg">
-          <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-            📞 Veuillez contacter le client pour organiser la prise en charge
-          </p>
+        <div className="bg-amber-50 dark:bg-amber-950/20 border-l-4 border-amber-500 p-3 rounded-r-lg" data-testid={`mission-contact-reminder-${request.id}`}>
+          <div className="flex items-center gap-2">
+            <PhoneCall className="h-4 w-4 text-amber-600" />
+            <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+              Veuillez contacter le client pour organiser la prise en charge
+            </p>
+          </div>
         </div>
 
         {/* Bouton Détails */}
         <Button 
           onClick={onViewDetails}
-          className="w-full h-12 bg-gradient-to-r from-[#0d9488] to-[#0f766e] hover:from-[#0f766e] hover:to-[#115e59] text-white font-semibold shadow-lg hover:shadow-xl transition-all"
+          variant="default"
+          className="w-full h-12 bg-gradient-to-r from-[#0d9488] to-[#0f766e] text-white font-semibold shadow-lg"
           data-testid={`button-view-mission-details-${request.id}`}
         >
           <FileText className="h-5 w-5 me-2" />

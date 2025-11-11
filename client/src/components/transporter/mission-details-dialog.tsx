@@ -12,7 +12,8 @@ import {
   Ruler,
   Warehouse,
   Image as ImageIcon,
-  User
+  User,
+  PhoneCall
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -59,7 +60,7 @@ export function MissionDetailsDialog({
             {/* Date de mission */}
             {missionDate && (
               <Card className="border-2 border-teal-200 dark:border-teal-800">
-                <CardContent className="p-4">
+                <CardContent className="p-4" data-testid="mission-details-date">
                   <div className="flex items-center gap-3">
                     <div className="p-2.5 bg-gradient-to-br from-teal-600 to-emerald-600 rounded-lg">
                       <Calendar className="h-5 w-5 text-white" />
@@ -87,7 +88,7 @@ export function MissionDetailsDialog({
                   Itinéraire
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-3" data-testid="mission-details-itinerary">
                 <div className="flex items-start gap-3 p-3 bg-teal-50 dark:bg-teal-950/20 rounded-lg">
                   <div className="p-2 bg-teal-600 rounded-lg mt-0.5">
                     <MapPin className="h-4 w-4 text-white" />
@@ -123,7 +124,7 @@ export function MissionDetailsDialog({
                   Contact Client
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent data-testid="mission-details-client-contact">
                 <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
                   <div className="flex items-center gap-3 flex-1">
                     <div className="p-2 bg-blue-600 rounded-lg">
@@ -137,17 +138,17 @@ export function MissionDetailsDialog({
                     </div>
                   </div>
                   {clientPhone !== "N/A" && (
-                    <Button
-                      size="sm"
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
-                      asChild
-                      data-testid="button-call-client-dialog"
-                    >
-                      <a href={`tel:${clientPhone}`}>
+                    <a href={`tel:${clientPhone}`}>
+                      <Button
+                        size="sm"
+                        variant="default"
+                        className="bg-blue-600"
+                        data-testid="button-call-client-dialog"
+                      >
                         <Phone className="h-4 w-4 me-2" />
                         Appeler
-                      </a>
-                    </Button>
+                      </Button>
+                    </a>
                   )}
                 </div>
               </CardContent>
@@ -161,7 +162,7 @@ export function MissionDetailsDialog({
                   Détails de la marchandise
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-3" data-testid="mission-details-goods">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-3 bg-slate-50 dark:bg-slate-950/20 rounded-lg">
                     <p className="text-xs text-muted-foreground font-medium mb-1">Type</p>
@@ -213,10 +214,13 @@ export function MissionDetailsDialog({
             </Card>
 
             {/* Message important */}
-            <div className="bg-amber-50 dark:bg-amber-950/20 border-l-4 border-amber-500 p-4 rounded-r-lg">
-              <p className="font-semibold text-amber-800 dark:text-amber-200 mb-1">
-                📞 Action requise
-              </p>
+            <div className="bg-amber-50 dark:bg-amber-950/20 border-l-4 border-amber-500 p-4 rounded-r-lg" data-testid="mission-action-required">
+              <div className="flex items-center gap-2 mb-1">
+                <PhoneCall className="h-4 w-4 text-amber-600" />
+                <p className="font-semibold text-amber-800 dark:text-amber-200">
+                  Action requise
+                </p>
+              </div>
               <p className="text-sm text-amber-700 dark:text-amber-300">
                 Contactez le client pour organiser la prise en charge de la marchandise. Le coordinateur suit l'avancement de cette mission.
               </p>
