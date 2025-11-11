@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { MapPin, Package, Calendar, DollarSign, Image as ImageIcon, AlertCircle, Eye, FileText, X, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown, ArrowRight, Camera, Warehouse, Building2, Home } from "lucide-react";
+import { MapPin, Package, DollarSign, Image as ImageIcon, AlertCircle, Eye, FileText, X, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown, ArrowRight, Camera, Warehouse, Building2, Home } from "lucide-react";
 import { format } from "date-fns";
 import { fr, ar } from "date-fns/locale";
 import { PhotoGalleryDialog } from "./photo-gallery-dialog";
@@ -133,19 +133,26 @@ export function RequestCard({
     <>
     <Card dir={i18n.dir()} className={`overflow-hidden hover-elevate border-2 ${categoryConfig.borderColor}`}>
       {/* En-tête coloré avec icône de catégorie */}
-      <div className={`${categoryConfig.bgColor} p-3 flex items-center justify-between`}>
+      <div className={`${categoryConfig.bgColor} p-2.5 flex items-center justify-between gap-3`}>
         <div className="flex items-center gap-2">
           <div className="bg-white/20 rounded-md p-1.5 backdrop-blur-sm">
-            <CategoryIcon className={`w-5 h-5 ${categoryConfig.color}`} />
+            <CategoryIcon className={`w-4 h-4 ${categoryConfig.color}`} />
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-1 justify-end">
           {/* Indicateur de disponibilité animé */}
           <div className="relative flex items-center justify-center" data-testid={`status-available-${request.id}`}>
             <span className="absolute h-3 w-3 rounded-full bg-green-400 opacity-75 animate-ping"></span>
             <span className="relative h-2.5 w-2.5 rounded-full bg-green-500"></span>
           </div>
-          <Badge className="bg-slate-900/90 text-white border-0 font-mono text-xs" data-testid={`text-reference-${request.id}`}>
+          {/* Date de disponibilité */}
+          <div className="bg-white/10 px-2.5 py-1 rounded-md backdrop-blur-sm border border-white/20">
+            <span className="text-[10px] font-medium text-white/90">
+              {format(dateTime, "dd MMM yyyy", { locale: dateLocale })}
+            </span>
+          </div>
+          {/* Numéro de commande */}
+          <Badge className="bg-slate-900/90 text-white border-0 font-mono text-xs px-2.5 py-1" data-testid={`text-reference-${request.id}`}>
             {request.referenceId}
           </Badge>
         </div>
@@ -187,15 +194,6 @@ export function RequestCard({
             </div>
           </div>
         )}
-
-        {/* Date de mission */}
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/30 border border-border/50">
-          <Calendar className="w-4 h-4 text-primary" />
-          <span className="text-xs font-medium text-muted-foreground">{t('requestCard.availability')}:</span>
-          <span className="text-sm font-semibold ms-auto">
-            {format(dateTime, "dd MMM yyyy", { locale: dateLocale })}
-          </span>
-        </div>
 
         {/* Description - Style client */}
         {request.description && (
