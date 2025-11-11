@@ -46,9 +46,7 @@ export function Header({ user, onLogout, onCreateRequest, onAnnounceReturn }: He
       ];
     } else if (user.role === "transporteur") {
       return [
-        { label: t('header.transporter.dashboard'), icon: Package, href: "/", priority: "primary" },
         { label: t('header.transporter.profile'), icon: User, href: "/transporter/profile", priority: "primary" },
-        { label: t('header.transporter.payments'), icon: Receipt, href: "/transporter/payments", priority: "secondary" },
         { label: t('header.transporter.ratings'), icon: Star, href: "/transporter/ratings", priority: "secondary" },
         { label: t('header.transporter.rib'), icon: CreditCard, href: "/transporter/rib", priority: "secondary" },
         { label: t('header.transporter.howItWorks'), icon: HelpCircle, href: "/how-it-works-transporter", priority: "secondary" },
