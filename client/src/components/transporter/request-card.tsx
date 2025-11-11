@@ -139,7 +139,7 @@ export function RequestCard({
             <CategoryIcon className={`w-4 h-4 ${categoryConfig.color}`} />
           </div>
         </div>
-        <div className="flex items-center gap-2.5 flex-1 justify-end">
+        <div className="flex items-center gap-2.5 flex-1 justify-end pr-1">
           {/* Date de disponibilité avec animation verte intense */}
           <div className="relative bg-gradient-to-r from-green-500 to-green-600 px-3.5 py-1.5 rounded-md shadow-md" data-testid={`text-availability-date-${request.id}`}>
             {/* Animation ping externe */}
