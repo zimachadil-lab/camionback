@@ -779,7 +779,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get truck photos for a specific transporter (lazy loading)
+  // Get truck photos for own profile (user can only access their own photos)
+  app.get("/api/users/:id/photos", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const currentUser = req.user!;
+      
+      // Security: Users can only access their own photos
+      if (currentUser.id !== id) {
+        return res.status(403).json({ error: "Accès non autorisé" });
+      }
+      
+      const photos = await storage.getTransporterPhotos(id);
+      
+      if (!photos) {
+        return res.status(404).json({ error: "Utilisateur non trouvé" });
+      }
+      
+      res.json(photos);
+    } catch (error: any) {
+      console.error("Error fetching user photos:", error?.message);
+      res.status(500).json({ 
+        error: "Échec de récupération des photos"
+      });
+    }
+  });
+
+  // Get truck photos for a specific transporter (lazy loading - admin only)
   app.get("/api/admin/transporter-photos/:id", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const { id } = req.params;
