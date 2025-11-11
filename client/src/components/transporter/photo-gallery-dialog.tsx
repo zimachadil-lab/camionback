@@ -76,12 +76,12 @@ export function PhotoGalleryDialog({ open, onClose, photos, referenceId }: Photo
             )}
           </div>
 
-          <div className="mt-3 sm:mt-4 flex gap-2 overflow-x-auto pb-2">
+          <div className="mt-3 sm:mt-4 grid grid-cols-4 gap-2">
             {photos.map((photo, idx) => (
               <button
                 key={idx}
                 onClick={() => setCurrentIndex(idx)}
-                className={`relative w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-colors ${
+                className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-colors ${
                   idx === currentIndex ? "border-primary" : "border-transparent"
                 }`}
                 data-testid={`button-thumbnail-${idx}`}
