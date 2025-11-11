@@ -38,6 +38,15 @@ The platform features a mobile-first, dark teal design with full French/Arabic b
 - Shadow animations on hover for all user roles
 - Improved visual responsiveness to user interactions
 
+**Shared StatusIndicator Component (Nov 2025):**
+- Centralized status badge component (`client/src/components/shared/status-indicator.tsx`) used across client and coordinator dashboards
+- Displays status with Lucide icon, text, and processing state animations
+- Processing states (`isProcessing: true`) feature emerald gradient (from-emerald-400 to-green-400) with spinning icon and pulse animation
+- Completed/static states use teal gradient (from-[#1abc9c] to-[#16a085]) without animations
+- Eliminates code duplication and ensures consistent status display styling
+- Coordinator getClientStatus updated with `isProcessing` flags for workflow states: qualification, finalization, publication, offers received, transporter selection
+- All emojis removed from status text per architecture rules, replaced with Lucide icon components
+
 ### Technical Implementations
 The backend is an Express.js and TypeScript application providing RESTful JSON APIs. Authentication is phone number-based with 6-digit PIN verification and bcrypt hashing. User roles (Client, Transporter, Admin, Coordinator) define access control. Real-time chat uses WebSockets, and an in-app notification system provides alerts. PostgreSQL (Neon Serverless) with Drizzle ORM is used for data storage. Key features include a multi-status client request progression and transporter offer workflow, advanced user management (transporter rating, contract management, account blocking/deletion), multi-channel notification system (in-app, SMS, email, PWA push), dynamic dashboards for Admin and Coordinators (request management, reporting, dispute resolution, payment status management), public order sharing with WhatsApp integration, CamioMatch for intelligent transporter matching, and robust file management for photos. Performance is optimized with pre-calculated offer counts, lazy loading, and optimized SQL queries. Coordinators can manage and requalify production orders. Google Maps integration uses a shared loader (`google-maps-loader.ts`) with `region=MA` parameter to display Western Sahara as part of Morocco across all map components (InteractiveRouteMap, GooglePlacesAutocomplete), ensuring territorial consistency with Morocco's perspective.
 
