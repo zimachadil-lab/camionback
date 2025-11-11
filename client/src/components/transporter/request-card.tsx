@@ -330,10 +330,11 @@ export function RequestCard({
             )}
 
             {request.handlingRequired === false && (
-              <div className="pt-2 border-t">
-                <Badge variant="outline" className="text-xs">
-                  {t('requestCard.handlingNo')}
-                </Badge>
+              <div className="pt-3 border-t">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Warehouse className="w-4 h-4 text-primary" />
+                  <span>{t('requestCard.handlingNo')}</span>
+                </div>
               </div>
             )}
           </>
