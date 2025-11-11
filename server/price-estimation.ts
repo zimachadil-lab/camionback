@@ -69,10 +69,10 @@ function computeCamionBackSplit(totalClientMAD: number): {
 }
 
 // Heuristic fallback estimation with CamionBack discount (-40%)
-function getHeuristicEstimate(distance: number | null, category: string): PriceEstimation {
+function getHeuristicEstimate(distance: number | null, category: string, handlingRequired: boolean = false): PriceEstimation {
   const baseFare = 700; // MAD
   const distanceMultiplier = 3.5; // MAD per km
-  const handlingFee = 400; // MAD
+  const handlingFee = handlingRequired ? 400 : 0; // MAD - Only if requested
   
   const distanceKm = distance || 100; // Default 100km if no distance
   const distanceCost = distanceKm * distanceMultiplier;
@@ -94,20 +94,31 @@ function getHeuristicEstimate(distance: number | null, category: string): PriceE
   
   const split = computeCamionBackSplit(camionbackPrice);
   
+  const reasoningParts = [
+    "Estimation heuristique (IA temporairement indisponible)",
+    `Prix traditionnel : ${Math.round(traditionalPrice)} MAD`,
+  ];
+  
+  if (handlingRequired) {
+    reasoningParts.push("Inclus manutention demandée (+400 MAD avant réduction)");
+  } else {
+    reasoningParts.push("Transport seul (manutention non demandée)");
+  }
+  
+  reasoningParts.push(
+    `Réduction CamionBack (retours à vide) : -40% → ${split.totalClientMAD} MAD`,
+    `Répartition garantie 60/40 : Transporteur ${split.transporterFeeMAD} MAD (60%), Plateforme ${split.platformFeeMAD} MAD (40%)`
+  );
+  
   return {
     totalClientMAD: split.totalClientMAD,
     transporterFeeMAD: split.transporterFeeMAD,
     platformFeeMAD: split.platformFeeMAD,
     confidence: 0.3,
-    reasoning: [
-      "Estimation heuristique (IA temporairement indisponible)",
-      `Prix traditionnel : ${Math.round(traditionalPrice)} MAD`,
-      `Réduction CamionBack (retours à vide) : -40% → ${split.totalClientMAD} MAD`,
-      `Répartition garantie 60/40 : Transporteur ${split.transporterFeeMAD} MAD (60%), Plateforme ${split.platformFeeMAD} MAD (40%)`
-    ],
+    reasoning: reasoningParts,
     modeledInputs: {
       goodsType: category,
-      handlingRequired: "Standard"
+      handlingRequired: handlingRequired ? "Oui" : "Non"
     }
   };
 }
@@ -130,6 +141,19 @@ export async function estimatePriceForRequest(request: TransportRequest): Promis
   try {
     console.log(`[Price Estimation] Calling GPT-5 for request ${request.id}`);
     
+    // Build handling details text
+    let handlingDetailsText = 'NON - Transport uniquement';
+    if (request.handlingRequired) {
+      const details = [];
+      if (request.departureFloor !== null && request.departureFloor !== undefined) {
+        details.push(`Départ étage ${request.departureFloor}${request.departureElevator ? ' (ascenseur disponible)' : ' (PAS d\'ascenseur)'}`);
+      }
+      if (request.arrivalFloor !== null && request.arrivalFloor !== undefined) {
+        details.push(`Arrivée étage ${request.arrivalFloor}${request.arrivalElevator ? ' (ascenseur disponible)' : ' (PAS d\'ascenseur)'}`);
+      }
+      handlingDetailsText = details.length > 0 ? `OUI - ${details.join(', ')}` : 'OUI - Manutention standard';
+    }
+    
     // Build intelligent prompt with CamionBack concept
     const prompt = `Tu es un expert en tarification logistique au Maroc avec 15 ans d'expérience, spécialisé dans la plateforme CamionBack.
 
@@ -144,11 +168,15 @@ INFORMATIONS DISPONIBLES :
 - Catégorie de marchandise : ${request.goodsType || 'Non catégorisée'}
 - Distance : ${request.distance ? `${request.distance} km` : 'Distance non calculée (estimer ~100-200 km)'}
 - Trajet : ${request.fromCity} → ${request.toCity}
+- Manutention demandée par le client : ${handlingDetailsText}
 ${request.photos && request.photos.length > 0 ? `- Photos fournies : ${request.photos.length} image(s)` : ''}
 
 MÉTHODE DE CALCUL :
 1. Calcule d'abord le prix TRADITIONNEL avec cette formule :
-   Prix traditionnel = Forfait base (500-1000 MAD) + (Distance × 2-5 MAD/km) + (Volume × 50-150 MAD/m³) + (Poids × 0.5-2 MAD/kg) + Manutention (200-800 MAD)
+   Prix traditionnel = Forfait base (500-1000 MAD) + (Distance × 2-5 MAD/km) + (Volume × 50-150 MAD/m³) + (Poids × 0.5-2 MAD/kg)
+   
+   ${request.handlingRequired ? '+ Manutention (200-800 MAD selon les détails fournis)' : ''}
+   ${!request.handlingRequired ? 'ATTENTION : Le client n\'a PAS demandé de manutention - ne l\'ajoute PAS au calcul !' : ''}
 
 2. Applique la réduction CamionBack :
    - Retours à vide : -40%
@@ -235,7 +263,7 @@ RÉPONSE REQUISE (JSON strict) :
     };
     
     // Validate against heuristic (reject if too far off)
-    const heuristic = getHeuristicEstimate(request.distance, request.goodsType || '');
+    const heuristic = getHeuristicEstimate(request.distance, request.goodsType || '', request.handlingRequired || false);
     const deviation = Math.abs(camionbackPrice - heuristic.totalClientMAD) / heuristic.totalClientMAD;
     
     if (deviation > 0.6 && confidence < 0.65) {
@@ -258,7 +286,7 @@ RÉPONSE REQUISE (JSON strict) :
     console.error('[Price Estimation] AI call failed:', error);
     
     // Fallback to heuristic
-    const heuristic = getHeuristicEstimate(request.distance, request.goodsType || '');
+    const heuristic = getHeuristicEstimate(request.distance, request.goodsType || '', request.handlingRequired || false);
     
     // Don't cache fallback results
     return heuristic;
