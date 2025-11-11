@@ -586,7 +586,7 @@ export default function TransporterDashboard() {
       <Header
         user={user! as { id: string; name?: string; role: string; clientId?: string }}
         onLogout={handleLogout}
-        onAnnounceReturn={() => setAnnounceReturnOpen(true)}
+        onAnnounceReturn={handleAnnounceReturn}
       />
       
       <StoriesBar userRole="transporter" />
