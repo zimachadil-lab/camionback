@@ -166,7 +166,7 @@ export function MissionDetailsDialog({
                   <div className="p-3 bg-slate-50 dark:bg-slate-950/20 rounded-lg">
                     <p className="text-xs text-muted-foreground font-medium mb-1">Type</p>
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl">{categoryConfig.icon}</span>
+                      <categoryConfig.icon className="h-6 w-6 text-primary" />
                       <p className="font-semibold text-sm">{categoryConfig.label}</p>
                     </div>
                   </div>

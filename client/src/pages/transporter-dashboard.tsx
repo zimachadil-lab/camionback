@@ -8,6 +8,8 @@ import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare,
 import { Header } from "@/components/layout/header";
 import { RequestCard } from "@/components/transporter/request-card";
 // OfferForm removed - new workflow uses interest-based matching instead of price offers
+import { MissionCard } from "@/components/transporter/mission-card";
+import { MissionDetailsDialog } from "@/components/transporter/mission-details-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { ChatWindow } from "@/components/chat/chat-window";
@@ -78,6 +80,8 @@ export default function TransporterDashboard() {
   const [editOfferDialogOpen, setEditOfferDialogOpen] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState<any>(null);
   const [notValidatedDialogOpen, setNotValidatedDialogOpen] = useState(false);
+  const [missionDetailsOpen, setMissionDetailsOpen] = useState(false);
+  const [selectedMission, setSelectedMission] = useState<any>(null);
 
   const { toast } = useToast();
 
@@ -807,130 +811,17 @@ export default function TransporterDashboard() {
 
           <TabsContent value="to-process" className="mt-6 space-y-6">
             {acceptedRequests.length > 0 ? (
-              <div className="space-y-4">
-                {acceptedRequests.map((request: any) => {
-                  // Client info comes from request object in new workflow
-                  const isMarkedForBilling = request.paymentStatus === "awaiting_payment";
-                  const categoryConfig = getCategoryConfig(request.goodsType);
-
-                  return (
-                    <Card key={request.id} className="hover-elevate">
-                      <CardContent className="p-6 space-y-4">
-                        <div className="flex items-center justify-between flex-wrap gap-3">
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="text-lg font-semibold">{request.referenceId}</h3>
-                              {isMarkedForBilling && (
-                                <Badge variant="default" className="bg-orange-600">
-                                  En attente de paiement client
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                              {request.fromCity} → {request.toCity}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleViewClientDetails(request)}
-                              className="gap-2"
-                              data-testid={`button-view-client-${request.id}`}
-                            >
-                              <Phone className="h-4 w-4" />
-                              Voir les détails
-                            </Button>
-                            {!isMarkedForBilling && request.status !== "completed" && request.paymentStatus !== "paid" && (
-                              <Button
-                                variant="default"
-                                size="sm"
-                                onClick={() => markForBillingMutation.mutate(request.id)}
-                                disabled={markForBillingMutation.isPending}
-                                className="gap-2"
-                                data-testid={`button-mark-billing-${request.id}`}
-                              >
-                                <CheckCircle className="h-4 w-4" />
-                                {t('transporterDashboard.actions.markForBilling')}
-                              </Button>
-                            )}
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleOpenReportDialog(request.id)}
-                              data-testid={`button-report-${request.id}`}
-                              className="gap-2"
-                            >
-                              <Flag className="h-4 w-4" />
-                              <span className="hidden sm:inline">{t('transporterDashboard.actions.report')}</span>
-                            </Button>
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div>
-                              <p className="text-muted-foreground">{t('shared.labels.goodsType')}</p>
-                              <p className="font-medium">{categoryConfig.label}</p>
-                            </div>
-                            {request.estimatedWeight && (
-                              <div>
-                                <p className="text-muted-foreground">{t('shared.labels.estimatedWeight')}</p>
-                                <p className="font-medium">{request.estimatedWeight}</p>
-                              </div>
-                            )}
-                          </div>
-
-                          {request.pickupDate && (
-                            <div className="bg-primary/5 border border-primary/20 rounded-md p-3 mt-3">
-                              <p className="text-sm text-muted-foreground flex items-center gap-2">
-                                <Calendar className="w-4 h-4" />
-                                {t('shared.labels.missionDate')}
-                              </p>
-                              <p className="text-base font-semibold text-primary mt-1">
-                                {format(new Date(request.pickupDate), "EEEE d MMMM yyyy", { locale: i18n.language === 'ar' ? undefined : fr })}
-                              </p>
-                            </div>
-                          )}
-                          
-                          {request.description && (
-                            <div>
-                              <p className="text-sm text-muted-foreground">{t('shared.labels.description')}</p>
-                              <p className="text-sm">{request.description}</p>
-                            </div>
-                          )}
-                          
-                          {request.photos && request.photos.length > 0 && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleViewPhotos(request.photos, request.referenceId)}
-                              className="gap-2"
-                              data-testid={`button-view-request-photos-${request.id}`}
-                            >
-                              <ImageIcon className="w-4 h-4" />
-                              {t('transporterDashboard.actions.viewPhotos')} ({request.photos.length})
-                            </Button>
-                          )}
-                        </div>
-
-                        {request.clientId && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleChat(request.clientId, request.clientName || t('shared.labels.client'), request.id)}
-                            className="gap-2 w-full sm:w-auto bg-[#00cc88] hover:bg-[#00cc88]/90 text-white border-[#00cc88]"
-                            data-testid={`button-chat-request-${request.id}`}
-                            style={{ textShadow: "0 1px 1px rgba(0,0,0,0.2)" }}
-                          >
-                            <MessageSquare className="w-4 w-4" />
-                            {t('transporterDashboard.actions.sendMessage')}
-                          </Button>
-                        )}
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+              <div className="space-y-4 px-4">
+                {acceptedRequests.map((request: any) => (
+                  <MissionCard
+                    key={request.id}
+                    request={request}
+                    onViewDetails={() => {
+                      setSelectedMission(request);
+                      setMissionDetailsOpen(true);
+                    }}
+                  />
+                ))}
               </div>
             ) : (
               <div className="text-center py-12">
@@ -1392,6 +1283,14 @@ export default function TransporterDashboard() {
           </Form>
         </DialogContent>
       </Dialog>
+
+      {/* Mission Details Dialog */}
+      <MissionDetailsDialog
+        open={missionDetailsOpen}
+        onOpenChange={setMissionDetailsOpen}
+        request={selectedMission}
+        onViewPhotos={handleViewPhotos}
+      />
 
       {/* Account Not Validated Dialog */}
       <Dialog open={notValidatedDialogOpen} onOpenChange={setNotValidatedDialogOpen}>
