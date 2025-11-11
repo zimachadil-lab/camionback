@@ -20,6 +20,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth-context";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -58,6 +59,7 @@ export default function TransporterDashboard() {
     }),
   }), [t]);
   const [selectedCity, setSelectedCity] = useState("allCities");
+  const [cityFilterOpen, setCityFilterOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   // Removed offerDialogOpen - new workflow uses interest buttons instead of offer form
   const [chatOpen, setChatOpen] = useState(false);
@@ -665,91 +667,117 @@ export default function TransporterDashboard() {
           </div>
 
           <TabsContent value="available" className="mt-6 space-y-6">
-            {/* Modern City Filter with Badges */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 px-4">
-                <ListFilter className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                <h3 className="text-sm font-medium text-muted-foreground">
-                  {t('transporterDashboard.filters.filterByCity')}
-                </h3>
-              </div>
-              
-              <div className="relative px-4">
-                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
-                  {/* All Cities Badge */}
-                  <button
-                    onClick={() => setSelectedCity("allCities")}
-                    data-testid="filter-city-all"
-                    className={`
-                      relative inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 whitespace-nowrap flex-shrink-0
-                      ${selectedCity === "allCities" 
-                        ? "bg-gradient-to-br from-[#0d9488] via-[#0f766e] to-[#115e59] text-white shadow-lg shadow-teal-500/30 scale-105" 
-                        : "bg-card text-muted-foreground hover:bg-accent hover:text-accent-foreground hover-elevate"
-                      }
-                    `}
+            {/* City Filter Button with Sheet */}
+            <div className="px-4">
+              <Sheet open={cityFilterOpen} onOpenChange={setCityFilterOpen}>
+                <SheetTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-between h-auto py-3"
+                    data-testid="button-city-filter"
                   >
-                    <MapPin className="h-4 w-4" />
-                    <span>{t('transporterDashboard.filters.allCities')}</span>
-                    <Badge 
-                      variant="secondary" 
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-primary" />
+                      <span className="font-medium">
+                        {selectedCity === "allCities" 
+                          ? t('transporterDashboard.filters.allCities')
+                          : selectedCity
+                        }
+                      </span>
+                    </div>
+                    <Badge variant="secondary" className="ml-2">
+                      {selectedCity === "allCities" 
+                        ? requests.filter((req: any) => 
+                            (!req.declinedBy || !req.declinedBy.includes(user.id)) &&
+                            (!req.transporterInterests?.includes(user.id))
+                          ).length
+                        : requests.filter((req: any) => 
+                            (req.fromCity === selectedCity || req.toCity === selectedCity) &&
+                            (!req.declinedBy || !req.declinedBy.includes(user.id)) &&
+                            (!req.transporterInterests?.includes(user.id))
+                          ).length
+                      }
+                    </Badge>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="bottom" className="h-[80vh]">
+                  <SheetHeader>
+                    <SheetTitle className="flex items-center gap-2">
+                      <ListFilter className="h-5 w-5" />
+                      {t('transporterDashboard.filters.filterByCity')}
+                    </SheetTitle>
+                  </SheetHeader>
+                  <div className="mt-6 space-y-2 overflow-y-auto max-h-[calc(80vh-100px)]">
+                    {/* All Cities Option */}
+                    <button
+                      onClick={() => {
+                        setSelectedCity("allCities");
+                        setCityFilterOpen(false);
+                      }}
+                      data-testid="filter-city-all"
                       className={`
-                        min-w-[24px] h-6 px-2 text-xs font-bold rounded-full
+                        w-full flex items-center justify-between p-4 rounded-xl transition-all duration-300
                         ${selectedCity === "allCities" 
-                          ? "bg-white/20 text-white" 
-                          : "bg-primary/10 text-primary"
+                          ? "bg-gradient-to-br from-[#0d9488] via-[#0f766e] to-[#115e59] text-white shadow-lg" 
+                          : "bg-card hover-elevate"
                         }
                       `}
                     >
-                      {requests.filter((req: any) => 
+                      <div className="flex items-center gap-3">
+                        <MapPin className={`h-5 w-5 ${selectedCity === "allCities" ? "text-white" : "text-primary"}`} />
+                        <span className="font-semibold">{t('transporterDashboard.filters.allCities')}</span>
+                      </div>
+                      <Badge 
+                        variant="secondary" 
+                        className={selectedCity === "allCities" ? "bg-white/20 text-white" : ""}
+                      >
+                        {requests.filter((req: any) => 
+                          (!req.declinedBy || !req.declinedBy.includes(user.id)) &&
+                          (!req.transporterInterests?.includes(user.id))
+                        ).length}
+                      </Badge>
+                    </button>
+
+                    {/* Individual Cities */}
+                    {availableCities.map((city: string) => {
+                      const cityRequestCount = requests.filter((req: any) => 
+                        (req.fromCity === city || req.toCity === city) &&
                         (!req.declinedBy || !req.declinedBy.includes(user.id)) &&
                         (!req.transporterInterests?.includes(user.id))
-                      ).length}
-                    </Badge>
-                  </button>
+                      ).length;
 
-                  {/* City Badges with Request Counts */}
-                  {availableCities.map((city: string) => {
-                    const cityRequestCount = requests.filter((req: any) => 
-                      (req.fromCity === city || req.toCity === city) &&
-                      (!req.declinedBy || !req.declinedBy.includes(user.id)) &&
-                      (!req.transporterInterests?.includes(user.id))
-                    ).length;
-
-                    return (
-                      <button
-                        key={city}
-                        onClick={() => setSelectedCity(city)}
-                        data-testid={`filter-city-${city}`}
-                        className={`
-                          relative inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 whitespace-nowrap flex-shrink-0
-                          ${selectedCity === city 
-                            ? "bg-gradient-to-br from-[#0d9488] via-[#0f766e] to-[#115e59] text-white shadow-lg shadow-teal-500/30 scale-105" 
-                            : "bg-card text-muted-foreground hover:bg-accent hover:text-accent-foreground hover-elevate"
-                          }
-                        `}
-                      >
-                        <MapPin className="h-4 w-4" />
-                        <span>{city}</span>
-                        <Badge 
-                          variant="secondary" 
+                      return (
+                        <button
+                          key={city}
+                          onClick={() => {
+                            setSelectedCity(city);
+                            setCityFilterOpen(false);
+                          }}
+                          data-testid={`filter-city-${city}`}
                           className={`
-                            min-w-[24px] h-6 px-2 text-xs font-bold rounded-full
+                            w-full flex items-center justify-between p-4 rounded-xl transition-all duration-300
                             ${selectedCity === city 
-                              ? "bg-white/20 text-white" 
-                              : "bg-primary/10 text-primary"
+                              ? "bg-gradient-to-br from-[#0d9488] via-[#0f766e] to-[#115e59] text-white shadow-lg" 
+                              : "bg-card hover-elevate"
                             }
                           `}
                         >
-                          {cityRequestCount}
-                        </Badge>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Gradient fade on right for scroll indication */}
-                <div className="absolute right-0 top-0 bottom-2 w-12 bg-gradient-to-l from-background to-transparent pointer-events-none" />
-              </div>
+                          <div className="flex items-center gap-3">
+                            <MapPin className={`h-5 w-5 ${selectedCity === city ? "text-white" : "text-primary"}`} />
+                            <span className="font-semibold">{city}</span>
+                          </div>
+                          <Badge 
+                            variant="secondary" 
+                            className={selectedCity === city ? "bg-white/20 text-white" : ""}
+                          >
+                            {cityRequestCount}
+                          </Badge>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </SheetContent>
+              </Sheet>
             </div>
 
             {filteredRequests.length > 0 ? (
