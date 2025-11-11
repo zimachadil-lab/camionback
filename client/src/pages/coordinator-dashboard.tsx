@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, MessageCircle, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck, Trash2, Share2, Copy, Send, RotateCcw, Info, Users, CreditCard, Calendar, X, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, FileText, MoreVertical, Image as ImageIcon, ClipboardCheck, Award, StickyNote, Plus, ChevronDown, ChevronUp, Upload, SlidersHorizontal, ArrowRight, AlertCircle, UserCheck, Hash, Warehouse, Building2 } from "lucide-react";
+import { Search, ListFilter, Package, Phone, CheckCircle, MapPin, MessageSquare, MessageCircle, Eye, EyeOff, Edit, DollarSign, Compass, ExternalLink, Star, Truck, Trash2, Share2, Copy, Send, RotateCcw, Info, Users, CreditCard, Calendar, X, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, FileText, MoreVertical, Image as ImageIcon, ClipboardCheck, Award, StickyNote, Plus, ChevronDown, ChevronUp, Upload, SlidersHorizontal, ArrowRight, AlertCircle, UserCheck, Hash, Warehouse, Building2, Sparkles, TrendingUp } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { TwoColumnGrid } from "@/components/layout/two-column-grid";
 import { Badge } from "@/components/ui/badge";
@@ -1317,6 +1317,27 @@ export default function CoordinatorDashboard() {
     },
   });
 
+  // AI Price Estimation mutation
+  const [priceEstimation, setPriceEstimation] = useState<any>(null);
+  const [priceEstimationDialogOpen, setPriceEstimationDialogOpen] = useState(false);
+  
+  const estimatePriceMutation = useMutation({
+    mutationFn: async (requestId: string) => {
+      return await apiRequest("POST", "/api/coordinator/estimate-price", { requestId });
+    },
+    onSuccess: (data) => {
+      setPriceEstimation(data);
+      setPriceEstimationDialogOpen(true);
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Erreur d'estimation",
+        description: error.message || "Impossible d'estimer le prix pour cette commande",
+      });
+    },
+  });
+
   // Redirect to login if not authenticated or not coordinator (after all hooks)
   useEffect(() => {
     if (!authLoading && (!user || user.role !== "coordinateur")) {
@@ -2319,15 +2340,36 @@ export default function CoordinatorDashboard() {
             </Badge>
           )}
 
-          {/* Voir détails */}
+          {/* AI Price Estimation - Ultra-modern design */}
           <Button
-            variant="secondary"
+            onClick={() => estimatePriceMutation.mutate(request.id)}
+            disabled={estimatePriceMutation.isPending}
+            data-testid={`button-estimate-price-${request.id}`}
+            className="relative gap-2 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 hover:from-purple-700 hover:via-pink-700 hover:to-blue-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all overflow-hidden group"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 opacity-0 group-hover:opacity-30 blur-xl transition-opacity" />
+            {estimatePriceMutation.isPending ? (
+              <>
+                <Sparkles className="h-4 w-4 animate-spin" />
+                Calcul IA...
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4" />
+                Estimer Prix
+              </>
+            )}
+          </Button>
+          
+          {/* View Details button (secondary) */}
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => handleViewDetails(request)}
             data-testid={`button-view-details-${request.id}`}
-            className="gap-2"
+            className="h-9 w-9 shrink-0"
           >
             <Eye className="h-4 w-4" />
-            Détails
           </Button>
         </div>
 
@@ -2961,6 +3003,123 @@ export default function CoordinatorDashboard() {
               </Button>
               <Button variant="outline" onClick={() => setDetailsDialogOpen(false)}>
                 Fermer
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* AI Price Estimation Dialog */}
+      {priceEstimation && (
+        <Dialog open={priceEstimationDialogOpen} onOpenChange={setPriceEstimationDialogOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500">
+                  <Sparkles className="h-5 w-5 text-white" />
+                </div>
+                Estimation IA - Prix de Transport
+              </DialogTitle>
+              <DialogDescription>
+                Analyse intelligente basée sur la description et la distance
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-6 py-4">
+              {/* Price Range Display */}
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 rounded-xl p-6 space-y-3">
+                <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  Fourchette de prix estimée
+                </p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                    {priceEstimation.priceMinMAD} - {priceEstimation.priceMaxMAD}
+                  </span>
+                  <span className="text-2xl font-semibold text-muted-foreground">MAD</span>
+                </div>
+                
+                {/* Confidence Badge */}
+                <div className="flex items-center gap-2">
+                  <Badge 
+                    variant={priceEstimation.confidence > 0.7 ? "default" : "secondary"}
+                    className="gap-1"
+                  >
+                    <Star className="h-3 w-3" />
+                    Confiance: {Math.round(priceEstimation.confidence * 100)}%
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Modeled Inputs */}
+              {priceEstimation.modeledInputs && Object.keys(priceEstimation.modeledInputs).length > 0 && (
+                <div className="space-y-3">
+                  <p className="text-sm font-semibold text-muted-foreground uppercase">Hypothèses de calcul</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {priceEstimation.modeledInputs.estimatedWeight && (
+                      <div className="bg-muted/50 rounded-lg p-3">
+                        <p className="text-xs text-muted-foreground">Poids estimé</p>
+                        <p className="font-medium">{priceEstimation.modeledInputs.estimatedWeight}</p>
+                      </div>
+                    )}
+                    {priceEstimation.modeledInputs.estimatedVolume && (
+                      <div className="bg-muted/50 rounded-lg p-3">
+                        <p className="text-xs text-muted-foreground">Volume estimé</p>
+                        <p className="font-medium">{priceEstimation.modeledInputs.estimatedVolume}</p>
+                      </div>
+                    )}
+                    {priceEstimation.modeledInputs.handlingRequired && (
+                      <div className="bg-muted/50 rounded-lg p-3">
+                        <p className="text-xs text-muted-foreground">Manutention</p>
+                        <p className="font-medium">{priceEstimation.modeledInputs.handlingRequired}</p>
+                      </div>
+                    )}
+                    {priceEstimation.modeledInputs.goodsType && (
+                      <div className="bg-muted/50 rounded-lg p-3">
+                        <p className="text-xs text-muted-foreground">Type</p>
+                        <p className="font-medium">{priceEstimation.modeledInputs.goodsType}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Reasoning */}
+              {priceEstimation.reasoning && priceEstimation.reasoning.length > 0 && (
+                <div className="space-y-3">
+                  <p className="text-sm font-semibold text-muted-foreground uppercase flex items-center gap-2">
+                    <Info className="h-4 w-4" />
+                    Détails du calcul
+                  </p>
+                  <div className="space-y-2">
+                    {priceEstimation.reasoning.map((reason: string, idx: number) => (
+                      <div key={idx} className="flex items-start gap-2 text-sm">
+                        <div className="h-1.5 w-1.5 rounded-full bg-purple-500 mt-1.5 shrink-0" />
+                        <p className="text-muted-foreground">{reason}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Disclaimer */}
+              <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+                <p className="text-xs text-yellow-800 dark:text-yellow-200 flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <span>
+                    Cette estimation est indicative et basée sur l'analyse IA de la description. 
+                    Le prix final peut varier selon les conditions réelles de transport.
+                  </span>
+                </p>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button 
+                onClick={() => setPriceEstimationDialogOpen(false)}
+                className="gap-2"
+              >
+                Compris
               </Button>
             </DialogFooter>
           </DialogContent>

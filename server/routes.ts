@@ -6769,7 +6769,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Get the request
-      const request = await storage.getRequest(requestId);
+      const request = await storage.getTransportRequest(requestId);
       if (!request) {
         return res.status(404).json({ error: "Demande non trouvée" });
       }
