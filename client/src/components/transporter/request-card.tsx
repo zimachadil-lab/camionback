@@ -435,40 +435,49 @@ export function RequestCard({
                 </div>
               </Button>
             ) : (
-              <>
+              <div className="flex gap-2.5 w-full">
+                {/* Bouton principal "Intéressé" - Premium Design avec Glassmorphism */}
                 <Button 
                   onClick={handleExpressInterest} 
                   disabled={isPendingInterest}
-                  className="w-full gap-3 h-14 border-2 border-[#17cfcf] bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] text-white font-semibold shadow-md transition-all duration-300"
+                  className="flex-[7] h-14 relative overflow-hidden bg-gradient-to-br from-[#17cfcf] via-[#15b8b8] to-[#13b3b3] border-2 border-white/30 shadow-[0_8px_30px_rgb(23,207,207,0.4)] hover:shadow-[0_12px_40px_rgb(23,207,207,0.5)] text-white font-bold transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] group"
                   data-testid={`button-express-interest-${request.id}`}
                 >
-                  <div className="flex items-center gap-3 w-full">
-                    <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+                  {/* Shimmer effect animé */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                  
+                  {/* Contenu du bouton */}
+                  <div className="relative flex items-center gap-2 justify-center">
+                    <div className="w-9 h-9 rounded-full bg-white/25 backdrop-blur-sm flex items-center justify-center shadow-lg">
                       <ThumbsUp className="w-5 h-5 text-white" />
                     </div>
-                    <div className="flex-1 text-left">
+                    <div className="text-left">
                       <p className="text-sm font-bold leading-tight">
                         {isPendingInterest ? t('requestCard.sending') : t('requestCard.interested_action')}
                       </p>
-                      <p className="text-xs text-white/80">
-                        Déclarer votre disponibilité
+                      <p className="text-[10px] text-white/90 leading-tight">
+                        Déclarer ma dispo
                       </p>
                     </div>
                   </div>
                 </Button>
+
+                {/* Bouton secondaire "Pas disponible" - Design minimaliste */}
                 {onDecline && (
                   <Button 
                     onClick={() => onDecline(request.id)} 
                     disabled={isPendingInterest}
                     variant="outline"
-                    className="w-full h-11 font-medium border-2 border-destructive/40 text-destructive transition-all"
+                    className="flex-[3] h-14 border-2 border-destructive/30 bg-transparent hover:bg-destructive/10 hover:border-destructive/50 text-destructive transition-all duration-200 group"
                     data-testid={`button-not-available-${request.id}`}
                   >
-                    <ThumbsDown className="w-4 h-4 me-2" />
-                    <span>{t('requestCard.notAvailable')}</span>
+                    <div className="flex flex-col items-center justify-center gap-0.5">
+                      <ThumbsDown className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                      <span className="text-[10px] font-semibold leading-tight">Indispo</span>
+                    </div>
                   </Button>
                 )}
-              </>
+              </div>
             )
           ) : (
             /* Old offer-based workflow (backward compatibility) */
