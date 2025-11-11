@@ -32,6 +32,7 @@ import { fr } from "date-fns/locale";
 import { useForceFrenchLayout } from "@/hooks/use-force-french-layout";
 import { useTranslation } from "react-i18next";
 import { getCategoryConfig } from "@/lib/goods-category-config";
+import { StatusIndicator } from "@/components/shared/status-indicator";
 
 // Types for adaptive filters by tab
 type TabId = 'nouveau' | 'qualifies' | 'interesses' | 'production' | 'archives';
@@ -132,7 +133,7 @@ function getClientStatus(request: any, interestedCount: number = 0) {
   // 9. Livraison effectuée - Marquage "Livré"
   if (request.status === "completed") {
     return {
-      text: "Livraison effectuée ✅ Merci pour votre confiance",
+      text: "Livraison effectuée - Merci pour votre confiance",
       variant: "default" as const,
       icon: CheckCircle,
     };
@@ -141,7 +142,7 @@ function getClientStatus(request: any, interestedCount: number = 0) {
   // 8. Livraison en cours - Transporteur marque "Pris en charge"
   if (request.status === "in_progress") {
     return {
-      text: "Livraison en cours 🚚📦",
+      text: "Livraison en cours",
       variant: "default" as const,
       icon: Truck,
     };
@@ -150,7 +151,7 @@ function getClientStatus(request: any, interestedCount: number = 0) {
   // 7. Offre confirmée - Si client valide un transporteur
   if (request.status === "accepted" && request.acceptedOfferId) {
     return {
-      text: "Transporteur sélectionné ✅ Livraison prévue",
+      text: "Transporteur sélectionné - Livraison prévue",
       variant: "default" as const,
       icon: CheckCircle,
     };
@@ -159,7 +160,7 @@ function getClientStatus(request: any, interestedCount: number = 0) {
   // 6. Transporteur assigné manuellement - Coordinateur
   if (request.assignedTransporterId && !request.acceptedOfferId) {
     return {
-      text: "Transporteur assigné ✅ Suivi en cours",
+      text: "Transporteur assigné - Suivi en cours",
       variant: "default" as const,
       icon: Truck,
     };
@@ -168,18 +169,20 @@ function getClientStatus(request: any, interestedCount: number = 0) {
   // 5. En sélection Transporteur - Tant qu'aucune offre n'a été choisie
   if (interestedCount > 0 && !request.acceptedOfferId && !request.assignedTransporterId) {
     return {
-      text: "Choisissez votre transporteur 👇",
+      text: "Choisissez votre transporteur",
       variant: "outline" as const,
       icon: Users,
+      isProcessing: true,
     };
   }
 
   // 4. Transporteurs intéressés - Si ≥ 1 intéressé
   if (request.status === "published_for_matching" && interestedCount > 0) {
     return {
-      text: "Des transporteurs ont postulé 🚚 Comparez les profils",
+      text: "Des transporteurs ont postulé - Comparez les profils",
       variant: "outline" as const,
       icon: Truck,
+      isProcessing: true,
     };
   }
 
@@ -189,6 +192,7 @@ function getClientStatus(request: any, interestedCount: number = 0) {
       text: "En attente d'offres transporteurs…",
       variant: "secondary" as const,
       icon: Package,
+      isProcessing: true,
     };
   }
 
@@ -198,6 +202,7 @@ function getClientStatus(request: any, interestedCount: number = 0) {
       text: "Finalisation de votre demande…",
       variant: "secondary" as const,
       icon: Info,
+      isProcessing: true,
     };
   }
 
@@ -206,6 +211,7 @@ function getClientStatus(request: any, interestedCount: number = 0) {
     text: "Qualification logistique en cours…",
     variant: "secondary" as const,
     icon: RotateCcw,
+    isProcessing: true,
   };
 }
 
@@ -1804,7 +1810,6 @@ export default function CoordinatorDashboard() {
     const interestedCount = request.transporterInterests?.length || 0;
     // Get client-friendly status
     const clientStatus = getClientStatus(request, interestedCount);
-    const StatusIcon = clientStatus.icon;
     
     // Get coordinator who qualified/assigned this request
     // The coordinator data is already in request.coordinationUpdatedBy or request.assignedTo as an object
@@ -2035,17 +2040,11 @@ export default function CoordinatorDashboard() {
         )}
 
         {/* Statut logistique */}
-        <div className="relative flex items-center gap-2.5 px-3 py-2 rounded-lg border-2 bg-gradient-to-r from-[#1abc9c]/20 via-[#16a085]/15 to-[#1abc9c]/20 border-[#1abc9c]/40 shadow-sm">
-          <div className="relative flex-shrink-0">
-            <div className="absolute inset-0 bg-[#1abc9c]/30 rounded-full animate-ping"></div>
-            <div className="relative w-7 h-7 rounded-full bg-[#1abc9c]/20 flex items-center justify-center border-2 border-[#1abc9c]/50">
-              <StatusIcon className="w-4 h-4 text-[#1abc9c]" />
-            </div>
-          </div>
-          <span className="text-sm font-semibold text-foreground whitespace-nowrap">
-            {clientStatus.text}
-          </span>
-        </div>
+        <StatusIndicator 
+          text={clientStatus.text}
+          icon={clientStatus.icon}
+          isProcessing={clientStatus.isProcessing}
+        />
 
         {/* Info client et tonnage */}
         <div className="space-y-2">
