@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { MapPin, Package, DollarSign, Image as ImageIcon, AlertCircle, Eye, FileText, X, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown, ArrowRight, Camera, Warehouse, Building2, Home } from "lucide-react";
+import { MapPin, Package, DollarSign, Image as ImageIcon, AlertCircle, Eye, FileText, X, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown, ArrowRight, Camera, Warehouse, Building2, Home, Calendar, Hash } from "lucide-react";
 import { format } from "date-fns";
 import { fr, ar } from "date-fns/locale";
 import { PhotoGalleryDialog } from "./photo-gallery-dialog";
@@ -135,7 +135,7 @@ export function RequestCard({
       {/* En-tête coloré avec icône de catégorie */}
       <div className={`${categoryConfig.bgColor} p-2.5 flex items-center justify-between gap-3`}>
         <div className="flex items-center gap-2">
-          <div className="bg-white/20 rounded-md p-1.5 backdrop-blur-sm">
+          <div className="bg-white/20 rounded-md px-3.5 py-1.5 backdrop-blur-sm shadow-md border border-white/20">
             <CategoryIcon className={`w-4 h-4 ${categoryConfig.color}`} />
           </div>
         </div>
@@ -148,15 +148,21 @@ export function RequestCard({
             <span className="absolute inset-0 bg-green-300 rounded-md opacity-40 animate-pulse"></span>
             {/* Effet de brillance */}
             <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent rounded-md animate-pulse"></span>
-            <span className="relative text-xs font-bold text-white drop-shadow-sm">
-              {format(dateTime, "dd MMM yyyy", { locale: dateLocale })}
-            </span>
+            <div className="relative flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 text-white drop-shadow-sm" />
+              <span className="text-xs font-bold text-white drop-shadow-sm">
+                {format(dateTime, "dd MMM yyyy", { locale: dateLocale })}
+              </span>
+            </div>
           </div>
           {/* Numéro de commande modernisé */}
           <div className="bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] px-3.5 py-1.5 rounded-md shadow-md border border-white/20" data-testid={`text-reference-${request.id}`}>
-            <span className="text-xs font-mono font-bold text-white drop-shadow-sm">
-              {request.referenceId}
-            </span>
+            <div className="flex items-center gap-1.5">
+              <Hash className="w-3.5 h-3.5 text-white drop-shadow-sm" />
+              <span className="text-xs font-mono font-bold text-white drop-shadow-sm">
+                {request.referenceId}
+              </span>
+            </div>
           </div>
         </div>
       </div>
