@@ -462,13 +462,12 @@ export function RequestCard({
                   </div>
                 </Button>
 
-                {/* Bouton secondaire "Pas disponible" - Design minimaliste */}
+                {/* Bouton secondaire "Pas disponible" - Rouge sophistiqué avec texte blanc */}
                 {onDecline && (
                   <Button 
                     onClick={() => onDecline(request.id)} 
                     disabled={isPendingInterest}
-                    variant="outline"
-                    className="flex-[3] h-14 border-2 border-destructive/30 bg-transparent hover:bg-destructive/10 hover:border-destructive/50 text-destructive transition-all duration-200 group"
+                    className="flex-[3] h-14 bg-gradient-to-br from-[#c94040] to-[#b83838] border-2 border-[#d66666]/40 text-white hover:from-[#d64b4b] hover:to-[#c43e3e] hover:border-[#d66666]/60 hover:shadow-lg transition-all duration-200 group"
                     data-testid={`button-not-available-${request.id}`}
                   >
                     <div className="flex flex-col items-center justify-center gap-0.5">
