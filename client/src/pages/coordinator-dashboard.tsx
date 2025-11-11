@@ -1828,9 +1828,6 @@ export default function CoordinatorDashboard() {
           <div className={`p-2 rounded-lg bg-white/20 ${categoryConfig.color}`}>
             <CategoryIcon className="w-5 h-5" />
           </div>
-          <span className={`text-base font-semibold ${categoryConfig.color}`}>
-            {categoryConfig.label}
-          </span>
         </div>
         <div className="flex items-center gap-2">
           {request.photos && request.photos.length > 0 && (
