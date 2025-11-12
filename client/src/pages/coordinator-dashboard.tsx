@@ -1803,7 +1803,7 @@ export default function CoordinatorDashboard() {
     );
   };
 
-  const renderRequestCard = (request: any, showVisibilityToggle = false, showPaymentControls = false, isCoordination = false, showQualifyButton = false, showQualifiedBy = false, showRepublishButton = false, showPaymentStatusSelector = false, showRequalifyButton = false) => {
+  const renderRequestCard = (request: any, showVisibilityToggle = false, showPaymentControls = false, isCoordination = false, showQualifyButton = false, showQualifiedBy = false, showRepublishButton = false, showPaymentStatusSelector = false, showRequalifyButton = false, options: { showCancel?: boolean; onCancel?: () => void } = {}) => {
     // Calculate interested count
     const interestedCount = request.transporterInterests?.length || 0;
     // Get client-friendly status
@@ -2327,6 +2327,19 @@ export default function CoordinatorDashboard() {
             </Button>
           )}
 
+          {/* Cancel button - Shown only when options.showCancel is true */}
+          {options.showCancel && options.onCancel && (
+            <Button
+              variant="destructive"
+              className="flex-1 min-w-[140px] gap-2 font-semibold shadow-md hover:shadow-lg transition-all"
+              onClick={options.onCancel}
+              data-testid={`button-cancel-request-${request.id}`}
+            >
+              <X className="h-4 w-4" />
+              Annuler
+            </Button>
+          )}
+
           {isAssignedToOther && request.assignedTo && (
             <Badge className="flex-1 min-w-[140px] gap-2 bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-700 dark:text-green-400 border-green-500/40 hover:bg-green-500/30 text-sm font-semibold py-2 justify-center" data-testid={`badge-assigned-coordinator-${request.id}`}>
               <Users className="h-4 w-4" />
@@ -2727,36 +2740,13 @@ export default function CoordinatorDashboard() {
               </Card>
             ) : (
               <TwoColumnGrid testId="grid-interested-requests">
-                {filterRequests(matchingRequests.filter((r: any) => r.transporterInterests && r.transporterInterests.length > 0), filters.interesses).map((request) => (
-                  <div key={request.id}>
-                    {renderRequestCard(request, true, false, false, false, true)}
-                    {/* Actions footer pour Intéressés */}
-                    <div className="flex gap-2 px-4 pb-4">
-                      <Button
-                        className="flex-1 gap-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700"
-                        onClick={() => {
-                          setSelectedRequestForInterested(request);
-                          setInterestedTransportersDialogOpen(true);
-                        }}
-                        data-testid={`button-view-assign-${request.id}`}
-                      >
-                        <Eye className="h-4 w-4" />
-                        Voir détails & Assigner
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        onClick={() => {
-                          setCancelRequestData(request);
-                          setCancelDialogOpen(true);
-                        }}
-                        data-testid={`button-cancel-request-${request.id}`}
-                      >
-                        <X className="h-4 w-4" />
-                        Annuler
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                {filterRequests(matchingRequests.filter((r: any) => r.transporterInterests && r.transporterInterests.length > 0), filters.interesses).map((request) => renderRequestCard(request, true, false, false, false, true, false, false, false, {
+                  showCancel: true,
+                  onCancel: () => {
+                    setCancelRequestData(request);
+                    setCancelDialogOpen(true);
+                  }
+                }))}
               </TwoColumnGrid>
             )}
           </TabsContent>
