@@ -6072,11 +6072,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Update takenInChargeAt and takenInChargeBy
+      // Update takenInChargeAt, takenInChargeBy and set paymentStatus to 'a_facturer'
+      // This ensures the request appears in the "Pris en charge" tab with "Payer" button
       await db.update(transportRequests)
         .set({
           takenInChargeAt: new Date(),
           takenInChargeBy: coordinatorId,
+          paymentStatus: 'a_facturer', // CRITICAL: Must be 'a_facturer' to appear in "Pris en charge" tab
         })
         .where(eq(transportRequests.id, id));
 
