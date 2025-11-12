@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star, CreditCard, Upload, Eye, Edit, MessageSquare, Calendar, Flag, Truck, Users, Zap, X, ChevronLeft, ChevronRight, Target, ArrowDown, Camera, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, DollarSign, ImageIcon, Plus, ArrowRight, FileText, AlertCircle } from "lucide-react";
+import { Package, Phone, CheckCircle, Trash2, Info, RotateCcw, Star, CreditCard, Upload, Eye, Edit, MessageSquare, Calendar, Flag, Truck, Users, Zap, X, ChevronLeft, ChevronRight, Target, ArrowDown, Camera, Home, Sofa, Boxes, Wrench, ShoppingCart, LucideIcon, DollarSign, ImageIcon, Plus, ArrowRight, FileText, AlertCircle, Sparkles } from "lucide-react";
 import { getCategoryConfig } from "@/lib/goods-category-config";
 import { Header } from "@/components/layout/header";
 import { NewRequestForm } from "@/components/client/new-request-form";
@@ -195,7 +195,7 @@ function getClientStatus(request: any, interestedCount: number = 0, t: any) {
   };
 }
 
-function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onDelete, onViewTransporter, onUpdateStatus, onReport, onChooseTransporter, onOpenPhotosDialog, users, cities, citiesLoading, currentUserId }: any) {
+function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onDelete, onViewTransporter, onUpdateStatus, onReport, onChooseTransporter, onOpenPhotosDialog, onEstimatePrice, users, cities, citiesLoading, currentUserId }: any) {
   const { t } = useTranslation();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showOffersDialog, setShowOffersDialog] = useState(false);
@@ -553,6 +553,30 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
               </div>
               <p className="text-sm leading-relaxed line-clamp-2">{request.description}</p>
             </div>
+          )}
+
+          {/* Bouton "Estimer Prix" - Visible uniquement pour les commandes nouvelles sans prix qualifié */}
+          {!request.clientTotal && !request.qualifiedAt && request.status === 'new' && (
+            <Button
+              variant="outline"
+              className="w-full gap-2 h-auto py-3 border-2 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-blue-500/10 hover:from-purple-500/20 hover:via-pink-500/20 hover:to-blue-500/20 border-purple-500/50 text-foreground font-semibold shadow-md hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300"
+              onClick={() => onEstimatePrice(request.id)}
+              data-testid={`button-estimate-price-${request.id}`}
+            >
+              <div className="flex items-center gap-2 w-full">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="text-sm font-bold leading-tight">
+                    Estimer le prix
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Estimation IA instantanée
+                  </p>
+                </div>
+              </div>
+            </Button>
           )}
 
           {/* Prix qualifié */}
@@ -1631,6 +1655,9 @@ export default function ClientDashboard() {
   const [selectedReceipt, setSelectedReceipt] = useState<string>("");
   const [showArchiveReasonDialog, setShowArchiveReasonDialog] = useState(false);
   const [selectedArchiveReason, setSelectedArchiveReason] = useState<string>("");
+  const [showEstimationDialog, setShowEstimationDialog] = useState(false);
+  const [currentEstimation, setCurrentEstimation] = useState<any>(null);
+  const [isEstimating, setIsEstimating] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -1639,6 +1666,23 @@ export default function ClientDashboard() {
   const handleOpenPhotosDialog = (photos: string[]) => {
     setSelectedPhotos(photos);
     setShowPhotosDialog(true);
+  };
+
+  const handleEstimatePrice = async (requestId: string) => {
+    try {
+      setIsEstimating(true);
+      const estimation = await apiRequest("POST", "/api/client/estimate-price", { requestId });
+      setCurrentEstimation(estimation);
+      setShowEstimationDialog(true);
+    } catch (error) {
+      toast({
+        title: "Erreur d'estimation",
+        description: "Impossible d'estimer le prix pour le moment. Veuillez réessayer.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsEstimating(false);
+    }
   };
 
   // Track client dashboard login with Meta Pixel
@@ -2163,6 +2207,7 @@ export default function ClientDashboard() {
                     onReport={handleOpenReportDialog}
                     onChooseTransporter={handleChooseTransporter}
                     onOpenPhotosDialog={handleOpenPhotosDialog}
+                    onEstimatePrice={handleEstimatePrice}
                   />
                 ))
               ) : (
@@ -2908,6 +2953,121 @@ export default function ClientDashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dialog d'estimation de prix IA */}
+      <Dialog open={showEstimationDialog} onOpenChange={setShowEstimationDialog}>
+        <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 flex items-center justify-center">
+                <Sparkles className="w-6 h-6 text-white" />
+              </div>
+              <DialogTitle className="text-xl">Estimation de prix IA</DialogTitle>
+            </div>
+            <DialogDescription>
+              Estimation instantanée basée sur votre demande de transport
+            </DialogDescription>
+          </DialogHeader>
+
+          {currentEstimation && (
+            <div className="space-y-5">
+              {/* Prix total estimé - Grande bannière */}
+              <div className="bg-gradient-to-r from-purple-50 via-pink-50 to-blue-50 dark:from-purple-950/20 dark:via-pink-950/20 dark:to-blue-950/20 border-2 border-purple-200 dark:border-purple-800 rounded-xl p-6 text-center">
+                <p className="text-sm font-medium text-muted-foreground mb-2">Prix estimé total</p>
+                <p className="text-5xl font-black bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">
+                  {Math.floor(currentEstimation.totalClientMAD).toLocaleString()} MAD
+                </p>
+                <div className="mt-3 flex items-center justify-center gap-2">
+                  <div className="h-1.5 flex-1 bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 rounded-full"></div>
+                  <span className="text-xs font-medium text-muted-foreground">
+                    Confiance : {Math.round(currentEstimation.confidence * 100)}%
+                  </span>
+                  <div className="h-1.5 flex-1 bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 rounded-full"></div>
+                </div>
+              </div>
+
+              {/* Disclaimer - Avertissement important */}
+              <div className="bg-amber-50 dark:bg-amber-950/20 border-l-4 border-amber-500 p-4 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">
+                      ⚠️ Estimation indicative
+                    </p>
+                    <p className="text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
+                      Ceci est une <strong>estimation automatique</strong> générée par intelligence artificielle. 
+                      Nos coordinateurs vont qualifier votre demande et vous fournir un <strong>prix exact et définitif</strong> sous peu.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Détails du calcul */}
+              {currentEstimation.modeledInputs && (
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <Target className="w-4 h-4" />
+                    Paramètres estimés
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {currentEstimation.modeledInputs.fromCity && (
+                      <div className="bg-muted/50 rounded-lg p-3">
+                        <p className="text-xs text-muted-foreground mb-1">Ville de départ</p>
+                        <p className="text-sm font-semibold">{currentEstimation.modeledInputs.fromCity}</p>
+                      </div>
+                    )}
+                    {currentEstimation.modeledInputs.toCity && (
+                      <div className="bg-muted/50 rounded-lg p-3">
+                        <p className="text-xs text-muted-foreground mb-1">Ville d'arrivée</p>
+                        <p className="text-sm font-semibold">{currentEstimation.modeledInputs.toCity}</p>
+                      </div>
+                    )}
+                    {currentEstimation.modeledInputs.distance && (
+                      <div className="bg-muted/50 rounded-lg p-3">
+                        <p className="text-xs text-muted-foreground mb-1">Distance</p>
+                        <p className="text-sm font-semibold">{currentEstimation.modeledInputs.distance} km</p>
+                      </div>
+                    )}
+                    {currentEstimation.modeledInputs.goodsType && (
+                      <div className="bg-muted/50 rounded-lg p-3">
+                        <p className="text-xs text-muted-foreground mb-1">Type de marchandise</p>
+                        <p className="text-sm font-semibold">{currentEstimation.modeledInputs.goodsType}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Raisonnement */}
+              {currentEstimation.reasoning && currentEstimation.reasoning.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Détails du calcul
+                  </h3>
+                  <div className="bg-muted/30 rounded-lg p-4 space-y-2">
+                    {currentEstimation.reasoning.map((line: string, index: number) => (
+                      <p key={index} className="text-xs text-foreground/80 leading-relaxed">
+                        • {line}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowEstimationDialog(false)}
+              data-testid="button-close-estimation"
+            >
+              Fermer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

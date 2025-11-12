@@ -6828,7 +6828,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'frais transporteur', 'frais plateforme',
           'marge', 'bénéfice',
           'retient', 'retenir', 'garde', 'garder',
-          'portion', 'part', 'partie'
+          'portion', 'part', 'partie',
+          'conserve', 'conservée', 'conserver',
+          'allouer', 'allocation',
+          'déduit', 'déduire', 'déduction'
         ];
         
         // English terms (GPT-5 may use English)
@@ -6839,7 +6842,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'revenue', 'margin', 'profit',
           'keeps', 'keep', 'takes', 'take',
           'retains', 'retain', 'holds', 'hold',
-          'portion', 'part'
+          'portion', 'part',
+          'conserves', 'conserve', 'conserved',
+          'allocates', 'allocate', 'allocation',
+          'deducts', 'deduct', 'deduction'
         ];
         
         // Brand/company terms that might reveal commission
