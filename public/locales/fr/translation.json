@@ -392,11 +392,11 @@
   },
   "transporterDashboard": {
     "datePickerDialog": {
-      "title": "Confirmer votre intérêt",
-      "description": "Vous confirmez votre disponibilité pour effectuer ce transport dès aujourd'hui.",
+      "title": "Choisir votre date de disponibilité",
+      "description": "Sélectionnez la date à laquelle vous êtes disponible pour effectuer ce transport.",
       "availableToday": "Disponible aujourd'hui",
       "clientRequestedDate": "Date demandée par le client :",
-      "selectedDate": "Date sélectionnée :",
+      "selectedDate": "Votre disponibilité :",
       "matchesClientDate": "✓ Correspond à la date souhaitée par le client",
       "alternativeDate": "ℹ️ Date alternative proposée (acceptable)",
       "cancel": "Annuler",

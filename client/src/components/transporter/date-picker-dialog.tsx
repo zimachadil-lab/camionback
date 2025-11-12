@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { fr, ar } from "date-fns/locale";
-import { CalendarIcon, CheckCircle } from "lucide-react";
+import { CalendarIcon } from "lucide-react";
 
 interface DatePickerDialogProps {
   open: boolean;
@@ -29,10 +30,12 @@ export function DatePickerDialog({
   isPending = false,
 }: DatePickerDialogProps) {
   const { t, i18n } = useTranslation();
-  const [selectedDate] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(requestDate || new Date());
 
   const handleConfirm = () => {
-    onConfirm(selectedDate);
+    if (selectedDate) {
+      onConfirm(selectedDate);
+    }
   };
 
   // Use appropriate locale for date-fns based on current language
@@ -40,10 +43,10 @@ export function DatePickerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[400px]">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-600" />
+            <CalendarIcon className="h-5 w-5 text-primary" />
             {t('transporterDashboard.datePickerDialog.title')}
           </DialogTitle>
           <DialogDescription>
@@ -51,16 +54,25 @@ export function DatePickerDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="py-6 flex justify-center">
-          <div className="inline-flex items-center gap-3 px-6 py-4 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-xl border-2 border-green-200 dark:border-green-800 shadow-sm">
-            <CalendarIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground mb-1">{t('transporterDashboard.datePickerDialog.availableToday')}</p>
-              <p className="text-lg font-bold text-green-700 dark:text-green-300">
-                {format(selectedDate, "dd MMMM yyyy", { locale: dateLocale })}
+        <div className="py-4">
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={setSelectedDate}
+            disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+            initialFocus
+            className="rounded-md border"
+            data-testid="calendar-availability"
+            locale={dateLocale}
+          />
+
+          {selectedDate && (
+            <div className="mt-4 p-3 bg-primary/10 rounded-md border border-primary/20">
+              <p className="text-sm font-medium">
+                {t('transporterDashboard.datePickerDialog.selectedDate')} {format(selectedDate, "dd MMMM yyyy", { locale: dateLocale })}
               </p>
             </div>
-          </div>
+          )}
         </div>
 
         <DialogFooter className="gap-2">
@@ -74,7 +86,7 @@ export function DatePickerDialog({
           </Button>
           <Button
             onClick={handleConfirm}
-            disabled={isPending}
+            disabled={!selectedDate || isPending}
             className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
             data-testid="button-confirm-interest"
           >
