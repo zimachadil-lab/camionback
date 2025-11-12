@@ -6033,7 +6033,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       .where(
         and(
           isNotNull(transportRequests.takenInChargeAt),
-          ne(transportRequests.coordinationStatus, 'archived'),
+          eq(transportRequests.coordinationStatus, 'pris_en_charge'), // Must have correct coordination status
           ne(transportRequests.status, 'cancelled'),
           eq(transportRequests.paymentStatus, 'a_facturer') // Only show unpaid requests
         )
@@ -6072,13 +6072,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Update takenInChargeAt, takenInChargeBy and set paymentStatus to 'a_facturer'
-      // This ensures the request appears in the "Pris en charge" tab with "Payer" button
+      // Update takenInChargeAt, takenInChargeBy, paymentStatus AND coordinationStatus
+      // CRITICAL: coordinationStatus must be 'pris_en_charge' for frontend filter to work
       await db.update(transportRequests)
         .set({
           takenInChargeAt: new Date(),
           takenInChargeBy: coordinatorId,
-          paymentStatus: 'a_facturer', // CRITICAL: Must be 'a_facturer' to appear in "Pris en charge" tab
+          paymentStatus: 'a_facturer', // Required for backend filter
+          coordinationStatus: 'pris_en_charge', // CRITICAL: Required for frontend filter
+          coordinationUpdatedAt: new Date(),
         })
         .where(eq(transportRequests.id, id));
 
@@ -7494,31 +7496,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // MIGRATION: Fix payment status for taken-in-charge requests
-  // This corrects legacy data where takenInChargeAt was set but paymentStatus wasn't updated to 'a_facturer'
+  // MIGRATION: Fix payment status AND coordination status for taken-in-charge requests
+  // This corrects legacy data where takenInChargeAt was set but paymentStatus/coordinationStatus weren't updated
   app.post("/api/admin/fix-pris-en-charge-payment-status", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
-      console.info('[Migration] 🔧 Starting payment status fix for taken-in-charge requests...');
+      console.info('[Migration] 🔧 Starting fix for taken-in-charge requests...');
 
-      // Find all requests that are taken in charge but have incorrect paymentStatus
+      // Find all requests that are taken in charge but have incorrect statuses
       const affectedRequests = await db.select({
         id: transportRequests.id,
         referenceId: transportRequests.referenceId,
         status: transportRequests.status,
         paymentStatus: transportRequests.paymentStatus,
+        coordinationStatus: transportRequests.coordinationStatus,
         takenInChargeAt: transportRequests.takenInChargeAt
       })
       .from(transportRequests)
       .where(
         and(
           isNotNull(transportRequests.takenInChargeAt),
-          ne(transportRequests.paymentStatus, 'a_facturer'),
-          sql`${transportRequests.status} IN ('accepted', 'completed')` // Only fix active requests
+          sql`${transportRequests.status} IN ('accepted', 'completed')`, // Only fix active requests
+          // Fix if EITHER paymentStatus OR coordinationStatus is wrong
+          sql`(${transportRequests.paymentStatus} != 'a_facturer' OR ${transportRequests.coordinationStatus} != 'pris_en_charge')`
         )
       );
 
       if (affectedRequests.length === 0) {
-        console.info('[Migration] ✅ No requests to fix - all payment statuses are correct');
+        console.info('[Migration] ✅ No requests to fix - all statuses are correct');
         return res.json({
           success: true,
           message: 'Aucune commande à corriger',
@@ -7529,19 +7533,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.info(`[Migration] 📋 Found ${affectedRequests.length} requests to fix:`);
       affectedRequests.forEach(req => {
-        console.info(`  - ${req.referenceId}: paymentStatus="${req.paymentStatus}" → "a_facturer"`);
+        const issues = [];
+        if (req.paymentStatus !== 'a_facturer') issues.push(`paymentStatus="${req.paymentStatus}" → "a_facturer"`);
+        if (req.coordinationStatus !== 'pris_en_charge') issues.push(`coordinationStatus="${req.coordinationStatus}" → "pris_en_charge"`);
+        console.info(`  - ${req.referenceId}: ${issues.join(', ')}`);
       });
 
-      // Update all affected requests in a single query
+      // Update all affected requests - fix BOTH paymentStatus AND coordinationStatus
       await db.update(transportRequests)
         .set({
-          paymentStatus: 'a_facturer'
+          paymentStatus: 'a_facturer',
+          coordinationStatus: 'pris_en_charge',
+          coordinationUpdatedAt: new Date(),
         })
         .where(
           and(
             isNotNull(transportRequests.takenInChargeAt),
-            ne(transportRequests.paymentStatus, 'a_facturer'),
-            sql`${transportRequests.status} IN ('accepted', 'completed')`
+            sql`${transportRequests.status} IN ('accepted', 'completed')`,
+            sql`(${transportRequests.paymentStatus} != 'a_facturer' OR ${transportRequests.coordinationStatus} != 'pris_en_charge')`
           )
         );
 
@@ -7549,12 +7558,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({
         success: true,
-        message: `Migration réussie : ${affectedRequests.length} commandes corrigées`,
+        message: `Migration réussie : ${affectedRequests.length} commande(s) "Pris en charge" corrigée(s)`,
         updated: affectedRequests.length,
         affectedRequests: affectedRequests.map(req => ({
           referenceId: req.referenceId,
           oldPaymentStatus: req.paymentStatus,
           newPaymentStatus: 'a_facturer',
+          oldCoordinationStatus: req.coordinationStatus,
+          newCoordinationStatus: 'pris_en_charge',
           takenInChargeAt: req.takenInChargeAt
         }))
       });
