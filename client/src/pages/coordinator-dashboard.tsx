@@ -3874,15 +3874,20 @@ export default function CoordinatorDashboard() {
           {selectedTransporterInfo && (
             <div className="space-y-4">
               {/* Photo du camion */}
-              {selectedTransporterInfo.truckPhotos && selectedTransporterInfo.truckPhotos.length > 0 && (
-                <div className="relative w-full aspect-video rounded-lg overflow-hidden border-2 border-emerald-500/20">
+              <div className="relative w-full aspect-video rounded-lg overflow-hidden border-2 border-emerald-500/20 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30">
+                {selectedTransporterInfo.truckPhotos && selectedTransporterInfo.truckPhotos.length > 0 ? (
                   <img 
                     src={selectedTransporterInfo.truckPhotos[0]} 
                     alt="Camion"
                     className="w-full h-full object-cover"
                   />
-                </div>
-              )}
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                    <Truck className="h-12 w-12 text-emerald-400/40" />
+                    <p className="text-sm text-muted-foreground/60">Aucune photo disponible</p>
+                  </div>
+                )}
+              </div>
 
               {/* Nom */}
               <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
@@ -3926,15 +3931,34 @@ export default function CoordinatorDashboard() {
 
               {/* Rating et trajets */}
               <div className="grid grid-cols-2 gap-3">
-                {selectedTransporterInfo.rating && (
-                  <div className="flex flex-col items-center gap-2 p-3 rounded-lg bg-gradient-to-br from-yellow-50 to-yellow-100/50 dark:from-yellow-950/30 dark:to-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
+                {selectedTransporterInfo.rating !== null && selectedTransporterInfo.rating !== undefined && (
+                  <div className="flex flex-col items-center gap-3 p-4 rounded-lg bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/20 border border-yellow-200 dark:border-yellow-800">
                     <div className="flex items-center gap-1">
-                      <Star className="h-5 w-5 fill-yellow-500 text-yellow-500" />
-                      <span className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">
+                      {[1, 2, 3, 4, 5].map((star) => {
+                        const rating = parseFloat(selectedTransporterInfo.rating || "0");
+                        const isFilled = star <= Math.floor(rating);
+                        const isHalf = star === Math.ceil(rating) && rating % 1 >= 0.5;
+                        
+                        return (
+                          <Star 
+                            key={star}
+                            className={`h-4 w-4 ${
+                              isFilled 
+                                ? "fill-yellow-500 text-yellow-500" 
+                                : isHalf 
+                                  ? "fill-yellow-500/50 text-yellow-500" 
+                                  : "text-yellow-300 dark:text-yellow-700"
+                            }`}
+                          />
+                        );
+                      })}
+                    </div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-xl font-bold text-yellow-700 dark:text-yellow-400">
                         {parseFloat(selectedTransporterInfo.rating).toFixed(1)}
                       </span>
+                      <span className="text-xs text-muted-foreground">/5</span>
                     </div>
-                    <p className="text-xs text-muted-foreground font-medium text-center">Score</p>
                   </div>
                 )}
 
