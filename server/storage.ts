@@ -2637,7 +2637,7 @@ export class DbStorage implements IStorage {
         assignedTransporterCity: sql<string | null>`assigned_transporter.city`.as('assigned_transporter_city'),
         assignedTransporterRating: sql<string | null>`assigned_transporter.rating`.as('assigned_transporter_rating'),
         assignedTransporterTruckPhotos: sql<string[] | null>`assigned_transporter.truck_photos`.as('assigned_transporter_truck_photos'),
-        assignedTransporterCompletedTrips: sql<number | null>`assigned_transporter.completed_trips`.as('assigned_transporter_completed_trips'),
+        assignedTransporterTotalTrips: sql<number | null>`assigned_transporter.total_trips`.as('assigned_transporter_total_trips'),
         // Offer data
         offerId: sql<string | null>`${offers.id}`.as('offer_id'),
         offerAmount: sql<string | null>`${offers.amount}`.as('offer_amount'),
@@ -2648,7 +2648,7 @@ export class DbStorage implements IStorage {
         offerTransporterCity: sql<string | null>`offer_transporter.city`.as('offer_transporter_city'),
         offerTransporterRating: sql<string | null>`offer_transporter.rating`.as('offer_transporter_rating'),
         offerTransporterTruckPhotos: sql<string[] | null>`offer_transporter.truck_photos`.as('offer_transporter_truck_photos'),
-        offerTransporterCompletedTrips: sql<number | null>`offer_transporter.completed_trips`.as('offer_transporter_completed_trips'),
+        offerTransporterTotalTrips: sql<number | null>`offer_transporter.total_trips`.as('offer_transporter_total_trips'),
       })
       .from(transportRequests)
       // JOIN client (always required)
@@ -2723,7 +2723,7 @@ export class DbStorage implements IStorage {
         city: row.assignedTransporterCity,
         rating: row.assignedTransporterRating,
         truckPhotos: row.assignedTransporterTruckPhotos,
-        completedTrips: row.assignedTransporterCompletedTrips,
+        totalTrips: row.assignedTransporterTotalTrips,
       } : (row.offerTransporterId ? {
         id: row.offerTransporterId,
         name: row.offerTransporterName,
@@ -2731,7 +2731,7 @@ export class DbStorage implements IStorage {
         city: row.offerTransporterCity,
         rating: row.offerTransporterRating,
         truckPhotos: row.offerTransporterTruckPhotos,
-        completedTrips: row.offerTransporterCompletedTrips,
+        totalTrips: row.offerTransporterTotalTrips,
       } : null),
       // Nested accepted offer object (if exists)
       acceptedOffer: row.offerId ? {

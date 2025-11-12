@@ -3938,12 +3938,12 @@ export default function CoordinatorDashboard() {
                   </div>
                 )}
 
-                {selectedTransporterInfo.completedTrips !== undefined && (
+                {selectedTransporterInfo.totalTrips !== undefined && (
                   <div className="flex flex-col items-center gap-2 p-3 rounded-lg bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/20 border border-emerald-200 dark:border-emerald-800">
                     <div className="flex items-center gap-1">
                       <Award className="h-5 w-5 text-emerald-500" />
                       <span className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
-                        {selectedTransporterInfo.completedTrips || 0}
+                        {selectedTransporterInfo.totalTrips || 0}
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground font-medium text-center">Trajets</p>
