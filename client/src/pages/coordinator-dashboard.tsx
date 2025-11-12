@@ -1586,9 +1586,10 @@ export default function CoordinatorDashboard() {
     // Deduplicate before filtering
     const uniqueRequests = deduplicateRequests(requests);
     return uniqueRequests.filter((request) => {
-      const matchesCity = tabFilters.selectedCity === "Toutes les villes" || 
-        request.fromCity === tabFilters.selectedCity || 
-        request.toCity === tabFilters.selectedCity;
+      // City matching: ALL_CITIES or normalized city comparison
+      const matchesCity = isAllCitiesSelection(tabFilters.selectedCity) || 
+        extractCityFromRequest(request.fromCity) === tabFilters.selectedCity.city.toLowerCase() || 
+        extractCityFromRequest(request.toCity) === tabFilters.selectedCity.city.toLowerCase();
       const matchesStatus = !applyStatusFilter || !tabFilters.selectedStatus || tabFilters.selectedStatus === "Tous les statuts" || 
         request.status === tabFilters.selectedStatus;
       const matchesSearch = tabFilters.searchQuery === "" ||
@@ -2663,25 +2664,37 @@ export default function CoordinatorDashboard() {
               </div>
             </div>
 
-            {/* City - All tabs */}
+            {/* City - All tabs with Google Places */}
             <div className="space-y-2">
-              <Label htmlFor="filter-city">Ville</Label>
-              <Select
-                value={tempFilters.selectedCity}
-                onValueChange={(value) => setTempFilters({ ...tempFilters, selectedCity: value })}
-              >
-                <SelectTrigger id="filter-city" data-testid="select-filter-city">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Toutes les villes">Toutes les villes</SelectItem>
-                  {cities.map((city: any) => (
-                    <SelectItem key={city.id} value={city.name}>
-                      {city.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="filter-city">Ville</Label>
+                {!isAllCitiesSelection(tempFilters.selectedCity) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setTempFilters({ ...tempFilters, selectedCity: ALL_CITIES })}
+                    className="h-6 px-2 text-xs"
+                    data-testid="button-reset-city-filter"
+                  >
+                    <X className="h-3 w-3 mr-1" />
+                    Effacer
+                  </Button>
+                )}
+              </div>
+              <GooglePlacesAutocomplete
+                value={tempFilters.selectedCity.label}
+                onChange={(address, placeDetails) => {
+                  const citySelection = createCitySelection(address, placeDetails);
+                  setTempFilters({ ...tempFilters, selectedCity: citySelection });
+                }}
+                placeholder="Rechercher une ville..."
+                dataTestId="input-filter-city"
+              />
+              {isAllCitiesSelection(tempFilters.selectedCity) && (
+                <p className="text-xs text-muted-foreground">
+                  Toutes les villes incluses
+                </p>
+              )}
             </div>
 
             {/* Date - nouveau, qualifies, production, pris_en_charge */}
