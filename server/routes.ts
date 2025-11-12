@@ -7002,6 +7002,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Price Estimation for Coordinator (full details with financial split)
   app.post("/api/coordinator/estimate-price", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
+      console.log('[Price Estimation] 🎯 Requête reçue:', {
+        userId: req.user?.id,
+        userRole: req.user?.role,
+        hasSession: !!req.session,
+        sessionUserId: req.session?.userId,
+        requestId: req.body?.requestId,
+        cookies: req.headers.cookie ? 'présents' : 'absents'
+      });
+      
       const { requestId } = req.body;
       
       if (!requestId) {
@@ -7014,13 +7023,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Demande non trouvée" });
       }
       
+      console.log('[Price Estimation] ✅ Demande trouvée, appel service IA...');
+      
       // Import and call the price estimation service
       const { estimatePriceForRequest } = await import('./price-estimation');
       const estimation = await estimatePriceForRequest(request);
       
+      console.log('[Price Estimation] ✅ Estimation complétée:', {
+        totalClientMAD: estimation.totalClientMAD,
+        confidence: estimation.confidence
+      });
+      
       res.json(estimation);
     } catch (error) {
-      console.error("Erreur estimation prix:", error);
+      console.error("[Price Estimation] ❌ Erreur:", error);
       res.status(500).json({ 
         error: "Erreur lors de l'estimation du prix",
         message: error instanceof Error ? error.message : "Erreur inconnue"

@@ -32,6 +32,13 @@ export async function requireAuth(
   const userId = req.session?.userId;
   
   if (!userId) {
+    console.error('[Auth] ❌ Requête non authentifiée détectée:', {
+      method: req.method,
+      url: req.url,
+      hasSession: !!req.session,
+      cookies: req.headers.cookie ? 'présents' : 'absents',
+      userAgent: req.headers['user-agent']?.substring(0, 50)
+    });
     res.status(401).json({ 
       error: "Non authentifié",
       message: "Vous devez être connecté pour accéder à cette ressource" 
