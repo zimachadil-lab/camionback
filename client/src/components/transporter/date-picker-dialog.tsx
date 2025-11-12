@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Dialog,
@@ -28,10 +29,10 @@ export function DatePickerDialog({
   isPending = false,
 }: DatePickerDialogProps) {
   const { t, i18n } = useTranslation();
-  const today = new Date();
+  const [selectedDate] = useState<Date>(new Date());
 
   const handleConfirm = () => {
-    onConfirm(today);
+    onConfirm(selectedDate);
   };
 
   // Use appropriate locale for date-fns based on current language
@@ -56,7 +57,7 @@ export function DatePickerDialog({
             <div className="text-center">
               <p className="text-xs text-muted-foreground mb-1">{t('transporterDashboard.datePickerDialog.availableToday')}</p>
               <p className="text-lg font-bold text-green-700 dark:text-green-300">
-                {format(today, "dd MMMM yyyy", { locale: dateLocale })}
+                {format(selectedDate, "dd MMMM yyyy", { locale: dateLocale })}
               </p>
             </div>
           </div>
