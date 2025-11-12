@@ -712,6 +712,9 @@ export default function CoordinatorDashboard() {
   const [showCoordinatorPaymentDialog, setShowCoordinatorPaymentDialog] = useState(false);
   const [coordinatorPaymentRequestId, setCoordinatorPaymentRequestId] = useState<string | null>(null);
   
+  // State for transporter info dialog
+  const [selectedTransporterInfo, setSelectedTransporterInfo] = useState<any>(null);
+  
   const { toast} = useToast();
 
   const handleLogout = () => {
@@ -2062,6 +2065,37 @@ export default function CoordinatorDashboard() {
                 {request.client.phoneNumber}
               </span>
             </a>
+          )}
+          
+          {/* Info transporteur - affiché seulement en production quand un transporteur est assigné */}
+          {request.transporter && showPaymentStatusSelector && (
+            <div className="flex items-center gap-2">
+              <a 
+                href={`tel:${request.transporter.phoneNumber}`}
+                className="group flex items-center gap-2 px-3 py-2.5 rounded-lg bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/20 hover:border-emerald-500/40 hover:shadow-sm transition-all flex-1"
+                data-testid={`link-call-transporter-${request.id}`}
+              >
+                <div className="w-7 h-7 rounded-full bg-emerald-500/15 flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-500/25 transition-colors">
+                  <Truck className="h-3.5 w-3.5 text-emerald-500" />
+                </div>
+                <span className="text-sm text-muted-foreground">
+                  Transporteur
+                </span>
+                <span className="text-sm font-semibold text-emerald-500 truncate">
+                  {request.transporter.phoneNumber}
+                </span>
+              </a>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 hover:bg-emerald-500/10 hover:border-emerald-500/40 hover:text-emerald-600 transition-all"
+                onClick={() => setSelectedTransporterInfo(request.transporter)}
+                data-testid={`button-view-transporter-${request.id}`}
+              >
+                <Info className="h-4 w-4" />
+                Infos
+              </Button>
+            </div>
           )}
           
           {request.weight && (
@@ -3826,6 +3860,110 @@ export default function CoordinatorDashboard() {
           }}
         />
       )}
+
+      {/* Transporter Info Dialog */}
+      <Dialog open={!!selectedTransporterInfo} onOpenChange={(open) => !open && setSelectedTransporterInfo(null)}>
+        <DialogContent className="sm:max-w-md" data-testid="dialog-transporter-info">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold flex items-center gap-2">
+              <Truck className="h-5 w-5 text-emerald-500" />
+              Informations Transporteur
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedTransporterInfo && (
+            <div className="space-y-4">
+              {/* Photo du camion */}
+              {selectedTransporterInfo.truckPhotos && selectedTransporterInfo.truckPhotos.length > 0 && (
+                <div className="relative w-full aspect-video rounded-lg overflow-hidden border-2 border-emerald-500/20">
+                  <img 
+                    src={selectedTransporterInfo.truckPhotos[0]} 
+                    alt="Camion"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+
+              {/* Nom */}
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                <div className="w-10 h-10 rounded-full bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
+                  <Truck className="h-5 w-5 text-emerald-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground font-medium">Nom</p>
+                  <p className="font-semibold text-base truncate">{selectedTransporterInfo.name}</p>
+                </div>
+              </div>
+
+              {/* Téléphone */}
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                <div className="w-10 h-10 rounded-full bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
+                  <Phone className="h-5 w-5 text-emerald-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground font-medium">Téléphone</p>
+                  <a 
+                    href={`tel:${selectedTransporterInfo.phoneNumber}`}
+                    className="font-semibold text-emerald-600 hover:text-emerald-700 text-base"
+                  >
+                    {selectedTransporterInfo.phoneNumber}
+                  </a>
+                </div>
+              </div>
+
+              {/* Ville */}
+              {selectedTransporterInfo.city && (
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                  <div className="w-10 h-10 rounded-full bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
+                    <MapPin className="h-5 w-5 text-emerald-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground font-medium">Ville</p>
+                    <p className="font-semibold text-base truncate">{selectedTransporterInfo.city}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Rating et trajets */}
+              <div className="grid grid-cols-2 gap-3">
+                {selectedTransporterInfo.rating && (
+                  <div className="flex flex-col items-center gap-2 p-3 rounded-lg bg-gradient-to-br from-yellow-50 to-yellow-100/50 dark:from-yellow-950/30 dark:to-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
+                    <div className="flex items-center gap-1">
+                      <Star className="h-5 w-5 fill-yellow-500 text-yellow-500" />
+                      <span className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">
+                        {parseFloat(selectedTransporterInfo.rating).toFixed(1)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground font-medium text-center">Score</p>
+                  </div>
+                )}
+
+                {selectedTransporterInfo.completedTrips !== undefined && (
+                  <div className="flex flex-col items-center gap-2 p-3 rounded-lg bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/20 border border-emerald-200 dark:border-emerald-800">
+                    <div className="flex items-center gap-1">
+                      <Award className="h-5 w-5 text-emerald-500" />
+                      <span className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
+                        {selectedTransporterInfo.completedTrips || 0}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground font-medium text-center">Trajets</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setSelectedTransporterInfo(null)}
+              className="w-full"
+            >
+              Fermer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );
