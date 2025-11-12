@@ -6256,75 +6256,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get "Pris en charge" requests (taken in charge by transporter)
+  // Get "Pris en charge" requests (taken in charge by transporter) - OPTIMIZED (no N+1)
   app.get("/api/coordinator/coordination/pris-en-charge", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
-      // Get base requests first (simplified query approach for robustness)
-      const baseRequests = await db.select()
-        .from(transportRequests)
-        .where(
-          and(
-            isNotNull(transportRequests.takenInChargeAt),
-            eq(transportRequests.coordinationStatus, 'pris_en_charge'),
-            ne(transportRequests.status, 'cancelled'),
-            eq(transportRequests.paymentStatus, 'a_facturer')
-          )
-        )
-        .orderBy(desc(transportRequests.takenInChargeAt));
+      // OPTIMIZATION: Use LEFT JOINs to fetch all related data in a SINGLE SQL query
+      // This eliminates N+1 queries (was 1 base + 3*N individual queries)
+      const requestsData = await db.execute(sql`
+        SELECT 
+          tr.*,
+          
+          -- Client data (aliased to avoid column name conflicts)
+          client.id as client_id,
+          client.name as client_name,
+          client.phone_number as client_phone_number,
+          client.city as client_city,
+          client.client_id as client_client_id,
+          
+          -- Transporter data
+          transporter.id as transporter_id,
+          transporter.name as transporter_name,
+          transporter.phone_number as transporter_phone_number,
+          transporter.city as transporter_city,
+          transporter.rating as transporter_rating,
+          
+          -- Assigned coordinator data
+          coordinator.id as coordinator_id,
+          coordinator.name as coordinator_name,
+          coordinator.phone_number as coordinator_phone_number
+          
+        FROM transport_requests tr
+        LEFT JOIN users client ON tr.client_id = client.id
+        LEFT JOIN users transporter ON tr.assigned_transporter_id = transporter.id
+        LEFT JOIN users coordinator ON tr.assigned_to_id = coordinator.id
+        WHERE 
+          tr.taken_in_charge_at IS NOT NULL 
+          AND tr.coordination_status = 'pris_en_charge'
+          AND tr.status != 'cancelled'
+          AND tr.payment_status = 'a_facturer'
+        ORDER BY tr.taken_in_charge_at DESC
+      `);
 
-      // Then enrich with related data using simple queries
-      const enrichedRequests = await Promise.all(
-        baseRequests.map(async (request) => {
-          // Get client
-          const client = request.clientId ? await db.select({
-            id: users.id,
-            name: users.name,
-            phoneNumber: users.phoneNumber,
-            city: users.city,
-            clientId: users.clientId,
-          })
-          .from(users)
-          .where(eq(users.id, request.clientId))
-          .limit(1)
-          .then(rows => rows[0] || null) : null;
+      // Format results: separate request data from joined user data
+      const enrichedRequests = requestsData.rows.map((row: any) => {
+        // Extract client object if client exists
+        const client = row.client_id ? {
+          id: row.client_id,
+          name: row.client_name,
+          phoneNumber: row.client_phone_number,
+          city: row.client_city,
+          clientId: row.client_client_id,
+        } : null;
 
-          // Get transporter
-          const transporter = request.assignedTransporterId ? await db.select({
-            id: users.id,
-            name: users.name,
-            phoneNumber: users.phoneNumber,
-            city: users.city,
-            rating: users.rating,
-          })
-          .from(users)
-          .where(eq(users.id, request.assignedTransporterId))
-          .limit(1)
-          .then(rows => rows[0] || null) : null;
+        // Extract transporter object if transporter exists
+        const transporter = row.transporter_id ? {
+          id: row.transporter_id,
+          name: row.transporter_name,
+          phoneNumber: row.transporter_phone_number,
+          city: row.transporter_city,
+          rating: row.transporter_rating,
+        } : null;
 
-          // Get assigned coordinator
-          const assignedTo = request.assignedToId ? await db.select({
-            id: users.id,
-            name: users.name,
-            phoneNumber: users.phoneNumber,
-          })
-          .from(users)
-          .where(eq(users.id, request.assignedToId))
-          .limit(1)
-          .then(rows => rows[0] || null) : null;
+        // Extract coordinator object if assigned
+        const assignedTo = row.coordinator_id ? {
+          id: row.coordinator_id,
+          name: row.coordinator_name,
+          phoneNumber: row.coordinator_phone_number,
+        } : null;
 
-          // Get transporter interests (empty array for Pris en charge tab - hidden per spec)
-          const transporterInterests: any[] = [];
+        // Return formatted request with embedded user objects
+        return {
+          id: row.id,
+          referenceId: row.reference_id,
+          clientId: row.client_id,
+          status: row.status,
+          paymentStatus: row.payment_status,
+          coordinationStatus: row.coordination_status,
+          fromCity: row.from_city,
+          toCity: row.to_city,
+          dateTime: row.date_time,
+          estimatedPrice: row.estimated_price,
+          goodsType: row.goods_type,
+          volume: row.volume,
+          weight: row.weight,
+          description: row.description,
+          assignedTransporterId: row.assigned_transporter_id,
+          assignedToId: row.assigned_to_id,
+          takenInChargeAt: row.taken_in_charge_at,
+          takenInChargeBy: row.taken_in_charge_by,
+          createdAt: row.created_at,
+          client,
+          transporter,
+          assignedTo,
+          transporterInterests: [], // Empty array for Pris en charge tab (hidden per spec)
+        };
+      });
 
-          return {
-            ...request,
-            client,
-            transporter,
-            assignedTo,
-            transporterInterests,
-          };
-        })
-      );
-
+      console.log(`✅ [OPTIMIZED] Fetched ${enrichedRequests.length} pris-en-charge requests with LEFT JOINs (no N+1)`);
       res.json(enrichedRequests);
     } catch (error) {
       console.error("Erreur récupération commandes prises en charge:", error);
@@ -7129,53 +7156,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all conversations grouped by request for coordinator
+  // Get all conversations grouped by request for coordinator - OPTIMIZED (no N+1)
   app.get("/api/coordinator/conversations", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
       const coordinatorId = req.user!.id;
 
-      // Get all transport requests
-      const allRequests = await storage.getAllTransportRequests();
-      
-      const conversations = await Promise.all(
-        allRequests.map(async (request) => {
-          // Get messages for this request
-          const messages = await storage.getMessagesByRequest(request.id);
+      // OPTIMIZATION 1: Fetch ALL requests with client/transporter in ONE SQL query using LEFT JOINs
+      // This eliminates N queries for users (was 2*N individual queries)
+      const requestsData = await db.execute(sql`
+        SELECT 
+          tr.id,
+          tr.reference_id,
+          tr.from_city,
+          tr.to_city,
+          tr.status,
+          tr.client_id,
+          tr.accepted_offer_id,
           
+          -- Client data
+          client.id as client_id,
+          client.name as client_name,
+          client.phone_number as client_phone_number,
+          client.city as client_city,
+          client.client_id as client_client_id,
+          
+          -- Transporter data (via offers table)
+          transporter.id as transporter_id,
+          transporter.name as transporter_name,
+          transporter.phone_number as transporter_phone_number,
+          transporter.city as transporter_city,
+          transporter.rating as transporter_rating
+          
+        FROM transport_requests tr
+        LEFT JOIN users client ON tr.client_id = client.id
+        LEFT JOIN offers offer ON tr.accepted_offer_id = offer.id
+        LEFT JOIN users transporter ON offer.transporter_id = transporter.id
+        ORDER BY tr.created_at DESC
+      `);
+
+      // OPTIMIZATION 2: Fetch ALL messages in ONE query and group by requestId in memory
+      // This eliminates N queries for messages (was N individual queries)
+      const allMessages = await db.select()
+        .from(chatMessages)
+        .orderBy(chatMessages.createdAt);
+
+      // Group messages by requestId for O(1) lookup
+      const messagesByRequestId: Record<string, any[]> = {};
+      for (const msg of allMessages) {
+        if (!messagesByRequestId[msg.requestId]) {
+          messagesByRequestId[msg.requestId] = [];
+        }
+        messagesByRequestId[msg.requestId].push(msg);
+      }
+
+      // Combine requests with their messages
+      const conversations = requestsData.rows
+        .map((row: any) => {
+          const messages = messagesByRequestId[row.id] || [];
+          
+          // Skip requests with no messages
           if (messages.length === 0) {
-            return null; // Skip requests with no messages
+            return null;
           }
-          
-          // Get client and transporter info
-          const client = await storage.getUser(request.clientId);
-          let transporter = null;
-          if (request.acceptedOfferId) {
-            const acceptedOffer = await storage.getOffer(request.acceptedOfferId);
-            if (acceptedOffer) {
-              transporter = await storage.getUser(acceptedOffer.transporterId);
-            }
-          }
-          
-          // Count unread messages (messages sent by client or transporter, not by coordinator)
+
+          // Extract client object if exists
+          const client = row.client_id ? {
+            id: row.client_id,
+            name: row.client_name,
+            phoneNumber: row.client_phone_number,
+            city: row.client_city,
+            clientId: row.client_client_id,
+          } : null;
+
+          // Extract transporter object if exists
+          const transporter = row.transporter_id ? {
+            id: row.transporter_id,
+            name: row.transporter_name,
+            phoneNumber: row.transporter_phone_number,
+            city: row.transporter_city,
+            rating: row.transporter_rating,
+          } : null;
+
+          // Count unread messages (not sent by coordinator)
           const unreadCount = messages.filter(
             (m: any) => !m.isRead && m.senderType !== 'coordinateur'
           ).length;
-          
+
           // Get last message
           const lastMessage = messages[messages.length - 1];
-          
+
           return {
-            requestId: request.id,
-            referenceId: request.referenceId,
-            fromCity: request.fromCity,
-            toCity: request.toCity,
-            status: request.status,
+            requestId: row.id,
+            referenceId: row.reference_id,
+            fromCity: row.from_city,
+            toCity: row.to_city,
+            status: row.status,
             client: client ? sanitizeUser(client, 'admin') : null,
             transporter: transporter ? sanitizeUser(transporter, 'admin') : null,
             lastMessage: lastMessage ? {
               content: lastMessage.messageType === 'text' ? lastMessage.message : 
-                       lastMessage.messageType === 'voice' ? '🎤 Message vocal' :
-                       lastMessage.messageType === 'photo' ? '📷 Photo' : '🎥 Vidéo',
+                       lastMessage.messageType === 'voice' ? 'Message vocal' :
+                       lastMessage.messageType === 'photo' ? 'Photo' : 'Vidéo',
               createdAt: lastMessage.createdAt,
               senderType: lastMessage.senderType
             } : null,
@@ -7183,18 +7264,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             messageCount: messages.length
           };
         })
-      );
-      
-      // Filter out null values and sort by last message date
-      const filteredConversations = conversations
-        .filter(c => c !== null)
-        .sort((a, b) => {
-          const aTime = a!.lastMessage?.createdAt ? new Date(a!.lastMessage.createdAt).getTime() : 0;
-          const bTime = b!.lastMessage?.createdAt ? new Date(b!.lastMessage.createdAt).getTime() : 0;
+        .filter((c: any) => c !== null) // Remove nulls (requests with no messages)
+        .sort((a: any, b: any) => {
+          // Sort by last message date
+          const aTime = a.lastMessage?.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0;
+          const bTime = b.lastMessage?.createdAt ? new Date(b.lastMessage.createdAt).getTime() : 0;
           return bTime - aTime;
         });
-      
-      res.json(filteredConversations);
+
+      console.log(`✅ [OPTIMIZED] Fetched ${conversations.length} conversations with 2 SQL queries (no N+1)`);
+      res.json(conversations);
     } catch (error) {
       console.error("Erreur récupération conversations:", error);
       res.status(500).json({ error: "Erreur lors de la récupération des conversations" });
