@@ -3863,7 +3863,7 @@ export default function CoordinatorDashboard() {
 
       {/* Transporter Info Dialog */}
       <Dialog open={!!selectedTransporterInfo} onOpenChange={(open) => !open && setSelectedTransporterInfo(null)}>
-        <DialogContent className="sm:max-w-md" data-testid="dialog-transporter-info">
+        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto" data-testid="dialog-transporter-info">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold flex items-center gap-2">
               <Truck className="h-5 w-5 text-emerald-500" />
@@ -3872,9 +3872,9 @@ export default function CoordinatorDashboard() {
           </DialogHeader>
 
           {selectedTransporterInfo && (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {/* Photo du camion */}
-              <div className="relative w-full aspect-video rounded-lg overflow-hidden border-2 border-emerald-500/20 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30">
+              <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden border-2 border-emerald-500/20 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30">
                 {selectedTransporterInfo.truckPhotos && selectedTransporterInfo.truckPhotos.length > 0 ? (
                   <img 
                     src={selectedTransporterInfo.truckPhotos[0]} 
@@ -3883,33 +3883,33 @@ export default function CoordinatorDashboard() {
                   />
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center gap-2">
-                    <Truck className="h-12 w-12 text-emerald-400/40" />
-                    <p className="text-sm text-muted-foreground/60">Aucune photo disponible</p>
+                    <Truck className="h-10 w-10 text-emerald-400/40" />
+                    <p className="text-xs text-muted-foreground/60">Aucune photo disponible</p>
                   </div>
                 )}
               </div>
 
               {/* Nom */}
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                <div className="w-10 h-10 rounded-full bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
-                  <Truck className="h-5 w-5 text-emerald-500" />
+              <div className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/50">
+                <div className="w-9 h-9 rounded-full bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
+                  <Truck className="h-4 w-4 text-emerald-500" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-muted-foreground font-medium">Nom</p>
-                  <p className="font-semibold text-base truncate">{selectedTransporterInfo.name}</p>
+                  <p className="font-semibold text-sm truncate">{selectedTransporterInfo.name}</p>
                 </div>
               </div>
 
               {/* Téléphone */}
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                <div className="w-10 h-10 rounded-full bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
-                  <Phone className="h-5 w-5 text-emerald-500" />
+              <div className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/50">
+                <div className="w-9 h-9 rounded-full bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
+                  <Phone className="h-4 w-4 text-emerald-500" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-muted-foreground font-medium">Téléphone</p>
                   <a 
                     href={`tel:${selectedTransporterInfo.phoneNumber}`}
-                    className="font-semibold text-emerald-600 hover:text-emerald-700 text-base"
+                    className="font-semibold text-emerald-600 hover:text-emerald-700 text-sm"
                   >
                     {selectedTransporterInfo.phoneNumber}
                   </a>
@@ -3918,24 +3918,24 @@ export default function CoordinatorDashboard() {
 
               {/* Ville */}
               {selectedTransporterInfo.city && (
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                  <div className="w-10 h-10 rounded-full bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
-                    <MapPin className="h-5 w-5 text-emerald-500" />
+                <div className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/50">
+                  <div className="w-9 h-9 rounded-full bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
+                    <MapPin className="h-4 w-4 text-emerald-500" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-muted-foreground font-medium">Ville</p>
-                    <p className="font-semibold text-base truncate">{selectedTransporterInfo.city}</p>
+                    <p className="font-semibold text-sm truncate">{selectedTransporterInfo.city}</p>
                   </div>
                 </div>
               )}
 
               {/* Rating et trajets */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2.5">
                 {selectedTransporterInfo.rating !== null && selectedTransporterInfo.rating !== undefined && (() => {
                   const rating = parseFloat(selectedTransporterInfo.rating || "0");
                   return (
-                    <div className="flex flex-col items-center gap-3 p-4 rounded-lg bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/20 border border-yellow-200 dark:border-yellow-800">
-                      <div className="flex items-center gap-1">
+                    <div className="flex flex-col items-center gap-2 p-3 rounded-lg bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/20 border border-yellow-200 dark:border-yellow-800">
+                      <div className="flex items-center gap-0.5">
                         {[1, 2, 3, 4, 5].map((star) => {
                           const isFilled = star <= Math.floor(rating);
                           const isHalf = star === Math.ceil(rating) && rating % 1 >= 0.5;
@@ -3943,7 +3943,7 @@ export default function CoordinatorDashboard() {
                           return (
                             <Star 
                               key={star}
-                              className={`h-4 w-4 ${
+                              className={`h-3.5 w-3.5 ${
                                 isFilled 
                                   ? "fill-yellow-500 text-yellow-500" 
                                   : isHalf 
@@ -3955,7 +3955,7 @@ export default function CoordinatorDashboard() {
                         })}
                       </div>
                       <div className="flex items-baseline gap-1">
-                        <span className="text-xl font-bold text-yellow-700 dark:text-yellow-400">
+                        <span className="text-lg font-bold text-yellow-700 dark:text-yellow-400">
                           {rating.toFixed(1)}
                         </span>
                         <span className="text-xs text-muted-foreground">/5</span>
@@ -3967,8 +3967,8 @@ export default function CoordinatorDashboard() {
                 {selectedTransporterInfo.totalTrips !== undefined && (
                   <div className="flex flex-col items-center gap-2 p-3 rounded-lg bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/20 border border-emerald-200 dark:border-emerald-800">
                     <div className="flex items-center gap-1">
-                      <Award className="h-5 w-5 text-emerald-500" />
-                      <span className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
+                      <Award className="h-4 w-4 text-emerald-500" />
+                      <span className="text-lg font-bold text-emerald-700 dark:text-emerald-400">
                         {selectedTransporterInfo.totalTrips || 0}
                       </span>
                     </div>
