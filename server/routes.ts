@@ -5950,6 +5950,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // DEBUG: Simple check for pris-en-charge requests
+  app.get("/api/coordinator/coordination/pris-en-charge-debug", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
+    try {
+      console.log('[DEBUG Pris en charge] 🔍 Simple query...');
+      
+      const simpleRequests = await db.select({
+        id: transportRequests.id,
+        referenceId: transportRequests.referenceId,
+        status: transportRequests.status,
+        paymentStatus: transportRequests.paymentStatus,
+        coordinationStatus: transportRequests.coordinationStatus,
+        takenInChargeAt: transportRequests.takenInChargeAt
+      })
+      .from(transportRequests)
+      .where(
+        and(
+          isNotNull(transportRequests.takenInChargeAt),
+          eq(transportRequests.coordinationStatus, 'pris_en_charge'),
+          ne(transportRequests.status, 'cancelled'),
+          eq(transportRequests.paymentStatus, 'a_facturer')
+        )
+      );
+
+      console.log(`[DEBUG Pris en charge] Found ${simpleRequests.length} requests`);
+      res.json({
+        count: simpleRequests.length,
+        requests: simpleRequests
+      });
+    } catch (error) {
+      console.error("[DEBUG Pris en charge] Error:", error);
+      res.status(500).json({ error: String(error) });
+    }
+  });
+
   // Get "Pris en charge" requests (taken in charge by transporter)
   app.get("/api/coordinator/coordination/pris-en-charge", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
