@@ -5951,65 +5951,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // DEBUG: Simple check for pris-en-charge requests
-  app.get("/api/coordinator/coordination/pris-en-charge-debug", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
-    try {
-      console.log('[DEBUG Pris en charge] 🔍 Simple query...');
-      
-      const simpleRequests = await db.select({
-        id: transportRequests.id,
-        referenceId: transportRequests.referenceId,
-        status: transportRequests.status,
-        paymentStatus: transportRequests.paymentStatus,
-        coordinationStatus: transportRequests.coordinationStatus,
-        takenInChargeAt: transportRequests.takenInChargeAt
-      })
-      .from(transportRequests)
-      .where(
-        and(
-          isNotNull(transportRequests.takenInChargeAt),
-          eq(transportRequests.coordinationStatus, 'pris_en_charge'),
-          ne(transportRequests.status, 'cancelled'),
-          eq(transportRequests.paymentStatus, 'a_facturer')
-        )
-      );
-
-      console.log(`[DEBUG Pris en charge] Found ${simpleRequests.length} requests`);
-      res.json({
-        count: simpleRequests.length,
-        requests: simpleRequests
-      });
-    } catch (error) {
-      console.error("[DEBUG Pris en charge] Error:", error);
-      res.status(500).json({ error: String(error) });
-    }
-  });
-
   // Get "Pris en charge" requests (taken in charge by transporter)
   app.get("/api/coordinator/coordination/pris-en-charge", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
-      console.log('[Pris en charge] 🔍 Fetching pris-en-charge requests...');
-      console.log('[Pris en charge] Current user:', { id: req.user?.id, role: req.user?.role });
-      
-      // DIAGNOSTIC: Check what's in database BEFORE applying all filters
-      const allWithTakenInCharge = await db.select({
-        id: transportRequests.id,
-        referenceId: transportRequests.referenceId,
-        status: transportRequests.status,
-        paymentStatus: transportRequests.paymentStatus,
-        coordinationStatus: transportRequests.coordinationStatus,
-        takenInChargeAt: transportRequests.takenInChargeAt,
-      })
-      .from(transportRequests)
-      .where(isNotNull(transportRequests.takenInChargeAt))
-      .limit(10);
-      
-      console.log('[Pris en charge] 📊 Requests with takenInChargeAt set (max 10):', allWithTakenInCharge.length);
-      allWithTakenInCharge.forEach((r, i) => {
-        console.log(`  [${i+1}] ${r.referenceId}: status=${r.status}, payment=${r.paymentStatus}, coord=${r.coordinationStatus}`);
-      });
-      
-      // SIMPLIFIED: Get base requests first
+      // Get base requests first (simplified query approach for robustness)
       const baseRequests = await db.select()
         .from(transportRequests)
         .where(
@@ -6021,8 +5966,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           )
         )
         .orderBy(desc(transportRequests.takenInChargeAt));
-
-      console.log(`[Pris en charge] ✅ Found ${baseRequests.length} base requests after filtering`);
 
       // Then enrich with related data using simple queries
       const enrichedRequests = await Promise.all(
@@ -6076,18 +6019,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
         })
       );
-
-      console.log(`[Pris en charge] ✅ Enriched ${enrichedRequests.length} requests`);
-      if (enrichedRequests.length > 0) {
-        console.log('[Pris en charge] First request:', {
-          referenceId: enrichedRequests[0].referenceId,
-          hasClient: !!enrichedRequests[0].client,
-          hasTransporter: !!enrichedRequests[0].transporter,
-          status: enrichedRequests[0].status,
-          paymentStatus: enrichedRequests[0].paymentStatus,
-          coordinationStatus: enrichedRequests[0].coordinationStatus,
-        });
-      }
 
       res.json(enrichedRequests);
     } catch (error) {
