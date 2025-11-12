@@ -1341,8 +1341,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Transport request routes
   app.post("/api/requests", async (req, res) => {
     try {
-      console.log("Request body received:", JSON.stringify(req.body, null, 2));
+      console.log("✅ [POST /api/requests] Request received from client");
+      // Log sanitized metadata only - no sensitive data (photos, addresses)
+      const metadata = {
+        fromCity: req.body.fromCity,
+        toCity: req.body.toCity,
+        goodsType: req.body.goodsType,
+        handlingRequired: req.body.handlingRequired,
+        photoCount: req.body.photos?.length || 0,
+        hasBudget: !!req.body.budget,
+        hasDateTime: !!req.body.dateTime,
+      };
+      console.log("📦 [POST /api/requests] Metadata:", JSON.stringify(metadata, null, 2));
+      
       const requestData = insertTransportRequestSchema.parse(req.body);
+      console.log("✅ [POST /api/requests] Validation passed");
       
       // Calculate distance if both addresses are provided
       if (requestData.departureAddress && requestData.arrivalAddress) {
@@ -1355,35 +1368,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (distance !== null) {
           requestData.distance = distance;
-          console.log(`[POST /api/requests] Distance calculated: ${distance} km`);
+          console.log(`✅ [POST /api/requests] Distance calculated: ${distance} km`);
         } else {
-          console.warn(`[POST /api/requests] Could not calculate distance: ${error}`);
+          console.warn(`⚠️ [POST /api/requests] Could not calculate distance: ${error}`);
         }
       }
       
       const request = await storage.createTransportRequest(requestData);
+      console.log("✅ [POST /api/requests] Request created successfully:", request.referenceId);
       
       // Send email notification to admin (non-blocking)
       storage.getUser(request.clientId).then(client => {
         if (client) {
           emailService.sendNewRequestEmail(request, client).catch(emailError => {
-            console.error("Failed to send request email:", emailError);
+            console.error("❌ [POST /api/requests] Failed to send email:", emailError);
           });
         }
       }).catch(err => {
-        console.error("Failed to get client for email:", err);
+        console.error("❌ [POST /api/requests] Failed to get client for email:", err);
       });
-      
-      console.log("New request created:", request.referenceId);
       
       res.json(request);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        console.log("Validation error:", JSON.stringify(error.errors, null, 2));
-        return res.status(400).json({ error: error.errors });
+        console.error("❌ [POST /api/requests] Validation error:", JSON.stringify(error.errors, null, 2));
+        const errorMessage = error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(", ");
+        return res.status(400).json({ 
+          error: "Validation échouée",
+          details: errorMessage,
+          fields: error.errors 
+        });
       }
-      console.log("Server error:", error);
-      res.status(500).json({ error: "Failed to create request" });
+      console.error("❌ [POST /api/requests] Server error:", error);
+      res.status(500).json({ 
+        error: "Échec de la création de la demande",
+        message: error instanceof Error ? error.message : "Erreur inconnue" 
+      });
     }
   });
 
