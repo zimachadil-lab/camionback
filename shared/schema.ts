@@ -91,6 +91,9 @@ export const transportRequests = pgTable("transport_requests", {
   assignedByCoordinatorId: varchar("assigned_by_coordinator_id").references(() => users.id), // Coordinator who made the assignment
   assignedManually: boolean("assigned_manually").default(false), // True if assigned manually by coordinator
   assignedAt: timestamp("assigned_at"), // Timestamp of manual assignment
+  // Taken in charge - When transporter actually starts the transport (communication + location sharing)
+  takenInChargeAt: timestamp("taken_in_charge_at"), // When coordinator marked transport as actually started
+  takenInChargeBy: varchar("taken_in_charge_by").references(() => users.id), // Coordinator who marked it
   // Transporter interests - Track transporters who clicked "Intéressé" for matching workflow
   transporterInterests: text("transporter_interests").array().default(sql`ARRAY[]::text[]`), // Array of transporter IDs who expressed interest
   qualifiedAt: timestamp("qualified_at"), // When coordinator completed qualification (set prices)

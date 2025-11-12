@@ -27,7 +27,7 @@ import {
   transportRequests,
   transporterInterests
 } from "@shared/schema";
-import { desc, eq, sql, and } from "drizzle-orm";
+import { desc, eq, sql, and, isNotNull, ne } from "drizzle-orm";
 import { sendNewOfferSMS, sendOfferAcceptedSMS, sendTransporterActivatedSMS, sendBulkSMS, sendManualAssignmentSMS, sendTransporterAssignedSMS, sendClientChoseYouSMS, sendTransporterSelectedSMS } from "./infobip-sms";
 import { emailService } from "./email-service";
 import { migrateProductionData } from "./migrate-production-endpoint";
@@ -5839,23 +5839,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get "Archives" requests (archived)
-  app.get("/api/coordinator/coordination/archives", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
+  // Get "Pris en charge" requests (taken in charge by transporter)
+  app.get("/api/coordinator/coordination/pris-en-charge", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
       const coordinatorId = req.user!.id;
-      const assignedToId = req.query.assignedToId as string | undefined;
-      const searchQuery = req.query.searchQuery as string | undefined;
       
-      const filters = {
-        assignedToId,
-        searchQuery
-      };
-      
-      const requests = await storage.getCoordinationArchivesRequests(filters);
+      // Get requests where takenInChargeAt is NOT NULL and not cancelled/archived
+      const requests = await db.select({
+        ...getTableColumns(transportRequests),
+        client: {
+          id: users.id,
+          name: users.name,
+          phoneNumber: users.phoneNumber,
+          city: users.city,
+          clientId: users.clientId,
+        },
+        transporter: sql<any>`
+          CASE 
+            WHEN ${transportRequests.assignedTransporterId} IS NOT NULL THEN
+              (SELECT json_build_object(
+                'id', u.id,
+                'name', u.name,
+                'phoneNumber', u.phone_number,
+                'city', u.city,
+                'rating', u.rating
+              )
+              FROM users u
+              WHERE u.id = ${transportRequests.assignedTransporterId})
+            ELSE NULL
+          END
+        `,
+        transporterInterests: sql<any[]>`
+          COALESCE(
+            (
+              SELECT json_agg(
+                json_build_object(
+                  'id', ti.id,
+                  'transporterId', ti.transporter_id,
+                  'availabilityDate', ti.availability_date,
+                  'hiddenFromClient', ti.hidden_from_client,
+                  'createdAt', ti.created_at,
+                  'transporter', json_build_object(
+                    'id', tu.id,
+                    'name', tu.name,
+                    'phoneNumber', tu.phone_number,
+                    'city', tu.city,
+                    'rating', tu.rating,
+                    'truckPhotos', tu.truck_photos
+                  )
+                )
+              )
+              FROM transporter_interests ti
+              LEFT JOIN users tu ON ti.transporter_id = tu.id
+              WHERE ti.request_id = ${transportRequests.id}
+            ),
+            '[]'::json
+          )
+        `,
+        assignedTo: sql<any>`
+          CASE 
+            WHEN ${transportRequests.assignedToId} IS NOT NULL THEN
+              (SELECT json_build_object(
+                'id', u.id,
+                'name', u.name,
+                'phoneNumber', u.phone_number
+              )
+              FROM users u
+              WHERE u.id = ${transportRequests.assignedToId})
+            ELSE NULL
+          END
+        `,
+      })
+      .from(transportRequests)
+      .leftJoin(users, eq(transportRequests.clientId, users.id))
+      .where(
+        and(
+          isNotNull(transportRequests.takenInChargeAt),
+          ne(transportRequests.coordinationStatus, 'archived'),
+          ne(transportRequests.status, 'cancelled')
+        )
+      )
+      .orderBy(desc(transportRequests.takenInChargeAt));
+
       res.json(requests);
     } catch (error) {
-      console.error("Erreur récupération archives:", error);
-      res.status(500).json({ error: "Erreur lors de la récupération des archives" });
+      console.error("Erreur récupération commandes prises en charge:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération des commandes prises en charge" });
+    }
+  });
+
+  // Mark request as taken in charge by transporter
+  app.patch("/api/coordinator/requests/:id/take-in-charge", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
+    try {
+      const coordinatorId = req.user!.id;
+      const { id } = req.params;
+
+      // Validate that request exists and is in production (accepted + has transporter)
+      const request = await db.select()
+        .from(transportRequests)
+        .where(eq(transportRequests.id, id))
+        .limit(1);
+
+      if (request.length === 0) {
+        return res.status(404).json({ error: "Commande non trouvée" });
+      }
+
+      const currentRequest = request[0];
+
+      // Validate: must be accepted and have a transporter assigned
+      if (currentRequest.status !== 'accepted' || !currentRequest.assignedTransporterId) {
+        return res.status(400).json({ 
+          error: "La commande doit être acceptée et avoir un transporteur assigné" 
+        });
+      }
+
+      // Update takenInChargeAt and takenInChargeBy
+      await db.update(transportRequests)
+        .set({
+          takenInChargeAt: new Date(),
+          takenInChargeBy: coordinatorId,
+        })
+        .where(eq(transportRequests.id, id));
+
+      // Log the action
+      await storage.createCoordinatorLog({
+        coordinatorId,
+        action: 'take_in_charge',
+        targetType: 'request',
+        targetId: id,
+        details: JSON.stringify({
+          requestId: id,
+          takenInChargeAt: new Date().toISOString(),
+        }),
+      });
+
+      res.json({ success: true, message: "Commande marquée comme prise en charge" });
+    } catch (error) {
+      console.error("Erreur lors de la prise en charge:", error);
+      res.status(500).json({ error: "Erreur lors de la prise en charge" });
     }
   });
 

@@ -35,7 +35,7 @@ import { getCategoryConfig } from "@/lib/goods-category-config";
 import { StatusIndicator } from "@/components/shared/status-indicator";
 
 // Types for adaptive filters by tab
-type TabId = 'nouveau' | 'qualifies' | 'interesses' | 'production' | 'archives';
+type TabId = 'nouveau' | 'qualifies' | 'interesses' | 'production' | 'pris_en_charge';
 
 interface TabFilters {
   searchQuery: string;
@@ -80,10 +80,10 @@ function getDefaultFilters(tab: TabId): TabFilters {
         selectedPaymentStatus: 'Tous les statuts',
         selectedDateFilter: 'all',
       };
-    case 'archives':
+    case 'pris_en_charge':
       return {
         ...baseFilters,
-        selectedArchiveReason: 'Toutes les raisons',
+        selectedPaymentStatus: 'Tous les statuts',
         selectedDateFilter: 'all',
       };
     default:
@@ -664,7 +664,7 @@ export default function CoordinatorDashboard() {
     qualifies: getDefaultFilters('qualifies'),
     interesses: getDefaultFilters('interesses'),
     production: getDefaultFilters('production'),
-    archives: getDefaultFilters('archives'),
+    pris_en_charge: getDefaultFilters('pris_en_charge'),
   });
   const [chatOpen, setChatOpen] = useState(false);
   const [selectedParticipants, setSelectedParticipants] = useState<{ client: any; transporter: any } | null>(null);
@@ -813,10 +813,10 @@ export default function CoordinatorDashboard() {
     },
   });
 
-  const { data: archivesRequests = [], isLoading: archivesLoading } = useQuery({
-    queryKey: ["/api/coordinator/coordination/archives"],
+  const { data: prisEnChargeRequests = [], isLoading: prisEnChargeLoading } = useQuery({
+    queryKey: ["/api/coordinator/coordination/pris-en-charge"],
     queryFn: async () => {
-      const response = await fetch("/api/coordinator/coordination/archives");
+      const response = await fetch("/api/coordinator/coordination/pris-en-charge");
       const data = await response.json();
       return Array.isArray(data) ? data : [];
     },
@@ -866,7 +866,7 @@ export default function CoordinatorDashboard() {
         query.queryKey[0] === "/api/coordinator/matching-requests" ||
         query.queryKey[0] === "/api/coordinator/coordination/en-action" ||
         query.queryKey[0] === "/api/coordinator/coordination/prioritaires" ||
-        query.queryKey[0] === "/api/coordinator/coordination/archives"
+        query.queryKey[0] === "/api/coordinator/coordination/pris-en-charge"
       });
       
       // Fonction de mise à jour optimiste
@@ -895,7 +895,7 @@ export default function CoordinatorDashboard() {
         updateCache
       );
       queryClient.setQueriesData(
-        { predicate: (query) => query.queryKey[0] === "/api/coordinator/coordination/archives" },
+        { predicate: (query) => query.queryKey[0] === "/api/coordinator/coordination/pris-en-charge" },
         updateCache
       );
     },
@@ -912,7 +912,7 @@ export default function CoordinatorDashboard() {
         query.queryKey[0] === "/api/coordinator/matching-requests" ||
         query.queryKey[0] === "/api/coordinator/coordination/en-action" ||
         query.queryKey[0] === "/api/coordinator/coordination/prioritaires" ||
-        query.queryKey[0] === "/api/coordinator/coordination/archives"
+        query.queryKey[0] === "/api/coordinator/coordination/pris-en-charge"
       });
       
       toast({
@@ -983,7 +983,7 @@ export default function CoordinatorDashboard() {
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/active-requests"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/en-action"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/prioritaires"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/archives"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/pris-en-charge"] });
       toast({
         title: "Succès",
         description: "Commande assignée à vous",
@@ -1011,7 +1011,7 @@ export default function CoordinatorDashboard() {
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/active-requests"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/en-action"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/prioritaires"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/archives"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/pris-en-charge"] });
       toast({
         title: "Succès",
         description: "Désassignation effectuée",
@@ -1107,7 +1107,7 @@ export default function CoordinatorDashboard() {
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/qualification-pending"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/en-action"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/prioritaires"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/archives"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/pris-en-charge"] });
     },
     onError: () => {
       toast({
@@ -1133,7 +1133,7 @@ export default function CoordinatorDashboard() {
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/qualification-pending"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/en-action"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/prioritaires"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/archives"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/pris-en-charge"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/available-requests"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/active-requests"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/payment-requests"] });
@@ -1166,7 +1166,7 @@ export default function CoordinatorDashboard() {
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/qualification-pending"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/en-action"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/prioritaires"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/archives"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/pris-en-charge"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/available-requests"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/active-requests"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/payment-requests"] });
@@ -1193,7 +1193,7 @@ export default function CoordinatorDashboard() {
       });
       // Invalidate all coordinator queries to refresh the views
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/qualification-pending"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/archives"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/pris-en-charge"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/available-requests"] });
     },
     onError: () => {
@@ -1581,11 +1581,7 @@ export default function CoordinatorDashboard() {
       const matchesPaymentStatus = !tabFilters.selectedPaymentStatus || tabFilters.selectedPaymentStatus === "Tous les statuts" ||
         request.paymentMethod === tabFilters.selectedPaymentStatus;
 
-      // Archive reason filtering (for archives tab)
-      const matchesArchiveReason = !tabFilters.selectedArchiveReason || tabFilters.selectedArchiveReason === "Toutes les raisons" ||
-        request.archiveReason === tabFilters.selectedArchiveReason;
-      
-      return matchesCity && matchesStatus && matchesSearch && matchesDate && matchesCoordinator && matchesMinInterested && matchesPaymentStatus && matchesArchiveReason;
+      return matchesCity && matchesStatus && matchesSearch && matchesDate && matchesCoordinator && matchesMinInterested && matchesPaymentStatus;
     });
   };
 
@@ -2477,8 +2473,8 @@ export default function CoordinatorDashboard() {
               </Select>
             </div>
 
-            {/* Date - nouveau, qualifies, production, archives */}
-            {(activeTab === 'nouveau' || activeTab === 'qualifies' || activeTab === 'production' || activeTab === 'archives') && (
+            {/* Date - nouveau, qualifies, production, pris_en_charge */}
+            {(activeTab === 'nouveau' || activeTab === 'qualifies' || activeTab === 'production' || activeTab === 'pris_en_charge') && (
               <div className="space-y-2">
                 <Label htmlFor="filter-date">Période</Label>
                 <Select
@@ -2536,8 +2532,8 @@ export default function CoordinatorDashboard() {
               </div>
             )}
 
-            {/* Payment Status - production only */}
-            {activeTab === 'production' && (
+            {/* Payment Status - production and pris_en_charge only */}
+            {(activeTab === 'production' || activeTab === 'pris_en_charge') && (
               <div className="space-y-2">
                 <Label htmlFor="filter-payment-status">Statut de paiement</Label>
                 <Select
@@ -2552,28 +2548,6 @@ export default function CoordinatorDashboard() {
                     <SelectItem value="a_facturer">À facturer</SelectItem>
                     <SelectItem value="paid_by_client">Payé par le client</SelectItem>
                     <SelectItem value="paid_by_camionback">Payé par CamionBack</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Archive Reason - archives only */}
-            {activeTab === 'archives' && (
-              <div className="space-y-2">
-                <Label htmlFor="filter-archive-reason">Raison d'archivage</Label>
-                <Select
-                  value={tempFilters.selectedArchiveReason || 'Toutes les raisons'}
-                  onValueChange={(value) => setTempFilters({ ...tempFilters, selectedArchiveReason: value })}
-                >
-                  <SelectTrigger id="filter-archive-reason" data-testid="select-filter-archive-reason">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Toutes les raisons">Toutes les raisons</SelectItem>
-                    <SelectItem value="completed">Terminé</SelectItem>
-                    <SelectItem value="cancelled">Annulé</SelectItem>
-                    <SelectItem value="no_response">Pas de réponse</SelectItem>
-                    <SelectItem value="other">Autre</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -2664,15 +2638,15 @@ export default function CoordinatorDashboard() {
                 )}
               </TabsTrigger>
               <TabsTrigger 
-                value="archives" 
-                data-testid="tab-archives"
-                className="relative inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-3 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#6b7280] data-[state=active]:via-[#4b5563] data-[state=active]:to-[#374151] data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-gray-500/50 text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                value="pris_en_charge" 
+                data-testid="tab-pris-en-charge"
+                className="relative inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-3 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 data-[state=active]:bg-gradient-to-br data-[state=active]:from-emerald-600 data-[state=active]:via-green-600 data-[state=active]:to-teal-600 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/50 text-slate-400 hover:text-slate-200 hover:bg-white/5"
               >
-                <Package className="h-4 w-4" />
-                <span className="hidden sm:inline">Archives</span>
-                {!archivesLoading && filterRequests(archivesRequests, filters.archives).length > 0 && (
-                  <span className="inline-flex items-center justify-center min-w-[20px] h-[20px] px-1 text-xs font-bold rounded-full bg-gradient-to-br from-gray-400 to-gray-500 text-white shadow-md">
-                    {filterRequests(archivesRequests, filters.archives).length}
+                <Truck className="h-4 w-4" />
+                <span className="hidden sm:inline">Pris en charge</span>
+                {!prisEnChargeLoading && filterRequests(prisEnChargeRequests, filters.pris_en_charge).length > 0 && (
+                  <span className="inline-flex items-center justify-center min-w-[20px] h-[20px] px-1 text-xs font-bold rounded-full bg-gradient-to-br from-emerald-400 to-green-500 text-white shadow-md">
+                    {filterRequests(prisEnChargeRequests, filters.pris_en_charge).length}
                   </span>
                 )}
               </TabsTrigger>
@@ -2809,12 +2783,34 @@ export default function CoordinatorDashboard() {
                       <Button
                         className="flex-1 gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
                         onClick={() => {
-                          handleCoordinatorPayment(request.id);
+                          // Mark request as taken in charge
+                          fetch(`/api/coordinator/requests/${request.id}/take-in-charge`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                          }).then(async (res) => {
+                            if (res.ok) {
+                              toast({
+                                title: "Prise en charge confirmée",
+                                description: "La commande a été marquée comme prise en charge.",
+                              });
+                              queryClient.invalidateQueries({ queryKey: ['/api/coordinator/active-requests'] });
+                              queryClient.invalidateQueries({ queryKey: ['/api/coordinator/payment-pending'] });
+                              queryClient.invalidateQueries({ queryKey: ['/api/coordinator/coordination/pris-en-charge'] });
+                            } else {
+                              const error = await res.json();
+                              toast({
+                                variant: "destructive",
+                                title: "Erreur",
+                                description: error.error || "Impossible de marquer comme pris en charge",
+                              });
+                            }
+                          });
                         }}
-                        data-testid={`button-pay-${request.id}`}
+                        data-testid={`button-take-in-charge-${request.id}`}
                       >
-                        <CreditCard className="h-4 w-4" />
-                        Prise en charge / Payer
+                        <Truck className="h-4 w-4" />
+                        Prise en charge
                       </Button>
                     </div>
                   </div>
@@ -2823,24 +2819,69 @@ export default function CoordinatorDashboard() {
             )}
           </TabsContent>
 
-          {/* ONGLET 5: ARCHIVES - Commandes archivées */}
-          <TabsContent value="archives" className="space-y-4">
-            {archivesLoading ? (
+          {/* ONGLET 5: PRIS EN CHARGE - Commandes réellement prises en charge par le transporteur */}
+          <TabsContent value="pris_en_charge" className="space-y-4">
+            {prisEnChargeLoading ? (
               <div className="flex justify-center py-12">
                 <LoadingTruck />
               </div>
-            ) : filterRequests(archivesRequests, filters.archives).length === 0 ? (
+            ) : filterRequests(prisEnChargeRequests, filters.pris_en_charge).length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center text-muted-foreground">
-                  <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p>Aucune commande archivée</p>
+                  <Truck className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>Aucune commande prise en charge</p>
                 </CardContent>
               </Card>
             ) : (
-              <TwoColumnGrid testId="grid-archived-requests">
-                {filterRequests(archivesRequests, filters.archives).map((request) => (
+              <TwoColumnGrid testId="grid-pris-en-charge-requests">
+                {filterRequests(prisEnChargeRequests, filters.pris_en_charge).map((request) => (
                   <div key={request.id}>
-                    {renderRequestCard(request, false, false, false, false, false, true)}
+                    {renderRequestCard(request, false, false, false, false, false, false, true)}
+                    {/* Actions footer pour Pris en charge */}
+                    <div className="flex gap-2 px-4 pb-4">
+                      <Button
+                        className="flex-1 gap-2 bg-gradient-to-r from-[#1abc9c] to-[#16a085] hover:from-[#16a085] hover:to-[#149174] text-white"
+                        onClick={() => {
+                          handleCoordinatorPayment(request.id);
+                        }}
+                        data-testid={`button-mark-paid-${request.id}`}
+                      >
+                        <CreditCard className="h-4 w-4" />
+                        Payer
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="flex-1 gap-2"
+                        onClick={() => {
+                          if (confirm(`Voulez-vous vraiment annuler et requalifier la commande ${request.referenceId} ?`)) {
+                            fetch(`/api/requests/${request.id}/requalify`, {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              credentials: 'include',
+                              body: JSON.stringify({ reason: 'Annulé par coordinateur' }),
+                            }).then(() => {
+                              queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/pris-en-charge"] });
+                              queryClient.invalidateQueries({ queryKey: ["/api/coordinator/qualification-pending"] });
+                            });
+                          }
+                        }}
+                        data-testid={`button-requalify-pris-en-charge-${request.id}`}
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                        Requalifier
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={() => {
+                          setCancelRequestData(request);
+                          setCancelDialogOpen(true);
+                        }}
+                        data-testid={`button-cancel-pris-en-charge-${request.id}`}
+                      >
+                        <X className="h-4 w-4" />
+                        Annuler
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </TwoColumnGrid>
