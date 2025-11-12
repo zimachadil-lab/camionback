@@ -1803,7 +1803,7 @@ export default function CoordinatorDashboard() {
     );
   };
 
-  const renderRequestCard = (request: any, showVisibilityToggle = false, showPaymentControls = false, isCoordination = false, showQualifyButton = false, showQualifiedBy = false, showRepublishButton = false, showPaymentStatusSelector = false) => {
+  const renderRequestCard = (request: any, showVisibilityToggle = false, showPaymentControls = false, isCoordination = false, showQualifyButton = false, showQualifiedBy = false, showRepublishButton = false, showPaymentStatusSelector = false, showRequalifyButton = false) => {
     // Calculate interested count
     const interestedCount = request.transporterInterests?.length || 0;
     // Get client-friendly status
@@ -2334,26 +2334,40 @@ export default function CoordinatorDashboard() {
             </Badge>
           )}
 
-          {/* AI Price Estimation - Ultra-modern design */}
-          <Button
-            onClick={() => estimatePriceMutation.mutate(request.id)}
-            disabled={estimatePriceMutation.isPending}
-            data-testid={`button-estimate-price-${request.id}`}
-            className="relative gap-2 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 hover:from-purple-700 hover:via-pink-700 hover:to-blue-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all overflow-hidden group"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 opacity-0 group-hover:opacity-30 blur-xl transition-opacity" />
-            {estimatePriceMutation.isPending ? (
-              <>
-                <Sparkles className="h-4 w-4 animate-spin" />
-                Calcul IA...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4" />
-                Estimer Prix
-              </>
-            )}
-          </Button>
+          {/* AI Price Estimation - Seulement sur onglet Nouveau */}
+          {showQualifyButton && (
+            <Button
+              onClick={() => estimatePriceMutation.mutate(request.id)}
+              disabled={estimatePriceMutation.isPending}
+              data-testid={`button-estimate-price-${request.id}`}
+              className="relative gap-2 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 hover:from-purple-700 hover:via-pink-700 hover:to-blue-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all overflow-hidden group"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 opacity-0 group-hover:opacity-30 blur-xl transition-opacity" />
+              {estimatePriceMutation.isPending ? (
+                <>
+                  <Sparkles className="h-4 w-4 animate-spin" />
+                  Calcul IA...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  Estimer Prix
+                </>
+              )}
+            </Button>
+          )}
+
+          {/* Requalifier - Seulement sur onglet Qualifiés */}
+          {showRequalifyButton && (
+            <Button
+              className="flex-1 min-w-[140px] gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold shadow-md hover:shadow-lg transition-all"
+              onClick={() => handleOpenQualificationDialog(request)}
+              data-testid={`button-requalify-${request.id}`}
+            >
+              <RotateCcw className="h-4 w-4" />
+              Requalifier
+            </Button>
+          )}
           
           {/* View Details button (secondary) */}
           <Button
@@ -2693,7 +2707,7 @@ export default function CoordinatorDashboard() {
               </Card>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {filterRequests(matchingRequests, filters.qualifies).map((request) => renderRequestCard(request, true, false, false, false, true))}
+                {filterRequests(matchingRequests, filters.qualifies).map((request) => renderRequestCard(request, true, false, false, false, true, false, false, true))}
               </div>
             )}
           </TabsContent>
