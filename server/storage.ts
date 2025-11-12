@@ -2634,6 +2634,10 @@ export class DbStorage implements IStorage {
         // Transporter data (from assigned_transporter_id)
         assignedTransporterName: sql<string | null>`assigned_transporter.name`.as('assigned_transporter_name'),
         assignedTransporterPhoneNumber: sql<string | null>`assigned_transporter.phone_number`.as('assigned_transporter_phone_number'),
+        assignedTransporterCity: sql<string | null>`assigned_transporter.city`.as('assigned_transporter_city'),
+        assignedTransporterRating: sql<string | null>`assigned_transporter.rating`.as('assigned_transporter_rating'),
+        assignedTransporterTruckPhotos: sql<string[] | null>`assigned_transporter.truck_photos`.as('assigned_transporter_truck_photos'),
+        assignedTransporterCompletedTrips: sql<number | null>`assigned_transporter.completed_trips`.as('assigned_transporter_completed_trips'),
         // Offer data
         offerId: sql<string | null>`${offers.id}`.as('offer_id'),
         offerAmount: sql<string | null>`${offers.amount}`.as('offer_amount'),
@@ -2641,6 +2645,10 @@ export class DbStorage implements IStorage {
         // Transporter data (from accepted offer)
         offerTransporterName: sql<string | null>`offer_transporter.name`.as('offer_transporter_name'),
         offerTransporterPhoneNumber: sql<string | null>`offer_transporter.phone_number`.as('offer_transporter_phone_number'),
+        offerTransporterCity: sql<string | null>`offer_transporter.city`.as('offer_transporter_city'),
+        offerTransporterRating: sql<string | null>`offer_transporter.rating`.as('offer_transporter_rating'),
+        offerTransporterTruckPhotos: sql<string[] | null>`offer_transporter.truck_photos`.as('offer_transporter_truck_photos'),
+        offerTransporterCompletedTrips: sql<number | null>`offer_transporter.completed_trips`.as('offer_transporter_completed_trips'),
       })
       .from(transportRequests)
       // JOIN client (always required)
@@ -2712,10 +2720,18 @@ export class DbStorage implements IStorage {
         id: row.assignedTransporterId,
         name: row.assignedTransporterName,
         phoneNumber: row.assignedTransporterPhoneNumber,
+        city: row.assignedTransporterCity,
+        rating: row.assignedTransporterRating,
+        truckPhotos: row.assignedTransporterTruckPhotos,
+        completedTrips: row.assignedTransporterCompletedTrips,
       } : (row.offerTransporterId ? {
         id: row.offerTransporterId,
         name: row.offerTransporterName,
         phoneNumber: row.offerTransporterPhoneNumber,
+        city: row.offerTransporterCity,
+        rating: row.offerTransporterRating,
+        truckPhotos: row.offerTransporterTruckPhotos,
+        completedTrips: row.offerTransporterCompletedTrips,
       } : null),
       // Nested accepted offer object (if exists)
       acceptedOffer: row.offerId ? {
