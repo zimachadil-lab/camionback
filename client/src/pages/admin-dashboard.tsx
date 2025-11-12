@@ -995,10 +995,26 @@ export default function AdminDashboard() {
   });
 
   // Diagnostic query for pris en charge requests
-  const { data: prisEnChargeDiagnostic, refetch: refetchDiagnostic } = useQuery({
+  const { data: prisEnChargeDiagnostic, refetch: refetchDiagnostic, isFetching: isDiagnosticLoading } = useQuery<{
+    total: number;
+    shouldAppear: number;
+    blocked: number;
+    diagnostics: Array<{
+      referenceId: string;
+      status: string;
+      paymentStatus: string;
+      coordinationStatus: string;
+      takenInChargeAt: string;
+      shouldAppear: boolean;
+      reason: string;
+    }>;
+  }>({
     queryKey: ["/api/admin/diagnostic-pris-en-charge"],
     enabled: false, // Only fetch when explicitly called
   });
+
+  // State for diagnostic dialog
+  const [diagnosticDialogOpen, setDiagnosticDialogOpen] = useState(false);
 
   // Update transporter mutation
   const updateTransporterMutation = useMutation({
@@ -2663,8 +2679,8 @@ export default function AdminDashboard() {
                     Corriger Statuts Paiement "Pris en charge"
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4">
+                <CardContent className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
                     Corriger les commandes marquées "prise en charge" qui n'apparaissent pas dans l'onglet "Pris en charge" du coordinateur
                   </p>
                   <Button
@@ -2687,6 +2703,28 @@ export default function AdminDashboard() {
                       <>
                         <RefreshCw className="w-4 h-4 mr-2" />
                         Corriger Paiements "Pris en charge"
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      refetchDiagnostic();
+                      setDiagnosticDialogOpen(true);
+                    }}
+                    variant="outline"
+                    className="w-full border-blue-500 text-blue-600 hover:bg-blue-50"
+                    disabled={isDiagnosticLoading}
+                    data-testid="button-view-diagnostic"
+                  >
+                    {isDiagnosticLoading ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        Chargement...
+                      </>
+                    ) : (
+                      <>
+                        <Search className="w-4 h-4 mr-2" />
+                        Voir Diagnostic "Pris en charge"
                       </>
                     )}
                   </Button>
@@ -4924,6 +4962,126 @@ export default function AdminDashboard() {
               data-testid="button-save-coordination"
             >
               {updateCoordinationMutation.isPending ? "Enregistrement..." : "Enregistrer"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Diagnostic "Pris en charge" */}
+      <Dialog open={diagnosticDialogOpen} onOpenChange={setDiagnosticDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Search className="w-5 h-5 text-blue-600" />
+              Diagnostic Commandes "Pris en charge"
+            </DialogTitle>
+            <DialogDescription>
+              Analyse détaillée des commandes marquées comme "prise en charge"
+            </DialogDescription>
+          </DialogHeader>
+
+          {isDiagnosticLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <RefreshCw className="w-8 h-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : prisEnChargeDiagnostic ? (
+            <div className="space-y-4">
+              {/* Summary cards */}
+              <div className="grid grid-cols-3 gap-3">
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-2xl font-bold">{prisEnChargeDiagnostic.total}</div>
+                    <div className="text-sm text-muted-foreground">Total avec takenInChargeAt</div>
+                  </CardContent>
+                </Card>
+                <Card className="border-emerald-500">
+                  <CardContent className="pt-6">
+                    <div className="text-2xl font-bold text-emerald-600">{prisEnChargeDiagnostic.shouldAppear}</div>
+                    <div className="text-sm text-muted-foreground">Devraient apparaître</div>
+                  </CardContent>
+                </Card>
+                <Card className="border-red-500">
+                  <CardContent className="pt-6">
+                    <div className="text-2xl font-bold text-red-600">{prisEnChargeDiagnostic.blocked}</div>
+                    <div className="text-sm text-muted-foreground">Bloquées</div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Detailed table */}
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Référence</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Payment Status</TableHead>
+                      <TableHead>Coordination</TableHead>
+                      <TableHead>État</TableHead>
+                      <TableHead>Raison</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {prisEnChargeDiagnostic.diagnostics.map((diag: any) => (
+                      <TableRow key={diag.referenceId} className={diag.shouldAppear ? "" : "bg-red-50"}>
+                        <TableCell className="font-medium">{diag.referenceId}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{diag.status}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={diag.paymentStatus === 'a_facturer' ? 'default' : 'destructive'}
+                          >
+                            {diag.paymentStatus}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{diag.coordinationStatus}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          {diag.shouldAppear ? (
+                            <Badge className="bg-emerald-500">OK</Badge>
+                          ) : (
+                            <Badge variant="destructive">Bloquée</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {diag.reason}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Explanation */}
+              {prisEnChargeDiagnostic.blocked > 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-amber-900 mb-2">Pourquoi certaines commandes sont bloquées ?</h4>
+                  <ul className="text-sm text-amber-800 space-y-1">
+                    <li>• <strong>paymentStatus</strong> : Doit être "a_facturer" pour apparaître dans "Pris en charge"</li>
+                    <li>• <strong>coordinationStatus</strong> : Ne doit pas être "archived"</li>
+                    <li>• <strong>status</strong> : Ne doit pas être "cancelled"</li>
+                  </ul>
+                  <p className="text-sm text-amber-800 mt-3">
+                    Cliquez sur "Corriger Paiements" pour résoudre automatiquement les problèmes de paymentStatus.
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              Aucune donnée disponible
+            </div>
+          )}
+
+          <div className="flex justify-end pt-4 border-t">
+            <Button
+              variant="outline"
+              onClick={() => setDiagnosticDialogOpen(false)}
+              data-testid="button-close-diagnostic"
+            >
+              Fermer
             </Button>
           </div>
         </DialogContent>
