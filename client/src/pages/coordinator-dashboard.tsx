@@ -1802,7 +1802,7 @@ export default function CoordinatorDashboard() {
     );
   };
 
-  const renderRequestCard = (request: any, showVisibilityToggle = false, showPaymentControls = false, isCoordination = false, showQualifyButton = false, showQualifiedBy = false, showRepublishButton = false, showPaymentStatusSelector = false, showRequalifyButton = false, options: { showCancel?: boolean; onCancel?: () => void; showProductionActions?: boolean; hideTransporterInterests?: boolean } = {}) => {
+  const renderRequestCard = (request: any, showVisibilityToggle = false, showPaymentControls = false, isCoordination = false, showQualifyButton = false, showQualifiedBy = false, showRepublishButton = false, showPaymentStatusSelector = false, showRequalifyButton = false, options: { showCancel?: boolean; onCancel?: () => void; showProductionActions?: boolean; showPrisEnChargeActions?: boolean; hideTransporterInterests?: boolean } = {}) => {
     // Calculate interested count
     const interestedCount = request.transporterInterests?.length || 0;
     // Get client-friendly status
@@ -2483,6 +2483,68 @@ export default function CoordinatorDashboard() {
           </div>
         )}
 
+        {/* Actions pour Pris en charge - juste avant Notes internes */}
+        {options.showPrisEnChargeActions && (
+          <div className="flex items-center gap-2 pt-3 border-t">
+            <Button
+              className="flex-1 gap-2 bg-gradient-to-r from-[#1abc9c] to-[#16a085] hover:from-[#16a085] hover:to-[#149174] text-white font-semibold shadow-md transition-all"
+              onClick={() => {
+                handleCoordinatorPayment(request.id);
+              }}
+              data-testid={`button-mark-paid-${request.id}`}
+            >
+              <CreditCard className="h-4 w-4" />
+              Payer
+            </Button>
+            <Button
+              className="flex-1 gap-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold shadow-md transition-all"
+              onClick={() => {
+                if (confirm(`Voulez-vous vraiment annuler et requalifier la commande ${request.referenceId} ?`)) {
+                  fetch(`/api/requests/${request.id}/requalify`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ reason: 'Annulé par coordinateur' }),
+                  }).then(() => {
+                    queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/pris-en-charge"] });
+                    queryClient.invalidateQueries({ queryKey: ["/api/coordinator/qualification-pending"] });
+                    toast({
+                      title: "Commande requalifiée",
+                      description: "La commande a été remise en matching.",
+                    });
+                  });
+                }
+              }}
+              data-testid={`button-requalify-pris-en-charge-${request.id}`}
+            >
+              <RotateCcw className="h-4 w-4" />
+              Requalifier
+            </Button>
+            <Button
+              variant="destructive"
+              className="gap-2"
+              onClick={() => {
+                setCancelRequestData(request);
+                setCancelDialogOpen(true);
+              }}
+              data-testid={`button-cancel-pris-en-charge-${request.id}`}
+            >
+              <X className="h-4 w-4" />
+              Annuler
+            </Button>
+            {/* View Details button aligné à droite pour Pris en charge */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleViewDetails(request)}
+              data-testid={`button-view-details-pris-en-charge-${request.id}`}
+              className="h-9 w-9 shrink-0"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+
         {/* Notes internes coordinateur */}
         <RequestNotes requestId={request.id} />
       </CardContent>
@@ -2861,56 +2923,9 @@ export default function CoordinatorDashboard() {
               </Card>
             ) : (
               <TwoColumnGrid testId="grid-pris-en-charge-requests">
-                {filterRequests(prisEnChargeRequests, filters.pris_en_charge).map((request) => (
-                  <div key={`pris-${request.id}`}>
-                    {renderRequestCard(request, false, false, false, false, false, false, true, false, { hideTransporterInterests: true })}
-                    {/* Actions footer pour Pris en charge */}
-                    <div className="flex gap-2 px-4 pb-4">
-                      <Button
-                        className="flex-1 gap-2 bg-gradient-to-r from-[#1abc9c] to-[#16a085] hover:from-[#16a085] hover:to-[#149174] text-white"
-                        onClick={() => {
-                          handleCoordinatorPayment(request.id);
-                        }}
-                        data-testid={`button-mark-paid-${request.id}`}
-                      >
-                        <CreditCard className="h-4 w-4" />
-                        Payer
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="flex-1 gap-2"
-                        onClick={() => {
-                          if (confirm(`Voulez-vous vraiment annuler et requalifier la commande ${request.referenceId} ?`)) {
-                            fetch(`/api/requests/${request.id}/requalify`, {
-                              method: 'PATCH',
-                              headers: { 'Content-Type': 'application/json' },
-                              credentials: 'include',
-                              body: JSON.stringify({ reason: 'Annulé par coordinateur' }),
-                            }).then(() => {
-                              queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/pris-en-charge"] });
-                              queryClient.invalidateQueries({ queryKey: ["/api/coordinator/qualification-pending"] });
-                            });
-                          }
-                        }}
-                        data-testid={`button-requalify-pris-en-charge-${request.id}`}
-                      >
-                        <RotateCcw className="h-4 w-4" />
-                        Requalifier
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        onClick={() => {
-                          setCancelRequestData(request);
-                          setCancelDialogOpen(true);
-                        }}
-                        data-testid={`button-cancel-pris-en-charge-${request.id}`}
-                      >
-                        <X className="h-4 w-4" />
-                        Annuler
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                {filterRequests(prisEnChargeRequests, filters.pris_en_charge).map((request) => 
+                  renderRequestCard(request, false, false, false, false, false, false, true, false, { hideTransporterInterests: true, showPrisEnChargeActions: true })
+                )}
               </TwoColumnGrid>
             )}
           </TabsContent>
