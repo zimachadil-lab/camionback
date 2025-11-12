@@ -18,18 +18,26 @@ The platform features a mobile-first, dark teal design with full French/Arabic b
 - Two-tab layout: "Actives" and "Terminées" for streamlined navigation
 
 **Coordinator Dashboard Complete Lifecycle (Nov 2025):**
-- Full request lifecycle: Nouveau → Qualifiés → Intéressés → Production → **Pris en charge** → Terminé
+- Full request lifecycle: Nouveau → Qualifiés → Intéressés → Production → **Pris en charge** → **Paiements** → Terminé
 - **Archives tab removed**: Cancelled/archived requests no longer visible in coordinator views (admin-only)
-- **New "Pris en charge" tab**: Replaces "Archives", tracks when transporters actually take charge of requests
+- **New "Pris en charge" tab**: Tracks when transporters actually take charge of requests
   - Emerald-green gradient tab (from-emerald-600 via-green-600 to-teal-600) with Truck icon
-  - Shows requests where `takenInChargeAt IS NOT NULL`
-  - Three action buttons: "Payer" (mark paid), "Requalifier" (send back to qualifiés), "Annuler" (cancel)
-  - Backend: GET `/api/coordinator/coordination/pris-en-charge` uses SQL subqueries for client/transporter/assignedTo data
+  - Shows requests where `takenInChargeAt IS NOT NULL` AND `paymentStatus='a_facturer'`
+  - Action buttons integrated into request cards (before Notes internes section): "Payer" (mark paid_by_client), "Requalifier" (send back to qualifiés), "Annuler" (cancel)
+  - Hides "Transporteurs intéressés" section (via hideTransporterInterests option)
+  - Backend: GET `/api/coordinator/coordination/pris-en-charge` filters unpaid requests only
   - Transition endpoint: PATCH `/api/coordinator/requests/:id/take-in-charge` records timestamp + coordinator ID
+- **New "Paiements" tab**: Read-only view for coordinators (admin validates final payment)
+  - Orange gradient tab (from-[#f59e0b] via-[#d97706] to-[#b45309]) with CreditCard icon
+  - Shows requests where `paymentStatus='paid_by_client'` (client/coordinator already paid)
+  - **Read-only cards** - no action buttons (financial security: admin-only CamionBack payment validation)
+  - Backend: GET `/api/coordinator/payment-requests` retrieves client-paid requests with enriched data
+  - **2-Step Payment Workflow**: ① Coordinator pays → disappears from "Pris en charge" → appears in "Paiements" (read-only) → ② Admin marks "Payé par CamionBack" → moves to admin "Contrats" view
 - **Production tab updated**: Button changed from "Prise en charge / Payer" to just "Prise en charge" (moves request to next stage)
-- Intelligent Sheet-based filter system that adapts to each tab (nouveau, qualifiés, intéressés, production, pris_en_charge)
+- **Coordinator Menu Simplified**: Removed "Tableau de bord" and "Gestions des Utilisateurs" - keeping only "Contact" option in header navigation
+- Intelligent Sheet-based filter system that adapts to each tab (nouveau, qualifiés, intéressés, production, paiements, pris_en_charge)
 - Filter state normalized per tab with persistent filters across tab switches
-- Tab-specific filters: nouveau (Search, City, Date, Coordinator), qualifiés (Search, City, Date), intéressés (Search, City, Min Interested), production (Search, City, Payment Status, Date), pris_en_charge (Search, City, Payment Status, Date)
+- Tab-specific filters: nouveau (Search, City, Date, Coordinator), qualifiés (Search, City, Date), intéressés (Search, City, Min Interested), production (Search, City, Payment Status, Date), paiements (Search, City, Date), pris_en_charge (Search, City, Payment Status, Date)
 - Visual filter badge displays count of active (non-default) filters for immediate feedback
 - Clean UI with single filter button (SlidersHorizontal icon) replacing old unified search bar
 - Apply/Reset buttons for explicit filter management
