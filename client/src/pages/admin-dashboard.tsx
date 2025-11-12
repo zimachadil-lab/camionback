@@ -27,7 +27,7 @@ import { KpiCard } from "@/components/admin/kpi-card";
 import { AddTransporterForm } from "@/components/admin/add-transporter-form";
 import { AddClientForm } from "@/components/admin/add-client-form";
 import { TransporterRibDialog } from "@/components/admin/transporter-rib-dialog";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useInfiniteQuery } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth-context";
@@ -69,8 +69,6 @@ export default function AdminDashboard() {
   const [conversationDialogOpen, setConversationDialogOpen] = useState(false);
   const [deleteConversationId, setDeleteConversationId] = useState<string | null>(null);
   const [adminMessage, setAdminMessage] = useState("");
-  const [transporterSearch, setTransporterSearch] = useState("");
-  const [transporterCityFilter, setTransporterCityFilter] = useState("all");
   const [clientSearch, setClientSearch] = useState("");
   const [assignOrderSearch, setAssignOrderSearch] = useState("");
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
@@ -264,38 +262,56 @@ export default function AdminDashboard() {
     },
   });
 
-  // Fetch transporters with stats
-  const { data: transportersWithStats = [], isLoading: transportersLoading, error: transportersError } = useQuery({
-    queryKey: ["/api/admin/transporters"],
-    queryFn: async () => {
-      console.log("🔍 [ADMIN] Fetching transporters from /api/admin/transporters");
-      const response = await fetch("/api/admin/transporters");
-      console.log("📡 [ADMIN] Response status:", response.status, response.statusText);
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("❌ [ADMIN] API Error:", errorText);
-        throw new Error(`Failed to fetch transporters: ${response.status} - ${errorText}`);
-      }
-      const data = await response.json();
-      console.log("✅ [ADMIN] Transporters data received:", {
-        count: data.length,
-        firstItem: data[0],
-        allItems: data
+  // Transporter search state with debounce
+  const [transporterSearchQuery, setTransporterSearchQuery] = useState("");
+  const [debouncedTransporterSearch, setDebouncedTransporterSearch] = useState("");
+
+  // Debounce search input (300ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedTransporterSearch(transporterSearchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [transporterSearchQuery]);
+
+  // Fetch transporters with infinite query (paginated)
+  const {
+    data: transportersData,
+    isLoading: transportersLoading,
+    error: transportersError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["/api/admin/transporters", { search: debouncedTransporterSearch }],
+    queryFn: async ({ pageParam = 1 }) => {
+      const params = new URLSearchParams({
+        page: pageParam.toString(),
+        pageSize: "50",
+        ...(debouncedTransporterSearch && { search: debouncedTransporterSearch }),
       });
-      return data;
+      const response = await fetch(`/api/admin/transporters?${params}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch transporters: ${response.status}`);
+      }
+      return response.json();
     },
+    getNextPageParam: (lastPage) => {
+      return lastPage.pagination.hasMore ? lastPage.pagination.page + 1 : undefined;
+    },
+    initialPageParam: 1,
   });
 
-  // Debug logging
-  useEffect(() => {
-    console.log("🚛 [ADMIN] Transporters state update:", {
-      loading: transportersLoading,
-      error: transportersError?.message,
-      count: transportersWithStats?.length,
-      hasData: Array.isArray(transportersWithStats),
-      data: transportersWithStats
-    });
-  }, [transportersWithStats, transportersLoading, transportersError]);
+  // Flatten all pages into single array
+  const transportersWithStats = useMemo(() => {
+    return transportersData?.pages.flatMap(page => page.transporters) ?? [];
+  }, [transportersData]);
+
+  // Get pagination info from last page
+  const transportersPagination = useMemo(() => {
+    const lastPage = transportersData?.pages[transportersData.pages.length - 1];
+    return lastPage?.pagination ?? null;
+  }, [transportersData]);
 
   // Fetch transporter photo when dialog opens
   const { data: transporterPhoto, isLoading: photoLoading } = useQuery({
@@ -1953,15 +1969,13 @@ export default function AdminDashboard() {
                   <Users className="w-5 h-5" />
                   Tous les transporteurs
                   <Badge className="ml-2" data-testid="badge-total-transporters">
-                    Total: {transportersWithStats.filter((t: any) => {
-                      const searchLower = transporterSearch.toLowerCase();
-                      const matchesSearch = !transporterSearch || 
-                        t.name.toLowerCase().includes(searchLower) || 
-                        t.phoneNumber.includes(transporterSearch);
-                      const matchesCity = transporterCityFilter === "all" || t.city === transporterCityFilter;
-                      return matchesSearch && matchesCity;
-                    }).length}
+                    Total: {transportersPagination?.total ?? transportersWithStats.length}
                   </Badge>
+                  {transportersLoading && (
+                    <Badge variant="outline" className="ml-2">
+                      Chargement...
+                    </Badge>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -1970,23 +1984,17 @@ export default function AdminDashboard() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder="Rechercher par nom ou téléphone..."
-                      value={transporterSearch}
-                      onChange={(e) => setTransporterSearch(e.target.value)}
+                      value={transporterSearchQuery}
+                      onChange={(e) => setTransporterSearchQuery(e.target.value)}
                       className="pl-10"
                       data-testid="input-search-transporter"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          setDebouncedTransporterSearch(transporterSearchQuery);
+                        }
+                      }}
                     />
                   </div>
-                  <Select value={transporterCityFilter} onValueChange={setTransporterCityFilter}>
-                    <SelectTrigger className="w-[200px]" data-testid="select-city-filter">
-                      <SelectValue placeholder="Filtrer par ville" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Toutes les villes</SelectItem>
-                      {Array.from(new Set(transportersWithStats.map((t: any) => t.city))).map((city: any) => (
-                        <SelectItem key={city} value={city}>{city}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                 </div>
 
                 {transportersLoading ? (
@@ -2009,16 +2017,7 @@ export default function AdminDashboard() {
                   </div>
                 ) : (
                   (() => {
-                    const filteredTransporters = transportersWithStats.filter((t: any) => {
-                      const searchLower = transporterSearch.toLowerCase();
-                      const matchesSearch = !transporterSearch || 
-                        t.name.toLowerCase().includes(searchLower) || 
-                        t.phoneNumber.includes(transporterSearch);
-                      const matchesCity = transporterCityFilter === "all" || t.city === transporterCityFilter;
-                      return matchesSearch && matchesCity;
-                    });
-
-                    return filteredTransporters.length === 0 ? (
+                    return transportersWithStats.length === 0 ? (
                       <div className="text-center py-8">
                         <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                         <p className="text-muted-foreground">Aucun transporteur trouvé avec ces critères</p>
@@ -2042,7 +2041,7 @@ export default function AdminDashboard() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {filteredTransporters.map((transporter: any) => (
+                            {transportersWithStats.map((transporter: any) => (
                               <TableRow key={transporter.id}>
                                 <TableCell>
                                   <TooltipProvider>
@@ -2173,6 +2172,27 @@ export default function AdminDashboard() {
                             ))}
                           </TableBody>
                         </Table>
+
+                        {/* Load More Button */}
+                        {hasNextPage && (
+                          <div className="flex justify-center py-4">
+                            <Button
+                              onClick={() => fetchNextPage()}
+                              disabled={isFetchingNextPage}
+                              variant="outline"
+                              data-testid="button-load-more-transporters"
+                            >
+                              {isFetchingNextPage ? 'Chargement...' : 'Charger plus'}
+                            </Button>
+                          </div>
+                        )}
+
+                        {/* Pagination info */}
+                        {transportersPagination && (
+                          <div className="text-center text-sm text-muted-foreground py-2">
+                            {transportersWithStats.length} sur {transportersPagination.total} transporteur(s)
+                          </div>
+                        )}
                       </div>
                     );
                   })()

@@ -3868,88 +3868,131 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all transporters with detailed stats (admin)
+  // Get all transporters with detailed stats (admin) - PAGINATED & OPTIMIZED
   app.get("/api/admin/transporters", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
-      console.log("🔍 [GET /api/admin/transporters] Starting optimized fetch...");
-      const users = await storage.getAllUsers();
-      const offers = await storage.getAllOffers();
-      const requests = await storage.getAllTransportRequests();
+      // Parse pagination & search params with validation
+      const rawPage = parseInt(req.query.page as string);
+      const rawPageSize = parseInt(req.query.pageSize as string);
       
-      console.log(`📊 Fetched ${users.length} users, ${offers.length} offers, ${requests.length} requests`);
-      
-      // Filter transporters
-      const transporters = users.filter(u => u.role === "transporteur" && u.status === "validated");
-      console.log(`👤 Found ${transporters.length} validated transporters`);
-      
+      // Validate and clamp parameters
+      const page = Math.max(1, isNaN(rawPage) ? 1 : rawPage);
+      const pageSize = Math.max(1, Math.min(100, isNaN(rawPageSize) ? 50 : rawPageSize));
+      const search = (req.query.search as string || '').trim();
+      const offset = (page - 1) * pageSize;
+
+      console.log(`🔍 [GET /api/admin/transporters] page=${page}, pageSize=${pageSize}, search="${search}"`);
+
       // Get admin settings for commission calculation
       const adminSettings = await storage.getAdminSettings();
       const commissionRate = adminSettings?.commissionPercentage ? parseFloat(adminSettings.commissionPercentage) : 10;
-      
-      // OPTIMISATION: Grouper les offers par transporterId AVANT la boucle (évite N×M comparaisons)
-      console.log("🗂️ Grouping offers by transporterId...");
-      const offersByTransporterId = offers.reduce((acc: Record<string, any[]>, offer) => {
-        if (!acc[offer.transporterId]) {
-          acc[offer.transporterId] = [];
+
+      // Build WHERE conditions for search
+      let searchCondition = and(
+        eq(users.role, 'transporteur'),
+        eq(users.status, 'validated')
+      );
+
+      if (search.length >= 2) {
+        searchCondition = and(
+          searchCondition,
+          sql`(
+            ${users.name} ILIKE ${`%${search}%`} OR
+            ${users.phoneNumber} ILIKE ${`%${search}%`} OR
+            ${users.city} ILIKE ${`%${search}%`}
+          )`
+        );
+      }
+
+      // Get total count for pagination
+      const [{ count: totalCount }] = await db.select({
+        count: sql<number>`count(*)::int`
+      })
+      .from(users)
+      .where(searchCondition);
+
+      console.log(`📊 Total transporters matching search: ${totalCount}`);
+
+      // Get paginated transporters with aggregated stats using SQL
+      const transportersData = await db.execute(sql`
+        WITH transporter_stats AS (
+          SELECT 
+            u.id,
+            u.name,
+            u.city,
+            u.phone_number,
+            u.rating,
+            u.total_ratings,
+            u.truck_photos,
+            u.account_status,
+            u.rib_name,
+            u.rib_number,
+            COALESCE(
+              (SELECT MAX(o.created_at) 
+               FROM offers o 
+               WHERE o.transporter_id = u.id), 
+              NULL
+            ) as last_activity,
+            COALESCE(
+              (SELECT COUNT(*)::int
+               FROM offers o
+               INNER JOIN transport_requests tr ON o.request_id = tr.id
+               WHERE o.transporter_id = u.id 
+                 AND o.status = 'accepted'
+                 AND tr.status = 'completed'),
+              0
+            ) as total_trips,
+            COALESCE(
+              (SELECT SUM(o.amount::numeric)
+               FROM offers o
+               WHERE o.transporter_id = u.id 
+                 AND o.status = 'accepted'),
+              0
+            ) as total_offer_amount
+          FROM users u
+          WHERE u.role = 'transporteur' 
+            AND u.status = 'validated'
+            ${search.length >= 2 ? sql`AND (
+              u.name ILIKE ${`%${search}%`} OR
+              u.phone_number ILIKE ${`%${search}%`} OR
+              u.city ILIKE ${`%${search}%`}
+            )` : sql``}
+          ORDER BY last_activity DESC NULLS LAST, u.name ASC
+          LIMIT ${pageSize}
+          OFFSET ${offset}
+        )
+        SELECT * FROM transporter_stats
+      `);
+
+      // Format results
+      const transportersWithStats = transportersData.rows.map((row: any) => ({
+        id: row.id,
+        name: row.name || "Sans nom",
+        city: row.city || "Non spécifiée",
+        phoneNumber: row.phone_number,
+        rating: row.rating ? parseFloat(row.rating) : 0,
+        totalTrips: parseInt(row.total_trips) || 0,
+        totalCommissions: Math.round((parseFloat(row.total_offer_amount) * commissionRate) / 100),
+        lastActivity: row.last_activity,
+        totalRatings: row.total_ratings || 0,
+        hasTruckPhoto: row.truck_photos && row.truck_photos.length > 0,
+        accountStatus: row.account_status || "active",
+        ribName: row.rib_name || null,
+        ribNumber: row.rib_number || null,
+      }));
+
+      console.log(`✅ Returning ${transportersWithStats.length} transporters for page ${page}`);
+
+      res.json({
+        transporters: transportersWithStats,
+        pagination: {
+          page,
+          pageSize,
+          total: totalCount,
+          totalPages: Math.ceil(totalCount / pageSize),
+          hasMore: offset + transportersWithStats.length < totalCount,
         }
-        acc[offer.transporterId].push(offer);
-        return acc;
-      }, {});
-      
-      // OPTIMISATION: Créer un index des requests par ID pour accès O(1)
-      const requestsById = requests.reduce((acc: Record<string, any>, req) => {
-        acc[req.id] = req;
-        return acc;
-      }, {});
-      
-      console.log("📋 Starting transporter stats calculation...");
-      
-      // Build transporter stats
-      const transportersWithStats = transporters.map(transporter => {
-        // Get all offers by this transporter (O(1) lookup au lieu de O(N))
-        const transporterOffers = offersByTransporterId[transporter.id] || [];
-        const transporterAcceptedOffers = transporterOffers.filter(o => o.status === "accepted");
-        
-        // Calculate total trips (completed requests) - accès direct par ID
-        const completedRequests = transporterAcceptedOffers.filter(offer => {
-          const request = requestsById[offer.requestId];
-          return request && request.status === "completed";
-        });
-        const totalTrips = completedRequests.length;
-        
-        // Calculate total commissions generated
-        const totalCommissions = transporterAcceptedOffers.reduce((sum, offer) => {
-          const amount = parseFloat(offer.amount);
-          const commission = (amount * commissionRate) / 100;
-          return sum + commission;
-        }, 0);
-        
-        // Get last activity date (most recent offer created) - utilise le groupe déjà créé
-        const lastActivityDate = transporterOffers.length > 0
-          ? transporterOffers.reduce((latest, offer) => {
-              const offerDate = offer.createdAt ? new Date(offer.createdAt) : new Date(0);
-              return offerDate > latest ? offerDate : latest;
-            }, new Date(0))
-          : null;
-        
-        return {
-          id: transporter.id,
-          name: transporter.name || "Sans nom",
-          city: transporter.city || "Non spécifiée",
-          phoneNumber: transporter.phoneNumber,
-          rating: transporter.rating ? parseFloat(transporter.rating) : 0,
-          totalTrips,
-          totalCommissions: Math.round(totalCommissions),
-          lastActivity: lastActivityDate,
-          totalRatings: transporter.totalRatings || 0,
-          hasTruckPhoto: transporter.truckPhotos && transporter.truckPhotos.length > 0,
-          accountStatus: transporter.accountStatus || "active",
-          ribName: transporter.ribName || null,
-          ribNumber: transporter.ribNumber || null,
-        };
       });
-      
-      res.json(transportersWithStats);
     } catch (error) {
       console.error("Error fetching transporters stats:", error);
       res.status(500).json({ error: "Failed to fetch transporters" });
