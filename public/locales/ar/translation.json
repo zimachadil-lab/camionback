@@ -400,7 +400,7 @@
       "matchesClientDate": "✓ يتطابق مع التاريخ المطلوب من العميل",
       "alternativeDate": "ℹ️ تاريخ بديل مقترح (مقبول)",
       "cancel": "إلغاء",
-      "confirmInterest": "تأكيد اهتمامي",
+      "confirmInterest": "تأكيد",
       "pending": "جارٍ..."
     },
     "photoGalleryDialog": {
