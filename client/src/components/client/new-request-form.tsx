@@ -159,7 +159,12 @@ export function NewRequestForm({ onSuccess, onClose }: { onSuccess?: () => void;
         body: JSON.stringify(payload),
       });
       
-      if (!response.ok) throw new Error();
+      if (!response.ok) {
+        // Log detailed error for debugging
+        const errorData = await response.json().catch(() => null);
+        console.error("❌ [NEW REQUEST] Failed to create request:", errorData);
+        throw new Error(errorData?.error || 'Request failed');
+      }
       
       const createdRequest = await response.json();
       
