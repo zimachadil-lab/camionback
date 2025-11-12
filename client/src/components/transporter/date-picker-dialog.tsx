@@ -64,6 +64,9 @@ export function DatePickerDialog({
             className="rounded-md border"
             data-testid="calendar-availability"
             locale={dateLocale}
+            modifiers={{
+              today: () => false
+            }}
           />
 
           {selectedDate && (
