@@ -5987,107 +5987,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get "Pris en charge" requests (taken in charge by transporter)
   app.get("/api/coordinator/coordination/pris-en-charge", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
-      const coordinatorId = req.user!.id;
-      
       console.log('[Pris en charge] 🔍 Fetching pris-en-charge requests...');
       
-      // Get requests where takenInChargeAt is NOT NULL and not cancelled/archived
-      const requests = await db.select({
-        ...getTableColumns(transportRequests),
-        client: sql<any>`
-          CASE 
-            WHEN transport_requests.client_id IS NOT NULL THEN
-              (SELECT json_build_object(
-                'id', u.id,
-                'name', u.name,
-                'phoneNumber', u.phone_number,
-                'city', u.city,
-                'clientId', u.client_id
-              )
-              FROM users u
-              WHERE u.id = transport_requests.client_id)
-            ELSE NULL
-          END
-        `,
-        transporter: sql<any>`
-          CASE 
-            WHEN transport_requests.assigned_transporter_id IS NOT NULL THEN
-              (SELECT json_build_object(
-                'id', u.id,
-                'name', u.name,
-                'phoneNumber', u.phone_number,
-                'city', u.city,
-                'rating', u.rating
-              )
-              FROM users u
-              WHERE u.id = transport_requests.assigned_transporter_id)
-            ELSE NULL
-          END
-        `,
-        transporterInterests: sql<any[]>`
-          COALESCE(
-            (
-              SELECT json_agg(
-                json_build_object(
-                  'id', ti.id,
-                  'transporterId', ti.transporter_id,
-                  'availabilityDate', ti.availability_date,
-                  'hiddenFromClient', ti.hidden_from_client,
-                  'createdAt', ti.created_at,
-                  'transporter', json_build_object(
-                    'id', tu.id,
-                    'name', tu.name,
-                    'phoneNumber', tu.phone_number,
-                    'city', tu.city,
-                    'rating', tu.rating,
-                    'truckPhotos', tu.truck_photos
-                  )
-                )
-              )
-              FROM transporter_interests ti
-              LEFT JOIN users tu ON ti.transporter_id = tu.id
-              WHERE ti.request_id = transport_requests.id
-            ),
-            '[]'::json
+      // SIMPLIFIED: Get base requests first
+      const baseRequests = await db.select()
+        .from(transportRequests)
+        .where(
+          and(
+            isNotNull(transportRequests.takenInChargeAt),
+            eq(transportRequests.coordinationStatus, 'pris_en_charge'),
+            ne(transportRequests.status, 'cancelled'),
+            eq(transportRequests.paymentStatus, 'a_facturer')
           )
-        `,
-        assignedTo: sql<any>`
-          CASE 
-            WHEN transport_requests.assigned_to_id IS NOT NULL THEN
-              (SELECT json_build_object(
-                'id', u.id,
-                'name', u.name,
-                'phoneNumber', u.phone_number
-              )
-              FROM users u
-              WHERE u.id = transport_requests.assigned_to_id)
-            ELSE NULL
-          END
-        `,
-      })
-      .from(transportRequests)
-      .where(
-        and(
-          isNotNull(transportRequests.takenInChargeAt),
-          eq(transportRequests.coordinationStatus, 'pris_en_charge'), // Must have correct coordination status
-          ne(transportRequests.status, 'cancelled'),
-          eq(transportRequests.paymentStatus, 'a_facturer') // Only show unpaid requests
         )
-      )
-      .orderBy(desc(transportRequests.takenInChargeAt));
+        .orderBy(desc(transportRequests.takenInChargeAt));
 
-      console.log(`[Pris en charge] ✅ Found ${requests.length} requests`);
-      if (requests.length > 0) {
+      console.log(`[Pris en charge] ✅ Found ${baseRequests.length} base requests`);
+
+      // Then enrich with related data using simple queries
+      const enrichedRequests = await Promise.all(
+        baseRequests.map(async (request) => {
+          // Get client
+          const client = request.clientId ? await db.select({
+            id: users.id,
+            name: users.name,
+            phoneNumber: users.phoneNumber,
+            city: users.city,
+            clientId: users.clientId,
+          })
+          .from(users)
+          .where(eq(users.id, request.clientId))
+          .limit(1)
+          .then(rows => rows[0] || null) : null;
+
+          // Get transporter
+          const transporter = request.assignedTransporterId ? await db.select({
+            id: users.id,
+            name: users.name,
+            phoneNumber: users.phoneNumber,
+            city: users.city,
+            rating: users.rating,
+          })
+          .from(users)
+          .where(eq(users.id, request.assignedTransporterId))
+          .limit(1)
+          .then(rows => rows[0] || null) : null;
+
+          // Get assigned coordinator
+          const assignedTo = request.assignedToId ? await db.select({
+            id: users.id,
+            name: users.name,
+            phoneNumber: users.phoneNumber,
+          })
+          .from(users)
+          .where(eq(users.id, request.assignedToId))
+          .limit(1)
+          .then(rows => rows[0] || null) : null;
+
+          // Get transporter interests (empty array for Pris en charge tab - hidden per spec)
+          const transporterInterests: any[] = [];
+
+          return {
+            ...request,
+            client,
+            transporter,
+            assignedTo,
+            transporterInterests,
+          };
+        })
+      );
+
+      console.log(`[Pris en charge] ✅ Enriched ${enrichedRequests.length} requests`);
+      if (enrichedRequests.length > 0) {
         console.log('[Pris en charge] First request:', {
-          referenceId: requests[0].referenceId,
-          status: requests[0].status,
-          paymentStatus: requests[0].paymentStatus,
-          coordinationStatus: requests[0].coordinationStatus,
-          takenInChargeAt: requests[0].takenInChargeAt
+          referenceId: enrichedRequests[0].referenceId,
+          hasClient: !!enrichedRequests[0].client,
+          hasTransporter: !!enrichedRequests[0].transporter,
+          status: enrichedRequests[0].status,
+          paymentStatus: enrichedRequests[0].paymentStatus,
+          coordinationStatus: enrichedRequests[0].coordinationStatus,
         });
       }
 
-      res.json(requests);
+      res.json(enrichedRequests);
     } catch (error) {
       console.error("Erreur récupération commandes prises en charge:", error);
       res.status(500).json({ error: "Erreur lors de la récupération des commandes prises en charge" });
