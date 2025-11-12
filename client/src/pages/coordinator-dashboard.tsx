@@ -3007,6 +3007,36 @@ export default function CoordinatorDashboard() {
                 </div>
               )}
 
+              {/* Manutention */}
+              <div className="border-t pt-4">
+                <p className="font-semibold mb-2">Manutention</p>
+                {selectedRequest.handlingRequired ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-green-500 text-white">Oui, manutention requise</Badge>
+                    </div>
+                    {selectedRequest.handlingDetails && (
+                      <div className="space-y-1 ml-2 text-sm">
+                        {selectedRequest.handlingDetails.floors && (
+                          <p><span className="text-muted-foreground">Étage:</span> {selectedRequest.handlingDetails.floors}</p>
+                        )}
+                        {selectedRequest.handlingDetails.elevator !== undefined && (
+                          <p><span className="text-muted-foreground">Ascenseur:</span> {selectedRequest.handlingDetails.elevator ? "Oui" : "Non"}</p>
+                        )}
+                        {selectedRequest.handlingDetails.weight && (
+                          <p><span className="text-muted-foreground">Poids estimé:</span> {selectedRequest.handlingDetails.weight} kg</p>
+                        )}
+                        {selectedRequest.handlingDetails.description && (
+                          <p><span className="text-muted-foreground">Détails:</span> {selectedRequest.handlingDetails.description}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <Badge variant="outline" className="text-muted-foreground">Non, pas de manutention</Badge>
+                )}
+              </div>
+
               {selectedRequest.client && (
                 <div className="border-t pt-4">
                   <p className="font-semibold mb-2">Client</p>
