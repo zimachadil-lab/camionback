@@ -30,12 +30,18 @@ The platform features a mobile-first, dark teal design with full French/Arabic b
   - **Payment workflow**: When coordinator clicks "Payer", request disappears from view (coordinator's work is complete)
 - **Production tab updated**: Button changed from "Prise en charge / Payer" to just "Prise en charge" (moves request to next stage)
 - **Coordinator Menu Simplified**: Removed "Tableau de bord" and "Gestions des Utilisateurs" - keeping only "Contact" option in header navigation
-- Intelligent Sheet-based filter system that adapts to each tab (nouveau, qualifiés, intéressés, production, pris_en_charge)
+- **Intelligent Google Places-powered filter system** (Nov 2025):
+  - Sheet-based filter adapts to each tab (nouveau, qualifiés, intéressés, production, pris_en_charge)
+  - **City filter uses GooglePlacesAutocomplete** instead of manual dropdown
+  - CitySelection type: `{label, city, placeId}` with ALL_CITIES sentinel for "Toutes les villes"
+  - Helper functions: `createCitySelection()` extracts city from Google Places, `isAllCitiesSelection()` checks default, `extractCityFromRequest()` normalizes city strings (handles "Quartier, Ville" format)
+  - Clear button (X) to reset city filter back to "Toutes les villes"
+  - Normalized lowercase comparison for robust matching across departure/arrival cities
+  - Tab-specific filters: nouveau (Search, City, Date, Coordinator), qualifiés (Search, City, Date), intéressés (Search, City, Min Interested), production (Search, City, Payment Status, Date), pris_en_charge (Search, City, Payment Status, Date)
+  - Visual filter badge displays count of active (non-default) filters for immediate feedback
+  - Clean UI with single filter button (SlidersHorizontal icon) replacing old unified search bar
+  - Apply/Reset buttons for explicit filter management
 - Filter state normalized per tab with persistent filters across tab switches
-- Tab-specific filters: nouveau (Search, City, Date, Coordinator), qualifiés (Search, City, Date), intéressés (Search, City, Min Interested), production (Search, City, Payment Status, Date), pris_en_charge (Search, City, Payment Status, Date)
-- Visual filter badge displays count of active (non-default) filters for immediate feedback
-- Clean UI with single filter button (SlidersHorizontal icon) replacing old unified search bar
-- Apply/Reset buttons for explicit filter management
 - All coordinator queries exclude `status='cancelled'` and `coordinationStatus='archived'` requests
 
 **Coordinator Request Cards - Unified Design (Nov 2025):**
