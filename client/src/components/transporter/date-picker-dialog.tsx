@@ -101,12 +101,13 @@ export function DatePickerDialog({
             <Button
               onClick={handleConfirm}
               disabled={!selectedDate || isPending}
-              className="flex-1 h-11 relative overflow-hidden bg-gradient-to-r from-[#1abc9c] to-[#16a085] hover:from-[#16a085] hover:to-[#1abc9c] text-white font-semibold shadow-lg hover:shadow-[#1abc9c]/50 transition-all duration-300 group"
+              className="flex-1 h-11 relative overflow-hidden bg-gradient-to-r from-[#1abc9c] to-[#16a085] hover:from-[#16a085] hover:to-[#1abc9c] text-white font-semibold shadow-lg hover:shadow-[#1abc9c]/50 hover:scale-105 active:scale-95 transition-all duration-300 group animate-pulse-slow"
               data-testid="button-confirm-interest"
             >
               <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500 skew-x-12"></div>
-              <CheckCircle className={`h-5 w-5 mr-2 ${isPending ? 'animate-spin' : 'group-hover:rotate-12 transition-transform duration-300'}`} />
-              <span>
+              <div className="absolute inset-0 animate-ping-slow bg-[#1abc9c]/30 rounded-md"></div>
+              <CheckCircle className={`h-5 w-5 mr-2 relative z-10 ${isPending ? 'animate-spin' : 'group-hover:rotate-12 group-hover:scale-125 transition-transform duration-300'}`} />
+              <span className="relative z-10">
                 {isPending ? t('transporterDashboard.datePickerDialog.pending') : t('transporterDashboard.datePickerDialog.confirmInterest')}
               </span>
             </Button>
