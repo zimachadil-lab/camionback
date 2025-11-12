@@ -62,16 +62,13 @@ export function AdminSidebar({ activeSection, onSectionChange, counts, onLogout 
     { id: "drivers", label: "Transporteurs", icon: TruckIcon },
     { id: "clients", label: "Clients", icon: Users },
     { id: "coordinators", label: "Coordinateurs", icon: Compass },
-    { id: "coordination-statuses", label: "Statuts Coordination", icon: RefreshCw },
     { id: "reports", label: "Signalements", icon: Flag, badge: counts.totalReports },
     { id: "communications", label: "Communications", icon: Send },
-    { id: "facturation", label: "Facturation", icon: DollarSign },
   ];
 
   // Configuration sections
   const configurationSections = [
     { id: "cities", label: "Villes", icon: MapPin },
-    { id: "stories", label: "Stories", icon: Camera },
     { id: "stats", label: "Statistiques", icon: TrendingUp },
   ];
 
