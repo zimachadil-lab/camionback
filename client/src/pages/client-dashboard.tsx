@@ -543,15 +543,26 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
             isProcessing={clientStatus.isProcessing}
           />
 
-          {/* Description */}
+          {/* Description - Style modernisé avec icône de catégorie */}
           {request.description && (
-            <div className="relative pl-9 pr-3 py-2.5 rounded-lg border border-border/50 bg-gradient-to-br from-muted/40 to-muted/20">
-              <div className="absolute left-2.5 top-2.5">
-                <div className="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center">
-                  <FileText className="w-3 h-3 text-primary" />
+            <div className="relative overflow-hidden rounded-xl border-2 border-border/40 bg-gradient-to-br from-background via-muted/30 to-muted/50 shadow-sm">
+              {/* Icône de catégorie avec fond coloré */}
+              <div className="absolute left-3 top-3">
+                <div className={`w-8 h-8 rounded-lg ${categoryConfig.bgColor} flex items-center justify-center shadow-md`}>
+                  {(() => {
+                    const CategoryIcon = categoryConfig.icon;
+                    return <CategoryIcon className="w-4 h-4 text-white" />;
+                  })()}
                 </div>
               </div>
-              <p className="text-sm leading-relaxed line-clamp-2">{request.description}</p>
+              
+              {/* Contenu de la description */}
+              <div className="pl-14 pr-4 py-3">
+                <p className="text-sm leading-relaxed text-foreground">
+                  <span className="font-bold text-primary">{categoryConfig.label}:</span>{' '}
+                  <span className="text-muted-foreground">{request.description}</span>
+                </p>
+              </div>
             </div>
           )}
 
