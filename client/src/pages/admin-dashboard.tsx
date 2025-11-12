@@ -971,6 +971,29 @@ export default function AdminDashboard() {
     }
   });
 
+  // Migration mutation to fix payment status for taken-in-charge requests
+  const fixPrisEnChargePaymentMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", "/api/admin/fix-pris-en-charge-payment-status");
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/pris-en-charge"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
+      toast({
+        title: "Migration réussie ✅",
+        description: `${data.updated} commande(s) "Pris en charge" corrigée(s). Elles apparaissent maintenant dans l'onglet avec le bouton "Payer".`
+      });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la migration.",
+      });
+    }
+  });
+
   // Update transporter mutation
   const updateTransporterMutation = useMutation({
     mutationFn: async ({ transporterId, formData }: { transporterId: string; formData: FormData }) => {
@@ -2621,6 +2644,43 @@ export default function AdminDashboard() {
                       <>
                         <RefreshCw className="w-4 h-4 mr-2" />
                         Lancer Migration
+                      </>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="border-emerald-500 border-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-emerald-600">
+                    <RefreshCw className="w-5 h-5" />
+                    Corriger Statuts Paiement "Pris en charge"
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Corriger les commandes marquées "prise en charge" qui n'apparaissent pas dans l'onglet "Pris en charge" du coordinateur
+                  </p>
+                  <Button
+                    onClick={() => {
+                      if (confirm("Lancer la migration pour corriger les statuts de paiement des commandes 'Pris en charge' ?")) {
+                        fixPrisEnChargePaymentMutation.mutate();
+                      }
+                    }}
+                    variant="outline"
+                    className="w-full border-emerald-500 text-emerald-600 hover:bg-emerald-50"
+                    disabled={fixPrisEnChargePaymentMutation.isPending}
+                    data-testid="button-fix-pris-en-charge-payment"
+                  >
+                    {fixPrisEnChargePaymentMutation.isPending ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        Correction en cours...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Corriger Paiements "Pris en charge"
                       </>
                     )}
                   </Button>
