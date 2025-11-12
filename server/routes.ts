@@ -25,7 +25,8 @@ import {
   type TransportRequest,
   clientTransporterContacts,
   transportRequests,
-  transporterInterests
+  transporterInterests,
+  users
 } from "@shared/schema";
 import { desc, eq, sql, and, isNotNull, ne, getTableColumns } from "drizzle-orm";
 import { sendNewOfferSMS, sendOfferAcceptedSMS, sendTransporterActivatedSMS, sendBulkSMS, sendManualAssignmentSMS, sendTransporterAssignedSMS, sendClientChoseYouSMS, sendTransporterSelectedSMS } from "./infobip-sms";
@@ -5988,6 +5989,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/coordinator/coordination/pris-en-charge", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
       console.log('[Pris en charge] 🔍 Fetching pris-en-charge requests...');
+      console.log('[Pris en charge] Current user:', { id: req.user?.id, role: req.user?.role });
+      
+      // DIAGNOSTIC: Check what's in database BEFORE applying all filters
+      const allWithTakenInCharge = await db.select({
+        id: transportRequests.id,
+        referenceId: transportRequests.referenceId,
+        status: transportRequests.status,
+        paymentStatus: transportRequests.paymentStatus,
+        coordinationStatus: transportRequests.coordinationStatus,
+        takenInChargeAt: transportRequests.takenInChargeAt,
+      })
+      .from(transportRequests)
+      .where(isNotNull(transportRequests.takenInChargeAt))
+      .limit(10);
+      
+      console.log('[Pris en charge] 📊 Requests with takenInChargeAt set (max 10):', allWithTakenInCharge.length);
+      allWithTakenInCharge.forEach((r, i) => {
+        console.log(`  [${i+1}] ${r.referenceId}: status=${r.status}, payment=${r.paymentStatus}, coord=${r.coordinationStatus}`);
+      });
       
       // SIMPLIFIED: Get base requests first
       const baseRequests = await db.select()
@@ -6002,7 +6022,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         )
         .orderBy(desc(transportRequests.takenInChargeAt));
 
-      console.log(`[Pris en charge] ✅ Found ${baseRequests.length} base requests`);
+      console.log(`[Pris en charge] ✅ Found ${baseRequests.length} base requests after filtering`);
 
       // Then enrich with related data using simple queries
       const enrichedRequests = await Promise.all(
