@@ -58,8 +58,6 @@ export function Header({ user, onLogout, onCreateRequest, onAnnounceReturn }: He
       ];
     } else if (user.role === "coordinateur") {
       return [
-        { label: t('header.coordinator.dashboard'), icon: Package, href: "/", priority: "primary" },
-        { label: t('header.coordinator.users'), icon: User, href: "/coordinator/users", priority: "primary" },
         { label: t('header.coordinator.contact'), icon: MessageCircle, onClick: () => setShowContactDialog(true), priority: "secondary" },
       ];
     }

@@ -2927,7 +2927,29 @@ export default function CoordinatorDashboard() {
             )}
           </TabsContent>
 
-          {/* ONGLET 5: PRIS EN CHARGE - Commandes réellement prises en charge par le transporteur */}
+          {/* ONGLET 5: PAIEMENTS - Vue lecture seule des commandes payées par client/coordinateur (admin validera CamionBack) */}
+          <TabsContent value="paiements" className="space-y-4">
+            {paymentLoading ? (
+              <div className="flex justify-center py-12">
+                <LoadingTruck />
+              </div>
+            ) : filterRequests(paymentRequests, filters.paiements).length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  <CreditCard className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>Aucun paiement en attente de validation</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <TwoColumnGrid testId="grid-payment-requests">
+                {filterRequests(paymentRequests, filters.paiements).map((request) => 
+                  renderRequestCard(request, false, false, false, false, false, false, true, false, { hideTransporterInterests: true })
+                )}
+              </TwoColumnGrid>
+            )}
+          </TabsContent>
+
+          {/* ONGLET 6: PRIS EN CHARGE - Commandes réellement prises en charge par le transporteur */}
           <TabsContent value="pris_en_charge" className="space-y-4">
             {prisEnChargeLoading ? (
               <div className="flex justify-center py-12">
