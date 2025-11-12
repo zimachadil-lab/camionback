@@ -37,9 +37,61 @@ import { StatusIndicator } from "@/components/shared/status-indicator";
 // Types for adaptive filters by tab
 type TabId = 'nouveau' | 'qualifies' | 'interesses' | 'production' | 'pris_en_charge';
 
+// City selection type for Google Places integration
+interface CitySelection {
+  label: string;      // Full formatted address (e.g., "Hay Mohammadi, Casablanca")
+  city: string;       // Extracted city name (e.g., "Casablanca")
+  placeId?: string;   // Google Place ID for precise matching
+}
+
+// Sentinel value for "All Cities" filter
+const ALL_CITIES: CitySelection = {
+  label: 'Toutes les villes',
+  city: 'ALL',
+  placeId: undefined,
+};
+
+// Helper: Create city selection from Google Places result
+function createCitySelection(address: string, placeDetails?: google.maps.places.PlaceResult): CitySelection {
+  if (!placeDetails || !placeDetails.address_components) {
+    return {
+      label: address,
+      city: address.split(',').pop()?.trim() || address,
+      placeId: placeDetails?.place_id,
+    };
+  }
+
+  let city = "";
+  placeDetails.address_components.forEach((component: google.maps.GeocoderAddressComponent) => {
+    if (component.types.includes("locality")) {
+      city = component.long_name;
+    } else if (!city && component.types.includes("administrative_area_level_1")) {
+      city = component.long_name;
+    }
+  });
+
+  return {
+    label: address,
+    city: city || address.split(',').pop()?.trim() || address,
+    placeId: placeDetails.place_id,
+  };
+}
+
+// Helper: Check if selection is "All Cities"
+function isAllCitiesSelection(selection: CitySelection): boolean {
+  return selection.city === 'ALL';
+}
+
+// Helper: Extract city name from request (handles "Quartier, Ville" format)
+function extractCityFromRequest(cityString: string): string {
+  if (!cityString) return '';
+  // Split on comma and take last part (the city), then normalize
+  return cityString.split(',').pop()?.trim().toLowerCase() || cityString.toLowerCase();
+}
+
 interface TabFilters {
   searchQuery: string;
-  selectedCity: string;
+  selectedCity: CitySelection;
   selectedStatus?: string;
   selectedDateFilter?: string;
   selectedCoordinator?: string;
@@ -54,7 +106,7 @@ type FiltersByTab = Record<TabId, TabFilters>;
 function getDefaultFilters(tab: TabId): TabFilters {
   const baseFilters = {
     searchQuery: '',
-    selectedCity: 'Toutes les villes',
+    selectedCity: ALL_CITIES,
   };
 
   switch (tab) {
@@ -96,6 +148,10 @@ function countActiveFilters(filters: TabFilters, tab: TabId): number {
   const defaults = getDefaultFilters(tab);
   return Object.entries(filters).filter(([key, value]) => {
     const defaultValue = defaults[key as keyof TabFilters];
+    // Special handling for selectedCity (CitySelection object)
+    if (key === 'selectedCity') {
+      return !isAllCitiesSelection(value as CitySelection);
+    }
     return value !== defaultValue && value !== '' && value !== undefined;
   }).length;
 }
