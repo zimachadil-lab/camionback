@@ -1839,7 +1839,7 @@ export default function CoordinatorDashboard() {
     };
 
     return (
-    <Card className={`hover-elevate overflow-hidden border-2 ${categoryConfig.borderColor}`} data-testid={`card-request-${request.id}`}>
+    <Card key={request.id} className={`hover-elevate overflow-hidden border-2 ${categoryConfig.borderColor}`} data-testid={`card-request-${request.id}`}>
       {/* En-tête coloré avec icône de catégorie - Style transporteur */}
       <div className={`${categoryConfig.bgColor} p-2.5 flex items-center justify-between gap-3`}>
         <div className="flex items-center gap-2">
@@ -2708,11 +2708,9 @@ export default function CoordinatorDashboard() {
               </Card>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {filterRequests(nouveauRequests, filters.nouveau).map((request) => (
-                  <div key={`nouveau-${request.id}`}>
-                    {renderRequestCard(request, true, false, false, true, true)}
-                  </div>
-                ))}
+                {filterRequests(nouveauRequests, filters.nouveau).map((request) => 
+                  renderRequestCard(request, true, false, false, true, true)
+                )}
               </div>
             )}
           </TabsContent>
@@ -2732,11 +2730,9 @@ export default function CoordinatorDashboard() {
               </Card>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {filterRequests(matchingRequests.filter((r: any) => !r.transporterInterests || r.transporterInterests.length === 0), filters.qualifies).map((request) => (
-                  <div key={`qualifies-${request.id}`}>
-                    {renderRequestCard(request, true, false, false, false, true, false, false, true)}
-                  </div>
-                ))}
+                {filterRequests(matchingRequests.filter((r: any) => !r.transporterInterests || r.transporterInterests.length === 0), filters.qualifies).map((request) => 
+                  renderRequestCard(request, true, false, false, false, true, false, false, true)
+                )}
               </div>
             )}
           </TabsContent>
@@ -2756,17 +2752,15 @@ export default function CoordinatorDashboard() {
               </Card>
             ) : (
               <TwoColumnGrid testId="grid-interested-requests">
-                {filterRequests(matchingRequests.filter((r: any) => r.transporterInterests && r.transporterInterests.length > 0), filters.interesses).map((request) => (
-                  <div key={`interesses-${request.id}`}>
-                    {renderRequestCard(request, true, false, false, false, true, false, false, false, {
-                      showCancel: true,
-                      onCancel: () => {
-                        setCancelRequestData(request);
-                        setCancelDialogOpen(true);
-                      }
-                    })}
-                  </div>
-                ))}
+                {filterRequests(matchingRequests.filter((r: any) => r.transporterInterests && r.transporterInterests.length > 0), filters.interesses).map((request) => 
+                  renderRequestCard(request, true, false, false, false, true, false, false, false, {
+                    showCancel: true,
+                    onCancel: () => {
+                      setCancelRequestData(request);
+                      setCancelDialogOpen(true);
+                    }
+                  })
+                )}
               </TwoColumnGrid>
             )}
           </TabsContent>
@@ -2786,9 +2780,8 @@ export default function CoordinatorDashboard() {
               </Card>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {filterRequests([...activeRequests, ...paymentRequests], filters.production).map((request) => {
-                  return (
-                    <div key={`production-wrapper-${request.id}`} className="space-y-3">
+                {filterRequests([...activeRequests, ...paymentRequests], filters.production).map((request) => (
+                    <div key={`production-${request.id}`} className="space-y-3">
                       {renderRequestCard(request, false, false, false, false, true, false, true)}
                       {/* Actions footer pour Production */}
                       <div className="flex gap-2">
@@ -2861,8 +2854,7 @@ export default function CoordinatorDashboard() {
                         </Button>
                       </div>
                     </div>
-                  );
-                })}
+                ))}
               </div>
             )}
           </TabsContent>
@@ -2883,7 +2875,7 @@ export default function CoordinatorDashboard() {
             ) : (
               <TwoColumnGrid testId="grid-pris-en-charge-requests">
                 {filterRequests(prisEnChargeRequests, filters.pris_en_charge).map((request) => (
-                  <div key={`pris-en-charge-${request.id}`}>
+                  <div key={`pris-${request.id}`}>
                     {renderRequestCard(request, false, false, false, false, false, false, true)}
                     {/* Actions footer pour Pris en charge */}
                     <div className="flex gap-2 px-4 pb-4">
