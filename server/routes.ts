@@ -7494,6 +7494,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // MIGRATION: Fix payment status for taken-in-charge requests
+  // This corrects legacy data where takenInChargeAt was set but paymentStatus wasn't updated to 'a_facturer'
+  app.post("/api/admin/fix-pris-en-charge-payment-status", requireAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      console.info('[Migration] 🔧 Starting payment status fix for taken-in-charge requests...');
+
+      // Find all requests that are taken in charge but have incorrect paymentStatus
+      const affectedRequests = await db.select({
+        id: transportRequests.id,
+        referenceId: transportRequests.referenceId,
+        status: transportRequests.status,
+        paymentStatus: transportRequests.paymentStatus,
+        takenInChargeAt: transportRequests.takenInChargeAt
+      })
+      .from(transportRequests)
+      .where(
+        and(
+          isNotNull(transportRequests.takenInChargeAt),
+          ne(transportRequests.paymentStatus, 'a_facturer'),
+          sql`${transportRequests.status} IN ('accepted', 'completed')` // Only fix active requests
+        )
+      );
+
+      if (affectedRequests.length === 0) {
+        console.info('[Migration] ✅ No requests to fix - all payment statuses are correct');
+        return res.json({
+          success: true,
+          message: 'Aucune commande à corriger',
+          updated: 0,
+          affectedRequests: []
+        });
+      }
+
+      console.info(`[Migration] 📋 Found ${affectedRequests.length} requests to fix:`);
+      affectedRequests.forEach(req => {
+        console.info(`  - ${req.referenceId}: paymentStatus="${req.paymentStatus}" → "a_facturer"`);
+      });
+
+      // Update all affected requests in a single query
+      await db.update(transportRequests)
+        .set({
+          paymentStatus: 'a_facturer'
+        })
+        .where(
+          and(
+            isNotNull(transportRequests.takenInChargeAt),
+            ne(transportRequests.paymentStatus, 'a_facturer'),
+            sql`${transportRequests.status} IN ('accepted', 'completed')`
+          )
+        );
+
+      console.info(`[Migration] ✅ Successfully updated ${affectedRequests.length} requests`);
+
+      res.json({
+        success: true,
+        message: `Migration réussie : ${affectedRequests.length} commandes corrigées`,
+        updated: affectedRequests.length,
+        affectedRequests: affectedRequests.map(req => ({
+          referenceId: req.referenceId,
+          oldPaymentStatus: req.paymentStatus,
+          newPaymentStatus: 'a_facturer',
+          takenInChargeAt: req.takenInChargeAt
+        }))
+      });
+    } catch (error) {
+      console.error('[Migration] ❌ Error fixing payment status:', error);
+      res.status(500).json({ error: "Erreur lors de la migration du statut de paiement" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // WebSocket server for real-time chat (using separate path to avoid Vite HMR conflict)
