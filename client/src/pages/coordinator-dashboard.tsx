@@ -2618,9 +2618,9 @@ export default function CoordinatorDashboard() {
               >
                 <ClipboardCheck className="h-4 w-4" />
                 <span className="hidden sm:inline">Qualifiés</span>
-                {!matchingLoading && filterRequests(matchingRequests, filters.qualifies).length > 0 && (
+                {!matchingLoading && filterRequests(matchingRequests.filter((r: any) => !r.transporterInterests || r.transporterInterests.length === 0), filters.qualifies).length > 0 && (
                   <span className="inline-flex items-center justify-center min-w-[20px] h-[20px] px-1 text-xs font-bold rounded-full bg-gradient-to-br from-blue-400 to-blue-500 text-white shadow-md">
-                    {filterRequests(matchingRequests, filters.qualifies).length}
+                    {filterRequests(matchingRequests.filter((r: any) => !r.transporterInterests || r.transporterInterests.length === 0), filters.qualifies).length}
                   </span>
                 )}
               </TabsTrigger>
@@ -2698,7 +2698,7 @@ export default function CoordinatorDashboard() {
               <div className="flex justify-center py-12">
                 <LoadingTruck />
               </div>
-            ) : filterRequests(matchingRequests, filters.qualifies).length === 0 ? (
+            ) : filterRequests(matchingRequests.filter((r: any) => !r.transporterInterests || r.transporterInterests.length === 0), filters.qualifies).length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center text-muted-foreground">
                   <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
@@ -2707,7 +2707,7 @@ export default function CoordinatorDashboard() {
               </Card>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {filterRequests(matchingRequests, filters.qualifies).map((request) => renderRequestCard(request, true, false, false, false, true, false, false, true))}
+                {filterRequests(matchingRequests.filter((r: any) => !r.transporterInterests || r.transporterInterests.length === 0), filters.qualifies).map((request) => renderRequestCard(request, true, false, false, false, true, false, false, true))}
               </div>
             )}
           </TabsContent>
