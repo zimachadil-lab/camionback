@@ -35,7 +35,7 @@ import { getCategoryConfig } from "@/lib/goods-category-config";
 import { StatusIndicator } from "@/components/shared/status-indicator";
 
 // Types for adaptive filters by tab
-type TabId = 'nouveau' | 'qualifies' | 'interesses' | 'production' | 'pris_en_charge';
+type TabId = 'nouveau' | 'qualifies' | 'interesses' | 'production' | 'paiements' | 'pris_en_charge';
 
 interface TabFilters {
   searchQuery: string;
@@ -78,6 +78,11 @@ function getDefaultFilters(tab: TabId): TabFilters {
       return {
         ...baseFilters,
         selectedPaymentStatus: 'Tous les statuts',
+        selectedDateFilter: 'all',
+      };
+    case 'paiements':
+      return {
+        ...baseFilters,
         selectedDateFilter: 'all',
       };
     case 'pris_en_charge':
@@ -664,6 +669,7 @@ export default function CoordinatorDashboard() {
     qualifies: getDefaultFilters('qualifies'),
     interesses: getDefaultFilters('interesses'),
     production: getDefaultFilters('production'),
+    paiements: getDefaultFilters('paiements'),
     pris_en_charge: getDefaultFilters('pris_en_charge'),
   });
   const [chatOpen, setChatOpen] = useState(false);
@@ -2789,6 +2795,19 @@ export default function CoordinatorDashboard() {
                 {!(activeLoading || paymentLoading) && filterRequests([...activeRequests, ...paymentRequests], filters.production).length > 0 && (
                   <span className="inline-flex items-center justify-center min-w-[20px] h-[20px] px-1 text-xs font-bold rounded-full bg-gradient-to-br from-green-400 to-green-500 text-white shadow-md">
                     {filterRequests([...activeRequests, ...paymentRequests], filters.production).length}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="paiements" 
+                data-testid="tab-paiements"
+                className="relative inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-3 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#f59e0b] data-[state=active]:via-[#d97706] data-[state=active]:to-[#b45309] data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-orange-500/50 text-slate-400 hover:text-slate-200 hover:bg-white/5"
+              >
+                <CreditCard className="h-4 w-4" />
+                <span className="hidden sm:inline">Paiements</span>
+                {!paymentLoading && filterRequests(paymentRequests, filters.paiements).length > 0 && (
+                  <span className="inline-flex items-center justify-center min-w-[20px] h-[20px] px-1 text-xs font-bold rounded-full bg-gradient-to-br from-orange-400 to-orange-500 text-white shadow-md">
+                    {filterRequests(paymentRequests, filters.paiements).length}
                   </span>
                 )}
               </TabsTrigger>

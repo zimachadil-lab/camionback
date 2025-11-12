@@ -4958,7 +4958,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Mark request as paid by CamionBack (final payment step)
+  // Get contracts (fully paid requests) for admin
+  app.get("/api/admin/contracts", requireAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      // Get requests with paymentStatus = 'paid' (fully paid)
+      const requests = await db.select({
+        ...getTableColumns(transportRequests),
+        client: sql<any>`
+          CASE 
+            WHEN transport_requests.client_id IS NOT NULL THEN
+              (SELECT json_build_object(
+                'id', u.id,
+                'name', u.name,
+                'phoneNumber', u.phone_number,
+                'city', u.city,
+                'clientId', u.client_id
+              )
+              FROM users u
+              WHERE u.id = transport_requests.client_id)
+            ELSE NULL
+          END
+        `,
+        transporter: sql<any>`
+          CASE 
+            WHEN transport_requests.assigned_transporter_id IS NOT NULL THEN
+              (SELECT json_build_object(
+                'id', u.id,
+                'name', u.name,
+                'phoneNumber', u.phone_number,
+                'city', u.city,
+                'rating', u.rating
+              )
+              FROM users u
+              WHERE u.id = transport_requests.assigned_transporter_id)
+            ELSE NULL
+          END
+        `,
+      })
+      .from(transportRequests)
+      .where(
+        and(
+          eq(transportRequests.paymentStatus, 'paid'), // Only fully paid requests
+          ne(transportRequests.status, 'cancelled'),
+          ne(transportRequests.coordinationStatus, 'archived')
+        )
+      )
+      .orderBy(desc(transportRequests.paymentValidatedAt));
+
+      res.json(requests);
+    } catch (error) {
+      console.error("Erreur récupération contrats:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération des contrats" });
+    }
+  });
+
+  // Mark request as paid by CamionBack (final payment step - ADMIN ONLY for financial security)
   app.patch("/api/admin/requests/:id/camionback-payment", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
       const { id } = req.params;
