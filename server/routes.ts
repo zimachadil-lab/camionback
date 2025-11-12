@@ -7529,8 +7529,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         and(
           isNotNull(transportRequests.takenInChargeAt),
           sql`${transportRequests.status} IN ('accepted', 'completed')`, // Only fix active requests
-          // Fix if EITHER paymentStatus OR coordinationStatus is wrong
-          sql`(${transportRequests.paymentStatus} != 'a_facturer' OR ${transportRequests.coordinationStatus} != 'pris_en_charge')`
+          // Fix if EITHER paymentStatus OR coordinationStatus is wrong (handles NULL correctly)
+          sql`(${transportRequests.paymentStatus} IS DISTINCT FROM 'a_facturer' OR ${transportRequests.coordinationStatus} IS DISTINCT FROM 'pris_en_charge')`
         )
       );
 
@@ -7563,7 +7563,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           and(
             isNotNull(transportRequests.takenInChargeAt),
             sql`${transportRequests.status} IN ('accepted', 'completed')`,
-            sql`(${transportRequests.paymentStatus} != 'a_facturer' OR ${transportRequests.coordinationStatus} != 'pris_en_charge')`
+            sql`(${transportRequests.paymentStatus} IS DISTINCT FROM 'a_facturer' OR ${transportRequests.coordinationStatus} IS DISTINCT FROM 'pris_en_charge')`
           )
         );
 
