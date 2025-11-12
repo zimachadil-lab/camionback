@@ -6759,7 +6759,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // AI Price Estimation for Coordinator
+  // AI Price Estimation for Coordinator (full details with financial split)
   app.post("/api/coordinator/estimate-price", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
       const { requestId } = req.body;
@@ -6781,6 +6781,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(estimation);
     } catch (error) {
       console.error("Erreur estimation prix:", error);
+      res.status(500).json({ 
+        error: "Erreur lors de l'estimation du prix",
+        message: error instanceof Error ? error.message : "Erreur inconnue"
+      });
+    }
+  });
+
+  // AI Price Estimation for Client (simplified version without financial split details)
+  app.post("/api/client/estimate-price", requireAuth, requireRole(['client']), async (req, res) => {
+    try {
+      const { requestId } = req.body;
+      
+      if (!requestId) {
+        return res.status(400).json({ error: "ID de demande requis" });
+      }
+      
+      // Get the request
+      const request = await storage.getTransportRequest(requestId);
+      if (!request) {
+        return res.status(404).json({ error: "Demande non trouvée" });
+      }
+      
+      // Verify the request belongs to the current user
+      const currentUser = await getCurrentUser(req);
+      if (!currentUser || request.clientId !== currentUser.id) {
+        return res.status(403).json({ error: "Accès non autorisé à cette demande" });
+      }
+      
+      // Import and call the price estimation service
+      const { estimatePriceForRequest } = await import('./price-estimation');
+      const fullEstimation = await estimatePriceForRequest(request);
+      
+      // Filter reasoning to remove ANY mention of financial split/commission
+      // This is CRITICAL for business confidentiality - we MUST NOT reveal our 60/40 model
+      const filteredReasoning = fullEstimation.reasoning.filter((line: string) => {
+        const lowerLine = line.toLowerCase();
+        
+        // === COMPREHENSIVE BLACKLIST ===
+        // French terms for split/commission
+        const forbiddenFrench = [
+          'répartition', 'repartition',
+          'plateforme', 'plate-forme', 'platform',
+          'transporteur', 'transporteurs',
+          'cotisation', 'commission',
+          'frais transporteur', 'frais plateforme',
+          'marge', 'bénéfice',
+          'retient', 'retenir', 'garde', 'garder',
+          'portion', 'part', 'partie'
+        ];
+        
+        // English terms (GPT-5 may use English)
+        const forbiddenEnglish = [
+          'platform', 'fee', 'fees',
+          'transporter', 'carrier',
+          'commission', 'split', 'share',
+          'revenue', 'margin', 'profit',
+          'keeps', 'keep', 'takes', 'take',
+          'retains', 'retain', 'holds', 'hold',
+          'portion', 'part'
+        ];
+        
+        // Brand/company terms that might reveal commission
+        const forbiddenBrand = [
+          'camionback fee', 'camionback commission',
+          'camionback keeps', 'camionback takes',
+          'company fee', 'service fee',
+          'service margin', 'service charge'
+        ];
+        
+        // Percentage patterns (60%, 40%, variations with spaces)
+        const forbiddenPatterns = [
+          /60\s*%/, /40\s*%/,           // 60%, 40%, 60 %, 40 %
+          /60\s*\/\s*40/,                // 60/40, 60 / 40
+          /\b0\.6\b/, /\b0\.4\b/,        // 0.6, 0.4 (decimal forms)
+          /\bsixty\b/, /\bforty\b/,      // Written out in English
+          /\bsoixante\b/, /\bquarante\b/ // Written out in French
+        ];
+        
+        // Check all forbidden lists
+        const allForbidden = [...forbiddenFrench, ...forbiddenEnglish, ...forbiddenBrand];
+        if (allForbidden.some(word => lowerLine.includes(word))) {
+          return false;
+        }
+        
+        // Check forbidden patterns
+        if (forbiddenPatterns.some(pattern => pattern.test(lowerLine))) {
+          return false;
+        }
+        
+        return true;
+      });
+      
+      // Return simplified version without financial split details
+      // Only show the total price, confidence, filtered reasoning, and modeled inputs
+      const clientEstimation = {
+        totalClientMAD: fullEstimation.totalClientMAD,
+        confidence: fullEstimation.confidence,
+        reasoning: filteredReasoning,
+        modeledInputs: fullEstimation.modeledInputs
+      };
+      
+      res.json(clientEstimation);
+    } catch (error) {
+      console.error("Erreur estimation prix client:", error);
       res.status(500).json({ 
         error: "Erreur lors de l'estimation du prix",
         message: error instanceof Error ? error.message : "Erreur inconnue"
