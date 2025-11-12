@@ -226,8 +226,8 @@ function CoordinatorOffersView({ requestId, onAcceptOffer, isPending }: {
     enabled: !!requestId,
   });
 
-  // State for managing truck photo viewing
-  const [selectedTruckPhoto, setSelectedTruckPhoto] = useState<string | null>(null);
+  // State for managing truck photo viewing - NOW SUPPORTS MULTIPLE PHOTOS
+  const [selectedTruckPhotos, setSelectedTruckPhotos] = useState<string[]>([]);
   const [photoDialogOpen, setPhotoDialogOpen] = useState(false);
 
   if (isLoading) {
@@ -248,9 +248,10 @@ function CoordinatorOffersView({ requestId, onAcceptOffer, isPending }: {
   }
 
   const handleViewTruckPhoto = (truckPhotos: string[] | null) => {
-    const photo = truckPhotos && truckPhotos.length > 0 ? truckPhotos[0] : null;
-    setSelectedTruckPhoto(photo);
-    setPhotoDialogOpen(true);
+    if (truckPhotos && truckPhotos.length > 0) {
+      setSelectedTruckPhotos(truckPhotos);
+      setPhotoDialogOpen(true);
+    }
   };
 
   return (
@@ -384,29 +385,13 @@ function CoordinatorOffersView({ requestId, onAcceptOffer, isPending }: {
       ))}
       </div>
 
-      {/* Truck Photo Dialog */}
-      <Dialog open={photoDialogOpen} onOpenChange={setPhotoDialogOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Photo du camion</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            {selectedTruckPhoto ? (
-              <img
-                src={selectedTruckPhoto}
-                alt="Photo du camion"
-                className="w-full h-auto rounded-lg"
-                data-testid="img-truck-photo"
-              />
-            ) : (
-              <div className="text-center py-12 text-muted-foreground">
-                <Truck className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>Aucune photo disponible pour ce camion</p>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Truck Photo Gallery Dialog - Supports multiple photos with navigation */}
+      <PhotoGalleryDialog
+        open={photoDialogOpen}
+        onClose={() => setPhotoDialogOpen(false)}
+        photos={selectedTruckPhotos}
+        referenceId="truck-photos"
+      />
     </>
   );
 }
@@ -428,8 +413,8 @@ function InterestedTransportersView({ request, onAssignTransporter, isPending }:
   
   const transporterInterests = interestedTransporters || [];
 
-  // State for managing truck photo viewing
-  const [selectedTruckPhoto, setSelectedTruckPhoto] = useState<string | null>(null);
+  // State for managing truck photo viewing - NOW SUPPORTS MULTIPLE PHOTOS
+  const [selectedTruckPhotos, setSelectedTruckPhotos] = useState<string[]>([]);
   const [photoDialogOpen, setPhotoDialogOpen] = useState(false);
 
   // Mutation to toggle transporter visibility for client
@@ -479,9 +464,10 @@ function InterestedTransportersView({ request, onAssignTransporter, isPending }:
   }
 
   const handleViewTruckPhoto = (truckPhotos: string[] | null) => {
-    const photo = truckPhotos && truckPhotos.length > 0 ? truckPhotos[0] : null;
-    setSelectedTruckPhoto(photo);
-    setPhotoDialogOpen(true);
+    if (truckPhotos && truckPhotos.length > 0) {
+      setSelectedTruckPhotos(truckPhotos);
+      setPhotoDialogOpen(true);
+    }
   };
 
   return (
@@ -651,27 +637,13 @@ function InterestedTransportersView({ request, onAssignTransporter, isPending }:
       ))}
       </div>
 
-      {/* Truck Photo Dialog */}
-      <Dialog open={photoDialogOpen} onOpenChange={setPhotoDialogOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Photo du camion</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            {selectedTruckPhoto ? (
-              <img 
-                src={selectedTruckPhoto} 
-                alt="Camion" 
-                className="w-full h-auto rounded-md"
-              />
-            ) : (
-              <div className="flex items-center justify-center h-64 bg-muted rounded-md">
-                <p className="text-muted-foreground">Aucune photo disponible</p>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Truck Photo Gallery Dialog - Supports multiple photos with navigation */}
+      <PhotoGalleryDialog
+        open={photoDialogOpen}
+        onClose={() => setPhotoDialogOpen(false)}
+        photos={selectedTruckPhotos}
+        referenceId="truck-photos"
+      />
     </>
   );
 }
