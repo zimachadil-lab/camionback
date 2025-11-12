@@ -5955,6 +5955,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const coordinatorId = req.user!.id;
       
+      console.log('[Pris en charge] 🔍 Fetching pris-en-charge requests...');
+      
       // Get requests where takenInChargeAt is NOT NULL and not cancelled/archived
       const requests = await db.select({
         ...getTableColumns(transportRequests),
@@ -6039,6 +6041,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         )
       )
       .orderBy(desc(transportRequests.takenInChargeAt));
+
+      console.log(`[Pris en charge] ✅ Found ${requests.length} requests`);
+      if (requests.length > 0) {
+        console.log('[Pris en charge] First request:', {
+          referenceId: requests[0].referenceId,
+          status: requests[0].status,
+          paymentStatus: requests[0].paymentStatus,
+          coordinationStatus: requests[0].coordinationStatus,
+          takenInChargeAt: requests[0].takenInChargeAt
+        });
+      }
 
       res.json(requests);
     } catch (error) {
