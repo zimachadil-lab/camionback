@@ -195,7 +195,7 @@ function getClientStatus(request: any, interestedCount: number = 0, t: any) {
   };
 }
 
-function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onDelete, onViewTransporter, onUpdateStatus, onReport, onChooseTransporter, onOpenPhotosDialog, onEstimatePrice, users, cities, citiesLoading, currentUserId }: any) {
+function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onDelete, onViewTransporter, onUpdateStatus, onReport, onChooseTransporter, onOpenPhotosDialog, onEstimatePrice, isEstimating, users, cities, citiesLoading, currentUserId }: any) {
   const { t } = useTranslation();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showOffersDialog, setShowOffersDialog] = useState(false);
@@ -561,18 +561,19 @@ function RequestWithOffers({ request, onAcceptOffer, onDeclineOffer, onChat, onD
               variant="outline"
               className="w-full gap-2 h-auto py-3 border-2 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-blue-500/10 hover:from-purple-500/20 hover:via-pink-500/20 hover:to-blue-500/20 border-purple-500/50 text-foreground font-semibold shadow-md hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300"
               onClick={() => onEstimatePrice(request.id)}
+              disabled={isEstimating}
               data-testid={`button-estimate-price-${request.id}`}
             >
               <div className="flex items-center gap-2 w-full">
                 <div className="w-9 h-9 rounded-full bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 flex items-center justify-center flex-shrink-0">
-                  <Sparkles className="w-5 h-5 text-white" />
+                  <Sparkles className={`w-5 h-5 text-white ${isEstimating ? 'animate-spin' : ''}`} />
                 </div>
                 <div className="flex-1 text-left">
                   <p className="text-sm font-bold leading-tight">
-                    Estimer le prix
+                    {isEstimating ? "IA en réflexion..." : "Estimer le prix"}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Estimation IA instantanée
+                    {isEstimating ? "Analyse en cours" : "Estimation IA instantanée"}
                   </p>
                 </div>
               </div>
@@ -2208,6 +2209,7 @@ export default function ClientDashboard() {
                     onChooseTransporter={handleChooseTransporter}
                     onOpenPhotosDialog={handleOpenPhotosDialog}
                     onEstimatePrice={handleEstimatePrice}
+                    isEstimating={isEstimating}
                   />
                 ))
               ) : (
@@ -2962,10 +2964,10 @@ export default function ClientDashboard() {
               <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 flex items-center justify-center">
                 <Sparkles className="w-6 h-6 text-white" />
               </div>
-              <DialogTitle className="text-xl">Estimation de prix IA</DialogTitle>
+              <DialogTitle className="text-xl">Estimation selon le concept CamionBack</DialogTitle>
             </div>
             <DialogDescription>
-              Estimation instantanée basée sur votre demande de transport
+              Prix estimé par IA basé sur notre concept innovant de retours à vide
             </DialogDescription>
           </DialogHeader>
 
@@ -2986,16 +2988,20 @@ export default function ClientDashboard() {
                 </div>
               </div>
 
-              {/* Disclaimer - Avertissement important */}
-              <div className="bg-amber-50 dark:bg-amber-950/20 border-l-4 border-amber-500 p-4 rounded-lg">
+              {/* Disclaimer - Concept CamionBack */}
+              <div className="bg-gradient-to-r from-teal-50 via-emerald-50 to-cyan-50 dark:from-teal-950/20 dark:via-emerald-950/20 dark:to-cyan-950/20 border-l-4 border-teal-500 p-4 rounded-lg">
                 <div className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                  <AlertCircle className="w-5 h-5 text-teal-600 dark:text-teal-400 flex-shrink-0 mt-0.5" />
                   <div className="space-y-2">
-                    <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">
-                      ⚠️ Estimation indicative
+                    <p className="text-sm font-semibold text-teal-900 dark:text-teal-100">
+                      💡 Le concept CamionBack
                     </p>
-                    <p className="text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
-                      Ceci est une <strong>estimation automatique</strong> générée par intelligence artificielle. 
+                    <p className="text-xs text-teal-800 dark:text-teal-200 leading-relaxed">
+                      <strong>CamionBack</strong> révolutionne le transport au Maroc en exploitant les <strong>retours à vide</strong> des camions. 
+                      Cette innovation permet des prix jusqu'à <strong>60% moins chers</strong> que les tarifs traditionnels tout en optimisant les trajets existants.
+                    </p>
+                    <p className="text-xs text-amber-800 dark:text-amber-200 leading-relaxed mt-2 pt-2 border-t border-teal-200/50 dark:border-teal-800/50">
+                      ⚠️ Ceci est une <strong>estimation automatique</strong> générée par IA. 
                       Nos coordinateurs vont qualifier votre demande et vous fournir un <strong>prix exact et définitif</strong> sous peu.
                     </p>
                   </div>
