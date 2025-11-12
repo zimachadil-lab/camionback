@@ -2682,7 +2682,8 @@ export class DbStorage implements IStorage {
             eq(transportRequests.status, 'accepted'),
             isNotNull(transportRequests.assignedTransporterId)
           ),
-          ne(transportRequests.paymentStatus, 'paid_by_camionback')
+          ne(transportRequests.paymentStatus, 'paid_by_camionback'),
+          isNull(transportRequests.takenInChargeAt)
         )
       )
       .orderBy(desc(transportRequests.createdAt));
