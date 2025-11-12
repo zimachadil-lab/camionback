@@ -2781,10 +2781,10 @@ export default function CoordinatorDashboard() {
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {filterRequests([...activeRequests, ...paymentRequests], filters.production).map((request) => (
-                    <div key={`production-${request.id}`} className="space-y-3">
+                    <div key={`production-${request.id}`}>
                       {renderRequestCard(request, false, false, false, false, true, false, true)}
                       {/* Actions footer pour Production */}
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 px-4 pb-4 -mt-3">
                         <Button
                           variant="outline"
                           className="flex-1 gap-2"
