@@ -2430,8 +2430,7 @@ export default function CoordinatorDashboard() {
         {options.showProductionActions && (
           <div className="flex items-center gap-2 pt-3 border-t">
             <Button
-              variant="outline"
-              className="flex-1 gap-2"
+              className="flex-1 gap-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold shadow-md transition-all"
               onClick={() => {
                 setCancelRequestData(request);
                 setCancelDialogOpen(true);
