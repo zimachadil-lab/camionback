@@ -392,8 +392,9 @@
   },
   "transporterDashboard": {
     "datePickerDialog": {
-      "title": "اختر تاريخ توفرك",
-      "description": "حدد التاريخ الذي تكون فيه متاحًا لتنفيذ هذا النقل.",
+      "title": "تأكيد اهتمامك",
+      "description": "أنت تؤكد توفرك لتنفيذ هذا النقل من اليوم.",
+      "availableToday": "متاح اليوم",
       "clientRequestedDate": "التاريخ المطلوب من العميل:",
       "selectedDate": "التاريخ المحدد:",
       "matchesClientDate": "✓ يتطابق مع التاريخ المطلوب من العميل",

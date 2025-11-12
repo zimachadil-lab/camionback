@@ -1,6 +1,4 @@
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Calendar } from "@/components/ui/calendar";
 import {
   Dialog,
   DialogContent,
@@ -10,9 +8,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { format, isSameDay } from "date-fns";
+import { format } from "date-fns";
 import { fr, ar } from "date-fns/locale";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, CheckCircle } from "lucide-react";
 
 interface DatePickerDialogProps {
   open: boolean;
@@ -30,12 +28,10 @@ export function DatePickerDialog({
   isPending = false,
 }: DatePickerDialogProps) {
   const { t, i18n } = useTranslation();
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(requestDate);
+  const today = new Date();
 
   const handleConfirm = () => {
-    if (selectedDate) {
-      onConfirm(selectedDate);
-    }
+    onConfirm(today);
   };
 
   // Use appropriate locale for date-fns based on current language
@@ -43,51 +39,27 @@ export function DatePickerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <CalendarIcon className="h-5 w-5 text-primary" />
+            <CheckCircle className="h-5 w-5 text-green-600" />
             {t('transporterDashboard.datePickerDialog.title')}
           </DialogTitle>
           <DialogDescription>
             {t('transporterDashboard.datePickerDialog.description')}
-            {requestDate && (
-              <span className="block mt-2 text-sm font-medium">
-                {t('transporterDashboard.datePickerDialog.clientRequestedDate')} {format(requestDate, "dd MMMM yyyy", { locale: dateLocale })}
-              </span>
-            )}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="py-4">
-          <Calendar
-            mode="single"
-            selected={selectedDate}
-            onSelect={setSelectedDate}
-            disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-            initialFocus
-            className="rounded-md border"
-            data-testid="calendar-availability"
-            locale={dateLocale}
-          />
-
-          {selectedDate && (
-            <div className="mt-4 p-3 bg-primary/10 rounded-md border border-primary/20">
-              <p className="text-sm font-medium">
-                {t('transporterDashboard.datePickerDialog.selectedDate')} {format(selectedDate, "dd MMMM yyyy", { locale: dateLocale })}
+        <div className="py-6 flex justify-center">
+          <div className="inline-flex items-center gap-3 px-6 py-4 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-xl border-2 border-green-200 dark:border-green-800 shadow-sm">
+            <CalendarIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground mb-1">{t('transporterDashboard.datePickerDialog.availableToday')}</p>
+              <p className="text-lg font-bold text-green-700 dark:text-green-300">
+                {format(today, "dd MMMM yyyy", { locale: dateLocale })}
               </p>
-              {requestDate && isSameDay(selectedDate, requestDate) && (
-                <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">
-                  {t('transporterDashboard.datePickerDialog.matchesClientDate')}
-                </p>
-              )}
-              {requestDate && !isSameDay(selectedDate, requestDate) && (
-                <p className="text-xs text-orange-600 dark:text-orange-400 mt-1 font-medium">
-                  {t('transporterDashboard.datePickerDialog.alternativeDate')}
-                </p>
-              )}
             </div>
-          )}
+          </div>
         </div>
 
         <DialogFooter className="gap-2">
@@ -101,7 +73,7 @@ export function DatePickerDialog({
           </Button>
           <Button
             onClick={handleConfirm}
-            disabled={!selectedDate || isPending}
+            disabled={isPending}
             className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
             data-testid="button-confirm-interest"
           >
