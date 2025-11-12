@@ -3665,17 +3665,9 @@ export class DbStorage implements IStorage {
   }
 
   async getInterestedTransportersForRequest(requestId: string): Promise<any[]> {
-    const request = await db.select()
-      .from(transportRequests)
-      .where(eq(transportRequests.id, requestId))
-      .limit(1);
-
-    if (!request[0] || !request[0].transporterInterests || request[0].transporterInterests.length === 0) {
-      return [];
-    }
-
-    // Get all interested transporters with their proposed availability dates
-    // Join with transporter_interests to get the availability_date and hiddenFromClient status
+    // FIX: Start from transporterInterests table (not users) to avoid ID mismatch
+    // The transportRequests.transporterInterests array contains interest IDs, not user IDs
+    // So we query directly from transporterInterests with requestId filter
     const transportersWithDates = await db
       .select({
         id: users.id,
@@ -3692,17 +3684,14 @@ export class DbStorage implements IStorage {
         hiddenFromClient: transporterInterests.hiddenFromClient,
         interestId: transporterInterests.id, // Include interest ID for updating visibility
       })
-      .from(users)
-      .leftJoin(
-        transporterInterests,
-        and(
-          eq(transporterInterests.transporterId, users.id),
-          eq(transporterInterests.requestId, requestId)
-        )
+      .from(transporterInterests)
+      .innerJoin(
+        users,
+        eq(transporterInterests.transporterId, users.id)
       )
       .where(
         and(
-          inArray(users.id, request[0].transporterInterests),
+          eq(transporterInterests.requestId, requestId),
           eq(users.role, 'transporteur'),
           eq(users.status, 'validated')
         )
