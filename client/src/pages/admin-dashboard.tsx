@@ -994,6 +994,12 @@ export default function AdminDashboard() {
     }
   });
 
+  // Diagnostic query for pris en charge requests
+  const { data: prisEnChargeDiagnostic, refetch: refetchDiagnostic } = useQuery({
+    queryKey: ["/api/admin/diagnostic-pris-en-charge"],
+    enabled: false, // Only fetch when explicitly called
+  });
+
   // Update transporter mutation
   const updateTransporterMutation = useMutation({
     mutationFn: async ({ transporterId, formData }: { transporterId: string; formData: FormData }) => {

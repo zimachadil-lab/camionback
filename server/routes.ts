@@ -7564,6 +7564,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // DIAGNOSTIC: Check all taken-in-charge requests and why they may not appear
+  app.get("/api/admin/diagnostic-pris-en-charge", requireAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      console.info('[Diagnostic] 🔍 Checking all taken-in-charge requests...');
+
+      // Get ALL requests with takenInChargeAt set, regardless of other filters
+      const allTakenInCharge = await db.select({
+        referenceId: transportRequests.referenceId,
+        status: transportRequests.status,
+        paymentStatus: transportRequests.paymentStatus,
+        coordinationStatus: transportRequests.coordinationStatus,
+        takenInChargeAt: transportRequests.takenInChargeAt,
+      })
+      .from(transportRequests)
+      .where(isNotNull(transportRequests.takenInChargeAt))
+      .orderBy(desc(transportRequests.takenInChargeAt));
+
+      console.info(`[Diagnostic] Found ${allTakenInCharge.length} requests with takenInChargeAt set`);
+
+      // Analyze each request to see why it may not appear in "Pris en charge" tab
+      const diagnostics = allTakenInCharge.map(req => {
+        const shouldAppear = 
+          req.coordinationStatus !== 'archived' &&
+          req.status !== 'cancelled' &&
+          req.paymentStatus === 'a_facturer';
+
+        let reason = '';
+        if (!shouldAppear) {
+          const reasons = [];
+          if (req.coordinationStatus === 'archived') reasons.push('coordinationStatus=archived');
+          if (req.status === 'cancelled') reasons.push('status=cancelled');
+          if (req.paymentStatus !== 'a_facturer') reasons.push(`paymentStatus=${req.paymentStatus} (devrait être a_facturer)`);
+          reason = reasons.join(', ');
+        }
+
+        return {
+          referenceId: req.referenceId,
+          status: req.status,
+          paymentStatus: req.paymentStatus,
+          coordinationStatus: req.coordinationStatus,
+          takenInChargeAt: req.takenInChargeAt,
+          shouldAppear,
+          reason: reason || 'OK - Devrait apparaître dans Pris en charge'
+        };
+      });
+
+      const shouldAppearCount = diagnostics.filter(d => d.shouldAppear).length;
+      const blockedCount = diagnostics.filter(d => !d.shouldAppear).length;
+
+      console.info(`[Diagnostic] Results: ${shouldAppearCount} should appear, ${blockedCount} blocked`);
+
+      res.json({
+        total: allTakenInCharge.length,
+        shouldAppear: shouldAppearCount,
+        blocked: blockedCount,
+        diagnostics
+      });
+    } catch (error) {
+      console.error('[Diagnostic] ❌ Error:', error);
+      res.status(500).json({ error: "Erreur lors du diagnostic" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // WebSocket server for real-time chat (using separate path to avoid Vite HMR conflict)
