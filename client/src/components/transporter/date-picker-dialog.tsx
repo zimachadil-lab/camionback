@@ -49,9 +49,6 @@ export function DatePickerDialog({
             <CalendarIcon className="h-5 w-5 text-primary" />
             {t('transporterDashboard.datePickerDialog.title')}
           </DialogTitle>
-          <DialogDescription>
-            {t('transporterDashboard.datePickerDialog.description')}
-          </DialogDescription>
         </DialogHeader>
 
         <div className="py-4">
