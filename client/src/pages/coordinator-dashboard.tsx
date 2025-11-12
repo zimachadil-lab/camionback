@@ -1839,7 +1839,7 @@ export default function CoordinatorDashboard() {
     };
 
     return (
-    <Card key={request.id} className={`hover-elevate overflow-hidden border-2 ${categoryConfig.borderColor}`} data-testid={`card-request-${request.id}`}>
+    <Card key={request.id} className={`hover-elevate border-2 ${categoryConfig.borderColor}`} data-testid={`card-request-${request.id}`}>
       {/* En-tête coloré avec icône de catégorie - Style transporteur */}
       <div className={`${categoryConfig.bgColor} p-2.5 flex items-center justify-between gap-3`}>
         <div className="flex items-center gap-2">
@@ -2000,7 +2000,7 @@ export default function CoordinatorDashboard() {
         </div>
       </div>
 
-      <CardContent className="p-4 space-y-3">
+      <CardContent className="p-4 pb-2 space-y-3">
 
         {/* Carte de trajet avec distance */}
         {request.fromCity && request.toCity && (
@@ -2441,24 +2441,28 @@ export default function CoordinatorDashboard() {
             </Button>
             <Button
               className="flex-1 gap-2 bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 hover:from-emerald-700 hover:via-green-700 hover:to-teal-700 text-white font-semibold shadow-lg transition-all"
-              onClick={async () => {
-                try {
-                  await apiRequest(`/api/coordinator/requests/${request.id}/take-in-charge`, {
-                    method: 'PATCH',
-                  });
-                  queryClient.invalidateQueries({ queryKey: ['/api/coordinator/coordination/production'] });
-                  queryClient.invalidateQueries({ queryKey: ['/api/coordinator/coordination/pris-en-charge'] });
-                  toast({
-                    title: "Succès",
-                    description: "La commande a été marquée comme prise en charge",
-                  });
-                } catch (error: any) {
-                  toast({
-                    title: "Erreur",
-                    description: error.message || "Impossible de marquer comme prise en charge",
-                    variant: "destructive",
-                  });
-                }
+              onClick={() => {
+                fetch(`/api/coordinator/requests/${request.id}/take-in-charge`, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  credentials: 'include',
+                }).then(async (res) => {
+                  if (res.ok) {
+                    toast({
+                      title: "Succès",
+                      description: "La commande a été marquée comme prise en charge",
+                    });
+                    queryClient.invalidateQueries({ queryKey: ['/api/coordinator/coordination/production'] });
+                    queryClient.invalidateQueries({ queryKey: ['/api/coordinator/coordination/pris-en-charge'] });
+                  } else {
+                    const error = await res.json();
+                    toast({
+                      title: "Erreur",
+                      description: error.error || "Impossible de marquer comme prise en charge",
+                      variant: "destructive",
+                    });
+                  }
+                });
               }}
               data-testid={`button-take-in-charge-${request.id}`}
             >
