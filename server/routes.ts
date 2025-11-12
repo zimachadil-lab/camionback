@@ -27,7 +27,7 @@ import {
   transportRequests,
   transporterInterests
 } from "@shared/schema";
-import { desc, eq, sql, and, isNotNull, ne } from "drizzle-orm";
+import { desc, eq, sql, and, isNotNull, ne, getTableColumns } from "drizzle-orm";
 import { sendNewOfferSMS, sendOfferAcceptedSMS, sendTransporterActivatedSMS, sendBulkSMS, sendManualAssignmentSMS, sendTransporterAssignedSMS, sendClientChoseYouSMS, sendTransporterSelectedSMS } from "./infobip-sms";
 import { emailService } from "./email-service";
 import { migrateProductionData } from "./migrate-production-endpoint";
@@ -5847,16 +5847,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get requests where takenInChargeAt is NOT NULL and not cancelled/archived
       const requests = await db.select({
         ...getTableColumns(transportRequests),
-        client: {
-          id: users.id,
-          name: users.name,
-          phoneNumber: users.phoneNumber,
-          city: users.city,
-          clientId: users.clientId,
-        },
+        client: sql<any>`
+          CASE 
+            WHEN transport_requests.client_id IS NOT NULL THEN
+              (SELECT json_build_object(
+                'id', u.id,
+                'name', u.name,
+                'phoneNumber', u.phone_number,
+                'city', u.city,
+                'clientId', u.client_id
+              )
+              FROM users u
+              WHERE u.id = transport_requests.client_id)
+            ELSE NULL
+          END
+        `,
         transporter: sql<any>`
           CASE 
-            WHEN ${transportRequests.assignedTransporterId} IS NOT NULL THEN
+            WHEN transport_requests.assigned_transporter_id IS NOT NULL THEN
               (SELECT json_build_object(
                 'id', u.id,
                 'name', u.name,
@@ -5865,7 +5873,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 'rating', u.rating
               )
               FROM users u
-              WHERE u.id = ${transportRequests.assignedTransporterId})
+              WHERE u.id = transport_requests.assigned_transporter_id)
             ELSE NULL
           END
         `,
@@ -5891,27 +5899,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
               )
               FROM transporter_interests ti
               LEFT JOIN users tu ON ti.transporter_id = tu.id
-              WHERE ti.request_id = ${transportRequests.id}
+              WHERE ti.request_id = transport_requests.id
             ),
             '[]'::json
           )
         `,
         assignedTo: sql<any>`
           CASE 
-            WHEN ${transportRequests.assignedToId} IS NOT NULL THEN
+            WHEN transport_requests.assigned_to_id IS NOT NULL THEN
               (SELECT json_build_object(
                 'id', u.id,
                 'name', u.name,
                 'phoneNumber', u.phone_number
               )
               FROM users u
-              WHERE u.id = ${transportRequests.assignedToId})
+              WHERE u.id = transport_requests.assigned_to_id)
             ELSE NULL
           END
         `,
       })
       .from(transportRequests)
-      .leftJoin(users, eq(transportRequests.clientId, users.id))
       .where(
         and(
           isNotNull(transportRequests.takenInChargeAt),
