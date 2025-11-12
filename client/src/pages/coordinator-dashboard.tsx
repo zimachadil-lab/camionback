@@ -2412,8 +2412,8 @@ export default function CoordinatorDashboard() {
             </Button>
           )}
           
-          {/* View Details button (secondary) - Seulement si pas Production */}
-          {!options.showProductionActions && (
+          {/* View Details button (secondary) - Seulement si pas Production ni Pris en charge */}
+          {!options.showProductionActions && !options.showPrisEnChargeActions && (
             <Button
               variant="ghost"
               size="icon"
