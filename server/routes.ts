@@ -4958,6 +4958,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Mark request as paid by CamionBack (final payment step)
+  app.patch("/api/admin/requests/:id/camionback-payment", requireAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const adminId = req.user!.id;
+
+      // Verify request exists and is in correct state
+      const request = await db.select()
+        .from(transportRequests)
+        .where(eq(transportRequests.id, id))
+        .limit(1);
+
+      if (!request[0]) {
+        return res.status(404).json({ error: "Commande non trouvée" });
+      }
+
+      if (request[0].paymentStatus !== 'paid_by_client') {
+        return res.status(400).json({ error: "La commande n'est pas dans l'état 'payé par client'" });
+      }
+
+      // Update payment status to 'paid' and record admin validation
+      const updated = await db.update(transportRequests)
+        .set({
+          paymentStatus: 'paid',
+          paymentValidatedAt: new Date(),
+          paymentValidatedBy: adminId,
+        })
+        .where(eq(transportRequests.id, id))
+        .returning();
+
+      res.json(updated[0]);
+    } catch (error) {
+      console.error("Erreur paiement CamionBack:", error);
+      res.status(500).json({ error: "Erreur lors du paiement CamionBack" });
+    }
+  });
+
   // ===== Admin - Coordination Status Configuration Routes =====
   
   // Get all coordination status configurations
@@ -5923,7 +5960,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         and(
           isNotNull(transportRequests.takenInChargeAt),
           ne(transportRequests.coordinationStatus, 'archived'),
-          ne(transportRequests.status, 'cancelled')
+          ne(transportRequests.status, 'cancelled'),
+          eq(transportRequests.paymentStatus, 'a_facturer') // Only show unpaid requests
         )
       )
       .orderBy(desc(transportRequests.takenInChargeAt));

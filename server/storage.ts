@@ -2756,19 +2756,36 @@ export class DbStorage implements IStorage {
   }
 
   async getCoordinatorPaymentRequests(): Promise<any[]> {
-    // Get requests with payment pending statuses
+    // Get requests paid by client/coordinator but awaiting CamionBack payment
     const requests = await db.select({
       id: transportRequests.id,
       referenceId: transportRequests.referenceId,
       fromCity: transportRequests.fromCity,
       toCity: transportRequests.toCity,
+      departureAddress: transportRequests.departureAddress,
+      arrivalAddress: transportRequests.arrivalAddress,
+      distance: transportRequests.distance,
       description: transportRequests.description,
       goodsType: transportRequests.goodsType,
       dateTime: transportRequests.dateTime,
       budget: transportRequests.budget,
       photos: transportRequests.photos,
+      handlingRequired: transportRequests.handlingRequired,
+      departureFloor: transportRequests.departureFloor,
+      departureElevator: transportRequests.departureElevator,
+      arrivalFloor: transportRequests.arrivalFloor,
+      arrivalElevator: transportRequests.arrivalElevator,
       status: transportRequests.status,
       paymentStatus: transportRequests.paymentStatus,
+      paymentReceipt: transportRequests.paymentReceipt,
+      paymentDate: transportRequests.paymentDate,
+      transporterRating: transportRequests.transporterRating,
+      transporterRatingComment: transportRequests.transporterRatingComment,
+      transporterAmount: transportRequests.transporterAmount,
+      platformFee: transportRequests.platformFee,
+      clientTotal: transportRequests.clientTotal,
+      assignedTransporterId: transportRequests.assignedTransporterId,
+      takenInChargeAt: transportRequests.takenInChargeAt,
       acceptedOfferId: transportRequests.acceptedOfferId,
       shareToken: transportRequests.shareToken,
       createdAt: transportRequests.createdAt,
@@ -2776,15 +2793,12 @@ export class DbStorage implements IStorage {
     .from(transportRequests)
     .where(
       and(
-        eq(transportRequests.status, 'accepted'),
-        or(
-          eq(transportRequests.paymentStatus, 'pending'),
-          eq(transportRequests.paymentStatus, 'awaiting_payment'),
-          eq(transportRequests.paymentStatus, 'pending_admin_validation')
-        )
+        eq(transportRequests.paymentStatus, 'paid_by_client'), // Only requests paid by client/coordinator
+        ne(transportRequests.status, 'cancelled'),
+        ne(transportRequests.coordinationStatus, 'archived')
       )
     )
-    .orderBy(desc(transportRequests.createdAt));
+    .orderBy(desc(transportRequests.paymentDate));
 
     // Enrich with client, transporter, and accepted offer
     const enrichedRequests = await Promise.all(
