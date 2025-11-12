@@ -1802,7 +1802,7 @@ export default function CoordinatorDashboard() {
     );
   };
 
-  const renderRequestCard = (request: any, showVisibilityToggle = false, showPaymentControls = false, isCoordination = false, showQualifyButton = false, showQualifiedBy = false, showRepublishButton = false, showPaymentStatusSelector = false, showRequalifyButton = false, options: { showCancel?: boolean; onCancel?: () => void; showProductionActions?: boolean } = {}) => {
+  const renderRequestCard = (request: any, showVisibilityToggle = false, showPaymentControls = false, isCoordination = false, showQualifyButton = false, showQualifiedBy = false, showRepublishButton = false, showPaymentStatusSelector = false, showRequalifyButton = false, options: { showCancel?: boolean; onCancel?: () => void; showProductionActions?: boolean; hideTransporterInterests?: boolean } = {}) => {
     // Calculate interested count
     const interestedCount = request.transporterInterests?.length || 0;
     // Get client-friendly status
@@ -2292,7 +2292,7 @@ export default function CoordinatorDashboard() {
             </div>
           )}
           
-          {interestedCount > 0 && request.qualifiedAt && (
+          {interestedCount > 0 && request.qualifiedAt && !options.hideTransporterInterests && (
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-[#17cfcf]" />
               <span className="text-muted-foreground">Transporteurs intéressés:</span>
@@ -2863,7 +2863,7 @@ export default function CoordinatorDashboard() {
               <TwoColumnGrid testId="grid-pris-en-charge-requests">
                 {filterRequests(prisEnChargeRequests, filters.pris_en_charge).map((request) => (
                   <div key={`pris-${request.id}`}>
-                    {renderRequestCard(request, false, false, false, false, false, false, true)}
+                    {renderRequestCard(request, false, false, false, false, false, false, true, false, { hideTransporterInterests: true })}
                     {/* Actions footer pour Pris en charge */}
                     <div className="flex gap-2 px-4 pb-4">
                       <Button
