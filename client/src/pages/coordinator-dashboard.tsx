@@ -2773,83 +2773,85 @@ export default function CoordinatorDashboard() {
                 </CardContent>
               </Card>
             ) : (
-              <TwoColumnGrid testId="grid-production-requests">
-                {filterRequests([...activeRequests, ...paymentRequests], filters.production).map((request) => (
-                  <div key={request.id}>
-                    {renderRequestCard(request, false, false, false, false, true, false, true)}
-                    {/* Actions footer pour Production */}
-                    <div className="flex gap-2 px-4 pb-4">
-                      <Button
-                        variant="outline"
-                        className="flex-1 gap-2"
-                        onClick={() => {
-                          // TODO: Implémenter requalify dialog
-                          if (confirm(`Voulez-vous vraiment annuler et requalifier la commande ${request.referenceId} ?`)) {
-                            fetch(`/api/requests/${request.id}/requalify`, {
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {filterRequests([...activeRequests, ...paymentRequests], filters.production).map((request) => {
+                  return (
+                    <div key={`production-wrapper-${request.id}`} className="space-y-3">
+                      {renderRequestCard(request, false, false, false, false, true, false, true)}
+                      {/* Actions footer pour Production */}
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          className="flex-1 gap-2"
+                          onClick={() => {
+                            // TODO: Implémenter requalify dialog
+                            if (confirm(`Voulez-vous vraiment annuler et requalifier la commande ${request.referenceId} ?`)) {
+                              fetch(`/api/requests/${request.id}/requalify`, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                credentials: 'include',
+                                body: JSON.stringify({ reason: 'Annulé par coordinateur' }),
+                              }).then(async (res) => {
+                                if (res.ok) {
+                                  toast({
+                                    title: "Commande requalifiée",
+                                    description: "La commande a été remise en matching.",
+                                  });
+                                  queryClient.invalidateQueries({ queryKey: ['/api/coordinator/active-requests'] });
+                                  queryClient.invalidateQueries({ queryKey: ['/api/coordinator/matching-requests'] });
+                                } else {
+                                  const error = await res.json();
+                                  toast({
+                                    variant: "destructive",
+                                    title: "Erreur",
+                                    description: error.error || "Impossible de requalifier",
+                                  });
+                                }
+                              });
+                            }
+                          }}
+                          data-testid={`button-requalify-${request.id}`}
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                          Annuler & Requalifier
+                        </Button>
+                        <Button
+                          className="flex-1 gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
+                          onClick={() => {
+                            // Mark request as taken in charge
+                            fetch(`/api/coordinator/requests/${request.id}/take-in-charge`, {
                               method: 'PATCH',
                               headers: { 'Content-Type': 'application/json' },
                               credentials: 'include',
-                              body: JSON.stringify({ reason: 'Annulé par coordinateur' }),
                             }).then(async (res) => {
                               if (res.ok) {
                                 toast({
-                                  title: "Commande requalifiée",
-                                  description: "La commande a été remise en matching.",
+                                  title: "Prise en charge confirmée",
+                                  description: "La commande a été marquée comme prise en charge.",
                                 });
                                 queryClient.invalidateQueries({ queryKey: ['/api/coordinator/active-requests'] });
-                                queryClient.invalidateQueries({ queryKey: ['/api/coordinator/matching-requests'] });
+                                queryClient.invalidateQueries({ queryKey: ['/api/coordinator/payment-pending'] });
+                                queryClient.invalidateQueries({ queryKey: ['/api/coordinator/coordination/pris-en-charge'] });
                               } else {
                                 const error = await res.json();
                                 toast({
                                   variant: "destructive",
                                   title: "Erreur",
-                                  description: error.error || "Impossible de requalifier",
+                                  description: error.error || "Impossible de marquer comme pris en charge",
                                 });
                               }
                             });
-                          }
-                        }}
-                        data-testid={`button-requalify-${request.id}`}
-                      >
-                        <RotateCcw className="h-4 w-4" />
-                        Annuler & Requalifier
-                      </Button>
-                      <Button
-                        className="flex-1 gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
-                        onClick={() => {
-                          // Mark request as taken in charge
-                          fetch(`/api/coordinator/requests/${request.id}/take-in-charge`, {
-                            method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json' },
-                            credentials: 'include',
-                          }).then(async (res) => {
-                            if (res.ok) {
-                              toast({
-                                title: "Prise en charge confirmée",
-                                description: "La commande a été marquée comme prise en charge.",
-                              });
-                              queryClient.invalidateQueries({ queryKey: ['/api/coordinator/active-requests'] });
-                              queryClient.invalidateQueries({ queryKey: ['/api/coordinator/payment-pending'] });
-                              queryClient.invalidateQueries({ queryKey: ['/api/coordinator/coordination/pris-en-charge'] });
-                            } else {
-                              const error = await res.json();
-                              toast({
-                                variant: "destructive",
-                                title: "Erreur",
-                                description: error.error || "Impossible de marquer comme pris en charge",
-                              });
-                            }
-                          });
-                        }}
-                        data-testid={`button-take-in-charge-${request.id}`}
-                      >
-                        <Truck className="h-4 w-4" />
-                        Prise en charge
-                      </Button>
+                          }}
+                          data-testid={`button-take-in-charge-${request.id}`}
+                        >
+                          <Truck className="h-4 w-4" />
+                          Prise en charge
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </TwoColumnGrid>
+                  );
+                })}
+              </div>
             )}
           </TabsContent>
 
