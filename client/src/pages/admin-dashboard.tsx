@@ -168,18 +168,52 @@ export default function AdminDashboard() {
   //   staleTime: 0,
   // });
 
-  // Fetch all requests for payment validation
-  const { data: allRequests = [] } = useQuery({
-    queryKey: ["/api/requests"],
-    queryFn: async () => {
-      console.log("🔍 [ADMIN] Fetching ALL requests from /api/requests");
-      const response = await fetch("/api/requests");
-      console.log("📡 [ADMIN] Response status:", response.status, response.statusText);
-      const data = await response.json();
-      console.log("📦 [ADMIN] Requests data:", Array.isArray(data) ? `${data.length} requests` : "ERROR - not an array", data);
-      return Array.isArray(data) ? data : [];
+  // Request search state with debounce
+  const [requestSearchQueryInput, setRequestSearchQueryInput] = useState("");
+  const [debouncedRequestSearch, setDebouncedRequestSearch] = useState("");
+
+  // Debounce request search input (300ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedRequestSearch(requestSearchQueryInput);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [requestSearchQueryInput]);
+
+  // Fetch requests with infinite query (paginated) - OPTIMIZED
+  const {
+    data: requestsData,
+    isLoading: requestsLoading,
+    error: requestsError,
+    fetchNextPage: fetchNextRequestsPage,
+    hasNextPage: hasNextRequestsPage,
+    isFetchingNextPage: isFetchingNextRequestsPage,
+  } = useInfiniteQuery({
+    queryKey: ["/api/admin/requests", { search: debouncedRequestSearch, status: requestStatusFilter }],
+    queryFn: async ({ pageParam = 1 }) => {
+      const params = new URLSearchParams({
+        page: pageParam.toString(),
+        pageSize: "50",
+        ...(debouncedRequestSearch && { search: debouncedRequestSearch }),
+        ...(requestStatusFilter !== 'all' && { status: requestStatusFilter }),
+      });
+      const response = await fetch(`/api/admin/requests?${params}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch requests: ${response.statusText}`);
+      }
+      return response.json();
     },
+    getNextPageParam: (lastPage: any) => {
+      return lastPage.pagination.hasMore ? lastPage.pagination.page + 1 : undefined;
+    },
+    initialPageParam: 1,
   });
+
+  // Flatten paginated requests for easier usage
+  const allRequests = useMemo(() => {
+    if (!requestsData?.pages) return [];
+    return requestsData.pages.flatMap((page: any) => page.requests || []);
+  }, [requestsData]);
 
   // Fetch admin settings to calculate commission for legacy orders (read-only, no longer configurable)
   const { data: adminSettings } = useQuery({
@@ -374,42 +408,11 @@ export default function AdminDashboard() {
     (req: any) => req.status === "accepted"
   );
 
-  // Filter and sort requests for the Demandes view
-  const filteredAndSortedRequests = [...allRequests]
-    .filter((request: any) => {
-      // Filter by status
-      if (requestStatusFilter !== "all") {
-        if (requestStatusFilter !== request.status) return false;
-      }
-
-      // Filter by search query
-      if (requestSearchQuery.trim() !== "") {
-        const query = requestSearchQuery.toLowerCase().trim();
-        const client = allUsers.find((u: any) => u.id === request.clientId);
-        
-        // Search by reference ID
-        if (request.referenceId?.toString().toLowerCase().includes(query)) return true;
-        
-        // Search by client phone number
-        if (client?.phoneNumber?.toString().toLowerCase().includes(query)) return true;
-        
-        // Search by departure city
-        if (request.fromCity?.toString().toLowerCase().includes(query)) return true;
-        
-        // Search by arrival city
-        if (request.toCity?.toString().toLowerCase().includes(query)) return true;
-        
-        return false;
-      }
-
-      return true;
-    })
-    .sort((a: any, b: any) => {
-      // Sort by date descending (most recent first)
-      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return dateB - dateA;
-    });
+  // Get pagination info from last page (no local filtering needed - backend handles it)
+  const requestsPagination = useMemo(() => {
+    const lastPage = requestsData?.pages[requestsData.pages.length - 1];
+    return lastPage?.pagination ?? null;
+  }, [requestsData]);
 
   const handleValidateDriver = async (driverId: string, validated: boolean) => {
     try {
@@ -1234,10 +1237,15 @@ export default function AdminDashboard() {
                         <Input
                           type="text"
                           placeholder="Rechercher par n° commande, téléphone, ville départ ou arrivée..."
-                          value={requestSearchQuery}
-                          onChange={(e) => setRequestSearchQuery(e.target.value)}
+                          value={requestSearchQueryInput}
+                          onChange={(e) => setRequestSearchQueryInput(e.target.value)}
                           className="pl-10"
                           data-testid="input-search-requests"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              setDebouncedRequestSearch(requestSearchQueryInput);
+                            }
+                          }}
                         />
                       </div>
                     </div>
@@ -1263,17 +1271,17 @@ export default function AdminDashboard() {
                   </div>
                   
                   {/* Results Summary */}
-                  {(requestSearchQuery || requestStatusFilter !== "all") && (
+                  {(requestSearchQueryInput || requestStatusFilter !== "all") && requestsPagination && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <span>
-                        {filteredAndSortedRequests.length} résultat{filteredAndSortedRequests.length > 1 ? 's' : ''} trouvé{filteredAndSortedRequests.length > 1 ? 's' : ''}
+                        {requestsPagination.total} résultat{requestsPagination.total > 1 ? 's' : ''} trouvé{requestsPagination.total > 1 ? 's' : ''}
                       </span>
-                      {(requestSearchQuery || requestStatusFilter !== "all") && (
+                      {(requestSearchQueryInput || requestStatusFilter !== "all") && (
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => {
-                            setRequestSearchQuery("");
+                            setRequestSearchQueryInput("");
                             setRequestStatusFilter("all");
                           }}
                           className="h-6 px-2"
@@ -1286,15 +1294,20 @@ export default function AdminDashboard() {
                   )}
                 </div>
 
-                {allRequests.length === 0 ? (
+                {requestsLoading ? (
                   <div className="text-center py-8">
-                    <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">Aucune demande pour le moment</p>
+                    <LoadingTruck message="Chargement des demandes..." size="md" />
                   </div>
-                ) : filteredAndSortedRequests.length === 0 ? (
+                ) : requestsError ? (
+                  <div className="text-center py-8 text-destructive">
+                    <XCircle className="w-12 h-12 mx-auto mb-4" />
+                    <p className="font-semibold">Erreur lors du chargement</p>
+                    <p className="text-sm mt-2">{requestsError.message}</p>
+                  </div>
+                ) : allRequests.length === 0 ? (
                   <div className="text-center py-8">
                     <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">Aucune demande ne correspond à vos critères de recherche</p>
+                    <p className="text-muted-foreground">Aucune demande trouvée</p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
@@ -1313,8 +1326,10 @@ export default function AdminDashboard() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredAndSortedRequests.map((request: any) => {
-                          const client = allUsers.find((u: any) => u.id === request.clientId);
+                        {allRequests.map((request: any) => {
+                          // Client info is now pre-loaded from backend
+                          const clientName = request.clientName;
+                          const clientPhone = request.clientPhone;
                           
                           // Format date with time: JJ/MM/AAAA - HH:mm
                           const formatDateWithTime = (dateStr: string) => {
@@ -1356,10 +1371,10 @@ export default function AdminDashboard() {
                               <TableCell>
                                 <div className="flex flex-col">
                                   <span className="font-medium">
-                                    {client?.phoneNumber || "Non défini"}
+                                    {clientPhone || "Non défini"}
                                   </span>
                                   <span className="text-xs text-muted-foreground">
-                                    {client?.clientId || "N/A"}
+                                    {clientName || "N/A"}
                                   </span>
                                 </div>
                               </TableCell>
@@ -1374,7 +1389,7 @@ export default function AdminDashboard() {
                               </TableCell>
                               <TableCell>
                                 <Badge variant="secondary" data-testid={`badge-offers-count-${request.id}`}>
-                                  {request.offersCount || 0} {request.offersCount === 1 ? "offre" : "offres"}
+                                  {request.offerCount || 0} {request.offerCount === 1 ? "offre" : "offres"}
                                 </Badge>
                               </TableCell>
                               <TableCell>{getStatusBadge(request.status)}</TableCell>
@@ -1442,6 +1457,27 @@ export default function AdminDashboard() {
                         })}
                       </TableBody>
                     </Table>
+
+                    {/* Load More Button */}
+                    {hasNextRequestsPage && (
+                      <div className="flex justify-center py-4">
+                        <Button
+                          onClick={() => fetchNextRequestsPage()}
+                          disabled={isFetchingNextRequestsPage}
+                          variant="outline"
+                          data-testid="button-load-more-requests"
+                        >
+                          {isFetchingNextRequestsPage ? 'Chargement...' : 'Charger plus'}
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Pagination info */}
+                    {requestsPagination && (
+                      <div className="text-sm text-muted-foreground text-center py-2">
+                        {allRequests.length} sur {requestsPagination.total} demande(s)
+                      </div>
+                    )}
                   </div>
                 )}
               </CardContent>

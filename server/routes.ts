@@ -4027,13 +4027,275 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all clients with stats (admin)
+  // Get all requests with pagination (admin) - PAGINATED & OPTIMIZED
+  app.get("/api/admin/requests", requireAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      // Parse pagination & filter params with validation
+      const rawPage = parseInt(req.query.page as string);
+      const rawPageSize = parseInt(req.query.pageSize as string);
+      
+      // Validate and clamp parameters
+      const page = Math.max(1, isNaN(rawPage) ? 1 : rawPage);
+      const pageSize = Math.max(1, Math.min(100, isNaN(rawPageSize) ? 50 : rawPageSize));
+      const search = (req.query.search as string || '').trim();
+      const statusFilter = req.query.status as string || 'all';
+      const offset = (page - 1) * pageSize;
+
+      console.log(`🔍 [GET /api/admin/requests] page=${page}, pageSize=${pageSize}, search="${search}", status=${statusFilter}`);
+
+      // Build WHERE conditions for search and filters
+      let baseConditions = [];
+      
+      // Status filter
+      if (statusFilter !== 'all') {
+        baseConditions.push(sql`tr.status = ${statusFilter}`);
+      }
+
+      // Search filter (reference ID, cities, client phone)
+      if (search.length >= 2) {
+        baseConditions.push(sql`(
+          tr.reference_id ILIKE ${`%${search}%`} OR
+          tr.from_city ILIKE ${`%${search}%`} OR
+          tr.to_city ILIKE ${`%${search}%`} OR
+          client.phone_number ILIKE ${`%${search}%`} OR
+          client.name ILIKE ${`%${search}%`}
+        )`);
+      }
+
+      const whereClause = baseConditions.length > 0 
+        ? sql`WHERE ${sql.join(baseConditions, sql` AND `)}`
+        : sql``;
+
+      // Get total count for pagination
+      const countResult = await db.execute(sql`
+        SELECT COUNT(*)::int as count
+        FROM transport_requests tr
+        LEFT JOIN users client ON tr.client_id = client.id
+        ${whereClause}
+      `);
+      const totalCount = Number(countResult.rows[0]?.count || 0);
+
+      console.log(`📊 Total requests matching filters: ${totalCount}`);
+
+      // Get paginated requests with aggregated stats using SQL
+      const requestsData = await db.execute(sql`
+        SELECT 
+          tr.id,
+          tr.reference_id,
+          tr.from_city,
+          tr.to_city,
+          tr.distance,
+          tr.goods_type,
+          tr.goods_category,
+          tr.goods_weight,
+          tr.goods_description,
+          tr.status,
+          tr.payment_status,
+          tr.date_time,
+          tr.created_at,
+          tr.accepted_at,
+          tr.completed_at,
+          tr.payment_validated_at,
+          tr.amount,
+          tr.coordination_status,
+          tr.assigned_coordinator_id,
+          tr.client_id,
+          tr.accepted_offer_id,
+          tr.assigned_transporter_id,
+          
+          -- Client info
+          client.name as client_name,
+          client.phone_number as client_phone,
+          
+          -- Offer count (total offers received)
+          COALESCE(
+            (SELECT COUNT(*)::int
+             FROM offers o
+             WHERE o.request_id = tr.id),
+            0
+          ) as offer_count,
+          
+          -- Accepted transporter info (if offer was accepted)
+          accepted_transporter.name as transporter_name,
+          accepted_transporter.phone_number as transporter_phone,
+          
+          -- Accepted offer amount
+          accepted_offer.amount as offer_amount
+          
+        FROM transport_requests tr
+        LEFT JOIN users client ON tr.client_id = client.id
+        LEFT JOIN offers accepted_offer ON tr.accepted_offer_id = accepted_offer.id
+        LEFT JOIN users accepted_transporter ON accepted_offer.transporter_id = accepted_transporter.id
+        ${whereClause}
+        ORDER BY tr.created_at DESC
+        LIMIT ${pageSize}
+        OFFSET ${offset}
+      `);
+
+      // Format results (convert snake_case to camelCase)
+      const requestsWithStats = requestsData.rows.map((row: any) => ({
+        id: row.id,
+        referenceId: row.reference_id,
+        fromCity: row.from_city,
+        toCity: row.to_city,
+        distance: row.distance ? parseFloat(row.distance) : 0,
+        goodsType: row.goods_type,
+        goodsCategory: row.goods_category,
+        goodsWeight: row.goods_weight,
+        goodsDescription: row.goods_description,
+        status: row.status,
+        paymentStatus: row.payment_status,
+        dateTime: row.date_time,
+        createdAt: row.created_at,
+        acceptedAt: row.accepted_at,
+        completedAt: row.completed_at,
+        paymentValidatedAt: row.payment_validated_at,
+        amount: row.amount ? parseFloat(row.amount) : null,
+        coordinationStatus: row.coordination_status,
+        assignedCoordinatorId: row.assigned_coordinator_id,
+        clientId: row.client_id,
+        acceptedOfferId: row.accepted_offer_id,
+        assignedTransporterId: row.assigned_transporter_id,
+        
+        // Enriched data
+        clientName: row.client_name || "Client inconnu",
+        clientPhone: row.client_phone,
+        offerCount: parseInt(row.offer_count) || 0,
+        transporterName: row.transporter_name,
+        transporterPhone: row.transporter_phone,
+        offerAmount: row.offer_amount ? parseFloat(row.offer_amount) : null,
+      }));
+
+      console.log(`✅ Returning ${requestsWithStats.length} requests for page ${page}`);
+
+      res.json({
+        requests: requestsWithStats,
+        pagination: {
+          page,
+          pageSize,
+          total: totalCount,
+          totalPages: Math.ceil(totalCount / pageSize),
+          hasMore: offset + requestsWithStats.length < totalCount,
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching paginated requests:", error);
+      res.status(500).json({ error: "Failed to fetch requests" });
+    }
+  });
+
+  // Get all clients with stats (admin) - PAGINATED & OPTIMIZED
   app.get("/api/admin/clients", requireAuth, requireRole(['admin']), async (req, res) => {
     try {
-      const clientStats = await storage.getClientStatistics();
-      res.json(clientStats);
+      // Parse pagination & search params with validation
+      const rawPage = parseInt(req.query.page as string);
+      const rawPageSize = parseInt(req.query.pageSize as string);
+      
+      // Validate and clamp parameters
+      const page = Math.max(1, isNaN(rawPage) ? 1 : rawPage);
+      const pageSize = Math.max(1, Math.min(100, isNaN(rawPageSize) ? 50 : rawPageSize));
+      const search = (req.query.search as string || '').trim();
+      const offset = (page - 1) * pageSize;
+
+      console.log(`🔍 [GET /api/admin/clients] page=${page}, pageSize=${pageSize}, search="${search}"`);
+
+      // Build WHERE conditions for search
+      let searchCondition = and(eq(users.role, 'client'));
+
+      if (search.length >= 2) {
+        searchCondition = and(
+          searchCondition,
+          sql`(
+            ${users.name} ILIKE ${`%${search}%`} OR
+            ${users.phoneNumber} ILIKE ${`%${search}%`} OR
+            ${users.clientId} ILIKE ${`%${search}%`}
+          )`
+        );
+      }
+
+      // Get total count for pagination
+      const [{ count: totalCount }] = await db.select({
+        count: sql<number>`count(*)::int`
+      })
+      .from(users)
+      .where(searchCondition);
+
+      console.log(`📊 Total clients matching search: ${totalCount}`);
+
+      // Get paginated clients with aggregated stats using SQL
+      const clientsData = await db.execute(sql`
+        SELECT 
+          u.id,
+          u.client_id,
+          u.name,
+          u.phone_number,
+          u.created_at,
+          u.account_status,
+          
+          -- Total orders count
+          COALESCE(
+            (SELECT COUNT(*)::int
+             FROM transport_requests tr
+             WHERE tr.client_id = u.id),
+            0
+          ) as total_orders,
+          
+          -- Completed orders count
+          COALESCE(
+            (SELECT COUNT(*)::int
+             FROM transport_requests tr
+             WHERE tr.client_id = u.id 
+               AND (tr.status = 'completed' OR tr.payment_status = 'paid')),
+            0
+          ) as completed_orders,
+          
+          -- Average rating (ratings given by this client)
+          COALESCE(
+            (SELECT AVG(r.score)
+             FROM ratings r
+             WHERE r.client_id = u.id),
+            0
+          ) as average_rating
+          
+        FROM users u
+        WHERE u.role = 'client'
+          ${search.length >= 2 ? sql`AND (
+            u.name ILIKE ${`%${search}%`} OR
+            u.phone_number ILIKE ${`%${search}%`} OR
+            u.client_id ILIKE ${`%${search}%`}
+          )` : sql``}
+        ORDER BY u.created_at DESC
+        LIMIT ${pageSize}
+        OFFSET ${offset}
+      `);
+
+      // Format results (convert snake_case to camelCase)
+      const clientsWithStats = clientsData.rows.map((row: any) => ({
+        id: row.id,
+        clientId: row.client_id || "N/A",
+        name: row.name || "Non renseigné",
+        phoneNumber: row.phone_number,
+        totalOrders: parseInt(row.total_orders) || 0,
+        completedOrders: parseInt(row.completed_orders) || 0,
+        averageRating: row.average_rating ? parseFloat(row.average_rating).toFixed(2) : "0.00",
+        registrationDate: row.created_at,
+        accountStatus: row.account_status || "active",
+      }));
+
+      console.log(`✅ Returning ${clientsWithStats.length} clients for page ${page}`);
+
+      res.json({
+        clients: clientsWithStats,
+        pagination: {
+          page,
+          pageSize,
+          total: Number(totalCount),
+          totalPages: Math.ceil(Number(totalCount) / pageSize),
+          hasMore: offset + clientsWithStats.length < Number(totalCount),
+        }
+      });
     } catch (error) {
-      console.error("Error fetching client statistics:", error);
+      console.error("Error fetching paginated clients:", error);
       res.status(500).json({ error: "Failed to fetch clients" });
     }
   });
