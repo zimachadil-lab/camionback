@@ -2412,21 +2412,23 @@ export default function CoordinatorDashboard() {
             </Button>
           )}
           
-          {/* View Details button (secondary) */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => handleViewDetails(request)}
-            data-testid={`button-view-details-${request.id}`}
-            className="h-9 w-9 shrink-0"
-          >
-            <Eye className="h-4 w-4" />
-          </Button>
+          {/* View Details button (secondary) - Seulement si pas Production */}
+          {!options.showProductionActions && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleViewDetails(request)}
+              data-testid={`button-view-details-${request.id}`}
+              className="h-9 w-9 shrink-0"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+          )}
         </div>
 
         {/* Actions pour Production - juste avant Notes internes */}
         {options.showProductionActions && (
-          <div className="flex gap-2 pt-3 border-t">
+          <div className="flex items-center gap-2 pt-3 border-t">
             <Button
               variant="outline"
               className="flex-1 gap-2"
@@ -2468,6 +2470,16 @@ export default function CoordinatorDashboard() {
             >
               <Truck className="h-4 w-4" />
               Prise en charge
+            </Button>
+            {/* View Details button aligné à droite pour Production */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleViewDetails(request)}
+              data-testid={`button-view-details-${request.id}`}
+              className="h-9 w-9 shrink-0"
+            >
+              <Eye className="h-4 w-4" />
             </Button>
           </div>
         )}
