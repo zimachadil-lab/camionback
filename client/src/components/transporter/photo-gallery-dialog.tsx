@@ -52,24 +52,24 @@ export function PhotoGalleryDialog({ open, onClose, photos, referenceId }: Photo
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute start-1 sm:start-2 top-1/2 -translate-y-1/2 bg-background/90 hover:bg-background h-8 w-8 sm:h-10 sm:w-10"
+                  className="absolute start-1 sm:start-2 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-black/90 text-white border-2 border-white/50 shadow-xl h-10 w-10 sm:h-12 sm:w-12"
                   onClick={handlePrevious}
                   data-testid="button-previous-photo"
                 >
-                  <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6 rtl:rotate-180" />
+                  <ChevronLeft className="h-6 w-6 sm:h-7 sm:w-7 rtl:rotate-180 stroke-[3]" />
                 </Button>
 
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute end-1 sm:end-2 top-1/2 -translate-y-1/2 bg-background/90 hover:bg-background h-8 w-8 sm:h-10 sm:w-10"
+                  className="absolute end-1 sm:end-2 top-1/2 -translate-y-1/2 bg-black/70 hover:bg-black/90 text-white border-2 border-white/50 shadow-xl h-10 w-10 sm:h-12 sm:w-12"
                   onClick={handleNext}
                   data-testid="button-next-photo"
                 >
-                  <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6 rtl:rotate-180" />
+                  <ChevronRight className="h-6 w-6 sm:h-7 sm:w-7 rtl:rotate-180 stroke-[3]" />
                 </Button>
 
-                <div className="absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 bg-background/90 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
+                <div className="absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 bg-black/80 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-sm sm:text-base font-bold border-2 border-white/30 shadow-xl">
                   {currentIndex + 1} / {photos.length}
                 </div>
               </>
