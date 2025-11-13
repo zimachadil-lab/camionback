@@ -3225,6 +3225,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           transporterId: offer.transporterId,
           referenceId: request.referenceId,
           amount: offer.amount,
+          platformFee: request.platformFee || "0", // CamionBack commission from request
         });
       }
 
@@ -3763,41 +3764,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Demandes totales
       const totalRequests = requests.length;
       
-      // Commissions totales
+      // ============================
+      // KPIs financiers basés sur les CONTRATS (pas les offres)
+      // ============================
+      
+      // Helper: Safe numeric conversion
+      const safeNumber = (value: any): number => {
+        if (value === null || value === undefined) return 0;
+        const num = typeof value === 'string' ? parseFloat(value) : Number(value);
+        return isNaN(num) ? 0 : num;
+      };
+      
+      // Chiffre d'affaires total (somme des montants des contrats)
+      const totalRevenue = contracts.reduce((sum, contract) => {
+        return sum + safeNumber(contract.amount);
+      }, 0);
+      
+      // Cotisation CamionBack totale (somme des platformFee)
+      const totalPlatformFee = contracts.reduce((sum, contract) => {
+        return sum + safeNumber(contract.platformFee);
+      }, 0);
+      
+      // Paiements transporteurs totaux (amount - platformFee)
+      const totalTransporterPayouts = contracts.reduce((sum, contract) => {
+        const amount = safeNumber(contract.amount);
+        const fee = safeNumber(contract.platformFee);
+        return sum + (amount - fee);
+      }, 0);
+      
+      // Moyenne cotisation par contrat (only count contracts with platformFee)
+      const contractsWithFee = contracts.filter(c => safeNumber(c.platformFee) > 0);
+      const averagePlatformFee = contractsWithFee.length > 0 
+        ? totalPlatformFee / contractsWithFee.length
+        : 0;
+      
+      // KPIs mensuels pour les tendances (avec conversion sécurisée)
+      const contractsLastMonth = contracts.filter(c => 
+        c.createdAt && new Date(c.createdAt) >= startOfLastMonth && new Date(c.createdAt) <= endOfLastMonth
+      );
+      const revenueLastMonth = contractsLastMonth.reduce((sum, c) => sum + safeNumber(c.amount), 0);
+      const platformFeeLastMonth = contractsLastMonth.reduce((sum, c) => sum + safeNumber(c.platformFee), 0);
+      
+      const contractsThisMonth = contracts.filter(c => 
+        c.createdAt && new Date(c.createdAt) >= startOfCurrentMonth
+      );
+      const revenueThisMonth = contractsThisMonth.reduce((sum, c) => sum + safeNumber(c.amount), 0);
+      const platformFeeThisMonth = contractsThisMonth.reduce((sum, c) => sum + safeNumber(c.platformFee), 0);
+      
+      // Tendances mensuelles
+      const revenueTrend = revenueLastMonth > 0
+        ? Math.round(((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100)
+        : revenueThisMonth > 0 ? 100 : 0;
+        
+      const platformFeeTrend = platformFeeLastMonth > 0
+        ? Math.round(((platformFeeThisMonth - platformFeeLastMonth) / platformFeeLastMonth) * 100)
+        : platformFeeThisMonth > 0 ? 100 : 0;
+      
+      // Taux de concrétisation (contracts / valid requests)
+      // Un contrat = une commande concrétisée
+      // Ne compter que les requests valides (pas annulées/archivées)
+      const validRequests = requests.filter(r => 
+        r.status !== 'cancelled' && r.status !== 'archived'
+      );
+      const realizationRate = validRequests.length > 0 
+        ? Math.round((contracts.length / validRequests.length) * 100)
+        : 0;
+      
+      // Taux de conversion offres (pour comparaison)
       const acceptedOffers = offers.filter(o => o.status === "accepted");
-      const adminSettings = await storage.getAdminSettings();
-      const commissionRate = adminSettings?.commissionPercentage ? parseFloat(adminSettings.commissionPercentage) : 10;
-      const totalCommissions = acceptedOffers.reduce((sum, offer) => {
-        const amount = parseFloat(offer.amount);
-        const commission = (amount * commissionRate) / 100;
-        return sum + commission;
-      }, 0);
-      
-      const acceptedOffersLastMonth = acceptedOffers.filter(o => 
-        o.createdAt && new Date(o.createdAt) >= startOfLastMonth && new Date(o.createdAt) <= endOfLastMonth
-      );
-      const commissionsLastMonth = acceptedOffersLastMonth.reduce((sum, offer) => {
-        const amount = parseFloat(offer.amount);
-        const commission = (amount * commissionRate) / 100;
-        return sum + commission;
-      }, 0);
-      
-      const acceptedOffersThisMonth = acceptedOffers.filter(o => 
-        o.createdAt && new Date(o.createdAt) >= startOfCurrentMonth
-      );
-      const commissionsThisMonth = acceptedOffersThisMonth.reduce((sum, offer) => {
-        const amount = parseFloat(offer.amount);
-        const commission = (amount * commissionRate) / 100;
-        return sum + commission;
-      }, 0);
-      
-      const commissionsTrend = commissionsLastMonth > 0
-        ? Math.round(((commissionsThisMonth - commissionsLastMonth) / commissionsLastMonth) * 100)
-        : commissionsThisMonth > 0 ? 100 : 0;
-      
-      // Taux de conversion
       const totalOffers = offers.length;
-      const conversionRate = totalOffers > 0 
+      const offerConversionRate = totalOffers > 0 
         ? Math.round((acceptedOffers.length / totalOffers) * 100)
         : 0;
       
@@ -3839,18 +3875,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }, 0);
       
       const stats = {
-        // KPIs principaux
+        // KPIs principaux - Utilisateurs
         activeClients: activeClientsCount,
         activeClientsTrend,
         activeDrivers: activeTransportersCount,
         activeDriversTrend: activeTransportersTrend,
         totalRequests,
-        totalCommissions: Math.round(totalCommissions),
-        commissionsTrend,
         contracts: contracts.length,
         
+        // KPIs financiers (basés sur les contrats) - NOUVEAUX
+        totalRevenue: Math.round(totalRevenue),
+        revenueTrend,
+        totalPlatformFee: Math.round(totalPlatformFee),
+        platformFeeTrend,
+        totalTransporterPayouts: Math.round(totalTransporterPayouts),
+        averagePlatformFee: Math.round(averagePlatformFee),
+        
+        // Taux et conversions
+        realizationRate, // Taux de concrétisation (contrats / valid requests)
+        offerConversionRate, // Taux de conversion d'offres (pour comparaison)
+        conversionRate: offerConversionRate, // Alias pour compatibilité
+        
         // Statistiques détaillées
-        conversionRate,
         completedRequests,
         openRequests: requests.filter(r => r.status === "open").length,
         averageRating: Math.round(averageRating * 10) / 10,

@@ -191,7 +191,8 @@ export const contracts = pgTable("contracts", {
   clientId: varchar("client_id").notNull().references(() => users.id),
   transporterId: varchar("transporter_id").notNull().references(() => users.id),
   referenceId: text("reference_id").notNull(), // Copy of request reference for easy display
-  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(), // Agreed amount
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(), // Agreed amount (total client pays)
+  platformFee: decimal("platform_fee", { precision: 10, scale: 2 }), // CamionBack commission (40% of amount) - nullable for legacy contracts
   status: text("status").default("in_progress"), // in_progress, marked_paid_transporter, marked_paid_client, completed
   createdAt: timestamp("created_at").defaultNow(),
 });

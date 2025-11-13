@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -1550,9 +1551,9 @@ export default function AdminDashboard() {
                           <TableHead>N° Commande</TableHead>
                           <TableHead>Client</TableHead>
                           <TableHead>Transporteur</TableHead>
-                          <TableHead>Montant</TableHead>
+                          <TableHead>Montant total</TableHead>
+                          <TableHead>Cotisation CamionBack</TableHead>
                           <TableHead>Date création</TableHead>
-                          <TableHead>Statut</TableHead>
                           <TableHead className="text-right">Action</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -1598,11 +1599,11 @@ export default function AdminDashboard() {
                               <TableCell className="font-semibold" data-testid={`text-contract-amount-${contract.id}`}>
                                 {contract.amount} MAD
                               </TableCell>
+                              <TableCell className="font-semibold text-emerald-600 dark:text-emerald-400" data-testid={`text-contract-platform-fee-${contract.id}`}>
+                                {contract.platformFee ? `${contract.platformFee} MAD` : "N/A"}
+                              </TableCell>
                               <TableCell data-testid={`text-contract-date-${contract.id}`}>
                                 {formatDate(contract.createdAt)}
-                              </TableCell>
-                              <TableCell data-testid={`badge-contract-status-${contract.id}`}>
-                                {getStatusBadge(contract.status)}
                               </TableCell>
                               <TableCell className="text-right">
                                 <Button
@@ -2612,47 +2613,106 @@ export default function AdminDashboard() {
               {/* KPI Principaux */}
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <KpiCard
-                  title="Clients actifs"
-                  value={adminStats?.activeClients || 0}
-                  icon={Users}
-                  trend={adminStats?.activeClientsTrend !== undefined ? formatTrend(adminStats.activeClientsTrend) : "..."}
-                  trendUp={adminStats?.activeClientsTrend ? adminStats.activeClientsTrend > 0 : undefined}
+                  title="Chiffre d'affaires"
+                  value={`${adminStats?.totalRevenue?.toLocaleString("fr-MA") || 0} MAD`}
+                  icon={DollarSign}
+                  trend={adminStats?.revenueTrend !== undefined ? formatTrend(adminStats.revenueTrend) : "..."}
+                  trendUp={adminStats?.revenueTrend ? adminStats.revenueTrend > 0 : undefined}
                 />
                 <KpiCard
-                  title="Transporteurs actifs"
-                  value={adminStats?.activeDrivers || 0}
-                  icon={Users}
-                  trend={adminStats?.activeDriversTrend !== undefined ? formatTrend(adminStats.activeDriversTrend) : "..."}
-                  trendUp={adminStats?.activeDriversTrend ? adminStats.activeDriversTrend > 0 : undefined}
+                  title="Cotisation CamionBack"
+                  value={`${adminStats?.totalPlatformFee?.toLocaleString("fr-MA") || 0} MAD`}
+                  icon={DollarSign}
+                  trend={adminStats?.platformFeeTrend !== undefined ? formatTrend(adminStats.platformFeeTrend) : "..."}
+                  trendUp={adminStats?.platformFeeTrend ? adminStats.platformFeeTrend > 0 : undefined}
                 />
                 <KpiCard
-                  title="Demandes totales"
-                  value={adminStats?.totalRequests || 0}
-                  icon={Package}
+                  title="Paiements transporteurs"
+                  value={`${adminStats?.totalTransporterPayouts?.toLocaleString("fr-MA") || 0} MAD`}
+                  icon={DollarSign}
                   trend=""
                   trendUp={undefined}
                 />
                 <KpiCard
-                  title="Commissions totales"
-                  value={`${adminStats?.totalCommissions?.toLocaleString("fr-MA") || 0} MAD`}
-                  icon={DollarSign}
-                  trend={adminStats?.commissionsTrend !== undefined ? formatTrend(adminStats.commissionsTrend) : "..."}
-                  trendUp={adminStats?.commissionsTrend ? adminStats.commissionsTrend > 0 : undefined}
+                  title="Taux de concrétisation"
+                  value={`${adminStats?.realizationRate || 0}%`}
+                  icon={Package}
+                  trend=""
+                  trendUp={undefined}
                 />
+              </div>
+
+              {/* Statistiques d'utilisateurs */}
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Clients actifs</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-primary mb-2">
+                      {adminStats?.activeClients || 0}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {adminStats?.activeClientsTrend !== undefined ? formatTrend(adminStats.activeClientsTrend) : "..."}
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Transporteurs actifs</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-primary mb-2">
+                      {adminStats?.activeDrivers || 0}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {adminStats?.activeDriversTrend !== undefined ? formatTrend(adminStats.activeDriversTrend) : "..."}
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Contrats créés</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-primary mb-2">
+                      {adminStats?.contracts || 0}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Total de contrats signés
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Moyenne cotisation</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-primary mb-2">
+                      {adminStats?.averagePlatformFee?.toLocaleString("fr-MA") || 0} MAD
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Par contrat
+                    </p>
+                  </CardContent>
+                </Card>
               </div>
 
               {/* Statistiques détaillées */}
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <Card>
                 <CardHeader>
-                  <CardTitle>Taux de conversion</CardTitle>
+                  <CardTitle>Demandes totales</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-4xl font-bold text-primary mb-2">
-                    {adminStats?.conversionRate || 0}%
+                    {adminStats?.totalRequests || 0}
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Offres acceptées / Total des offres
+                    Toutes demandes confondues
                   </p>
                 </CardContent>
               </Card>
@@ -3208,265 +3268,216 @@ export default function AdminDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Contract Details Dialog */}
+      {/* Contract Details Dialog - Invoice Style */}
       <Dialog open={contractDetailsOpen} onOpenChange={setContractDetailsOpen}>
-        <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Détails du contrat</DialogTitle>
-            <DialogDescription>
-              Informations complètes sur le contrat et la commande associée
-            </DialogDescription>
+        <DialogContent className="max-w-[95vw] sm:max-w-3xl max-h-[90vh] overflow-y-auto print:bg-white print:text-black">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Facture / Contrat</DialogTitle>
+            <DialogDescription>Document contractuel de transport</DialogDescription>
           </DialogHeader>
           {selectedContract && (() => {
             const request = allRequests.find((r: any) => r.id === selectedContract.requestId);
             const offer = allOffers.find((o: any) => o.id === selectedContract.offerId);
             const client = allUsers.find((u: any) => u.id === selectedContract.clientId);
             const transporter = allUsers.find((u: any) => u.id === selectedContract.transporterId);
+            
+            const transporterPayout = Number(selectedContract.amount || 0) - Number(selectedContract.platformFee || 0);
 
             return (
-              <div className="mt-4 space-y-6">
-                {/* Header avec statut */}
-                <div className="flex items-center justify-between pb-4 border-b">
-                  <div>
-                    <h3 className="text-lg font-semibold">Contrat {selectedContract.referenceId}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Créé le {new Date(selectedContract.createdAt).toLocaleDateString("fr-FR")}
-                    </p>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <label className="text-sm font-medium">Changer le statut</label>
-                    <Select
-                      value={selectedContract.status}
-                      onValueChange={async (value) => {
-                        try {
-                          await apiRequest("PATCH", `/api/contracts/${selectedContract.id}`, { status: value });
-                          toast({
-                            title: "Statut mis à jour",
-                            description: "Le statut du contrat a été modifié avec succès",
-                          });
-                          queryClient.invalidateQueries({ queryKey: ["/api/contracts"] });
-                          setContractDetailsOpen(false);
-                        } catch (error) {
-                          toast({
-                            variant: "destructive",
-                            title: "Erreur",
-                            description: "Échec de la mise à jour du statut",
-                          });
-                        }
-                      }}
-                    >
-                      <SelectTrigger className="w-[250px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="in_progress">En cours d'exécution</SelectItem>
-                        <SelectItem value="marked_paid_transporter">Payé côté transporteur</SelectItem>
-                        <SelectItem value="marked_paid_client">Payé côté client</SelectItem>
-                        <SelectItem value="completed">Terminé</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {/* Informations financières */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Informations financières</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Montant convenu</span>
-                      <span className="font-semibold">{selectedContract.amount} MAD</span>
+              <Card className="border-0 shadow-none bg-card text-card-foreground">
+                <CardHeader className="space-y-4 px-4 sm:px-6 py-6">
+                  {/* Branded Header */}
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10">
+                        <TruckIcon className="w-7 h-7 text-primary" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-bold text-primary">CamionBack</h2>
+                        <p className="text-xs text-muted-foreground">Plateforme logistique Maroc</p>
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
+                    <div className="text-left sm:text-right">
+                      <p className="text-sm font-semibold">FACTURE / CONTRAT</p>
+                      <p className="text-lg font-bold text-primary">{selectedContract.referenceId}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Émis le {new Date(selectedContract.createdAt).toLocaleDateString("fr-FR")}
+                      </p>
+                    </div>
+                  </div>
+                  <Separator />
+                </CardHeader>
 
-                {/* Informations client et transporteur */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <Users className="w-4 h-4" />
-                        Client
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Identifiant</p>
-                        <p className="font-medium">Client {client?.clientId || "Non défini"}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Ville</p>
-                        <p className="font-medium flex items-center gap-2">
-                          <MapPin className="w-4 h-4" />
-                          {client?.city || "N/A"}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <TruckIcon className="w-4 h-4" />
-                        Transporteur
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Nom</p>
-                        <p className="font-medium">{transporter?.name || "N/A"}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Téléphone</p>
-                        <p className="font-medium flex items-center gap-2">
-                          <Phone className="w-4 h-4" />
-                          {transporter?.phoneNumber || "N/A"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Ville</p>
-                        <p className="font-medium flex items-center gap-2">
-                          <MapPin className="w-4 h-4" />
-                          {transporter?.city || "N/A"}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Détails de la commande */}
-                {request && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <FileText className="w-4 h-4" />
-                        Détails de la commande
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm text-muted-foreground">Ville de départ</p>
-                          <p className="font-medium">{request.fromCity}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Ville d'arrivée</p>
-                          <p className="font-medium">{request.toCity}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Date souhaitée</p>
-                          <p className="font-medium flex items-center gap-2">
-                            <Calendar className="w-4 h-4" />
-                            {new Date(request.dateTime).toLocaleDateString("fr-FR")}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Type de marchandise</p>
-                          <p className="font-medium">{getCategoryConfig(request.goodsType).label}</p>
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Description</p>
-                        <p className="mt-1">{request.description}</p>
-                      </div>
-                      {/* Handling/Manutention Information */}
-                      {request.handlingRequired !== undefined && request.handlingRequired !== null && (
-                        <div className="p-3 rounded-lg border bg-muted/30 space-y-2">
-                          <div className="flex items-center gap-2 text-sm font-medium">
-                            <Weight className="w-4 h-4" />
-                            <span>Manutention : {request.handlingRequired ? 'Oui' : 'Non'}</span>
-                          </div>
-                          {request.handlingRequired && (
-                            <div className="grid grid-cols-2 gap-2 text-xs">
-                              <div className="flex flex-col gap-1">
-                                <div className="flex items-center gap-1 text-muted-foreground">
-                                  <Building2 className="w-3 h-3" />
-                                  <span className="font-medium">Départ</span>
-                                </div>
-                                <div className="pl-4">
-                                  {request.departureFloor !== undefined && request.departureFloor !== null ? (
-                                    <>
-                                      <div>{request.departureFloor === 0 ? 'RDC' : `${request.departureFloor}ᵉ étage`}</div>
-                                      <div className="text-muted-foreground flex items-center gap-1">
-                                        Ascenseur {request.departureElevator ? <CheckCircle className="w-3 h-3 text-green-600" /> : <XCircle className="w-3 h-3 text-red-600" />}
-                                      </div>
-                                    </>
-                                  ) : (
-                                    <div className="text-muted-foreground">Non spécifié</div>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="flex flex-col gap-1">
-                                <div className="flex items-center gap-1 text-muted-foreground">
-                                  <Home className="w-3 h-3" />
-                                  <span className="font-medium">Arrivée</span>
-                                </div>
-                                <div className="pl-4">
-                                  {request.arrivalFloor !== undefined && request.arrivalFloor !== null ? (
-                                    <>
-                                      <div>{request.arrivalFloor === 0 ? 'RDC' : `${request.arrivalFloor}ᵉ étage`}</div>
-                                      <div className="text-muted-foreground flex items-center gap-1">
-                                        Ascenseur {request.arrivalElevator ? <CheckCircle className="w-3 h-3 text-green-600" /> : <XCircle className="w-3 h-3 text-red-600" />}
-                                      </div>
-                                    </>
-                                  ) : (
-                                    <div className="text-muted-foreground">Non spécifié</div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
+                <CardContent className="space-y-6 px-4 sm:px-6 pb-6">
+                  {/* Parties - Client & Transporteur */}
+                  <div>
+                    <h3 className="text-sm font-semibold mb-3 uppercase text-muted-foreground">Parties contractantes</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Client */}
+                      <div className="rounded-md bg-muted/20 border border-border/50 p-4 space-y-2" data-testid="invoice-client-details">
+                        <p className="text-xs font-semibold uppercase text-muted-foreground">Client</p>
+                        <div className="space-y-1">
+                          <p className="font-medium">Client {client?.clientId || "Non défini"}</p>
+                          {client?.city && (
+                            <p className="text-sm text-muted-foreground flex items-center gap-1">
+                              <MapPin className="w-3 h-3" />
+                              {client.city}
+                            </p>
                           )}
                         </div>
-                      )}
-                      {request.photos && request.photos.length > 0 && (
-                        <div>
-                          <p className="text-sm text-muted-foreground mb-2">Photos</p>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                            {request.photos.map((photo: string, index: number) => (
-                              <img
-                                key={index}
-                                src={photo}
-                                alt={`Photo ${index + 1}`}
-                                className="w-full h-24 object-cover rounded-lg border"
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
+                      </div>
 
-                {/* Détails de l'offre */}
-                {offer && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <Package className="w-4 h-4" />
-                        Détails de l'offre
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm text-muted-foreground">Date de prise en charge</p>
-                          <p className="font-medium flex items-center gap-2">
-                            <Calendar className="w-4 h-4" />
-                            {new Date(offer.pickupDate).toLocaleDateString("fr-FR")}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Type de chargement</p>
-                          <p className="font-medium">
-                            {offer.loadType === "return" ? "Retour (camion vide)" : "Groupage / Partagé"}
-                          </p>
+                      {/* Transporteur */}
+                      <div className="rounded-md bg-muted/20 border border-border/50 p-4 space-y-2" data-testid="invoice-transporter-details">
+                        <p className="text-xs font-semibold uppercase text-muted-foreground">Transporteur</p>
+                        <div className="space-y-1">
+                          <p className="font-medium">{transporter?.name || "N/A"}</p>
+                          {transporter?.phoneNumber && (
+                            <p className="text-sm text-muted-foreground flex items-center gap-1">
+                              <Phone className="w-3 h-3" />
+                              {transporter.phoneNumber}
+                            </p>
+                          )}
+                          {transporter?.city && (
+                            <p className="text-sm text-muted-foreground flex items-center gap-1">
+                              <MapPin className="w-3 h-3" />
+                              {transporter.city}
+                            </p>
+                          )}
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Service Summary */}
+                  {request && (
+                    <div>
+                      <h3 className="text-sm font-semibold mb-3 uppercase text-muted-foreground">Description du service</h3>
+                      <div className="space-y-3" data-testid="invoice-service-details">
+                        {/* Route */}
+                        <div className="flex items-center gap-2 text-base">
+                          <MapPin className="w-5 h-5 text-primary flex-shrink-0" />
+                          <span className="font-medium">
+                            {request.fromCity} → {request.toCity}
+                          </span>
+                        </div>
+
+                        {/* Date & Type */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-muted-foreground" />
+                            <span>
+                              <span className="text-muted-foreground">Date: </span>
+                              {new Date(request.dateTime).toLocaleDateString("fr-FR")}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Package className="w-4 h-4 text-muted-foreground" />
+                            <span>
+                              <span className="text-muted-foreground">Type: </span>
+                              {getCategoryConfig(request.goodsType).label}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Description */}
+                        {request.description && (
+                          <div className="mt-2">
+                            <p className="text-xs text-muted-foreground mb-1">Description:</p>
+                            <p className="text-sm">{request.description}</p>
+                          </div>
+                        )}
+
+                        {/* Load Type (if offer exists) */}
+                        {offer && (
+                          <div className="text-sm">
+                            <span className="text-muted-foreground">Type de chargement: </span>
+                            <span className="font-medium">
+                              {offer.loadType === "return" ? "Retour (camion vide)" : "Groupage / Partagé"}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  <Separator />
+
+                  {/* Financial Breakdown */}
+                  <div>
+                    <h3 className="text-sm font-semibold mb-3 uppercase text-muted-foreground">Détails financiers</h3>
+                    <div 
+                      className="rounded-lg bg-primary/5 dark:bg-primary/10 border border-primary/20 p-4 space-y-3"
+                      data-testid="invoice-financial-breakdown"
+                    >
+                      <div className="flex justify-between items-center text-sm sm:text-base">
+                        <span className="text-muted-foreground">Montant total client</span>
+                        <span className="font-semibold">{selectedContract.amount || "—"} MAD</span>
+                      </div>
+                      
+                      <Separator className="bg-border/50" />
+                      
+                      <div className="flex justify-between items-center text-sm sm:text-base">
+                        <span className="text-muted-foreground">Cotisation CamionBack (40%)</span>
+                        <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                          {selectedContract.platformFee || "—"} MAD
+                        </span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center text-sm sm:text-base">
+                        <span className="text-muted-foreground">Paiement transporteur (60%)</span>
+                        <span className="font-semibold">
+                          {transporterPayout.toFixed(2)} MAD
+                        </span>
+                      </div>
+                      
+                      <Separator className="bg-primary/30" />
+                      
+                      <div className="flex justify-between items-center text-base sm:text-lg pt-2">
+                        <span className="font-bold">TOTAL TTC</span>
+                        <span className="font-bold text-primary text-xl">
+                          {selectedContract.amount || "—"} MAD
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Footer - Legal & Contact */}
+                  <div className="space-y-4">
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <p className="font-medium">Notes:</p>
+                      <p>• Ce document constitue la preuve contractuelle de l'accord de transport entre les parties.</p>
+                      <p>• La cotisation CamionBack (40%) est prélevée sur le montant total pour les services de la plateforme.</p>
+                      <p>• Le transporteur reçoit 60% du montant total comme rémunération pour le service de transport.</p>
+                    </div>
+
+                    <Separator />
+
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                      <div className="text-xs text-muted-foreground">
+                        <p className="font-medium text-primary mb-1">CamionBack</p>
+                        <p>Plateforme logistique Maroc</p>
+                        <p>contact@camionback.ma</p>
+                      </div>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.print()}
+                        className="gap-2"
+                        data-testid="button-print-invoice"
+                      >
+                        <FileText className="w-4 h-4" />
+                        Imprimer
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             );
           })()}
         </DialogContent>
