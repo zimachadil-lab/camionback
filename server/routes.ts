@@ -2456,7 +2456,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        // Find the accepted offer for this request
+        // Try to find an accepted offer for this request
         const acceptedOffers = await db.select()
           .from(offers)
           .where(
@@ -2467,22 +2467,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
           )
           .limit(1);
 
-        if (!acceptedOffers[0]) {
-          return res.status(400).json({ 
-            error: "Cannot validate payment: No accepted offer found for this request" 
-          });
+        const acceptedOffer = acceptedOffers[0];
+        
+        // Determine contract amount and offer ID
+        // Case 1: Normal workflow with accepted offer
+        // Case 2: Manual assignment by coordinator (no offer, use request.finalPrice)
+        let contractAmount: string;
+        let contractOfferId: string | null = null;
+        
+        if (acceptedOffer) {
+          contractAmount = acceptedOffer.amount;
+          contractOfferId = acceptedOffer.id;
+          console.log(`✅ Creating contract for request ${request.referenceId} from accepted offer`);
+        } else {
+          // Manual assignment: use clientTotal as the contract amount
+          if (!request.clientTotal) {
+            return res.status(400).json({ 
+              error: "Cannot validate payment: No price information available for this request" 
+            });
+          }
+          
+          contractAmount = request.clientTotal;
+          console.log(`✅ Creating contract for request ${request.referenceId} from manual assignment (no offer)`);
         }
-
-        console.log(`✅ Creating contract for request ${request.referenceId} before payment validation`);
         
         try {
           await storage.createContract({
             requestId: request.id,
-            offerId: acceptedOffers[0].id,
+            offerId: contractOfferId, // null for manual assignments
             clientId: request.clientId,
             transporterId: request.assignedTransporterId,
             referenceId: request.referenceId,
-            amount: acceptedOffers[0].amount,
+            amount: contractAmount,
             platformFee: request.platformFee || "0",
           });
         } catch (contractError) {

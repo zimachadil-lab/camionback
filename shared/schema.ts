@@ -183,11 +183,11 @@ export const emptyReturns = pgTable("empty_returns", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Contracts - Generated when client accepts an offer
+// Contracts - Generated when client accepts an offer OR when coordinator assigns manually
 export const contracts = pgTable("contracts", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   requestId: varchar("request_id").notNull().references(() => transportRequests.id, { onDelete: 'cascade' }),
-  offerId: varchar("offer_id").notNull().references(() => offers.id),
+  offerId: varchar("offer_id").references(() => offers.id), // Nullable: null for manual coordinator assignments
   clientId: varchar("client_id").notNull().references(() => users.id),
   transporterId: varchar("transporter_id").notNull().references(() => users.id),
   referenceId: text("reference_id").notNull(), // Copy of request reference for easy display
