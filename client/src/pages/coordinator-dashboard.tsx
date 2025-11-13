@@ -771,6 +771,9 @@ export default function CoordinatorDashboard() {
   // State for transporter info dialog
   const [selectedTransporterInfo, setSelectedTransporterInfo] = useState<any>(null);
   
+  // State for empty returns dialog
+  const [showReturnsDialog, setShowReturnsDialog] = useState(false);
+  
   const { toast} = useToast();
 
   const handleLogout = () => {
@@ -2801,6 +2804,8 @@ export default function CoordinatorDashboard() {
           role: "coordinateur",
         }}
         onLogout={handleLogout}
+        onViewReturns={() => setShowReturnsDialog(true)}
+        returnsCount={emptyReturns.length}
       />
 
       <main className="container mx-auto p-4 max-w-7xl">
@@ -4091,6 +4096,139 @@ export default function CoordinatorDashboard() {
               variant="outline" 
               onClick={() => setSelectedTransporterInfo(null)}
               className="w-full"
+            >
+              Fermer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Empty Returns Dialog - Coordinator View */}
+      <Dialog open={showReturnsDialog} onOpenChange={setShowReturnsDialog}>
+        <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Truck className="w-5 h-5 text-[#00d4b2]" />
+              Retours à vide disponibles
+            </DialogTitle>
+            <DialogDescription>
+              Transporteurs ayant annoncé des trajets retour à vide
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-4">
+            {emptyReturnsLoading ? (
+              <div className="text-center py-12">
+                <LoadingTruck message="Chargement des retours..." size="md" />
+              </div>
+            ) : emptyReturns.length === 0 ? (
+              <div className="text-center py-12">
+                <Truck className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+                <p className="text-muted-foreground text-lg font-medium">
+                  Aucun retour à vide disponible
+                </p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Les transporteurs annonceront leurs trajets retour ici
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {emptyReturns.map((emptyReturn: any) => {
+                  const transporter = allUsers.find((u: any) => u.id === emptyReturn.transporterId);
+                  const truckPhotos = loadedTruckPhotos[emptyReturn.transporterId];
+                  const firstPhoto = Array.isArray(truckPhotos) && truckPhotos.length > 0 
+                    ? truckPhotos[0] 
+                    : null;
+
+                  return (
+                    <Card 
+                      key={emptyReturn.id} 
+                      className="hover-elevate overflow-hidden"
+                      data-testid={`card-empty-return-${emptyReturn.id}`}
+                    >
+                      <CardContent className="p-0">
+                        {/* Truck Photo Section */}
+                        <div className="relative h-40 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
+                          {firstPhoto ? (
+                            <img
+                              src={firstPhoto}
+                              alt="Camion"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Truck className="w-16 h-16 text-gray-400 dark:text-gray-600" />
+                            </div>
+                          )}
+                          {/* Badge Overlay */}
+                          <div className="absolute top-2 right-2">
+                            <Badge className="bg-[#00d4b2] text-white border-0 shadow-md">
+                              Retour à vide
+                            </Badge>
+                          </div>
+                        </div>
+
+                        {/* Content Section */}
+                        <div className="p-4 space-y-3">
+                          {/* Route Information */}
+                          <div className="flex items-center gap-2 text-sm">
+                            <MapPin className="w-4 h-4 text-[#00d4b2] flex-shrink-0" />
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              <span className="font-semibold truncate">{emptyReturn.fromCity}</span>
+                              <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                              <span className="font-semibold truncate">{emptyReturn.toCity}</span>
+                            </div>
+                          </div>
+
+                          {/* Date */}
+                          <div className="flex items-center gap-2 text-sm">
+                            <Calendar className="w-4 h-4 text-[#00d4b2]" />
+                            <span className="text-muted-foreground">
+                              {new Date(emptyReturn.returnDate).toLocaleDateString("fr-FR", {
+                                weekday: "long",
+                                day: "numeric",
+                                month: "long",
+                                year: "numeric"
+                              })}
+                            </span>
+                          </div>
+
+                          {/* Transporter Info */}
+                          <div className="pt-3 border-t space-y-2">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#17cfcf] to-[#0ea5a5] flex items-center justify-center text-white font-semibold text-sm">
+                                {transporter?.name ? transporter.name.charAt(0).toUpperCase() : "T"}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm truncate">
+                                  {transporter?.name || "Transporteur inconnu"}
+                                </p>
+                                <a 
+                                  href={`tel:${transporter?.phoneNumber}`}
+                                  className="text-xs text-[#00d4b2] hover:underline flex items-center gap-1"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Phone className="w-3 h-3" />
+                                  {transporter?.phoneNumber || "N/A"}
+                                </a>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="mt-6">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowReturnsDialog(false)}
+              className="w-full sm:w-auto"
+              data-testid="button-close-returns-dialog"
             >
               Fermer
             </Button>
