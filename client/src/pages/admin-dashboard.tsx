@@ -2350,9 +2350,9 @@ export default function AdminDashboard() {
                                   {client.completedOrders}
                                 </TableCell>
                                 <TableCell data-testid={`text-client-rating-${client.id}`}>
-                                  {client.averageRating > 0 ? (
+                                  {Number(client.averageRating) > 0 ? (
                                     <div className="flex items-center gap-1">
-                                      ⭐ {client.averageRating.toFixed(1)}
+                                      ⭐ {Number(client.averageRating).toFixed(1)}
                                     </div>
                                   ) : (
                                     <span className="text-muted-foreground">Aucune note</span>
