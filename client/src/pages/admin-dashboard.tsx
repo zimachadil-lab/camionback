@@ -359,15 +359,56 @@ export default function AdminDashboard() {
     enabled: viewPhotoDialogOpen && !!viewPhotoTransporterId,
   });
 
-  // Fetch clients with stats
-  const { data: clientsWithStats = [] } = useQuery({
-    queryKey: ["/api/admin/clients"],
-    queryFn: async () => {
-      const response = await fetch("/api/admin/clients");
-      const data = await response.json();
-      return Array.isArray(data) ? data : [];
+  // Client search state with debounce
+  const [clientSearchQuery, setClientSearchQuery] = useState("");
+  const [debouncedClientSearch, setDebouncedClientSearch] = useState("");
+
+  // Debounce search input (300ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedClientSearch(clientSearchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [clientSearchQuery]);
+
+  // Fetch clients with infinite query (paginated)
+  const {
+    data: clientsData,
+    isLoading: clientsLoading,
+    error: clientsError,
+    fetchNextPage: fetchNextClientsPage,
+    hasNextPage: hasNextClientsPage,
+    isFetchingNextPage: isFetchingNextClientsPage,
+  } = useInfiniteQuery({
+    queryKey: ["/api/admin/clients", { search: debouncedClientSearch }],
+    queryFn: async ({ pageParam = 1 }) => {
+      const params = new URLSearchParams({
+        page: pageParam.toString(),
+        pageSize: "50",
+        ...(debouncedClientSearch && { search: debouncedClientSearch }),
+      });
+      const response = await fetch(`/api/admin/clients?${params}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch clients: ${response.statusText}`);
+      }
+      return response.json();
     },
+    getNextPageParam: (lastPage: any) => {
+      return lastPage.pagination?.hasMore ? lastPage.pagination.page + 1 : undefined;
+    },
+    initialPageParam: 1,
   });
+
+  // Flatten all pages into single array
+  const clientsWithStats = useMemo(() => {
+    return clientsData?.pages.flatMap(page => page.clients) ?? [];
+  }, [clientsData]);
+
+  // Get pagination info from last page (contains current state)
+  const clientsPagination = useMemo(() => {
+    const lastPage = clientsData?.pages[clientsData.pages.length - 1];
+    return lastPage?.pagination ?? null;
+  }, [clientsData]);
 
   // Combine clients and transporters for unified lookup
   const allUsers = useMemo(() => {
@@ -2233,13 +2274,7 @@ export default function AdminDashboard() {
                   <Users className="w-5 h-5" />
                   Tous les clients
                   <Badge className="ml-2" data-testid="badge-total-clients">
-                    Total: {clientsWithStats.filter((c: any) => {
-                      const searchLower = clientSearch.toLowerCase();
-                      return !clientSearch || 
-                        c.name.toLowerCase().includes(searchLower) || 
-                        c.phoneNumber.includes(clientSearch) ||
-                        c.clientId.toLowerCase().includes(searchLower);
-                    }).length}
+                    Total: {clientsPagination?.total ?? 0}
                   </Badge>
                 </CardTitle>
               </CardHeader>
@@ -2249,52 +2284,49 @@ export default function AdminDashboard() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder="Rechercher par ID, nom ou téléphone..."
-                      value={clientSearch}
-                      onChange={(e) => setClientSearch(e.target.value)}
+                      value={clientSearchQuery}
+                      onChange={(e) => setClientSearchQuery(e.target.value)}
                       className="pl-10"
                       data-testid="input-search-client"
                     />
                   </div>
                 </div>
 
-                {clientsWithStats.length === 0 ? (
+                {clientsLoading && clientsWithStats.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Chargement des clients...</p>
+                  </div>
+                ) : clientsError ? (
+                  <div className="text-center py-8">
+                    <Users className="w-12 h-12 text-destructive mx-auto mb-4" />
+                    <p className="text-destructive">Erreur lors du chargement des clients</p>
+                  </div>
+                ) : clientsWithStats.length === 0 ? (
                   <div className="text-center py-8">
                     <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">Aucun client enregistré</p>
+                    <p className="text-muted-foreground">
+                      {debouncedClientSearch ? "Aucun client trouvé avec ces critères" : "Aucun client enregistré"}
+                    </p>
                   </div>
                 ) : (
-                  (() => {
-                    const filteredClients = clientsWithStats.filter((c: any) => {
-                      const searchLower = clientSearch.toLowerCase();
-                      return !clientSearch || 
-                        c.name.toLowerCase().includes(searchLower) || 
-                        c.phoneNumber.includes(clientSearch) ||
-                        c.clientId.toLowerCase().includes(searchLower);
-                    });
-
-                    return filteredClients.length === 0 ? (
-                      <div className="text-center py-8">
-                        <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                        <p className="text-muted-foreground">Aucun client trouvé avec ces critères</p>
-                      </div>
-                    ) : (
-                      <div className="overflow-x-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>ID Client</TableHead>
-                              <TableHead>Nom</TableHead>
-                              <TableHead>Téléphone</TableHead>
-                              <TableHead>Commandes totales</TableHead>
-                              <TableHead>Commandes complétées</TableHead>
-                              <TableHead>Satisfaction</TableHead>
-                              <TableHead>Date d'inscription</TableHead>
-                              <TableHead>Statut</TableHead>
-                              <TableHead>Action</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {filteredClients.map((client: any) => (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>ID Client</TableHead>
+                          <TableHead>Nom</TableHead>
+                          <TableHead>Téléphone</TableHead>
+                          <TableHead>Commandes totales</TableHead>
+                          <TableHead>Commandes complétées</TableHead>
+                          <TableHead>Satisfaction</TableHead>
+                          <TableHead>Date d'inscription</TableHead>
+                          <TableHead>Statut</TableHead>
+                          <TableHead>Action</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {clientsWithStats.map((client: any) => (
                               <TableRow key={client.id}>
                                 <TableCell className="font-medium" data-testid={`text-client-id-${client.id}`}>
                                   {client.clientId}
@@ -2376,12 +2408,31 @@ export default function AdminDashboard() {
                                   </div>
                                 </TableCell>
                               </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
+                        ))}
+                      </TableBody>
+                    </Table>
+
+                    {/* Load More Button */}
+                    {hasNextClientsPage && (
+                      <div className="flex justify-center py-4">
+                        <Button
+                          onClick={() => fetchNextClientsPage()}
+                          disabled={isFetchingNextClientsPage}
+                          variant="outline"
+                          data-testid="button-load-more-clients"
+                        >
+                          {isFetchingNextClientsPage ? 'Chargement...' : 'Charger plus'}
+                        </Button>
                       </div>
-                    );
-                  })()
+                    )}
+
+                    {/* Pagination info */}
+                    {clientsPagination && (
+                      <div className="text-center text-sm text-muted-foreground py-2">
+                        {clientsWithStats.length} sur {clientsPagination.total} client(s)
+                      </div>
+                    )}
+                  </div>
                 )}
               </CardContent>
             </Card>
