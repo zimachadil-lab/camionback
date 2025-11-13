@@ -734,6 +734,8 @@ export default function AdminDashboard() {
         description: "Le paiement a été validé et la commande est maintenant terminée",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/contracts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
     },
     onError: (error: any) => {
       toast({
@@ -755,6 +757,8 @@ export default function AdminDashboard() {
         description: "Le paiement a été rejeté et le client a été notifié",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/contracts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
     },
     onError: (error: any) => {
       toast({
