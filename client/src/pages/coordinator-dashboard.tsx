@@ -838,14 +838,16 @@ export default function CoordinatorDashboard() {
   });
 
   // Fetch empty returns for coordinator
-  const { data: emptyReturns = [], isLoading: emptyReturnsLoading } = useQuery({
+  const { data: emptyReturnsData, isLoading: emptyReturnsLoading } = useQuery({
     queryKey: ["/api/empty-returns"],
     queryFn: async () => {
       const response = await fetch("/api/empty-returns");
       const data = await response.json();
-      return Array.isArray(data) ? data : [];
+      return data;
     },
   });
+  
+  const emptyReturns = emptyReturnsData?.emptyReturns ?? [];
 
   // NEW WORKFLOW: "Nouveau" devient "À qualifier" avec status qualification_pending
   const { data: nouveauRequests = [], isLoading: nouveauLoading } = useQuery({

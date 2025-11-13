@@ -3,6 +3,18 @@
 ## Overview
 CamionBack is a full-stack logistics marketplace web application for the Moroccan market. It connects clients with independent transporters, streamlining logistics through request creation, service offers, and platform management. The platform supports Client, Transporter, Administrator, and Coordinator roles, aiming to become a leading and efficient logistics solution in Morocco.
 
+## Recent Changes
+
+### November 13, 2025 - Empty Returns Migration to Coordinator
+- **Admin Dashboard**: Removed "Retours" (empty returns) tab and management interface
+- **Header Component**: Extended with optional `onViewReturns` and `returnsCount` props for coordinators
+- **Coordinator Dashboard**: 
+  - Added header button with badge counter for empty returns
+  - Created dialog displaying empty returns in responsive card grid
+  - Cards show truck photos (with fallback), routes, dates, and transporter details
+  - Reuses existing `/api/empty-returns` query and truck photo cache
+- **Architecture**: Empty returns management shifted from admin-only to coordinator-focused workflow
+
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
@@ -13,7 +25,7 @@ The platform features a mobile-first, dark teal design with full French/Arabic b
 
 **Client Dashboard:** Features a simplified two-tab layout ("Actives" and "Terminées"), with payment handled directly on request cards and dynamic button displays based on request status.
 
-**Coordinator Dashboard:** Implements a complete request lifecycle (Nouveau → Qualifiés → Intéressés → Production → Pris en charge → Terminé) with a new "Pris en charge" tab for tracking requests taken by transporters. It includes an intelligent Google Places-powered filter system for various tabs and unified request card designs. A shared `StatusIndicator` component ensures consistent status display across dashboards.
+**Coordinator Dashboard:** Implements a complete request lifecycle (Nouveau → Qualifiés → Intéressés → Production → Pris en charge → Terminé) with a new "Pris en charge" tab for tracking requests taken by transporters. It includes an intelligent Google Places-powered filter system for various tabs and unified request card designs. A shared `StatusIndicator` component ensures consistent status display across dashboards. The coordinator dashboard features an "Empty Returns" dialog accessible via a header button with badge counter, displaying available return trips with truck photos, routes, dates, and transporter contact information in a responsive card grid.
 
 **AI-Powered Price Estimation:** Integrates an AI-powered price estimation system using GPT-5 for the coordinator dashboard. This system considers empty returns (-60% discount) and groupage for small volumes, with conditional handling fees. It enforces a financial split (60% Transporter, 40% Platform with a minimum fee), includes an in-memory cache, rate limiting, and a heuristic fallback. The estimation provides a total client price, financial breakdown, confidence score, and reasoning.
 
