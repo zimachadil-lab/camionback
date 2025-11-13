@@ -769,6 +769,28 @@ export default function AdminDashboard() {
     },
   });
 
+  // Backfill missing contracts mutation
+  const backfillContractsMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", `/api/admin/backfill-contracts`, {});
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Contrats créés !",
+        description: `${data.created} contrats créés, ${data.skipped} ignorés${data.errors.length > 0 ? `, ${data.errors.length} erreurs` : ''}`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/contracts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Erreur de backfill",
+        description: error.message || "Échec de la génération des contrats manquants",
+      });
+    },
+  });
+
   const toggleHideRequest = useMutation({
     mutationFn: async ({ requestId, isHidden }: { requestId: string; isHidden: boolean }) => {
       return await apiRequest("PATCH", `/api/requests/${requestId}/toggle-hide`, {
@@ -2881,6 +2903,43 @@ export default function AdminDashboard() {
                       <>
                         <Search className="w-4 h-4 mr-2" />
                         Voir Diagnostic "Pris en charge"
+                      </>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="border-blue-500 border-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-blue-600">
+                    <FileText className="w-5 h-5" />
+                    Générer les contrats manquants
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Créer automatiquement les contrats pour toutes les commandes payées qui n'en ont pas encore
+                  </p>
+                  <Button
+                    onClick={() => {
+                      if (confirm("Générer les contrats manquants pour toutes les commandes payées ?\n\nCela créera automatiquement les contrats pour les demandes qui en manquent.")) {
+                        backfillContractsMutation.mutate();
+                      }
+                    }}
+                    variant="outline"
+                    className="w-full border-blue-500 text-blue-600 hover:bg-blue-50"
+                    disabled={backfillContractsMutation.isPending}
+                    data-testid="button-backfill-contracts"
+                  >
+                    {backfillContractsMutation.isPending ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        Génération en cours...
+                      </>
+                    ) : (
+                      <>
+                        <FileText className="w-4 h-4 mr-2" />
+                        Générer les contrats
                       </>
                     )}
                   </Button>

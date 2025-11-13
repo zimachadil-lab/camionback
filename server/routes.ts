@@ -26,7 +26,8 @@ import {
   clientTransporterContacts,
   transportRequests,
   transporterInterests,
-  users
+  users,
+  offers
 } from "@shared/schema";
 import { desc, eq, sql, and, isNotNull, ne, getTableColumns } from "drizzle-orm";
 import { sendNewOfferSMS, sendOfferAcceptedSMS, sendTransporterActivatedSMS, sendBulkSMS, sendManualAssignmentSMS, sendTransporterAssignedSMS, sendClientChoseYouSMS, sendTransporterSelectedSMS } from "./infobip-sms";
@@ -2444,7 +2445,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Payment is not awaiting validation" });
       }
 
-      // Update to final completed state
+      // ✅ CREATE CONTRACT FIRST before marking payment as validated (CRITICAL FIX)
+      // Check if contract already exists (idempotent guard)
+      const existingContract = await storage.getContractByRequestId(req.params.id);
+      
+      if (!existingContract) {
+        if (!request.assignedTransporterId) {
+          return res.status(400).json({ 
+            error: "Cannot validate payment: No transporter assigned to this request" 
+          });
+        }
+
+        // Find the accepted offer for this request
+        const acceptedOffers = await db.select()
+          .from(offers)
+          .where(
+            and(
+              eq(offers.requestId, req.params.id),
+              eq(offers.status, 'accepted')
+            )
+          )
+          .limit(1);
+
+        if (!acceptedOffers[0]) {
+          return res.status(400).json({ 
+            error: "Cannot validate payment: No accepted offer found for this request" 
+          });
+        }
+
+        console.log(`✅ Creating contract for request ${request.referenceId} before payment validation`);
+        
+        try {
+          await storage.createContract({
+            requestId: request.id,
+            offerId: acceptedOffers[0].id,
+            clientId: request.clientId,
+            transporterId: request.assignedTransporterId,
+            referenceId: request.referenceId,
+            amount: acceptedOffers[0].amount,
+            platformFee: request.platformFee || "0",
+          });
+        } catch (contractError) {
+          console.error("❌ Failed to create contract:", contractError);
+          return res.status(500).json({ 
+            error: "Failed to create contract. Payment validation aborted.",
+            details: contractError instanceof Error ? contractError.message : "Unknown error"
+          });
+        }
+      } else {
+        console.log(`ℹ️ Contract already exists for request ${request.referenceId} - proceeding with payment validation`);
+      }
+
+      // NOW update to final completed state (only after contract is created)
       const updatedRequest = await storage.updateTransportRequest(req.params.id, {
         status: 'completed',
         paymentStatus: 'paid',
@@ -2472,6 +2524,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Validate payment error:", error);
       res.status(500).json({ error: "Failed to validate payment" });
+    }
+  });
+
+  // ADMIN: Backfill missing contracts for paid requests
+  app.post("/api/admin/backfill-contracts", requireAuth, requireRole(['admin']), async (req, res) => {
+    try {
+      console.log("🔄 Starting contract backfill process...");
+
+      // Find all paid requests (should have contracts)
+      const paidRequests = await db.select()
+        .from(transportRequests)
+        .where(eq(transportRequests.paymentStatus, 'paid'));
+
+      console.log(`📊 Found ${paidRequests.length} paid requests`);
+
+      const results = {
+        total: paidRequests.length,
+        created: 0,
+        skipped: 0,
+        errors: [] as string[],
+      };
+
+      // Process each paid request
+      for (const request of paidRequests) {
+        try {
+          // Check if contract already exists
+          const existingContract = await storage.getContractByRequestId(request.id);
+
+          if (existingContract) {
+            console.log(`⏭️  Skipping ${request.referenceId} - contract already exists`);
+            results.skipped++;
+            continue;
+          }
+
+          // Find accepted offer
+          const acceptedOffers = await db.select()
+            .from(offers)
+            .where(
+              and(
+                eq(offers.requestId, request.id),
+                eq(offers.status, 'accepted')
+              )
+            )
+            .limit(1);
+
+          if (!acceptedOffers[0]) {
+            console.warn(`⚠️  No accepted offer for ${request.referenceId}`);
+            results.errors.push(`${request.referenceId}: No accepted offer found`);
+            continue;
+          }
+
+          if (!request.assignedTransporterId) {
+            console.warn(`⚠️  No assigned transporter for ${request.referenceId}`);
+            results.errors.push(`${request.referenceId}: No assigned transporter`);
+            continue;
+          }
+
+          // Create missing contract
+          console.log(`✅ Creating contract for ${request.referenceId}`);
+          await storage.createContract({
+            requestId: request.id,
+            offerId: acceptedOffers[0].id,
+            clientId: request.clientId,
+            transporterId: request.assignedTransporterId,
+            referenceId: request.referenceId,
+            amount: acceptedOffers[0].amount,
+            platformFee: request.platformFee || "0",
+          });
+
+          results.created++;
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : "Unknown error";
+          console.error(`❌ Error creating contract for ${request.referenceId}:`, error);
+          results.errors.push(`${request.referenceId}: ${errorMsg}`);
+        }
+      }
+
+      console.log("✅ Backfill complete:", results);
+
+      res.json({
+        success: true,
+        message: `Backfill complete: ${results.created} contracts created, ${results.skipped} skipped`,
+        ...results,
+      });
+    } catch (error) {
+      console.error("❌ Backfill error:", error);
+      res.status(500).json({ 
+        error: "Backfill failed",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 
