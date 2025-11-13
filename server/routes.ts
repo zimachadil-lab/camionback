@@ -3828,13 +3828,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/cities", async (req, res) => {
     try {
       const cityData = insertCitySchema.parse(req.body);
+      
+      // Normalize city name: trim and capitalize first letter
+      if (cityData.name) {
+        cityData.name = cityData.name.trim();
+      }
+      
       const city = await storage.createCity(cityData);
       res.json(city);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Create city error:", error);
+      
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: error.errors });
       }
+      
+      // Check for Postgres unique constraint violation
+      if (error?.code === '23505' || error?.message?.includes('unique constraint')) {
+        return res.status(409).json({ 
+          error: "Cette ville existe déjà dans la liste",
+          detail: "Veuillez choisir un nom différent"
+        });
+      }
+      
       res.status(500).json({ error: "Échec de création de la ville" });
     }
   });
