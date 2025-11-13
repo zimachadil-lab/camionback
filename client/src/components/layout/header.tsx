@@ -30,9 +30,11 @@ interface HeaderProps {
   onLogout: () => void;
   onCreateRequest?: () => void;
   onAnnounceReturn?: () => void;
+  onViewReturns?: () => void;
+  returnsCount?: number;
 }
 
-export function Header({ user, onLogout, onCreateRequest, onAnnounceReturn }: HeaderProps) {
+export function Header({ user, onLogout, onCreateRequest, onAnnounceReturn, onViewReturns, returnsCount }: HeaderProps) {
   const [location, navigate] = useLocation();
   const [showContactDialog, setShowContactDialog] = useState(false);
   const { t, i18n } = useTranslation();
@@ -161,6 +163,24 @@ export function Header({ user, onLogout, onCreateRequest, onAnnounceReturn }: He
               data-testid="button-announce-return-header"
             >
               <CornerUpLeft className="w-5 h-5" />
+            </Button>
+          )}
+
+          {/* View Returns Button - Coordinator Only */}
+          {user.role === "coordinateur" && onViewReturns && (
+            <Button
+              onClick={onViewReturns}
+              size="icon"
+              variant="default"
+              className="bg-gradient-to-br from-[#00d4b2] to-[#00b396] hover:from-[#00c0a6] hover:to-[#009d84] text-white shadow-md relative"
+              data-testid="button-view-returns-header"
+            >
+              <CornerUpLeft className="w-5 h-5" />
+              {returnsCount !== undefined && returnsCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                  {returnsCount > 9 ? "9+" : returnsCount}
+                </span>
+              )}
             </Button>
           )}
           

@@ -35,12 +35,10 @@ interface AdminSidebarProps {
   onSectionChange: (section: string) => void;
   counts: {
     pendingRequests: number;
-    pendingOffers: number;
     activeContracts: number;
     totalMessages: number;
     unpaidRequests: number;
     pendingTransporters: number;
-    emptyReturns: number;
     totalReports: number;
   };
   onLogout: () => void;
@@ -54,7 +52,6 @@ export function AdminSidebar({ activeSection, onSectionChange, counts, onLogout 
     { id: "messages", label: "Messages", icon: MessageSquare, badge: counts.totalMessages },
     { id: "to-pay", label: "Paiements", icon: DollarSign, badge: counts.unpaidRequests },
     { id: "validation", label: "Validation", icon: UserCheck, badge: counts.pendingTransporters },
-    { id: "empty-returns", label: "Retours", icon: TruckIcon, badge: counts.emptyReturns },
   ];
 
   // Gestion sections

@@ -62,8 +62,6 @@ export default function AdminDashboard() {
   // REMOVED: commissionRate state - no longer needed with manual coordinator pricing
   const [selectedReceipt, setSelectedReceipt] = useState<string>("");
   const [showReceiptDialog, setShowReceiptDialog] = useState(false);
-  const [assignOrderDialogOpen, setAssignOrderDialogOpen] = useState(false);
-  const [selectedEmptyReturn, setSelectedEmptyReturn] = useState<any>(null);
   const [selectedContract, setSelectedContract] = useState<any>(null);
   const [contractDetailsOpen, setContractDetailsOpen] = useState(false);
   const [selectedConversation, setSelectedConversation] = useState<any>(null);
@@ -71,7 +69,6 @@ export default function AdminDashboard() {
   const [deleteConversationId, setDeleteConversationId] = useState<string | null>(null);
   const [adminMessage, setAdminMessage] = useState("");
   const [clientSearch, setClientSearch] = useState("");
-  const [assignOrderSearch, setAssignOrderSearch] = useState("");
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
   const [invoiceDetailsOpen, setInvoiceDetailsOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
@@ -230,16 +227,6 @@ export default function AdminDashboard() {
     queryKey: ["/api/offers/all"],
     queryFn: async () => {
       const response = await fetch("/api/offers");
-      const data = await response.json();
-      return Array.isArray(data) ? data : [];
-    },
-  });
-
-  // Fetch active empty returns
-  const { data: emptyReturns = [], isLoading: emptyReturnsLoading } = useQuery({
-    queryKey: ["/api/empty-returns"],
-    queryFn: async () => {
-      const response = await fetch("/api/empty-returns");
       const data = await response.json();
       return Array.isArray(data) ? data : [];
     },
@@ -674,31 +661,6 @@ export default function AdminDashboard() {
       });
     }
   };
-
-  const assignOrderMutation = useMutation({
-    mutationFn: async ({ emptyReturnId, requestId }: { emptyReturnId: string; requestId: string }) => {
-      return await apiRequest("POST", `/api/empty-returns/${emptyReturnId}/assign`, {
-        requestId,
-      });
-    },
-    onSuccess: () => {
-      toast({
-        title: "Commande affectée",
-        description: "La commande a été affectée au transporteur avec succès",
-      });
-      setAssignOrderDialogOpen(false);
-      setSelectedEmptyReturn(null);
-      queryClient.invalidateQueries({ queryKey: ["/api/empty-returns"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
-    },
-    onError: () => {
-      toast({
-        variant: "destructive",
-        title: "Erreur",
-        description: "Échec de l'affectation de la commande",
-      });
-    },
-  });
 
   const updateReportMutation = useMutation({
     mutationFn: async ({ reportId, status, resolution }: { reportId: string; status: string; resolution?: string }) => {
@@ -1181,12 +1143,10 @@ export default function AdminDashboard() {
   // Prepare counts for sidebar badges
   const sidebarCounts = {
     pendingRequests: allRequests.filter(r => r.status === "en_attente" || r.status === "à_traiter").length,
-    pendingOffers: 0, // Removed offer system
     activeContracts: contracts.length,
     totalMessages: conversations.length,
     unpaidRequests: unpaidRequests.length,
     pendingTransporters: pendingTransporters.length,
-    emptyReturns: emptyReturns.length,
     totalReports: reports.length,
   };
 
@@ -1235,7 +1195,6 @@ export default function AdminDashboard() {
                         queryClient.invalidateQueries({ queryKey: ["/api/contracts"] }),
                         queryClient.invalidateQueries({ queryKey: ["/api/conversations"] }),
                         queryClient.invalidateQueries({ queryKey: ["/api/offers"] }),
-                        queryClient.invalidateQueries({ queryKey: ["/api/empty-returns"] }),
                         queryClient.invalidateQueries({ queryKey: ["/api/reports"] }),
                         queryClient.invalidateQueries({ queryKey: ["/api/cities"] }),
                         queryClient.invalidateQueries({ queryKey: ["/api/stories"] }),
@@ -3115,80 +3074,6 @@ export default function AdminDashboard() {
           )}
 
           {/* REMOVED: Old automatic pricing system with commission percentage - now using manual coordinator pricing */}
-          
-          {activeSection === 'empty-returns' && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TruckIcon className="w-5 h-5" />
-                  Retours à vide annoncés
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {emptyReturnsLoading ? (
-                  <div className="text-center py-8">
-                    <LoadingTruck message="Chargement des retours à vide..." size="md" />
-                  </div>
-                ) : emptyReturns.length === 0 ? (
-                  <div className="text-center py-8">
-                    <TruckIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">Aucun retour à vide annoncé</p>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Transporteur</TableHead>
-                        <TableHead>Téléphone</TableHead>
-                        <TableHead>De</TableHead>
-                        <TableHead>Vers</TableHead>
-                        <TableHead>Date de retour</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {emptyReturns.map((emptyReturn: any) => {
-                        const transporter = allUsers.find((u: any) => u.id === emptyReturn.transporterId);
-                        return (
-                          <TableRow key={emptyReturn.id}>
-                            <TableCell className="font-medium">
-                              {transporter?.name || "Inconnu"}
-                            </TableCell>
-                            <TableCell>
-                              <a 
-                                href={`tel:${transporter?.phoneNumber}`}
-                                className="text-primary hover:underline"
-                              >
-                                {transporter?.phoneNumber || "N/A"}
-                              </a>
-                            </TableCell>
-                            <TableCell>{emptyReturn.fromCity}</TableCell>
-                            <TableCell>{emptyReturn.toCity}</TableCell>
-                            <TableCell>
-                              {new Date(emptyReturn.returnDate).toLocaleDateString("fr-FR")}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Button
-                                size="sm"
-                                className="bg-[#00d4b2] hover:bg-[#00d4b2] border border-[#00d4b2]"
-                                onClick={() => {
-                                  setSelectedEmptyReturn(emptyReturn);
-                                  setAssignOrderDialogOpen(true);
-                                }}
-                                data-testid={`button-assign-order-${emptyReturn.id}`}
-                              >
-                                Affecter une commande
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          )}
 
       <AddTransporterForm
         open={addTransporterOpen}
@@ -3218,115 +3103,6 @@ export default function AdminDashboard() {
                 className="w-full h-auto max-h-[70vh] object-contain rounded-lg border"
               />
             )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Assign Order Dialog */}
-      <Dialog open={assignOrderDialogOpen} onOpenChange={setAssignOrderDialogOpen}>
-        <DialogContent className="max-w-[90vw] sm:max-w-3xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Affecter une commande</DialogTitle>
-            <DialogDescription>
-              Sélectionnez une commande ouverte à affecter au transporteur
-              {selectedEmptyReturn && (
-                <span className="block mt-2 text-sm">
-                  Retour: <strong>{selectedEmptyReturn.fromCity} → {selectedEmptyReturn.toCity}</strong>
-                  {" "}le{" "}
-                  <strong>{new Date(selectedEmptyReturn.returnDate).toLocaleDateString("fr-FR")}</strong>
-                </span>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="mt-4 space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher par référence (CMD-XXXX)..."
-                value={assignOrderSearch}
-                onChange={(e) => setAssignOrderSearch(e.target.value)}
-                className="pl-10"
-                data-testid="input-search-assign-order"
-              />
-            </div>
-
-            {(() => {
-              const openRequests = allRequests
-                .filter((req: any) => req.status === "open")
-                .filter((req: any) => 
-                  !assignOrderSearch || 
-                  req.referenceId.toLowerCase().includes(assignOrderSearch.toLowerCase())
-                );
-
-              if (allRequests.filter((req: any) => req.status === "open").length === 0) {
-                return (
-                  <div className="text-center py-8">
-                    <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">Aucune commande ouverte disponible</p>
-                  </div>
-                );
-              }
-
-              if (openRequests.length === 0 && assignOrderSearch) {
-                return (
-                  <div className="text-center py-8">
-                    <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">Aucune commande trouvée avec cette référence</p>
-                  </div>
-                );
-              }
-
-              return (
-                <div className="space-y-3">
-                  {openRequests.map((request: any) => {
-                    const client = allUsers.find((u: any) => u.id === request.clientId);
-                    return (
-                      <Card 
-                        key={request.id}
-                        className="hover-elevate cursor-pointer"
-                        onClick={() => {
-                          if (selectedEmptyReturn) {
-                            assignOrderMutation.mutate({
-                              emptyReturnId: selectedEmptyReturn.id,
-                              requestId: request.id,
-                            });
-                          }
-                        }}
-                        data-testid={`card-assign-request-${request.id}`}
-                      >
-                        <CardContent className="p-4">
-                          <div className="flex justify-between items-start gap-4">
-                            <div className="flex-1 space-y-2">
-                              <div className="flex items-center gap-2">
-                                <Badge variant="outline">Réf: {request.referenceId}</Badge>
-                                <span className="text-sm text-muted-foreground">
-                                  Client {client?.clientId || "Non défini"}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2 text-sm">
-                                <span className="font-medium">{request.fromCity}</span>
-                                <span className="text-muted-foreground">→</span>
-                                <span className="font-medium">{request.toCity}</span>
-                              </div>
-                              <p className="text-sm text-muted-foreground line-clamp-2">
-                                {request.description}
-                              </p>
-                            </div>
-                            <Button
-                              size="sm"
-                              className="bg-[#00d4b2] hover:bg-[#00d4b2] border border-[#00d4b2]"
-                              disabled={assignOrderMutation.isPending}
-                            >
-                              {assignOrderMutation.isPending ? "Affectation..." : "Affecter"}
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              );
-            })()}
           </div>
         </DialogContent>
       </Dialog>
