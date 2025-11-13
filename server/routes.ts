@@ -6565,10 +6565,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const currentRequest = request[0];
 
-      // Validate: must be accepted and have a transporter assigned
-      if (currentRequest.status !== 'accepted' || !currentRequest.assignedTransporterId) {
+      // Validate: must have a transporter assigned and not be cancelled/archived
+      if (!currentRequest.assignedTransporterId) {
         return res.status(400).json({ 
-          error: "La commande doit être acceptée et avoir un transporteur assigné" 
+          error: "La commande doit avoir un transporteur assigné" 
+        });
+      }
+
+      // Cannot take in charge if already completed or cancelled
+      if (currentRequest.status === 'completed' || currentRequest.status === 'cancelled') {
+        return res.status(400).json({ 
+          error: "Impossible de prendre en charge une commande terminée ou annulée" 
         });
       }
 
