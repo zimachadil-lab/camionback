@@ -177,7 +177,10 @@ export function Header({ user, onLogout, onCreateRequest, onAnnounceReturn, onVi
             >
               <CornerUpLeft className="w-5 h-5" />
               {returnsCount !== undefined && returnsCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                <span 
+                  className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white"
+                  data-testid="badge-returns-count"
+                >
                   {returnsCount > 9 ? "9+" : returnsCount}
                 </span>
               )}
