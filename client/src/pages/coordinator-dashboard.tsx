@@ -1387,6 +1387,41 @@ export default function CoordinatorDashboard() {
     }
   }, [user, authLoading, setLocation]);
 
+  // Auto-load truck photos when empty returns dialog opens
+  useEffect(() => {
+    if (showReturnsDialog && emptyReturns.length > 0) {
+      emptyReturns.forEach((emptyReturn: any) => {
+        const transporterId = emptyReturn.transporterId;
+        
+        // Skip if photos are already loaded or being loaded
+        if (loadedTruckPhotos[transporterId] !== undefined || loadingTruckPhotos[transporterId]) {
+          return;
+        }
+
+        // Start loading silently in background
+        setLoadingTruckPhotos(prev => ({ ...prev, [transporterId]: true }));
+
+        fetch(`/api/admin/transporter-photos/${transporterId}`)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Failed to load photos');
+            }
+            return response.json();
+          })
+          .then(data => {
+            const photos = data.truckPhotos || [];
+            setLoadedTruckPhotos(prev => ({ ...prev, [transporterId]: photos }));
+            setLoadingTruckPhotos(prev => ({ ...prev, [transporterId]: false }));
+          })
+          .catch(() => {
+            // Silently fail and mark as empty
+            setLoadedTruckPhotos(prev => ({ ...prev, [transporterId]: null }));
+            setLoadingTruckPhotos(prev => ({ ...prev, [transporterId]: false }));
+          });
+      });
+    }
+  }, [showReturnsDialog, emptyReturns, loadedTruckPhotos, loadingTruckPhotos]);
+
   // Show loading while checking auth (after all hooks)
   if (authLoading || !user) {
     return (
