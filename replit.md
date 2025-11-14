@@ -5,6 +5,14 @@ CamionBack is a full-stack logistics marketplace web application for the Morocca
 
 ## Recent Changes
 
+### November 14, 2025 - Empty Returns Display Bug Fix
+- **Bug Fix**: Corrected empty returns dialog to properly display transporter data
+- **Array Format Handling**: Updated query to handle `/api/empty-returns` returning array format directly
+  - Added backward-compatible guard: `Array.isArray(emptyReturnsData) ? emptyReturnsData : (emptyReturnsData?.emptyReturns ?? [])`
+- **Transporter Access**: Fixed ReferenceError by using embedded `emptyReturn.transporter` instead of non-existent `allUsers`
+- **Null Safety**: Existing optional chaining (`?.`) and fallbacks already prevent crashes when transporter data is missing
+- **UI Degradation**: Dialog displays "Transporteur inconnu" and "N/A" gracefully for missing transporter info
+
 ### November 13, 2025 - Empty Returns Migration to Coordinator
 - **Admin Dashboard**: Removed "Retours" (empty returns) tab and management interface
 - **Header Component**: Extended with optional `onViewReturns` and `returnsCount` props for coordinators
