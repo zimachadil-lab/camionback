@@ -807,8 +807,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get truck photos for a specific transporter (lazy loading - admin only)
-  app.get("/api/admin/transporter-photos/:id", requireAuth, requireRole(['admin']), async (req, res) => {
+  // Get truck photos for a specific transporter (lazy loading - admin and coordinator)
+  app.get("/api/admin/transporter-photos/:id", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {
       const { id } = req.params;
       const photos = await storage.getTransporterPhotos(id);
