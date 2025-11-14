@@ -5,6 +5,19 @@ CamionBack is a full-stack logistics marketplace web application for the Morocca
 
 ## Recent Changes
 
+### November 14, 2025 - Pricing Section Added to "Pris en Charge" Tab
+- **Feature Addition**: Added pricing display section to coordinator dashboard "Pris en charge" tab
+- **API Enhancement**: Extended `/api/coordinator/coordination/pris-en-charge` endpoint to include pricing fields
+  - Added fields: `clientTotal`, `transporterAmount`, `platformFee`, `qualifiedAt`
+  - Modified SQL SELECT and response mapping to include pricing data
+- **Consistency Update**: Added same pricing fields to coordinator endpoints for consistency
+  - Updated `getCoordinationEnActionRequests` in storage.ts
+  - Updated `getCoordinationPrioritairesRequests` in storage.ts
+- **Frontend Display**: Price section now shows automatically when pricing data exists
+  - Displays: Prix transporteur, Cotisation plateforme (40%), Total client
+  - Same design and formatting as "En production" tab
+  - Conditional rendering based on `request.clientTotal && request.qualifiedAt`
+
 ### November 14, 2025 - Empty Returns Display Bug Fix
 - **Bug Fix**: Corrected empty returns dialog to properly display transporter data
 - **Array Format Handling**: Updated query to handle `/api/empty-returns` returning array format directly

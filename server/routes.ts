@@ -6502,7 +6502,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           -- Assigned coordinator data
           coordinator.id as coordinator_id,
           coordinator.name as coordinator_name,
-          coordinator.phone_number as coordinator_phone_number
+          coordinator.phone_number as coordinator_phone_number,
+          
+          -- Pricing data (for price section display)
+          tr.client_total,
+          tr.transporter_amount,
+          tr.platform_fee,
+          tr.qualified_at
           
         FROM transport_requests tr
         LEFT JOIN users client ON tr.client_id = client.id
@@ -6564,6 +6570,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           takenInChargeAt: row.taken_in_charge_at,
           takenInChargeBy: row.taken_in_charge_by,
           createdAt: row.created_at,
+          // Pricing data for price section display
+          clientTotal: row.client_total,
+          transporterAmount: row.transporter_amount,
+          platformFee: row.platform_fee,
+          qualifiedAt: row.qualified_at,
           client,
           transporter,
           assignedTo,

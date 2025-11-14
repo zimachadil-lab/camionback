@@ -3066,6 +3066,11 @@ export class DbStorage implements IStorage {
       assignedToId: transportRequests.assignedToId,
       shareToken: transportRequests.shareToken,
       createdAt: transportRequests.createdAt,
+      // Pricing data for price section display
+      clientTotal: transportRequests.clientTotal,
+      transporterAmount: transportRequests.transporterAmount,
+      platformFee: transportRequests.platformFee,
+      qualifiedAt: transportRequests.qualifiedAt,
     })
     .from(transportRequests)
     .where(and(...whereConditions))
@@ -3164,6 +3169,11 @@ export class DbStorage implements IStorage {
       assignedToId: transportRequests.assignedToId,
       shareToken: transportRequests.shareToken,
       createdAt: transportRequests.createdAt,
+      // Pricing data for price section display
+      clientTotal: transportRequests.clientTotal,
+      transporterAmount: transportRequests.transporterAmount,
+      platformFee: transportRequests.platformFee,
+      qualifiedAt: transportRequests.qualifiedAt,
     })
     .from(transportRequests)
     .where(and(...whereConditions))
