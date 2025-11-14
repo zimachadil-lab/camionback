@@ -6030,18 +6030,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const previousTransporterId = request.assignedTransporterId;
       const client = await storage.getUser(request.clientId);
 
+      // Determine coordination status based on whether pricing data exists
+      // If the request has been qualified with prices, keep "qualified" status
+      // Otherwise, send back to "qualification_pending" for price estimation
+      // Use explicit null checks to avoid misclassifying zero-valued amounts
+      const hasPricingData = request.transporterAmount != null && 
+                             request.platformFee != null && 
+                             request.clientTotal != null;
+      const newCoordinationStatus = hasPricingData ? "qualified" : "qualification_pending";
+
+      console.log(`🔄 Requalifying request ${request.referenceId}: ${hasPricingData ? 'keeping pricing data' : 'clearing for re-qualification'}`);
+
       // Update request: cancel current assignment and requalify for matching
       const updated = await db
         .update(transportRequests)
         .set({
           status: "open", // Reset to open status
-          coordinationStatus: "qualified", // Keep qualified status with prices
+          coordinationStatus: newCoordinationStatus, // "qualified" if has pricing, else "qualification_pending"
           assignedTransporterId: null, // Clear transporter assignment
           acceptedOfferId: null, // Clear accepted offer
           acceptedAt: null, // Clear acceptance timestamp
           paymentStatus: "a_facturer", // Reset payment status
           transporterInterests: [], // Clear all previous interests
-          publishedForMatchingAt: new Date(), // Republish for matching NOW
+          // Only set publishedForMatchingAt for qualified requests with pricing
+          // For qualification_pending, leave null so coordinator can publish after qualifying
+          publishedForMatchingAt: hasPricingData ? new Date() : null,
           coordinationUpdatedAt: new Date(),
           coordinationUpdatedBy: coordinatorId,
         })
