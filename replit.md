@@ -5,6 +5,21 @@ CamionBack is a full-stack logistics marketplace web application for the Morocca
 
 ## Recent Changes
 
+### November 14, 2025 - Intelligent Requalification with Pricing Preservation
+- **Critical Fix**: Requalification endpoint now intelligently handles requests with/without pricing data
+- **Pricing Preservation Logic**: 
+  - Requests WITH pricing (transporterAmount, platformFee, clientTotal) → requalified as "qualified" status
+  - Requests WITHOUT pricing (legacy workflow) → demoted to "qualification_pending" for price estimation
+- **Endpoint Updated**: `/api/coordinator/requests/:id/cancel-and-requalify`
+  - Uses explicit null checks (`!= null`) instead of truthy checks to avoid edge cases with zero values
+  - Conditionally sets `publishedForMatchingAt`: Only set for qualified requests, null for pending ones
+  - Preserves existing pricing data when present, avoiding blank pricing sections in UI
+- **Workflow Behavior**:
+  - Production/Pris en charge with pricing → Requalify → Qualifiés tab (keeps prices visible)
+  - Production/Pris en charge without pricing → Requalify → Nouveau tab (coordinator must qualify first)
+- **Architecture Review**: Validated by architect, ensures legacy requests route through qualification workflow while keeping priced orders intact
+- **Console Logging**: Added diagnostic logging to track pricing preservation decisions
+
 ### November 14, 2025 - Pricing Section Added to "Pris en Charge" Tab
 - **Feature Addition**: Added pricing display section to coordinator dashboard "Pris en charge" tab
 - **API Enhancement**: Extended `/api/coordinator/coordination/pris-en-charge` endpoint to include pricing fields
