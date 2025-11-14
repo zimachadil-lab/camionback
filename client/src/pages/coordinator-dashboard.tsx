@@ -883,7 +883,6 @@ export default function CoordinatorDashboard() {
     queryFn: async () => {
       const response = await fetch("/api/coordinator/coordination/pris-en-charge");
       const data = await response.json();
-      console.log("🔍 [DEBUG] Pris en charge data:", data[0]); // DEBUG
       return Array.isArray(data) ? data : [];
     },
   });
@@ -2352,7 +2351,7 @@ export default function CoordinatorDashboard() {
         )}
 
         {/* Prix qualifié - Détaillé */}
-        {request.clientTotal && request.qualifiedAt && (
+        {(request.transporterAmount || request.clientTotal) && (
           <div className="space-y-2 px-3 py-3 rounded-lg bg-gradient-to-r from-[#00ff88]/10 via-[#00ff88]/5 to-transparent border-l-4 border-[#00ff88]">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-full bg-[#00ff88]/20 flex items-center justify-center flex-shrink-0">
@@ -2373,7 +2372,7 @@ export default function CoordinatorDashboard() {
               </div>
               <div className="flex justify-between items-center pt-1.5 border-t border-[#00ff88]/20">
                 <span className="text-sm font-bold text-foreground">Total client</span>
-                <span className="text-lg font-bold text-[#00ff88]">{Math.floor(request.clientTotal).toLocaleString()} Dhs</span>
+                <span className="text-lg font-bold text-[#00ff88]">{Math.floor(request.clientTotal || ((parseFloat(request.transporterAmount) || 0) + (parseFloat(request.platformFee) || 0))).toLocaleString()} Dhs</span>
               </div>
             </div>
           </div>
