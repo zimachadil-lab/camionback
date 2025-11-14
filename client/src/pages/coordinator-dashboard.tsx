@@ -847,7 +847,8 @@ export default function CoordinatorDashboard() {
     },
   });
   
-  const emptyReturns = emptyReturnsData?.emptyReturns ?? [];
+  // Handle both array format (current API) and object format for future compatibility
+  const emptyReturns = Array.isArray(emptyReturnsData) ? emptyReturnsData : (emptyReturnsData?.emptyReturns ?? []);
 
   // NEW WORKFLOW: "Nouveau" devient "À qualifier" avec status qualification_pending
   const { data: nouveauRequests = [], isLoading: nouveauLoading } = useQuery({
@@ -4136,7 +4137,7 @@ export default function CoordinatorDashboard() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {emptyReturns.map((emptyReturn: any) => {
-                  const transporter = allUsers.find((u: any) => u.id === emptyReturn.transporterId);
+                  const transporter = emptyReturn.transporter;
                   const truckPhotos = loadedTruckPhotos[emptyReturn.transporterId];
                   const firstPhoto = Array.isArray(truckPhotos) && truckPhotos.length > 0 
                     ? truckPhotos[0] 
