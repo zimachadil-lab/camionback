@@ -883,6 +883,7 @@ export default function CoordinatorDashboard() {
     queryFn: async () => {
       const response = await fetch("/api/coordinator/coordination/pris-en-charge");
       const data = await response.json();
+      console.log("🔍 [DEBUG] Pris en charge data:", data[0]); // DEBUG
       return Array.isArray(data) ? data : [];
     },
   });
