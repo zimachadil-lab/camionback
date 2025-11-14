@@ -1320,6 +1320,9 @@ export default function CoordinatorDashboard() {
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/qualified-requests"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/interested-requests"] });
       queryClient.invalidateQueries({ queryKey: ["/api/coordinator/matching-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/production"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/pris-en-charge"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/en-action"] });
     },
     onError: () => {
       toast({
@@ -2530,8 +2533,8 @@ export default function CoordinatorDashboard() {
             <Button
               className="flex-1 gap-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold shadow-md transition-all"
               onClick={() => {
-                setCancelRequestData(request);
-                setCancelDialogOpen(true);
+                setRequalifyRequestData(request);
+                setRequalifyDialogOpen(true);
               }}
               data-testid={`button-cancel-requalify-${request.id}`}
             >
@@ -2597,21 +2600,8 @@ export default function CoordinatorDashboard() {
             <Button
               className="flex-1 gap-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold shadow-md transition-all"
               onClick={() => {
-                if (confirm(`Voulez-vous vraiment annuler et requalifier la commande ${request.referenceId} ?`)) {
-                  fetch(`/api/requests/${request.id}/requalify`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({ reason: 'Annulé par coordinateur' }),
-                  }).then(() => {
-                    queryClient.invalidateQueries({ queryKey: ["/api/coordinator/coordination/pris-en-charge"] });
-                    queryClient.invalidateQueries({ queryKey: ["/api/coordinator/qualification-pending"] });
-                    toast({
-                      title: "Commande requalifiée",
-                      description: "La commande a été remise en matching.",
-                    });
-                  });
-                }
+                setRequalifyRequestData(request);
+                setRequalifyDialogOpen(true);
               }}
               data-testid={`button-requalify-pris-en-charge-${request.id}`}
             >
