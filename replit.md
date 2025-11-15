@@ -5,6 +5,34 @@ CamionBack is a full-stack logistics marketplace web application for the Morocca
 
 ## Recent Changes
 
+### November 15, 2025 - Professional Invoice Generation for Coordinator Dashboard
+- **New Feature**: Added comprehensive invoice generation system for Production and "Pris en charge" tabs
+- **UI Components**:
+  - Added "Facture" buttons with FileText icon on all request cards in Production and Pris en charge tabs
+  - Buttons styled with dark teal theme (#0d9488), matching platform design
+  - data-testids: `button-facture-${request.id}` (Production), `button-facture-pris-en-charge-${request.id}` (Pris en charge)
+- **InvoiceDialog Component**: Professional, mobile-responsive invoice preview dialog
+  - Displays complete invoice details: number (INV-{requestId}-{timestamp}), dates, client/transporter info
+  - Shows route, cargo details, handling requirements, total client amount
+  - Includes payment instructions with RIB: 011815000005210001099713
+  - Double-click protection: "Télécharger PDF" button disables during generation
+- **PDF Export**: Client-side PDF generation using @react-pdf/renderer
+  - Professional A4 format with dark teal branding
+  - On-demand generation (no backend storage) ensures latest data always reflected
+  - Error handling with toast notifications for generation failures
+- **Data Transformation**: Created `normalizeInvoiceData()` utility function
+  - Transforms request data into standardized invoice format
+  - Provides fallbacks for missing data (N/A, "Transporteur inconnu")
+  - Formats dates using date-fns, currency using Intl.NumberFormat
+- **Architecture Decision**: Frontend-only implementation to reduce server load
+  - Reuses existing request data from coordinator endpoints
+  - No new backend endpoints required
+  - Leverages existing pricing data (clientTotal, transporterAmount, platformFee)
+- **Architect Review**: Passed validation with no critical issues identified
+  - Modular structure praised (InvoiceDialog + InvoicePdfDocument + utilities)
+  - Proper error handling and fallback values confirmed
+  - Mobile responsiveness verified
+
 ### November 14, 2025 - Intelligent Requalification with Pricing Preservation
 - **Critical Fix**: Requalification endpoint now intelligently handles requests with/without pricing data
 - **Pricing Preservation Logic**: 
