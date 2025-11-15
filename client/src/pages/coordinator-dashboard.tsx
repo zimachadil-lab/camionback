@@ -2886,7 +2886,7 @@ export default function CoordinatorDashboard() {
                 data-testid="tab-production"
                 className="relative inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-3 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 data-[state=active]:bg-gradient-to-br data-[state=active]:from-[#10b981] data-[state=active]:via-[#059669] data-[state=active]:to-[#047857] data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-green-500/50 text-slate-400 hover:text-slate-200 hover:bg-white/5"
               >
-                <Truck className="h-4 w-4" />
+                <Boxes className="h-4 w-4" />
                 <span className="hidden sm:inline">Production</span>
                 {!(activeLoading || paymentLoading) && filterRequests([...activeRequests, ...paymentRequests], filters.production).length > 0 && (
                   <span className="inline-flex items-center justify-center min-w-[20px] h-[20px] px-1 text-xs font-bold rounded-full bg-gradient-to-br from-green-400 to-green-500 text-white shadow-md">
