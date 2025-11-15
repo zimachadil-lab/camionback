@@ -4,15 +4,15 @@ import { InvoiceData, formatHandlingDetails, formatCurrency } from '@/lib/invoic
 // Define styles for PDF
 const styles = StyleSheet.create({
   page: {
-    padding: 40,
-    fontSize: 11,
+    padding: 30,
+    fontSize: 10,
     fontFamily: 'Helvetica',
     backgroundColor: '#FFFFFF',
   },
   header: {
-    marginBottom: 30,
+    marginBottom: 20,
     borderBottom: '2 solid #0d9488',
-    paddingBottom: 15,
+    paddingBottom: 10,
   },
   companyName: {
     fontSize: 24,
@@ -25,31 +25,31 @@ const styles = StyleSheet.create({
     color: '#64748b',
   },
   invoiceTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#1e293b',
-    marginTop: 20,
+    marginTop: 15,
     marginBottom: 5,
   },
   invoiceInfo: {
-    fontSize: 10,
+    fontSize: 9,
     color: '#64748b',
-    marginBottom: 3,
+    marginBottom: 2,
   },
   section: {
-    marginBottom: 20,
+    marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 'bold',
     color: '#0f172a',
-    marginBottom: 10,
-    paddingBottom: 5,
+    marginBottom: 6,
+    paddingBottom: 3,
     borderBottom: '1 solid #e2e8f0',
   },
   row: {
     flexDirection: 'row',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   label: {
     width: '35%',
@@ -65,23 +65,23 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    marginBottom: 12,
   },
   gridItem: {
     width: '48%',
-    padding: 12,
+    padding: 8,
     backgroundColor: '#f8fafc',
     borderRadius: 4,
     border: '1 solid #e2e8f0',
   },
   gridTitle: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: 'bold',
     color: '#0d9488',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   gridRow: {
-    marginBottom: 4,
+    marginBottom: 3,
   },
   gridLabel: {
     fontSize: 9,
@@ -93,8 +93,8 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   totalSection: {
-    marginTop: 20,
-    padding: 15,
+    marginTop: 10,
+    padding: 10,
     backgroundColor: '#ecfeff',
     borderRadius: 4,
     border: '2 solid #0d9488',
@@ -115,26 +115,26 @@ const styles = StyleSheet.create({
     color: '#0d9488',
   },
   paymentSection: {
-    marginTop: 20,
-    padding: 15,
+    marginTop: 10,
+    padding: 10,
     backgroundColor: '#fef3c7',
     borderRadius: 4,
     border: '1 solid #fbbf24',
   },
   paymentTitle: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 'bold',
     color: '#92400e',
-    marginBottom: 8,
+    marginBottom: 5,
   },
   paymentText: {
-    fontSize: 10,
+    fontSize: 9,
     color: '#78350f',
-    marginBottom: 4,
+    marginBottom: 3,
   },
   ribBox: {
-    marginTop: 8,
-    padding: 8,
+    marginTop: 5,
+    padding: 6,
     backgroundColor: '#fffbeb',
     borderRadius: 3,
     border: '1 solid #fbbf24',
@@ -151,10 +151,10 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   footer: {
-    marginTop: 30,
-    paddingTop: 15,
+    marginTop: 15,
+    paddingTop: 8,
     borderTop: '1 solid #e2e8f0',
-    fontSize: 9,
+    fontSize: 8,
     color: '#94a3b8',
     textAlign: 'center',
   },
@@ -173,6 +173,12 @@ const styles = StyleSheet.create({
 interface InvoicePdfDocumentProps {
   invoice: InvoiceData;
 }
+
+// Helper to truncate text to fit within 2 lines (approx 100 chars for PDF width)
+const truncateText = (text: string, maxLength: number = 100): string => {
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength - 3) + '...';
+};
 
 export function InvoicePdfDocument({ invoice }: InvoicePdfDocumentProps) {
   return (
@@ -195,7 +201,7 @@ export function InvoicePdfDocument({ invoice }: InvoicePdfDocumentProps) {
         {/* Client & Transporter Info Grid */}
         <View style={styles.grid}>
           <View style={styles.gridItem}>
-            <Text style={styles.gridTitle}>📋 CLIENT</Text>
+            <Text style={styles.gridTitle}>CLIENT</Text>
             <View style={styles.gridRow}>
               <Text style={styles.gridLabel}>Nom</Text>
               <Text style={styles.gridValue}>{invoice.clientName}</Text>
@@ -204,14 +210,10 @@ export function InvoicePdfDocument({ invoice }: InvoicePdfDocumentProps) {
               <Text style={styles.gridLabel}>Téléphone</Text>
               <Text style={styles.gridValue}>{invoice.clientPhone}</Text>
             </View>
-            <View style={styles.gridRow}>
-              <Text style={styles.gridLabel}>Ville</Text>
-              <Text style={styles.gridValue}>{invoice.clientCity}</Text>
-            </View>
           </View>
 
           <View style={styles.gridItem}>
-            <Text style={styles.gridTitle}>🚛 TRANSPORTEUR</Text>
+            <Text style={styles.gridTitle}>TRANSPORTEUR</Text>
             <View style={styles.gridRow}>
               <Text style={styles.gridLabel}>Nom</Text>
               <Text style={styles.gridValue}>{invoice.transporterName}</Text>
@@ -219,10 +221,6 @@ export function InvoicePdfDocument({ invoice }: InvoicePdfDocumentProps) {
             <View style={styles.gridRow}>
               <Text style={styles.gridLabel}>Téléphone</Text>
               <Text style={styles.gridValue}>{invoice.transporterPhone}</Text>
-            </View>
-            <View style={styles.gridRow}>
-              <Text style={styles.gridLabel}>Ville</Text>
-              <Text style={styles.gridValue}>{invoice.transporterCity}</Text>
             </View>
           </View>
         </View>
@@ -279,7 +277,7 @@ export function InvoicePdfDocument({ invoice }: InvoicePdfDocumentProps) {
           
           <View style={styles.row}>
             <Text style={styles.label}>Description:</Text>
-            <Text style={styles.value}>{invoice.description}</Text>
+            <Text style={styles.value}>{truncateText(invoice.description, 100)}</Text>
           </View>
         </View>
 
@@ -303,7 +301,7 @@ export function InvoicePdfDocument({ invoice }: InvoicePdfDocumentProps) {
 
         {/* Payment Instructions */}
         <View style={styles.paymentSection}>
-          <Text style={styles.paymentTitle}>💳 Instructions de Paiement</Text>
+          <Text style={styles.paymentTitle}>Instructions de Paiement</Text>
           <Text style={styles.paymentText}>Mode de paiement: {invoice.paymentMethod}</Text>
           <Text style={styles.paymentText}>{invoice.paymentInstructions}</Text>
           <Text style={styles.paymentText}>À libeller au nom de: CamionBack</Text>
