@@ -33,6 +33,8 @@ import { useForceFrenchLayout } from "@/hooks/use-force-french-layout";
 import { useTranslation } from "react-i18next";
 import { getCategoryConfig } from "@/lib/goods-category-config";
 import { StatusIndicator } from "@/components/shared/status-indicator";
+import { InvoiceDialog } from "@/components/coordinator/invoice-dialog";
+import { normalizeInvoiceData, InvoiceData } from "@/lib/invoice-utils";
 
 // Types for adaptive filters by tab
 type TabId = 'nouveau' | 'qualifies' | 'interesses' | 'production' | 'pris_en_charge';
@@ -774,10 +776,21 @@ export default function CoordinatorDashboard() {
   // State for empty returns dialog
   const [showReturnsDialog, setShowReturnsDialog] = useState(false);
   
+  // State for invoice dialog
+  const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
+  const [selectedInvoiceData, setSelectedInvoiceData] = useState<InvoiceData | null>(null);
+  
   const { toast} = useToast();
 
   const handleLogout = () => {
     logout();
+  };
+
+  // Handle invoice generation
+  const handleGenerateInvoice = (request: any) => {
+    const invoiceData = normalizeInvoiceData(request);
+    setSelectedInvoiceData(invoiceData);
+    setInvoiceDialogOpen(true);
   };
 
   // Handle coordinator payment - opens unified payment dialog
@@ -2571,6 +2584,17 @@ export default function CoordinatorDashboard() {
               <Truck className="h-4 w-4" />
               Prise en charge
             </Button>
+            {/* Facture button */}
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => handleGenerateInvoice(request)}
+              data-testid={`button-facture-${request.id}`}
+              className="h-9 w-9 shrink-0 border-[#0d9488] text-[#0d9488] hover:bg-[#0d9488] hover:text-white transition-all"
+              title="Générer facture"
+            >
+              <FileText className="h-4 w-4" />
+            </Button>
             {/* View Details button aligné à droite pour Production */}
             <Button
               variant="ghost"
@@ -2619,6 +2643,17 @@ export default function CoordinatorDashboard() {
             >
               <X className="h-4 w-4" />
               Annuler
+            </Button>
+            {/* Facture button */}
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => handleGenerateInvoice(request)}
+              data-testid={`button-facture-pris-en-charge-${request.id}`}
+              className="h-9 w-9 shrink-0 border-[#0d9488] text-[#0d9488] hover:bg-[#0d9488] hover:text-white transition-all"
+              title="Générer facture"
+            >
+              <FileText className="h-4 w-4" />
             </Button>
             {/* View Details button aligné à droite pour Pris en charge */}
             <Button
@@ -4263,6 +4298,13 @@ export default function CoordinatorDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Invoice Dialog */}
+      <InvoiceDialog
+        open={invoiceDialogOpen}
+        onClose={() => setInvoiceDialogOpen(false)}
+        invoice={selectedInvoiceData}
+      />
 
     </div>
   );
