@@ -5,6 +5,27 @@ CamionBack is a full-stack logistics marketplace web application for the Morocca
 
 ## Recent Changes
 
+### November 17, 2025 - Simplified City Filter for Coordinator Dashboard
+- **UX Improvement**: Replaced Google Places Autocomplete with transporter-style city filter across all coordinator tabs
+- **CityFilterSheet Component**: Created reusable component matching transporter UX
+  - Displays only cities with active requests from actual data (fromCity/toCity fields)
+  - Shows request counters per city using Map-based deduplication
+  - Teal coordinator theming with MapPin icon
+  - data-testids: `button-city-filter-{tabId}`, `sheet-city-filter-{tabId}`, `button-select-city-{cityName}`
+- **Filter Simplification**: Changed from complex CitySelection object to simple string
+  - `selectedCity` now stores 'allCities' or city name directly
+  - String-based matching in filterRequests function (fromCity/toCity comparison)
+  - Per-tab filter state persists in FiltersByTab record
+- **Helper Functions**: 
+  - `extractCityName()`: Normalizes city names (trims whitespace, handles empty values)
+  - `computeAvailableCities()`: Extracts unique cities with counters from request arrays
+- **Integration**: Applied to all 5 coordinator tabs
+  - Nouveau, Qualifiés, Intéressés: Uses request data directly
+  - Production, Pris en charge: City lists update with payment status filters
+- **Performance**: useMemo calculations prevent unnecessary recomputation
+- **User Feedback**: Previous Google Places search created confusion; new filter shows only relevant cities with accurate counts
+- **Architect Review**: Validated with no blocking defects, confirmed accurate city counters and proper filter interactions
+
 ### November 15, 2025 - Professional Invoice Generation for Coordinator Dashboard
 - **New Feature**: Added comprehensive invoice generation system for Production and "Pris en charge" tabs
 - **UI Components**:
@@ -89,7 +110,7 @@ The platform features a mobile-first, dark teal design with full French/Arabic b
 
 **Client Dashboard:** Features a simplified two-tab layout ("Actives" and "Terminées"), with payment handled directly on request cards and dynamic button displays based on request status.
 
-**Coordinator Dashboard:** Implements a complete request lifecycle (Nouveau → Qualifiés → Intéressés → Production → Pris en charge → Terminé) with a new "Pris en charge" tab for tracking requests taken by transporters. It includes an intelligent Google Places-powered filter system for various tabs and unified request card designs. A shared `StatusIndicator` component ensures consistent status display across dashboards. The coordinator dashboard features an "Empty Returns" dialog accessible via a header button with badge counter, displaying available return trips with truck photos, routes, dates, and transporter contact information in a responsive card grid.
+**Coordinator Dashboard:** Implements a complete request lifecycle (Nouveau → Qualifiés → Intéressés → Production → Pris en charge → Terminé) with a new "Pris en charge" tab for tracking requests taken by transporters. City filtering uses a transporter-style dropdown sheet that displays only cities with active requests and includes request counters, matching the transporter UX for consistency. Unified request card designs ensure a cohesive interface. A shared `StatusIndicator` component ensures consistent status display across dashboards. The coordinator dashboard features an "Empty Returns" dialog accessible via a header button with badge counter, displaying available return trips with truck photos, routes, dates, and transporter contact information in a responsive card grid.
 
 **AI-Powered Price Estimation:** Integrates an AI-powered price estimation system using GPT-5 for the coordinator dashboard. This system considers empty returns (-60% discount) and groupage for small volumes, with conditional handling fees. It enforces a financial split (60% Transporter, 40% Platform with a minimum fee), includes an in-memory cache, rate limiting, and a heuristic fallback. The estimation provides a total client price, financial breakdown, confidence score, and reasoning.
 
