@@ -161,7 +161,7 @@ export interface IStorage {
   qualifyRequest(requestId: string, transporterAmount: number, platformFee: number, coordinatorId: string): Promise<TransportRequest | undefined>;
   publishForMatching(requestId: string, coordinatorId: string): Promise<TransportRequest | undefined>;
   getMatchingRequests(filters?: { assignedToId?: string; searchQuery?: string }): Promise<any[]>;
-  getPublishedRequestsForTransporter(): Promise<any[]>;
+  getPublishedRequestsForTransporter(limit?: number, offset?: number): Promise<{ requests: any[]; totalCount: number }>;
   expressInterest(requestId: string, transporterId: string, availabilityDate?: Date): Promise<TransportRequest | undefined>;
   withdrawInterest(requestId: string, transporterId: string): Promise<TransportRequest | undefined>;
   getInterestedTransportersForRequest(requestId: string): Promise<any[]>;
@@ -1266,8 +1266,8 @@ export class MemStorage implements IStorage {
   async getMatchingRequests(filters?: { assignedToId?: string; searchQuery?: string }): Promise<any[]> {
     return [];
   }
-  async getPublishedRequestsForTransporter(): Promise<any[]> {
-    return [];
+  async getPublishedRequestsForTransporter(limit: number = 12, offset: number = 0): Promise<{ requests: any[]; totalCount: number }> {
+    return { requests: [], totalCount: 0 };
   }
   async expressInterest(requestId: string, transporterId: string, availabilityDate?: Date): Promise<TransportRequest | undefined> {
     return undefined;
@@ -3485,7 +3485,24 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
-  async getPublishedRequestsForTransporter(): Promise<any[]> {
+  async getPublishedRequestsForTransporter(limit: number = 12, offset: number = 0): Promise<{ requests: any[]; totalCount: number }> {
+    // First get total count
+    const countResult = await db.select({ count: sql<number>`count(*)::int` })
+      .from(transportRequests)
+      .where(
+        and(
+          eq(transportRequests.status, 'published_for_matching'),
+          eq(transportRequests.coordinationStatus, 'matching'),
+          or(
+            eq(transportRequests.isHidden, false),
+            isNull(transportRequests.isHidden)
+          )
+        )
+      );
+    
+    const totalCount = countResult[0]?.count || 0;
+    
+    // Then get paginated results
     // Explicitly project transporter-safe columns
     // INCLUDE pricing fields that transporters need to see
     const requests = await db.select({
@@ -3529,9 +3546,11 @@ export class DbStorage implements IStorage {
           )
         )
       )
-      .orderBy(desc(transportRequests.publishedForMatchingAt));
+      .orderBy(desc(transportRequests.publishedForMatchingAt))
+      .limit(limit)
+      .offset(offset);
     
-    return requests;
+    return { requests, totalCount };
   }
 
   async getMatchingRequests(filters?: { assignedToId?: string; searchQuery?: string }): Promise<any[]> {
