@@ -1,104 +1,7 @@
 # CamionBack - Logistics Marketplace Platform
 
 ## Overview
-CamionBack is a full-stack logistics marketplace web application for the Moroccan market. It connects clients with independent transporters, streamlining logistics through request creation, service offers, and platform management. The platform supports Client, Transporter, Administrator, and Coordinator roles, aiming to become a leading and efficient logistics solution in Morocco.
-
-## Recent Changes
-
-### November 17, 2025 - Simplified City Filter for Coordinator Dashboard
-- **UX Improvement**: Replaced Google Places Autocomplete with transporter-style city filter across all coordinator tabs
-- **CityFilterSheet Component**: Created reusable component matching transporter UX
-  - Displays only cities with active requests from actual data (fromCity/toCity fields)
-  - Shows request counters per city using Map-based deduplication
-  - Teal coordinator theming with MapPin icon
-  - data-testids: `button-city-filter-{tabId}`, `sheet-city-filter-{tabId}`, `button-select-city-{cityName}`
-- **Filter Simplification**: Changed from complex CitySelection object to simple string
-  - `selectedCity` now stores 'allCities' or city name directly
-  - String-based matching in filterRequests function (fromCity/toCity comparison)
-  - Per-tab filter state persists in FiltersByTab record
-- **Helper Functions**: 
-  - `extractCityName()`: Normalizes city names (trims whitespace, handles empty values)
-  - `computeAvailableCities()`: Extracts unique cities with counters from request arrays
-- **Integration**: Applied to all 5 coordinator tabs
-  - Nouveau, Qualifiés, Intéressés: Uses request data directly
-  - Production, Pris en charge: City lists update with payment status filters
-- **Performance**: useMemo calculations prevent unnecessary recomputation
-- **User Feedback**: Previous Google Places search created confusion; new filter shows only relevant cities with accurate counts
-- **Architect Review**: Validated with no blocking defects, confirmed accurate city counters and proper filter interactions
-
-### November 15, 2025 - Professional Invoice Generation for Coordinator Dashboard
-- **New Feature**: Added comprehensive invoice generation system for Production and "Pris en charge" tabs
-- **UI Components**:
-  - Added "Facture" buttons with FileText icon on all request cards in Production and Pris en charge tabs
-  - Buttons styled with dark teal theme (#0d9488), matching platform design
-  - data-testids: `button-facture-${request.id}` (Production), `button-facture-pris-en-charge-${request.id}` (Pris en charge)
-- **InvoiceDialog Component**: Professional, mobile-responsive invoice preview dialog
-  - Displays complete invoice details: number (INV-{requestId}-{timestamp}), dates, client/transporter info
-  - Shows route, cargo details, handling requirements, total client amount
-  - Includes payment instructions with RIB: 011815000005210001099713
-  - Double-click protection: "Télécharger PDF" button disables during generation
-- **PDF Export**: Client-side PDF generation using @react-pdf/renderer
-  - Professional A4 format with dark teal branding
-  - On-demand generation (no backend storage) ensures latest data always reflected
-  - Error handling with toast notifications for generation failures
-- **Data Transformation**: Created `normalizeInvoiceData()` utility function
-  - Transforms request data into standardized invoice format
-  - Provides fallbacks for missing data (N/A, "Transporteur inconnu")
-  - Formats dates using date-fns, currency using Intl.NumberFormat
-- **Architecture Decision**: Frontend-only implementation to reduce server load
-  - Reuses existing request data from coordinator endpoints
-  - No new backend endpoints required
-  - Leverages existing pricing data (clientTotal, transporterAmount, platformFee)
-- **Architect Review**: Passed validation with no critical issues identified
-  - Modular structure praised (InvoiceDialog + InvoicePdfDocument + utilities)
-  - Proper error handling and fallback values confirmed
-  - Mobile responsiveness verified
-
-### November 14, 2025 - Intelligent Requalification with Pricing Preservation
-- **Critical Fix**: Requalification endpoint now intelligently handles requests with/without pricing data
-- **Pricing Preservation Logic**: 
-  - Requests WITH pricing (transporterAmount, platformFee, clientTotal) → requalified as "qualified" status
-  - Requests WITHOUT pricing (legacy workflow) → demoted to "qualification_pending" for price estimation
-- **Endpoint Updated**: `/api/coordinator/requests/:id/cancel-and-requalify`
-  - Uses explicit null checks (`!= null`) instead of truthy checks to avoid edge cases with zero values
-  - Conditionally sets `publishedForMatchingAt`: Only set for qualified requests, null for pending ones
-  - Preserves existing pricing data when present, avoiding blank pricing sections in UI
-- **Workflow Behavior**:
-  - Production/Pris en charge with pricing → Requalify → Qualifiés tab (keeps prices visible)
-  - Production/Pris en charge without pricing → Requalify → Nouveau tab (coordinator must qualify first)
-- **Architecture Review**: Validated by architect, ensures legacy requests route through qualification workflow while keeping priced orders intact
-- **Console Logging**: Added diagnostic logging to track pricing preservation decisions
-
-### November 14, 2025 - Pricing Section Added to "Pris en Charge" Tab
-- **Feature Addition**: Added pricing display section to coordinator dashboard "Pris en charge" tab
-- **API Enhancement**: Extended `/api/coordinator/coordination/pris-en-charge` endpoint to include pricing fields
-  - Added fields: `clientTotal`, `transporterAmount`, `platformFee`, `qualifiedAt`
-  - Modified SQL SELECT and response mapping to include pricing data
-- **Consistency Update**: Added same pricing fields to coordinator endpoints for consistency
-  - Updated `getCoordinationEnActionRequests` in storage.ts
-  - Updated `getCoordinationPrioritairesRequests` in storage.ts
-- **Frontend Display**: Price section now shows automatically when pricing data exists
-  - Displays: Prix transporteur, Cotisation plateforme (40%), Total client
-  - Same design and formatting as "En production" tab
-  - Conditional rendering based on `request.clientTotal && request.qualifiedAt`
-
-### November 14, 2025 - Empty Returns Display Bug Fix
-- **Bug Fix**: Corrected empty returns dialog to properly display transporter data
-- **Array Format Handling**: Updated query to handle `/api/empty-returns` returning array format directly
-  - Added backward-compatible guard: `Array.isArray(emptyReturnsData) ? emptyReturnsData : (emptyReturnsData?.emptyReturns ?? [])`
-- **Transporter Access**: Fixed ReferenceError by using embedded `emptyReturn.transporter` instead of non-existent `allUsers`
-- **Null Safety**: Existing optional chaining (`?.`) and fallbacks already prevent crashes when transporter data is missing
-- **UI Degradation**: Dialog displays "Transporteur inconnu" and "N/A" gracefully for missing transporter info
-
-### November 13, 2025 - Empty Returns Migration to Coordinator
-- **Admin Dashboard**: Removed "Retours" (empty returns) tab and management interface
-- **Header Component**: Extended with optional `onViewReturns` and `returnsCount` props for coordinators
-- **Coordinator Dashboard**: 
-  - Added header button with badge counter for empty returns
-  - Created dialog displaying empty returns in responsive card grid
-  - Cards show truck photos (with fallback), routes, dates, and transporter details
-  - Reuses existing `/api/empty-returns` query and truck photo cache
-- **Architecture**: Empty returns management shifted from admin-only to coordinator-focused workflow
+CamionBack is a full-stack logistics marketplace web application for the Moroccan market. It connects clients with independent transporters, streamlining logistics through request creation, service offers, and platform management. The platform supports Client, Transporter, Administrator, and Coordinator roles, aiming to become a leading and efficient logistics solution in Morocco, fostering efficiency and transparency in the logistics sector.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -110,14 +13,14 @@ The platform features a mobile-first, dark teal design with full French/Arabic b
 
 **Client Dashboard:** Features a simplified two-tab layout ("Actives" and "Terminées"), with payment handled directly on request cards and dynamic button displays based on request status.
 
-**Coordinator Dashboard:** Implements a complete request lifecycle (Nouveau → Qualifiés → Intéressés → Production → Pris en charge → Terminé) with a new "Pris en charge" tab for tracking requests taken by transporters. City filtering uses a transporter-style dropdown sheet that displays only cities with active requests and includes request counters, matching the transporter UX for consistency. Unified request card designs ensure a cohesive interface. A shared `StatusIndicator` component ensures consistent status display across dashboards. The coordinator dashboard features an "Empty Returns" dialog accessible via a header button with badge counter, displaying available return trips with truck photos, routes, dates, and transporter contact information in a responsive card grid.
+**Coordinator Dashboard:** Implements a complete request lifecycle (Nouveau → Qualifiés → Intéressés → Production → Pris en charge → Terminé) with a "Pris en charge" tab for tracking requests taken by transporters. City filtering uses a transporter-style dropdown sheet displaying only cities with active requests and includes request counters. Unified request card designs ensure a cohesive interface, with a shared `StatusIndicator` component for consistent status display. The dashboard includes an "Empty Returns" dialog accessible via a header button with a badge counter, displaying available return trips with truck photos, routes, dates, and transporter contact information. Professional invoice generation is integrated for "Production" and "Pris en charge" tabs, providing client-side PDF export with comprehensive details. The coordinator filter is available across all coordinator tabs, maintaining independent filter states for each tab. Intelligent requalification preserves pricing for qualified requests and demotes unpriced requests for estimation.
 
 **AI-Powered Price Estimation:** Integrates an AI-powered price estimation system using GPT-5 for the coordinator dashboard. This system considers empty returns (-60% discount) and groupage for small volumes, with conditional handling fees. It enforces a financial split (60% Transporter, 40% Platform with a minimum fee), includes an in-memory cache, rate limiting, and a heuristic fallback. The estimation provides a total client price, financial breakdown, confidence score, and reasoning.
 
 ### Technical Implementations
 The backend is an Express.js and TypeScript application providing RESTful JSON APIs. Authentication is phone number-based with 6-digit PIN verification. User roles define access control. Real-time chat uses WebSockets, and an in-app notification system provides alerts. PostgreSQL (Neon Serverless) with Drizzle ORM is used for data storage. Key features include a multi-status client request progression, transporter offer workflow, advanced user management, multi-channel notifications, dynamic dashboards for Admin and Coordinators, public order sharing (WhatsApp integration), CamioMatch for intelligent transporter matching, and robust file management. Performance is optimized with pre-calculated offer counts, lazy loading, and optimized SQL queries, including universal pagination for the Admin Dashboard and N+1 query elimination for critical coordinator endpoints. Google Maps integration consistently displays Western Sahara as part of Morocco.
 
-**Contract Generation & Payment Validation:** Contracts are automatically created during payment validation for both standard offer-based workflows and manual coordinator assignments. The system handles two workflows: (1) Standard: Request → Offers → Accepted Offer → Payment → Contract; (2) Manual Assignment: Request → Direct Coordinator Assignment → Payment → Contract. The `contracts.offerId` field is nullable to support manual assignments without offers, using `request.clientTotal` as the contract amount. An admin backfill endpoint (`/api/admin/backfill-contracts`) retroactively generates missing contracts for paid requests.
+**Contract Generation & Payment Validation:** Contracts are automatically created during payment validation for both standard offer-based workflows and manual coordinator assignments. The system supports two workflows: (1) Standard: Request → Offers → Accepted Offer → Payment → Contract; (2) Manual Assignment: Request → Direct Coordinator Assignment → Payment → Contract. The `contracts.offerId` field is nullable to support manual assignments without offers, using `request.clientTotal` as the contract amount. An admin backfill endpoint (`/api/admin/backfill-contracts`) retroactively generates missing contracts for paid requests.
 
 **Error Handling Improvements:** The frontend error handler properly extracts and displays JSON error messages from API responses, including detailed error messages (e.g., duplicate city names trigger "Cette ville existe déjà" instead of generic 500 errors). City creation includes name trimming and Postgres unique constraint detection (error code 23505).
 
@@ -154,3 +57,4 @@ The backend is an Express.js and TypeScript application providing RESTful JSON A
 - **React Hook Form**: Form state management.
 - **Zod**: Schema validation.
 - **date-fns**: Date manipulation.
+- **@react-pdf/renderer**: Client-side PDF generation.
