@@ -698,9 +698,9 @@ export default function TransporterDashboard() {
               >
                 <Search className="h-4 w-4 flex-shrink-0" />
                 <span className="hidden sm:inline truncate">{t('transporterDashboard.tabs.available')}</span>
-                {filteredRequests.length > 0 && (
+                {((selectedCity === "allCities" ? metadata?.totalCount : metadata?.cityCounts?.[selectedCity]) || 0) > 0 && (
                   <span className="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 text-xs font-bold rounded-full bg-gradient-to-br from-cyan-400 to-cyan-500 text-white shadow-md shadow-cyan-500/40 animate-pulse flex-shrink-0">
-                    {filteredRequests.length}
+                    {selectedCity === "allCities" ? (metadata?.totalCount || 0) : (metadata?.cityCounts?.[selectedCity] || 0)}
                   </span>
                 )}
               </TabsTrigger>
