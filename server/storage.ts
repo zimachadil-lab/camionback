@@ -3449,6 +3449,7 @@ export class DbStorage implements IStorage {
       }
     }
     
+    // Qualify AND automatically publish for transporter matching
     const result = await db.update(transportRequests)
       .set({
         transporterAmount: transporterAmount.toString(),
@@ -3456,6 +3457,10 @@ export class DbStorage implements IStorage {
         clientTotal: clientTotal.toString(),
         distance: distance,
         qualifiedAt: new Date(),
+        // Automatically publish for transporters
+        status: 'published_for_matching',
+        coordinationStatus: 'matching',
+        publishedForMatchingAt: new Date(),
         coordinationUpdatedAt: new Date(),
         coordinationUpdatedBy: coordinatorId,
       })

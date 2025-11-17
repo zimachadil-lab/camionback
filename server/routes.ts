@@ -5670,6 +5670,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.json(updated);
+
+      // Fire-and-forget: notify transporters asynchronously (since qualification now auto-publishes)
+      void notifyTransportersAboutNewMission(updated, storage);
     } catch (error) {
       console.error("Erreur qualification demande:", error);
       res.status(500).json({ error: "Erreur lors de la qualification" });
