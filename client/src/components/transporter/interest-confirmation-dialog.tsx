@@ -9,7 +9,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { AlertTriangle, Phone, Calendar, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, Phone, Calendar, CheckCircle2, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface InterestConfirmationDialogProps {
   open: boolean;
@@ -33,9 +34,26 @@ export function InterestConfirmationDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent 
         dir={i18n.dir()} 
-        className="max-w-md mx-4 rounded-2xl border-2 border-[#17cfcf]/30 shadow-2xl"
+        className="w-full max-w-sm sm:max-w-md max-h-[90dvh] overflow-y-auto rounded-2xl border-2 border-[#17cfcf]/30 shadow-2xl p-0"
       >
-        <AlertDialogHeader className="space-y-4">
+        {/* Close button - visible on mobile */}
+        <AlertDialogCancel 
+          asChild
+          className="absolute top-3 right-3 z-50"
+        >
+          <Button 
+            size="icon" 
+            variant="ghost"
+            className="h-8 w-8 rounded-full"
+            data-testid="button-close-interest-dialog"
+            aria-label={i18n.language === 'ar' ? 'إغلاق' : 'Fermer'}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </AlertDialogCancel>
+
+        <div className="p-6">
+          <AlertDialogHeader className="space-y-4">
           <div className="flex justify-center">
             <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg">
               <AlertTriangle className="w-8 h-8 text-white" />
@@ -70,7 +88,7 @@ export function InterestConfirmationDialog({
                       <CheckCircle2 className="w-4 h-4 text-white" />
                     </div>
                   </div>
-                  <p className="text-sm font-semibold text-foreground leading-relaxed">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-50 leading-relaxed">
                     {i18n.language === 'ar'
                       ? 'العميل سيتلقى إشعارًا فوريًا باهتمامك'
                       : 'Le client recevra immédiatement une notification de votre intérêt'
@@ -85,7 +103,7 @@ export function InterestConfirmationDialog({
                       <Phone className="w-4 h-4 text-white" />
                     </div>
                   </div>
-                  <p className="text-sm font-semibold text-foreground leading-relaxed">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-50 leading-relaxed">
                     {i18n.language === 'ar'
                       ? 'المنسق سيتصل بك خلال 24 ساعة'
                       : 'Le coordinateur vous contactera sous 24 heures'
@@ -100,7 +118,7 @@ export function InterestConfirmationDialog({
                       <Calendar className="w-4 h-4 text-white" />
                     </div>
                   </div>
-                  <p className="text-sm font-semibold text-foreground leading-relaxed">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-50 leading-relaxed">
                     {i18n.language === 'ar'
                       ? 'يجب أن تكون متاحًا 100٪ للتاريخ المحدد'
                       : 'Vous devez être disponible à 100% pour la date indiquée'
@@ -122,21 +140,22 @@ export function InterestConfirmationDialog({
           </AlertDialogDescription>
         </AlertDialogHeader>
 
-        <AlertDialogFooter className="gap-2 sm:gap-2">
-          <AlertDialogCancel 
-            className="flex-1 h-12 text-base font-semibold border-2 hover:bg-muted"
-            data-testid="button-cancel-interest"
-          >
-            {i18n.language === 'ar' ? 'إلغاء' : 'Annuler'}
-          </AlertDialogCancel>
-          <AlertDialogAction
-            onClick={handleConfirm}
-            className="flex-1 h-12 text-base font-bold bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] hover:from-[#15b8b8] hover:to-[#11a0a0] border-2 border-[#17cfcf]/30 shadow-lg"
-            data-testid="button-confirm-interest"
-          >
-            {i18n.language === 'ar' ? 'تأكيد الاهتمام ✓' : 'Confirmer l\'intérêt ✓'}
-          </AlertDialogAction>
-        </AlertDialogFooter>
+          <AlertDialogFooter className="gap-2 sm:gap-2">
+            <AlertDialogCancel 
+              className="flex-1 h-12 text-base font-semibold border-2 hover:bg-muted"
+              data-testid="button-cancel-interest"
+            >
+              {i18n.language === 'ar' ? 'إلغاء' : 'Annuler'}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirm}
+              className="flex-1 h-12 text-base font-bold bg-gradient-to-r from-[#17cfcf] to-[#13b3b3] hover:from-[#15b8b8] hover:to-[#11a0a0] border-2 border-[#17cfcf]/30 shadow-lg"
+              data-testid="button-confirm-interest"
+            >
+              {i18n.language === 'ar' ? 'تأكيد الاهتمام ✓' : 'Confirmer l\'intérêt ✓'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </div>
       </AlertDialogContent>
     </AlertDialog>
   );
