@@ -63,6 +63,14 @@ export default function TransporterDashboard() {
   const [selectedCity, setSelectedCity] = useState("allCities");
   const [cityFilterOpen, setCityFilterOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Pagination state for available requests
+  const [displayedRequests, setDisplayedRequests] = useState<any[]>([]);
+  const [currentOffset, setCurrentOffset] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const REQUEST_LIMIT = 12;
   // Removed offerDialogOpen - new workflow uses interest buttons instead of offer form
   const [chatOpen, setChatOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<{ id: string; name: string; role: string } | null>(null);
@@ -129,18 +137,63 @@ export default function TransporterDashboard() {
     }
   };
 
-  // Fetch available requests (qualified and published for matching)
-  const { data: requests = [], isLoading: requestsLoading } = useQuery({
-    queryKey: ["/api/transporter/available-requests", user?.id],
+  // Fetch initial batch of available requests (qualified and published for matching)
+  const { data: initialRequestsData, isLoading: requestsLoading, refetch: refetchRequests } = useQuery({
+    queryKey: ["/api/transporter/available-requests", user?.id, 0],
     enabled: !!user,
     queryFn: async () => {
-      const response = await fetch(`/api/transporter/available-requests`);
+      const response = await fetch(`/api/transporter/available-requests?limit=${REQUEST_LIMIT}&offset=0`);
       if (!response.ok) {
         throw new Error('Failed to fetch requests');
       }
       return response.json();
     },
   });
+
+  // Initialize displayed requests when initial data loads
+  useEffect(() => {
+    if (initialRequestsData) {
+      setDisplayedRequests(initialRequestsData.requests || []);
+      setTotalCount(initialRequestsData.totalCount || 0);
+      setCurrentOffset(REQUEST_LIMIT);
+      setHasMore((initialRequestsData.requests?.length || 0) < (initialRequestsData.totalCount || 0));
+    }
+  }, [initialRequestsData]);
+
+  // Function to load more requests
+  const loadMoreRequests = async () => {
+    // Guard against concurrent calls
+    if (!hasMore || requestsLoading || loadingMore) return;
+    
+    setLoadingMore(true);
+    try {
+      const response = await fetch(`/api/transporter/available-requests?limit=${REQUEST_LIMIT}&offset=${currentOffset}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch more requests');
+      }
+      const data = await response.json();
+      
+      // Update state atomically to prevent race conditions
+      setDisplayedRequests(prev => {
+        const newRequests = [...prev, ...(data.requests || [])];
+        // Calculate hasMore based on the new total
+        const newHasMore = newRequests.length < data.totalCount;
+        setHasMore(newHasMore);
+        return newRequests;
+      });
+      setCurrentOffset(prev => prev + REQUEST_LIMIT);
+      setTotalCount(data.totalCount);
+    } catch (error) {
+      console.error('Error loading more requests:', error);
+      toast({
+        title: t('shared.errors.generic'),
+        description: t('transporterDashboard.errors.loadMore'),
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   // Fetch transporter's interests with availability dates
   const { data: myInterests = [], isLoading: interestsLoading } = useQuery({
@@ -488,7 +541,7 @@ export default function TransporterDashboard() {
   const createReportMutation = useMutation({
     mutationFn: async (data: { requestId: string; description: string; type: string }) => {
       // Get the request to find the client ID
-      const request = [...requests, ...acceptedRequests].find((r: any) => r.id === data.requestId);
+      const request = [...displayedRequests, ...acceptedRequests].find((r: any) => r.id === data.requestId);
       const clientId = request?.clientId || "";
       
       return await apiRequest("POST", "/api/reports", {
@@ -547,14 +600,14 @@ export default function TransporterDashboard() {
   // Extract unique cities from available requests (Google Maps cities)
   const availableCities = useMemo(() => {
     const citiesSet = new Set<string>();
-    requests.forEach((req: any) => {
+    displayedRequests.forEach((req: any) => {
       if (req.fromCity) citiesSet.add(req.fromCity);
       if (req.toCity) citiesSet.add(req.toCity);
     });
     return Array.from(citiesSet).sort((a, b) => a.localeCompare(b, 'fr'));
-  }, [requests]);
+  }, [displayedRequests]);
 
-  const filteredRequests = requests
+  const filteredRequests = displayedRequests
     .filter((req: any) => {
       // Exclude requests declined by this transporter
       const notDeclined = !req.declinedBy || !req.declinedBy.includes(user.id);
@@ -682,11 +735,11 @@ export default function TransporterDashboard() {
                       className="bg-gradient-to-br from-[#0d9488] via-[#0f766e] to-[#115e59] text-white border-0 text-sm sm:text-base font-bold px-2 sm:px-3 py-1 sm:py-1.5 flex-shrink-0"
                     >
                       {selectedCity === "allCities" 
-                        ? requests.filter((req: any) => 
+                        ? displayedRequests.filter((req: any) => 
                             (!req.declinedBy || !req.declinedBy.includes(user.id)) &&
                             (!req.transporterInterests?.includes(user.id))
                           ).length
-                        : requests.filter((req: any) => 
+                        : displayedRequests.filter((req: any) => 
                             (req.fromCity === selectedCity || req.toCity === selectedCity) &&
                             (!req.declinedBy || !req.declinedBy.includes(user.id)) &&
                             (!req.transporterInterests?.includes(user.id))
@@ -728,7 +781,7 @@ export default function TransporterDashboard() {
                         variant="secondary" 
                         className={selectedCity === "allCities" ? "bg-white/20 text-white" : ""}
                       >
-                        {requests.filter((req: any) => 
+                        {displayedRequests.filter((req: any) => 
                           (!req.declinedBy || !req.declinedBy.includes(user.id)) &&
                           (!req.transporterInterests?.includes(user.id))
                         ).length}
@@ -737,7 +790,7 @@ export default function TransporterDashboard() {
 
                     {/* Individual Cities */}
                     {availableCities.map((city: string) => {
-                      const cityRequestCount = requests.filter((req: any) => 
+                      const cityRequestCount = displayedRequests.filter((req: any) => 
                         (req.fromCity === city || req.toCity === city) &&
                         (!req.declinedBy || !req.declinedBy.includes(user.id)) &&
                         (!req.transporterInterests?.includes(user.id))
@@ -778,28 +831,56 @@ export default function TransporterDashboard() {
             </div>
 
             {filteredRequests.length > 0 ? (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {filteredRequests.map((request: any) => {
-                  // Check if transporter has expressed interest
-                  const isInterested = request.transporterInterests?.includes(user.id) || false;
-                  const isPending = expressInterestMutation.isPending || withdrawInterestMutation.isPending;
-                  
-                  return (
-                    <RequestCard
-                      key={request.id}
-                      request={request}
-                      userStatus={user.status}
-                      onDecline={handleDeclineRequest}
-                      onTrackView={() => trackViewMutation.mutate(request.id)}
-                      // New interest-based props
-                      isInterested={isInterested}
-                      onExpressInterest={(id, date) => expressInterestMutation.mutate({ requestId: id, availabilityDate: date })}
-                      onWithdrawInterest={(id) => withdrawInterestMutation.mutate(id)}
-                      isPendingInterest={isPending}
-                    />
-                  );
-                })}
-              </div>
+              <>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {filteredRequests.map((request: any) => {
+                    // Check if transporter has expressed interest
+                    const isInterested = request.transporterInterests?.includes(user.id) || false;
+                    const isPending = expressInterestMutation.isPending || withdrawInterestMutation.isPending;
+                    
+                    return (
+                      <RequestCard
+                        key={request.id}
+                        request={request}
+                        userStatus={user.status}
+                        onDecline={handleDeclineRequest}
+                        onTrackView={() => trackViewMutation.mutate(request.id)}
+                        // New interest-based props
+                        isInterested={isInterested}
+                        onExpressInterest={(id, date) => expressInterestMutation.mutate({ requestId: id, availabilityDate: date })}
+                        onWithdrawInterest={(id) => withdrawInterestMutation.mutate(id)}
+                        isPendingInterest={isPending}
+                      />
+                    );
+                  })}
+                </div>
+                
+                {/* Load More Button */}
+                {hasMore && (
+                  <div className="flex justify-center mt-6">
+                    <Button
+                      onClick={loadMoreRequests}
+                      variant="outline"
+                      size="lg"
+                      disabled={requestsLoading}
+                      className="min-w-[200px]"
+                      data-testid="button-load-more"
+                    >
+                      {requestsLoading ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                          {i18n.language === 'ar' ? 'جار التحميل...' : 'Chargement...'}
+                        </>
+                      ) : (
+                        <>
+                          <Package className="mr-2 h-4 w-4" />
+                          {i18n.language === 'ar' ? `تحميل المزيد (${totalCount - displayedRequests.length} متبقي)` : `Charger plus (${totalCount - displayedRequests.length} restantes)`}
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="text-center py-12">
                 <Search className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
