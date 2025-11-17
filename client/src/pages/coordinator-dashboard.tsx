@@ -85,7 +85,6 @@ interface TabFilters {
   selectedDateFilter?: string;
   selectedCoordinator?: string;
   minInterested?: number;
-  selectedPaymentStatus?: string;
   selectedArchiveReason?: string;
 }
 
@@ -118,13 +117,11 @@ function getDefaultFilters(tab: TabId): TabFilters {
     case 'production':
       return {
         ...baseFilters,
-        selectedPaymentStatus: 'Tous les statuts',
         selectedDateFilter: 'all',
       };
     case 'pris_en_charge':
       return {
         ...baseFilters,
-        selectedPaymentStatus: 'Tous les statuts',
         selectedDateFilter: 'all',
       };
     default:
@@ -143,16 +140,6 @@ function countActiveFilters(filters: TabFilters, tab: TabId): number {
     }
     return value !== defaultValue && value !== '' && value !== undefined;
   }).length;
-}
-
-// Helper function to get payment status label in French
-function getPaymentStatusLabel(status: string): string {
-  const labels: Record<string, string> = {
-    'a_facturer': 'À facturer',
-    'paid_by_client': 'Payé par le client',
-    'paid_by_camionback': 'Payé par CamionBack'
-  };
-  return labels[status] || status;
 }
 
 // Helper function to get client-friendly status with color
@@ -1716,11 +1703,7 @@ export default function CoordinatorDashboard() {
       const matchesMinInterested = !tabFilters.minInterested || 
         (request.transporterInterests && request.transporterInterests.length >= tabFilters.minInterested);
 
-      // Payment status filtering (for production tab)
-      const matchesPaymentStatus = !tabFilters.selectedPaymentStatus || tabFilters.selectedPaymentStatus === "Tous les statuts" ||
-        request.paymentMethod === tabFilters.selectedPaymentStatus;
-
-      return matchesCity && matchesStatus && matchesSearch && matchesDate && matchesCoordinator && matchesMinInterested && matchesPaymentStatus;
+      return matchesCity && matchesStatus && matchesSearch && matchesDate && matchesCoordinator && matchesMinInterested;
     });
   };
 
@@ -2838,27 +2821,6 @@ export default function CoordinatorDashboard() {
                   onChange={(e) => setTempFilters({ ...tempFilters, minInterested: parseInt(e.target.value) || 1 })}
                   data-testid="input-filter-min-interested"
                 />
-              </div>
-            )}
-
-            {/* Payment Status - production and pris_en_charge only */}
-            {(activeTab === 'production' || activeTab === 'pris_en_charge') && (
-              <div className="space-y-2">
-                <Label htmlFor="filter-payment-status">Statut de paiement</Label>
-                <Select
-                  value={tempFilters.selectedPaymentStatus || 'Tous les statuts'}
-                  onValueChange={(value) => setTempFilters({ ...tempFilters, selectedPaymentStatus: value })}
-                >
-                  <SelectTrigger id="filter-payment-status" data-testid="select-filter-payment-status">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Tous les statuts">Tous les statuts</SelectItem>
-                    <SelectItem value="a_facturer">À facturer</SelectItem>
-                    <SelectItem value="paid_by_client">Payé par le client</SelectItem>
-                    <SelectItem value="paid_by_camionback">Payé par CamionBack</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             )}
           </div>
