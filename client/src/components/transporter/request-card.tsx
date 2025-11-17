@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { fr, ar } from "date-fns/locale";
 import { PhotoGalleryDialog } from "./photo-gallery-dialog";
 import { DatePickerDialog } from "./date-picker-dialog";
+import { InterestConfirmationDialog } from "./interest-confirmation-dialog";
 import { getCategoryConfig } from "@/lib/goods-category-config";
 import { RouteMap } from "@/components/route-map";
 import { extractCityFromAddress } from "@shared/utils";
@@ -68,6 +69,7 @@ export function RequestCard({
 }: RequestCardProps) {
   const { t, i18n } = useTranslation();
   const [photoGalleryOpen, setPhotoGalleryOpen] = useState(false);
+  const [confirmationDialogOpen, setConfirmationDialogOpen] = useState(false);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [showValidationWarning, setShowValidationWarning] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
@@ -98,8 +100,13 @@ export function RequestCard({
     if (!isUserValidated) {
       setShowValidationWarning(true);
     } else {
-      setDatePickerOpen(true);
+      setConfirmationDialogOpen(true);
     }
+  };
+
+  const handleConfirmInterest = () => {
+    setConfirmationDialogOpen(false);
+    setDatePickerOpen(true);
   };
 
   const handleDateConfirm = (date: Date) => {
@@ -531,6 +538,12 @@ export function RequestCard({
       onConfirm={handleDateConfirm}
       requestDate={dateTime}
       isPending={isPendingInterest}
+    />
+
+    <InterestConfirmationDialog
+      open={confirmationDialogOpen}
+      onOpenChange={setConfirmationDialogOpen}
+      onConfirm={handleConfirmInterest}
     />
     </>
   );
