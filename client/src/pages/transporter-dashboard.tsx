@@ -137,12 +137,27 @@ export default function TransporterDashboard() {
     }
   };
 
-  // Fetch initial batch of available requests (qualified and published for matching)
-  const { data: initialRequestsData, isLoading: requestsLoading, refetch: refetchRequests } = useQuery({
-    queryKey: ["/api/transporter/available-requests", user?.id, 0],
+  // Fetch metadata (total count and city counts) - lightweight query
+  const { data: metadata, isLoading: metadataLoading } = useQuery({
+    queryKey: ["/api/transporter/available-requests/metadata", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const response = await fetch(`/api/transporter/available-requests?limit=${REQUEST_LIMIT}&offset=0`);
+      const response = await fetch(`/api/transporter/available-requests/metadata`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch metadata');
+      }
+      return response.json();
+    },
+  });
+
+  // Fetch initial batch of available requests (qualified and published for matching)
+  // Now with optional city filter
+  const { data: initialRequestsData, isLoading: requestsLoading, refetch: refetchRequests } = useQuery({
+    queryKey: ["/api/transporter/available-requests", user?.id, selectedCity, 0],
+    enabled: !!user,
+    queryFn: async () => {
+      const cityParam = selectedCity !== "allCities" ? `&city=${encodeURIComponent(selectedCity)}` : '';
+      const response = await fetch(`/api/transporter/available-requests?limit=${REQUEST_LIMIT}&offset=0${cityParam}`);
       if (!response.ok) {
         throw new Error('Failed to fetch requests');
       }
@@ -160,14 +175,15 @@ export default function TransporterDashboard() {
     }
   }, [initialRequestsData]);
 
-  // Function to load more requests
+  // Function to load more requests (respects current city filter)
   const loadMoreRequests = async () => {
     // Guard against concurrent calls
     if (!hasMore || requestsLoading || loadingMore) return;
     
     setLoadingMore(true);
     try {
-      const response = await fetch(`/api/transporter/available-requests?limit=${REQUEST_LIMIT}&offset=${currentOffset}`);
+      const cityParam = selectedCity !== "allCities" ? `&city=${encodeURIComponent(selectedCity)}` : '';
+      const response = await fetch(`/api/transporter/available-requests?limit=${REQUEST_LIMIT}&offset=${currentOffset}${cityParam}`);
       if (!response.ok) {
         throw new Error('Failed to fetch more requests');
       }
@@ -354,6 +370,11 @@ export default function TransporterDashboard() {
       });
       // Keep old key for backward compatibility
       queryClient.invalidateQueries({ queryKey: ["/api/requests"], exact: false });
+      // Invalidate metadata to refresh total counts and city counts
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/transporter/available-requests/metadata"], 
+        exact: false 
+      });
     },
     onError: (error: any) => {
       // Check if the error is a 404 (request not found/deleted)
@@ -413,6 +434,11 @@ export default function TransporterDashboard() {
         queryKey: ["/api/transporter/my-interests"], 
         exact: false 
       });
+      // Invalidate metadata to refresh total counts and city counts
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/transporter/available-requests/metadata"], 
+        exact: false 
+      });
     },
     onError: () => {
       toast({
@@ -446,6 +472,11 @@ export default function TransporterDashboard() {
       });
       queryClient.invalidateQueries({ 
         queryKey: ["/api/transporter/my-interests"], 
+        exact: false 
+      });
+      // Invalidate metadata to refresh total counts and city counts
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/transporter/available-requests/metadata"], 
         exact: false 
       });
     },
@@ -597,15 +628,11 @@ export default function TransporterDashboard() {
     }
   };
 
-  // Extract unique cities from available requests (Google Maps cities)
+  // Extract unique cities from metadata (all available cities with counts)
   const availableCities = useMemo(() => {
-    const citiesSet = new Set<string>();
-    displayedRequests.forEach((req: any) => {
-      if (req.fromCity) citiesSet.add(req.fromCity);
-      if (req.toCity) citiesSet.add(req.toCity);
-    });
-    return Array.from(citiesSet).sort((a, b) => a.localeCompare(b, 'fr'));
-  }, [displayedRequests]);
+    if (!metadata?.cityCounts) return [];
+    return Object.keys(metadata.cityCounts).sort((a, b) => a.localeCompare(b, 'fr'));
+  }, [metadata]);
 
   const filteredRequests = displayedRequests
     .filter((req: any) => {
@@ -735,15 +762,8 @@ export default function TransporterDashboard() {
                       className="bg-gradient-to-br from-[#0d9488] via-[#0f766e] to-[#115e59] text-white border-0 text-sm sm:text-base font-bold px-2 sm:px-3 py-1 sm:py-1.5 flex-shrink-0"
                     >
                       {selectedCity === "allCities" 
-                        ? displayedRequests.filter((req: any) => 
-                            (!req.declinedBy || !req.declinedBy.includes(user.id)) &&
-                            (!req.transporterInterests?.includes(user.id))
-                          ).length
-                        : displayedRequests.filter((req: any) => 
-                            (req.fromCity === selectedCity || req.toCity === selectedCity) &&
-                            (!req.declinedBy || !req.declinedBy.includes(user.id)) &&
-                            (!req.transporterInterests?.includes(user.id))
-                          ).length
+                        ? (metadata?.totalCount || 0)
+                        : (metadata?.cityCounts?.[selectedCity] || 0)
                       }
                     </Badge>
                   </button>
@@ -781,20 +801,13 @@ export default function TransporterDashboard() {
                         variant="secondary" 
                         className={selectedCity === "allCities" ? "bg-white/20 text-white" : ""}
                       >
-                        {displayedRequests.filter((req: any) => 
-                          (!req.declinedBy || !req.declinedBy.includes(user.id)) &&
-                          (!req.transporterInterests?.includes(user.id))
-                        ).length}
+                        {metadata?.totalCount || 0}
                       </Badge>
                     </button>
 
                     {/* Individual Cities */}
                     {availableCities.map((city: string) => {
-                      const cityRequestCount = displayedRequests.filter((req: any) => 
-                        (req.fromCity === city || req.toCity === city) &&
-                        (!req.declinedBy || !req.declinedBy.includes(user.id)) &&
-                        (!req.transporterInterests?.includes(user.id))
-                      ).length;
+                      const cityRequestCount = metadata?.cityCounts?.[city] || 0;
 
                       return (
                         <button
