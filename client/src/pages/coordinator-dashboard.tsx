@@ -96,6 +96,7 @@ function getDefaultFilters(tab: TabId): TabFilters {
   const baseFilters = {
     searchQuery: '',
     selectedCity: ALL_CITIES,
+    selectedCoordinator: 'Tous les coordinateurs',
   };
 
   switch (tab) {
@@ -103,7 +104,6 @@ function getDefaultFilters(tab: TabId): TabFilters {
       return {
         ...baseFilters,
         selectedDateFilter: 'all',
-        selectedCoordinator: 'Tous les coordinateurs',
       };
     case 'qualifies':
       return {
@@ -2703,6 +2703,11 @@ export default function CoordinatorDashboard() {
     const activeFilterCount = countActiveFilters(activeFilters, activeTab);
     const [tempFilters, setTempFilters] = useState(activeFilters);
 
+    // Synchronize tempFilters when activeTab changes
+    useEffect(() => {
+      setTempFilters(filters[activeTab]);
+    }, [activeTab, filters]);
+
     const handleApply = () => {
       setFilters({ ...filters, [activeTab]: tempFilters });
       setFilterSheetOpen(false);
@@ -2800,28 +2805,26 @@ export default function CoordinatorDashboard() {
               </div>
             )}
 
-            {/* Coordinator - nouveau only */}
-            {activeTab === 'nouveau' && (
-              <div className="space-y-2">
-                <Label htmlFor="filter-coordinator">Coordinateur</Label>
-                <Select
-                  value={tempFilters.selectedCoordinator || 'Tous les coordinateurs'}
-                  onValueChange={(value) => setTempFilters({ ...tempFilters, selectedCoordinator: value })}
-                >
-                  <SelectTrigger id="filter-coordinator" data-testid="select-filter-coordinator">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Tous les coordinateurs">Tous les coordinateurs</SelectItem>
-                    {allCoordinators.map((coordinator: any) => (
-                      <SelectItem key={coordinator.id} value={coordinator.name || coordinator.phoneNumber}>
-                        {coordinator.name || coordinator.phoneNumber}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            {/* Coordinator - All tabs */}
+            <div className="space-y-2">
+              <Label htmlFor="filter-coordinator">Coordinateur</Label>
+              <Select
+                value={tempFilters.selectedCoordinator || 'Tous les coordinateurs'}
+                onValueChange={(value) => setTempFilters({ ...tempFilters, selectedCoordinator: value })}
+              >
+                <SelectTrigger id="filter-coordinator" data-testid="select-filter-coordinator">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Tous les coordinateurs">Tous les coordinateurs</SelectItem>
+                  {allCoordinators.map((coordinator: any) => (
+                    <SelectItem key={coordinator.id} value={coordinator.name || coordinator.phoneNumber}>
+                      {coordinator.name || coordinator.phoneNumber}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
             {/* Min Interested - interesses only */}
             {activeTab === 'interesses' && (
