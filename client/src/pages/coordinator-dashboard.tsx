@@ -35,65 +35,52 @@ import { getCategoryConfig } from "@/lib/goods-category-config";
 import { StatusIndicator } from "@/components/shared/status-indicator";
 import { InvoiceDialog } from "@/components/coordinator/invoice-dialog";
 import { normalizeInvoiceData, InvoiceData } from "@/lib/invoice-utils";
+import { CityFilterSheet } from "@/components/coordinator/city-filter-sheet";
+import { useMemo } from "react";
 
 // Types for adaptive filters by tab
 type TabId = 'nouveau' | 'qualifies' | 'interesses' | 'production' | 'pris_en_charge';
 
-// City selection type for Google Places integration
-interface CitySelection {
-  label: string;      // Full formatted address (e.g., "Hay Mohammadi, Casablanca")
-  city: string;       // Extracted city name (e.g., "Casablanca")
-  placeId?: string;   // Google Place ID for precise matching
+// Sentinel value for "All Cities" filter
+const ALL_CITIES = 'allCities';
+
+// Helper: Extract city name from request (handles "Quartier, Ville" format)
+function extractCityName(cityString: string): string {
+  if (!cityString) return '';
+  // Split on comma and take last part (the city name)
+  return cityString.split(',').pop()?.trim() || cityString.trim();
 }
 
-// Sentinel value for "All Cities" filter
-const ALL_CITIES: CitySelection = {
-  label: 'Toutes les villes',
-  city: 'ALL',
-  placeId: undefined,
-};
+// Helper: Extract unique cities from requests with counters
+interface CityWithCount {
+  city: string;
+  count: number;
+}
 
-// Helper: Create city selection from Google Places result
-function createCitySelection(address: string, placeDetails?: google.maps.places.PlaceResult): CitySelection {
-  if (!placeDetails || !placeDetails.address_components) {
-    return {
-      label: address,
-      city: address.split(',').pop()?.trim() || address,
-      placeId: placeDetails?.place_id,
-    };
-  }
-
-  let city = "";
-  placeDetails.address_components.forEach((component: google.maps.GeocoderAddressComponent) => {
-    if (component.types.includes("locality")) {
-      city = component.long_name;
-    } else if (!city && component.types.includes("administrative_area_level_1")) {
-      city = component.long_name;
+function computeAvailableCities(requests: any[]): CityWithCount[] {
+  const cityCountMap = new Map<string, number>();
+  
+  requests.forEach((req: any) => {
+    // Extract cities from both fromCity and toCity
+    if (req.fromCity) {
+      const city = extractCityName(req.fromCity);
+      cityCountMap.set(city, (cityCountMap.get(city) || 0) + 1);
+    }
+    if (req.toCity) {
+      const city = extractCityName(req.toCity);
+      cityCountMap.set(city, (cityCountMap.get(city) || 0) + 1);
     }
   });
 
-  return {
-    label: address,
-    city: city || address.split(',').pop()?.trim() || address,
-    placeId: placeDetails.place_id,
-  };
-}
-
-// Helper: Check if selection is "All Cities"
-function isAllCitiesSelection(selection: CitySelection): boolean {
-  return selection.city === 'ALL';
-}
-
-// Helper: Extract city name from request (handles "Quartier, Ville" format)
-function extractCityFromRequest(cityString: string): string {
-  if (!cityString) return '';
-  // Split on comma and take last part (the city), then normalize
-  return cityString.split(',').pop()?.trim().toLowerCase() || cityString.toLowerCase();
+  // Convert to array and sort alphabetically
+  return Array.from(cityCountMap.entries())
+    .map(([city, count]) => ({ city, count }))
+    .sort((a, b) => a.city.localeCompare(b.city, 'fr'));
 }
 
 interface TabFilters {
   searchQuery: string;
-  selectedCity: CitySelection;
+  selectedCity: string; // 'allCities' or city name
   selectedStatus?: string;
   selectedDateFilter?: string;
   selectedCoordinator?: string;
@@ -150,9 +137,9 @@ function countActiveFilters(filters: TabFilters, tab: TabId): number {
   const defaults = getDefaultFilters(tab);
   return Object.entries(filters).filter(([key, value]) => {
     const defaultValue = defaults[key as keyof TabFilters];
-    // Special handling for selectedCity (CitySelection object)
+    // Special handling for selectedCity (now a simple string)
     if (key === 'selectedCity') {
-      return !isAllCitiesSelection(value as CitySelection);
+      return value !== ALL_CITIES;
     }
     return value !== defaultValue && value !== '' && value !== undefined;
   }).length;
@@ -780,6 +767,15 @@ export default function CoordinatorDashboard() {
   const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
   const [selectedInvoiceData, setSelectedInvoiceData] = useState<InvoiceData | null>(null);
   
+  // State for city filter sheet (per tab)
+  const [cityFilterOpen, setCityFilterOpen] = useState<Record<TabId, boolean>>({
+    nouveau: false,
+    qualifies: false,
+    interesses: false,
+    production: false,
+    pris_en_charge: false,
+  });
+  
   const { toast} = useToast();
 
   const handleLogout = () => {
@@ -931,6 +927,32 @@ export default function CoordinatorDashboard() {
       return Array.isArray(data) ? data : [];
     },
   });
+
+  // Compute available cities with counters for each tab
+  const nouveauAvailableCities = useMemo(() => 
+    computeAvailableCities(nouveauRequests), 
+    [nouveauRequests]
+  );
+
+  const qualifiesAvailableCities = useMemo(() => 
+    computeAvailableCities(matchingRequests.filter((r: any) => !r.transporterInterests || r.transporterInterests.length === 0)), 
+    [matchingRequests]
+  );
+
+  const interessesAvailableCities = useMemo(() => 
+    computeAvailableCities(matchingRequests.filter((r: any) => r.transporterInterests && r.transporterInterests.length > 0)), 
+    [matchingRequests]
+  );
+
+  const productionAvailableCities = useMemo(() => 
+    computeAvailableCities(enActionRequests), 
+    [enActionRequests]
+  );
+
+  const prisEnChargeAvailableCities = useMemo(() => 
+    computeAvailableCities(prisEnChargeRequests), 
+    [prisEnChargeRequests]
+  );
 
   // Toggle request visibility mutation
   const toggleVisibilityMutation = useMutation({
@@ -1644,9 +1666,9 @@ export default function CoordinatorDashboard() {
     const uniqueRequests = deduplicateRequests(requests);
     return uniqueRequests.filter((request) => {
       // City matching: ALL_CITIES or normalized city comparison
-      const matchesCity = isAllCitiesSelection(tabFilters.selectedCity) || 
-        extractCityFromRequest(request.fromCity) === tabFilters.selectedCity.city.toLowerCase() || 
-        extractCityFromRequest(request.toCity) === tabFilters.selectedCity.city.toLowerCase();
+      const matchesCity = tabFilters.selectedCity === ALL_CITIES || 
+        extractCityName(request.fromCity) === tabFilters.selectedCity || 
+        extractCityName(request.toCity) === tabFilters.selectedCity;
       const matchesStatus = !applyStatusFilter || !tabFilters.selectedStatus || tabFilters.selectedStatus === "Tous les statuts" || 
         request.status === tabFilters.selectedStatus;
       const matchesSearch = tabFilters.searchQuery === "" ||
@@ -2730,11 +2752,11 @@ export default function CoordinatorDashboard() {
               </div>
             </div>
 
-            {/* City - All tabs with Google Places */}
+            {/* City - All tabs - Will be replaced with CityFilterSheet */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="filter-city">Ville</Label>
-                {!isAllCitiesSelection(tempFilters.selectedCity) && (
+                {tempFilters.selectedCity !== ALL_CITIES && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -2747,20 +2769,14 @@ export default function CoordinatorDashboard() {
                   </Button>
                 )}
               </div>
-              <GooglePlacesAutocomplete
-                value={tempFilters.selectedCity.label}
-                onChange={(address, placeDetails) => {
-                  const citySelection = createCitySelection(address, placeDetails);
-                  setTempFilters({ ...tempFilters, selectedCity: citySelection });
-                }}
-                placeholder="Rechercher une ville..."
-                dataTestId="input-filter-city"
-              />
-              {isAllCitiesSelection(tempFilters.selectedCity) && (
-                <p className="text-xs text-muted-foreground">
-                  Toutes les villes incluses
+              <div className="p-3 border rounded-md bg-muted/50">
+                <p className="text-sm text-muted-foreground">
+                  {tempFilters.selectedCity === ALL_CITIES ? 'Toutes les villes' : tempFilters.selectedCity}
                 </p>
-              )}
+                <p className="text-xs text-muted-foreground mt-1">
+                  (Le filtre sera mis à jour dans la prochaine étape)
+                </p>
+              </div>
             </div>
 
             {/* Date - nouveau, qualifies, production, pris_en_charge */}
@@ -2953,6 +2969,19 @@ export default function CoordinatorDashboard() {
 
           {/* ONGLET 1: NOUVEAU - Demandes en attente de qualification */}
           <TabsContent value="nouveau" className="space-y-4">
+            {/* City Filter for Nouveau */}
+            <div className="px-4">
+              <CityFilterSheet
+                selectedCity={filters.nouveau.selectedCity}
+                onCityChange={(city) => setFilters({ ...filters, nouveau: { ...filters.nouveau, selectedCity: city }})}
+                availableCities={nouveauAvailableCities}
+                totalCount={nouveauRequests.length}
+                open={cityFilterOpen.nouveau}
+                onOpenChange={(open) => setCityFilterOpen({ ...cityFilterOpen, nouveau: open })}
+                triggerLabel="Filtrer par ville"
+              />
+            </div>
+
             {nouveauLoading ? (
               <div className="flex justify-center py-12">
                 <LoadingTruck />
@@ -2975,6 +3004,19 @@ export default function CoordinatorDashboard() {
 
           {/* ONGLET 2: QUALIFIÉS - Demandes publiées pour matching transporteurs */}
           <TabsContent value="qualifies" className="space-y-4">
+            {/* City Filter for Qualifiés */}
+            <div className="px-4">
+              <CityFilterSheet
+                selectedCity={filters.qualifies.selectedCity}
+                onCityChange={(city) => setFilters({ ...filters, qualifies: { ...filters.qualifies, selectedCity: city }})}
+                availableCities={qualifiesAvailableCities}
+                totalCount={matchingRequests.filter((r: any) => !r.transporterInterests || r.transporterInterests.length === 0).length}
+                open={cityFilterOpen.qualifies}
+                onOpenChange={(open) => setCityFilterOpen({ ...cityFilterOpen, qualifies: open })}
+                triggerLabel="Filtrer par ville"
+              />
+            </div>
+
             {matchingLoading ? (
               <div className="flex justify-center py-12">
                 <LoadingTruck />
@@ -2997,6 +3039,19 @@ export default function CoordinatorDashboard() {
 
           {/* ONGLET 3: INTÉRESSÉS - Demandes avec transporteurs intéressés */}
           <TabsContent value="interesses" className="space-y-4">
+            {/* City Filter for Intéressés */}
+            <div className="px-4">
+              <CityFilterSheet
+                selectedCity={filters.interesses.selectedCity}
+                onCityChange={(city) => setFilters({ ...filters, interesses: { ...filters.interesses, selectedCity: city }})}
+                availableCities={interessesAvailableCities}
+                totalCount={matchingRequests.filter((r: any) => r.transporterInterests && r.transporterInterests.length > 0).length}
+                open={cityFilterOpen.interesses}
+                onOpenChange={(open) => setCityFilterOpen({ ...cityFilterOpen, interesses: open })}
+                triggerLabel="Filtrer par ville"
+              />
+            </div>
+
             {matchingLoading ? (
               <div className="flex justify-center py-12">
                 <LoadingTruck />
@@ -3025,6 +3080,19 @@ export default function CoordinatorDashboard() {
 
           {/* ONGLET 4: EN PRODUCTION - Commandes actives et en paiement */}
           <TabsContent value="production" className="space-y-4">
+            {/* City Filter for Production */}
+            <div className="px-4">
+              <CityFilterSheet
+                selectedCity={filters.production.selectedCity}
+                onCityChange={(city) => setFilters({ ...filters, production: { ...filters.production, selectedCity: city }})}
+                availableCities={productionAvailableCities}
+                totalCount={enActionRequests.length}
+                open={cityFilterOpen.production}
+                onOpenChange={(open) => setCityFilterOpen({ ...cityFilterOpen, production: open })}
+                triggerLabel="Filtrer par ville"
+              />
+            </div>
+
             {(activeLoading || paymentLoading) ? (
               <div className="flex justify-center py-12">
                 <LoadingTruck />
@@ -3047,6 +3115,19 @@ export default function CoordinatorDashboard() {
 
           {/* ONGLET 5: PRIS EN CHARGE - Commandes réellement prises en charge par le transporteur */}
           <TabsContent value="pris_en_charge" className="space-y-4">
+            {/* City Filter for Pris en charge */}
+            <div className="px-4">
+              <CityFilterSheet
+                selectedCity={filters.pris_en_charge.selectedCity}
+                onCityChange={(city) => setFilters({ ...filters, pris_en_charge: { ...filters.pris_en_charge, selectedCity: city }})}
+                availableCities={prisEnChargeAvailableCities}
+                totalCount={prisEnChargeRequests.length}
+                open={cityFilterOpen.pris_en_charge}
+                onOpenChange={(open) => setCityFilterOpen({ ...cityFilterOpen, pris_en_charge: open })}
+                triggerLabel="Filtrer par ville"
+              />
+            </div>
+
             {prisEnChargeLoading ? (
               <div className="flex justify-center py-12">
                 <LoadingTruck />
