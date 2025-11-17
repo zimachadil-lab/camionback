@@ -161,7 +161,8 @@ export interface IStorage {
   qualifyRequest(requestId: string, transporterAmount: number, platformFee: number, coordinatorId: string): Promise<TransportRequest | undefined>;
   publishForMatching(requestId: string, coordinatorId: string): Promise<TransportRequest | undefined>;
   getMatchingRequests(filters?: { assignedToId?: string; searchQuery?: string }): Promise<any[]>;
-  getPublishedRequestsForTransporter(limit?: number, offset?: number): Promise<{ requests: any[]; totalCount: number }>;
+  getPublishedRequestsForTransporter(limit?: number, offset?: number, city?: string): Promise<{ requests: any[]; totalCount: number }>;
+  getPublishedRequestsMetadata(): Promise<{ totalCount: number; cityCounts: Record<string, number> }>;
   expressInterest(requestId: string, transporterId: string, availabilityDate?: Date): Promise<TransportRequest | undefined>;
   withdrawInterest(requestId: string, transporterId: string): Promise<TransportRequest | undefined>;
   getInterestedTransportersForRequest(requestId: string): Promise<any[]>;
@@ -1266,8 +1267,12 @@ export class MemStorage implements IStorage {
   async getMatchingRequests(filters?: { assignedToId?: string; searchQuery?: string }): Promise<any[]> {
     return [];
   }
-  async getPublishedRequestsForTransporter(limit: number = 12, offset: number = 0): Promise<{ requests: any[]; totalCount: number }> {
+  async getPublishedRequestsForTransporter(limit: number = 12, offset: number = 0, city?: string): Promise<{ requests: any[]; totalCount: number }> {
     return { requests: [], totalCount: 0 };
+  }
+  
+  async getPublishedRequestsMetadata(): Promise<{ totalCount: number; cityCounts: Record<string, number> }> {
+    return { totalCount: 0, cityCounts: {} };
   }
   async expressInterest(requestId: string, transporterId: string, availabilityDate?: Date): Promise<TransportRequest | undefined> {
     return undefined;
@@ -3485,20 +3490,31 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
-  async getPublishedRequestsForTransporter(limit: number = 12, offset: number = 0): Promise<{ requests: any[]; totalCount: number }> {
-    // First get total count
-    const countResult = await db.select({ count: sql<number>`count(*)::int` })
-      .from(transportRequests)
-      .where(
-        and(
-          eq(transportRequests.status, 'published_for_matching'),
-          eq(transportRequests.coordinationStatus, 'matching'),
-          or(
-            eq(transportRequests.isHidden, false),
-            isNull(transportRequests.isHidden)
-          )
+  async getPublishedRequestsForTransporter(limit: number = 12, offset: number = 0, city?: string): Promise<{ requests: any[]; totalCount: number }> {
+    // Build where conditions
+    const baseConditions = [
+      eq(transportRequests.status, 'published_for_matching'),
+      eq(transportRequests.coordinationStatus, 'matching'),
+      or(
+        eq(transportRequests.isHidden, false),
+        isNull(transportRequests.isHidden)
+      )
+    ];
+    
+    // Add city filter if provided
+    if (city && city !== 'allCities') {
+      baseConditions.push(
+        or(
+          eq(transportRequests.fromCity, city),
+          eq(transportRequests.toCity, city)
         )
       );
+    }
+    
+    // First get total count with filters
+    const countResult = await db.select({ count: sql<number>`count(*)::int` })
+      .from(transportRequests)
+      .where(and(...baseConditions));
     
     const totalCount = countResult[0]?.count || 0;
     
@@ -3536,6 +3552,21 @@ export class DbStorage implements IStorage {
       // Exclude budget (old workflow field)
     })
       .from(transportRequests)
+      .where(and(...baseConditions))
+      .orderBy(desc(transportRequests.publishedForMatchingAt))
+      .limit(limit)
+      .offset(offset);
+    
+    return { requests, totalCount };
+  }
+
+  async getPublishedRequestsMetadata(): Promise<{ totalCount: number; cityCounts: Record<string, number> }> {
+    // Get all published requests (without pagination)
+    const requests = await db.select({
+      fromCity: transportRequests.fromCity,
+      toCity: transportRequests.toCity,
+    })
+      .from(transportRequests)
       .where(
         and(
           eq(transportRequests.status, 'published_for_matching'),
@@ -3545,12 +3576,26 @@ export class DbStorage implements IStorage {
             isNull(transportRequests.isHidden)
           )
         )
-      )
-      .orderBy(desc(transportRequests.publishedForMatchingAt))
-      .limit(limit)
-      .offset(offset);
+      );
     
-    return { requests, totalCount };
+    const totalCount = requests.length;
+    
+    // Calculate city counts
+    const cityCounts: Record<string, number> = {};
+    
+    for (const request of requests) {
+      // Count for fromCity
+      if (request.fromCity) {
+        cityCounts[request.fromCity] = (cityCounts[request.fromCity] || 0) + 1;
+      }
+      
+      // Count for toCity (avoid double counting if same city)
+      if (request.toCity && request.toCity !== request.fromCity) {
+        cityCounts[request.toCity] = (cityCounts[request.toCity] || 0) + 1;
+      }
+    }
+    
+    return { totalCount, cityCounts };
   }
 
   async getMatchingRequests(filters?: { assignedToId?: string; searchQuery?: string }): Promise<any[]> {

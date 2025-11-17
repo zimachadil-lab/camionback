@@ -6286,17 +6286,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get available requests for transporters (published for matching) with pagination
+  // Get available requests metadata (total count and city counts)
+  app.get("/api/transporter/available-requests/metadata", requireAuth, requireRole(['transporteur']), async (req, res) => {
+    try {
+      const metadata = await storage.getPublishedRequestsMetadata();
+      res.json(metadata);
+    } catch (error) {
+      console.error("Erreur récupération métadonnées demandes:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération des métadonnées" });
+    }
+  });
+
+  // Get available requests for transporters (published for matching) with pagination and optional city filter
   app.get("/api/transporter/available-requests", requireAuth, requireRole(['transporteur']), async (req, res) => {
     try {
       // Parse pagination parameters from query
       const limit = parseInt(req.query.limit as string) || 12;
       const offset = parseInt(req.query.offset as string) || 0;
+      const city = req.query.city as string | undefined;
       
       // Get published requests (already filtered and projected to exclude pricing)
       // Storage layer handles: status, coordinationStatus, isHidden filtering
       // AND projection to exclude all coordinator-only pricing fields
-      const result = await storage.getPublishedRequestsForTransporter(limit, offset);
+      const result = await storage.getPublishedRequestsForTransporter(limit, offset, city);
       
       res.json(result);
     } catch (error) {
