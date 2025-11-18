@@ -66,9 +66,11 @@ Toute la configuration Capacitor a été réalisée avec le plus haut niveau de 
 - `ACCESS_FINE_LOCATION` - GPS tracking
 - `ACCESS_COARSE_LOCATION` - Localisation approximative
 - `CAMERA` - Photos de camions
-- `CALL_PHONE` - Appels directs
+- `RECORD_AUDIO` - Enregistrements vocaux (messages vocaux dans chat)
 - `ACCESS_NETWORK_STATE` - État réseau
 - `VIBRATE` - Notifications tactiles
+
+**Note:** Les appels téléphoniques utilisent `tel:` links (pas besoin de permission CALL_PHONE)
 
 ### Package Configuration
 - **Package ID:** `ma.camionback.app`

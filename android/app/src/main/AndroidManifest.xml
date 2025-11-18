@@ -42,8 +42,8 @@
     <!-- Camera for truck photos -->
     <uses-permission android:name="android.permission.CAMERA" />
     
-    <!-- Phone calls -->
-    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <!-- Audio recording for voice messages -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     
     <!-- Network state -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />

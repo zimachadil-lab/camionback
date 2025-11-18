@@ -18,7 +18,7 @@ Toute la configuration Capacitor a été réalisée de manière professionnelle 
   - Push Notifications
   - Localisation (GPS tracking)
   - Caméra (photos camions)
-  - Appels téléphoniques
+  - Enregistrement audio (messages vocaux)
   - Vibration
 
 ---
@@ -274,7 +274,50 @@ Exemple URL à fournir:
 https://camionback.ma/privacy-policy
 ```
 
-### 7. Soumission
+### 7. Formulaire Data Safety (REQUIS depuis 2022)
+**Google exige une déclaration complète des données collectées.**
+
+Accéder : Play Console → Data safety
+
+**Réponses pour CamionBack:**
+
+**Collecte de données:**
+- ✅ Oui, nous collectons des données
+
+**Types de données:**
+1. **Informations personnelles**
+   - Nom et prénom ✅
+   - Numéro de téléphone ✅
+   - Adresse email (si applicable) ✅
+
+2. **Position géographique**
+   - Localisation approximative ✅ (pour trajets)
+   - Localisation précise ✅ (tracking GPS)
+
+3. **Photos et vidéos**
+   - Photos ✅ (photos de camions)
+
+4. **Fichiers et documents**
+   - Documents utilisateur ✅ (contrats, factures)
+
+5. **Audio**
+   - Enregistrements vocaux ✅ (messages vocaux dans chat)
+   - **Justification:** Communication entre transporteurs et coordinateurs
+
+**Utilisation des données:**
+- Fonctionnalités de l'app ✅
+- Analyses ✅
+- Communications ✅
+
+**Partage de données:**
+- Non, aucun partage avec tiers
+
+**Sécurité:**
+- ✅ Données chiffrées en transit (HTTPS)
+- ✅ Utilisateur peut demander suppression
+- ✅ Conformité aux bonnes pratiques de sécurité
+
+### 8. Soumission
 - Remplir questionnaire contenu
 - Sélectionner pays: Maroc (et autres si besoin)
 - Âge: 3+ (app business)
