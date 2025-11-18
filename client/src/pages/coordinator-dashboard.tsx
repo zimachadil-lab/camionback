@@ -113,6 +113,7 @@ function getDefaultFilters(tab: TabId): TabFilters {
     case 'interesses':
       return {
         ...baseFilters,
+        selectedDateFilter: 'all',
         minInterested: 1,
       };
     case 'production':
@@ -2796,8 +2797,8 @@ export default function CoordinatorDashboard() {
               </div>
             </div>
 
-            {/* Date - nouveau, qualifies, production, pris_en_charge */}
-            {(activeTab === 'nouveau' || activeTab === 'qualifies' || activeTab === 'production' || activeTab === 'pris_en_charge') && (
+            {/* Date - nouveau, qualifies, interesses, production, pris_en_charge */}
+            {(activeTab === 'nouveau' || activeTab === 'qualifies' || activeTab === 'interesses' || activeTab === 'production' || activeTab === 'pris_en_charge') && (
               <div className="space-y-2">
                 <Label htmlFor="filter-date">Période</Label>
                 <Select
