@@ -1921,7 +1921,7 @@ export default function CoordinatorDashboard() {
     );
   };
 
-  const renderRequestCard = (request: any, showVisibilityToggle = false, showPaymentControls = false, isCoordination = false, showQualifyButton = false, showQualifiedBy = false, showRepublishButton = false, showPaymentStatusSelector = false, showRequalifyButton = false, options: { showCancel?: boolean; onCancel?: () => void; showProductionActions?: boolean; showPrisEnChargeActions?: boolean; hideTransporterInterests?: boolean } = {}) => {
+  const renderRequestCard = (request: any, showVisibilityToggle = false, showPaymentControls = false, isCoordination = false, showQualifyButton = false, showQualifiedBy = false, showRepublishButton = false, showPaymentStatusSelector = false, showRequalifyButton = false, options: { showCancel?: boolean; onCancel?: () => void; showProductionActions?: boolean; showPrisEnChargeActions?: boolean; showInterestedActions?: boolean; hideTransporterInterests?: boolean } = {}) => {
     // Calculate interested count
     const interestedCount = request.transporterInterests?.length || 0;
     // Get client-friendly status
@@ -2531,8 +2531,8 @@ export default function CoordinatorDashboard() {
             </Button>
           )}
           
-          {/* View Details button (secondary) - Seulement si pas Production ni Pris en charge */}
-          {!options.showProductionActions && !options.showPrisEnChargeActions && (
+          {/* View Details button (secondary) - Seulement si pas Production ni Pris en charge ni Intéressés */}
+          {!options.showProductionActions && !options.showPrisEnChargeActions && !options.showInterestedActions && (
             <Button
               variant="ghost"
               size="icon"
@@ -2666,6 +2666,33 @@ export default function CoordinatorDashboard() {
               size="icon"
               onClick={() => handleViewDetails(request)}
               data-testid={`button-view-details-pris-en-charge-${request.id}`}
+              className="h-9 w-9 shrink-0"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+
+        {/* Actions pour Intéressés - juste avant Notes internes */}
+        {options.showInterestedActions && (
+          <div className="flex items-center gap-2 pt-3 border-t">
+            <Button
+              className="flex-1 gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold shadow-md transition-all"
+              onClick={() => {
+                setRequalifyRequestData(request);
+                setRequalifyDialogOpen(true);
+              }}
+              data-testid={`button-requalify-interested-${request.id}`}
+            >
+              <RotateCcw className="h-4 w-4" />
+              Requalifier
+            </Button>
+            {/* View Details button aligné à droite pour Intéressés */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleViewDetails(request)}
+              data-testid={`button-view-details-interested-${request.id}`}
               className="h-9 w-9 shrink-0"
             >
               <Eye className="h-4 w-4" />
@@ -3036,7 +3063,8 @@ export default function CoordinatorDashboard() {
                     onCancel: () => {
                       setCancelRequestData(request);
                       setCancelDialogOpen(true);
-                    }
+                    },
+                    showInterestedActions: true
                   })
                 )}
               </TwoColumnGrid>
