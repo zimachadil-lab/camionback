@@ -36,6 +36,7 @@ import { StatusIndicator } from "@/components/shared/status-indicator";
 import { InvoiceDialog } from "@/components/coordinator/invoice-dialog";
 import { normalizeInvoiceData, InvoiceData } from "@/lib/invoice-utils";
 import { CityFilterSheet } from "@/components/coordinator/city-filter-sheet";
+import { TransporterPortfolio } from "@/components/coordinator/transporter-portfolio";
 import { useMemo } from "react";
 
 // Types for adaptive filters by tab
@@ -749,6 +750,7 @@ export default function CoordinatorDashboard() {
   
   // State for empty returns dialog
   const [showReturnsDialog, setShowReturnsDialog] = useState(false);
+  const [showTransporterPortfolio, setShowTransporterPortfolio] = useState(false);
   
   // State for invoice dialog
   const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
@@ -2877,6 +2879,7 @@ export default function CoordinatorDashboard() {
         onLogout={handleLogout}
         onViewReturns={() => setShowReturnsDialog(true)}
         returnsCount={emptyReturns.length}
+        onViewTransporterPortfolio={() => setShowTransporterPortfolio(true)}
       />
 
       <main className="container mx-auto p-4 max-w-7xl">
@@ -4378,6 +4381,12 @@ export default function CoordinatorDashboard() {
         open={invoiceDialogOpen}
         onClose={() => setInvoiceDialogOpen(false)}
         invoice={selectedInvoiceData}
+      />
+
+      {/* Transporter Portfolio Dialog */}
+      <TransporterPortfolio
+        open={showTransporterPortfolio}
+        onOpenChange={setShowTransporterPortfolio}
       />
 
     </div>

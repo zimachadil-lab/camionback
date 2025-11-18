@@ -5396,6 +5396,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get validated transporters portfolio - For transporter matching/discovery
+  // SECURITY NOTE: This endpoint is accessible to coordinators for transporter discovery.
+  // Exposed fields are minimal but necessary for the matching workflow:
+  // - phoneNumber: Required to contact transporters for coordination
+  // - truckPhotos: Required to verify vehicle capability
+  // - rating/trips: Required to assess transporter reliability
+  // Only VALIDATED, ACTIVE, NON-BLOCKED transporters are returned.
+  // Future enhancement: Add coordinator region-based filtering if needed.
+  app.get("/api/coordinator/transporters-portfolio", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
+    try {
+      const cityFilter = req.query.city as string | undefined;
+      
+      // Build WHERE conditions with proper filtering
+      const whereConditions = [
+        eq(users.role, 'transporteur'),
+        eq(users.status, 'validated'),
+        eq(users.isActive, true),
+        ne(users.accountStatus, 'blocked')
+      ];
+      
+      // Add city filter only if provided
+      if (cityFilter) {
+        whereConditions.push(eq(users.city, cityFilter));
+      }
+      
+      // Query validated transporters with NECESSARY details for matching
+      const transporters = await db
+        .select({
+          id: users.id,
+          name: users.name,
+          city: users.city,
+          phoneNumber: users.phoneNumber, // Required for coordinator contact
+          truckPhotos: users.truckPhotos, // Required to verify vehicle
+          rating: users.rating,           // Required to assess quality
+          totalRatings: users.totalRatings,
+          totalTrips: users.totalTrips,   // Required to assess experience
+          isVerified: users.isVerified,   // Badge indicator
+          createdAt: users.createdAt,
+        })
+        .from(users)
+        .where(and(...whereConditions))
+        .orderBy(desc(users.rating), desc(users.totalTrips));
+      
+      res.json(transporters);
+    } catch (error) {
+      console.error("Erreur récupération portefeuille transporteurs:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération des transporteurs" });
+    }
+  });
+
   // Toggle request visibility (hide/show from transporters)
   app.patch("/api/coordinator/requests/:id/toggle-visibility", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
     try {

@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { Menu, User, LogOut, Package, Star, Receipt, CreditCard, HelpCircle, MessageCircle, Truck, Plus, CornerUpLeft } from "lucide-react";
+import { Menu, User, LogOut, Package, Star, Receipt, CreditCard, HelpCircle, MessageCircle, Truck, Plus, CornerUpLeft, Users } from "lucide-react";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { MessagesBadge } from "@/components/chat/messages-badge";
 import { ContactWhatsAppDialog } from "@/components/contact-whatsapp-dialog";
@@ -32,9 +32,10 @@ interface HeaderProps {
   onAnnounceReturn?: () => void;
   onViewReturns?: () => void;
   returnsCount?: number;
+  onViewTransporterPortfolio?: () => void;
 }
 
-export function Header({ user, onLogout, onCreateRequest, onAnnounceReturn, onViewReturns, returnsCount }: HeaderProps) {
+export function Header({ user, onLogout, onCreateRequest, onAnnounceReturn, onViewReturns, returnsCount, onViewTransporterPortfolio }: HeaderProps) {
   const [location, navigate] = useLocation();
   const [showContactDialog, setShowContactDialog] = useState(false);
   const { t, i18n } = useTranslation();
@@ -166,25 +167,43 @@ export function Header({ user, onLogout, onCreateRequest, onAnnounceReturn, onVi
             </Button>
           )}
 
-          {/* View Returns Button - Coordinator Only */}
-          {user.role === "coordinateur" && onViewReturns && (
-            <Button
-              onClick={onViewReturns}
-              size="icon"
-              variant="default"
-              className="bg-gradient-to-br from-[#00d4b2] to-[#00b396] hover:from-[#00c0a6] hover:to-[#009d84] text-white shadow-md relative"
-              data-testid="button-view-returns-header"
-            >
-              <CornerUpLeft className="w-5 h-5" />
-              {returnsCount !== undefined && returnsCount > 0 && (
-                <span 
-                  className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white"
-                  data-testid="badge-returns-count"
+          {/* Coordinator Action Buttons */}
+          {user.role === "coordinateur" && (
+            <>
+              {/* View Returns Button */}
+              {onViewReturns && (
+                <Button
+                  onClick={onViewReturns}
+                  size="icon"
+                  variant="default"
+                  className="bg-gradient-to-br from-[#00d4b2] to-[#00b396] hover:from-[#00c0a6] hover:to-[#009d84] text-white shadow-md relative"
+                  data-testid="button-view-returns-header"
                 >
-                  {returnsCount > 9 ? "9+" : returnsCount}
-                </span>
+                  <CornerUpLeft className="w-5 h-5" />
+                  {returnsCount !== undefined && returnsCount > 0 && (
+                    <span 
+                      className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white"
+                      data-testid="badge-returns-count"
+                    >
+                      {returnsCount > 9 ? "9+" : returnsCount}
+                    </span>
+                  )}
+                </Button>
               )}
-            </Button>
+              
+              {/* Transporter Portfolio Button */}
+              {onViewTransporterPortfolio && (
+                <Button
+                  onClick={onViewTransporterPortfolio}
+                  size="icon"
+                  variant="default"
+                  className="bg-gradient-to-br from-[#17cfcf] to-[#0ea5a5] hover:from-[#15b8b8] hover:to-[#0c8f8f] text-white shadow-md"
+                  data-testid="button-view-transporter-portfolio-header"
+                >
+                  <Users className="w-5 h-5" />
+                </Button>
+              )}
+            </>
           )}
           
           {/* Notifications & Messages Group */}
