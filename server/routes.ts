@@ -5422,13 +5422,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Query validated transporters with NECESSARY details for matching
+      // PERFORMANCE: Only select first truck photo to reduce payload size (photos are base64, ~3-5MB each)
       const transporters = await db
         .select({
           id: users.id,
           name: users.name,
           city: users.city,
           phoneNumber: users.phoneNumber, // Required for coordinator contact
-          truckPhotos: users.truckPhotos, // Required to verify vehicle
+          truckPhotos: sql<string[]>`CASE WHEN ${users.truckPhotos} IS NOT NULL AND array_length(${users.truckPhotos}, 1) > 0 THEN ARRAY[${users.truckPhotos}[1]] ELSE ARRAY[]::text[] END`, // Only first photo for performance
           rating: users.rating,           // Required to assess quality
           totalRatings: users.totalRatings,
           totalTrips: users.totalTrips,   // Required to assess experience
