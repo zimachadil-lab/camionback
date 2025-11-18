@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CamionBack</string>
+    <string name="title_activity_main">CamionBack</string>
+    <string name="package_name">ma.camionback.app</string>
+    <string name="custom_url_scheme">ma.camionback.app</string>
+</resources>
