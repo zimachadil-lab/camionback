@@ -35,21 +35,23 @@ jobs:
     - name: 🔄 Sync Capacitor
       run: npx cap sync android
     
-    - name: 🎯 Build AAB (Debug - Sans Signature)
+    - name: 🎯 Build AAB (Debug - Non Signé pour Test)
       run: |
         cd android
         chmod +x gradlew
-        ./gradlew bundleRelease
+        ./gradlew bundleDebug
     
     - name: 📤 Upload AAB
       uses: actions/upload-artifact@v4
       with:
-        name: camionback-app-release
-        path: android/app/build/outputs/bundle/release/app-release.aab
+        name: camionback-app-debug
+        path: android/app/build/outputs/bundle/debug/app-debug.aab
         retention-days: 30
     
     - name: 📊 AAB Info
       run: |
-        ls -lh android/app/build/outputs/bundle/release/app-release.aab
-        echo "✅ AAB généré avec succès !"
+        ls -lh android/app/build/outputs/bundle/debug/app-debug.aab
+        echo "✅ AAB DEBUG généré avec succès !"
+        echo "⚠️  IMPORTANT: Ceci est un AAB de DEBUG (non signé)"
+        echo "📝 Pour PRODUCTION: Créez un keystore et signez l'AAB"
         echo "📥 Téléchargez-le depuis l'onglet 'Actions' de GitHub"
