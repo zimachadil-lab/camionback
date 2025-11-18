@@ -3,7 +3,7 @@ name: 🚀 Build Android AAB
 on:
   push:
     branches: [ main, master ]
-  workflow_dispatch:  # Permet de lancer manuellement
+  workflow_dispatch:
 
 jobs:
   build-aab:
@@ -11,66 +11,39 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - name: 📥 Checkout code
+    - name: 📥 Checkout
       uses: actions/checkout@v4
     
-    - name: ☕ Setup Java 17
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
-    
-    - name: 📱 Setup Android SDK
-      uses: android-actions/setup-android@v3
-    
-    - name: ✅ Accept Android Licenses
-      run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-    
-    - name: 📦 Setup Node.js 20
+    - name: 📦 Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-        cache: 'npm'
     
     - name: 🔧 Install dependencies
-      run: |
-        echo "📦 Installation des dépendances..."
-        npm ci --legacy-peer-deps
-        echo "✅ Dépendances installées"
+      run: npm install
     
     - name: 🏗️ Build web app
-      run: |
-        echo "🏗️ Build du frontend..."
-        npm run build
-        echo "✅ Build frontend réussi"
-        ls -la dist/
+      run: npm run build
+      
+    - name: ☕ Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+    
+    - name: 🔐 Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
     
     - name: 🔄 Sync Capacitor
-      run: |
-        echo "🔄 Synchronisation Capacitor..."
-        npx cap sync android
-        echo "✅ Sync Capacitor réussi"
-        ls -la android/
+      run: npx cap sync android
     
-    - name: 🎯 Build AAB (Debug - Non Signé pour Test)
-      run: |
-        echo "🎯 Compilation AAB..."
-        cd android
-        chmod +x gradlew
-        ./gradlew bundleDebug --stacktrace --info
-        echo "✅ Build AAB réussi"
+    - name: 🎯 Build APK Debug (Simple Test)
+      working-directory: android
+      run: ./gradlew assembleDebug --no-daemon --warning-mode all
     
-    - name: 📤 Upload AAB
+    - name: 📤 Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: camionback-app-debug
-        path: android/app/build/outputs/bundle/debug/app-debug.aab
+        path: android/app/build/outputs/apk/debug/app-debug.apk
         retention-days: 30
-    
-    - name: 📊 AAB Info
-      run: |
-        ls -lh android/app/build/outputs/bundle/debug/app-debug.aab
-        echo "✅ AAB DEBUG généré avec succès !"
-        echo "⚠️  IMPORTANT: Ceci est un AAB de DEBUG (non signé)"
-        echo "📝 Pour PRODUCTION: Créez un keystore et signez l'AAB"
-        echo "📥 Téléchargez-le depuis l'onglet 'Actions' de GitHub"
