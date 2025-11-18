@@ -23,11 +23,10 @@ interface Transporter {
   name: string;
   city: string;
   phoneNumber: string;
-  truckPhotos: string[];
+  hasPhoto: boolean; // PERFORMANCE: Photo loaded on-demand via separate endpoint
   rating: string;
   totalRatings: number;
   totalTrips: number;
-  status: string;
   isVerified: boolean;
   createdAt: string;
 }
@@ -37,6 +36,7 @@ export function TransporterPortfolio({ open, onOpenChange }: TransporterPortfoli
   const [currentIndex, setCurrentIndex] = useState(0);
   const [swipeDirection, setSwipeDirection] = useState<"left" | "right" | null>(null);
   const [savedTransporters, setSavedTransporters] = useState<string[]>([]);
+  const [photoCache, setPhotoCache] = useState<Record<string, string>>({});  // Cache for loaded photos
 
   // Fetch all cities for filter dropdown (unfiltered source)
   const { data: allCities = [] } = useQuery<Array<{ id: string; name: string }>>({
@@ -104,10 +104,41 @@ export function TransporterPortfolio({ open, onOpenChange }: TransporterPortfoli
     );
   };
 
-  const getTruckPhoto = (photos: string[]) => {
-    if (!photos || photos.length === 0) return null;
-    return photos[0];
+  // Lazy load transporter photo on-demand
+  const loadTransporterPhoto = async (transporterId: string) => {
+    // Check cache first
+    if (photoCache[transporterId]) {
+      return photoCache[transporterId];
+    }
+
+    try {
+      const response = await fetch(`/api/coordinator/transporters/${transporterId}/photo`);
+      if (!response.ok) {
+        return null;
+      }
+      const data = await response.json();
+      if (data.photo) {
+        setPhotoCache(prev => ({ ...prev, [transporterId]: data.photo }));
+        return data.photo;
+      }
+    } catch (error) {
+      console.error('Failed to load photo for transporter:', transporterId, error);
+    }
+    return null;
   };
+
+  // Preload photos for current and next 2 transporters
+  useEffect(() => {
+    if (!transporters.length || currentIndex >= transporters.length) return;
+
+    const preloadCount = 3; // Current + next 2
+    for (let i = currentIndex; i < Math.min(currentIndex + preloadCount, transporters.length); i++) {
+      const transporter = transporters[i];
+      if (transporter.hasPhoto && !photoCache[transporter.id]) {
+        loadTransporterPhoto(transporter.id);
+      }
+    }
+  }, [currentIndex, transporters]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -188,8 +219,8 @@ export function TransporterPortfolio({ open, onOpenChange }: TransporterPortfoli
                       <Card key={transporter.id} className="p-4" data-testid={`saved-transporter-${transporter.id}`}>
                         <div className="flex items-center gap-3">
                           <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                            {getTruckPhoto(transporter.truckPhotos) ? (
-                              <img src={getTruckPhoto(transporter.truckPhotos)!} alt={transporter.name} className="w-full h-full object-cover" />
+                            {photoCache[transporter.id] ? (
+                              <img src={photoCache[transporter.id]} alt={transporter.name} className="w-full h-full object-cover" />
                             ) : (
                               <div className="flex items-center justify-center h-full">
                                 <Truck className="w-8 h-8 text-muted-foreground/30" />
@@ -274,9 +305,9 @@ export function TransporterPortfolio({ open, onOpenChange }: TransporterPortfoli
                     <Card className="overflow-hidden shadow-2xl border-2">
                       {/* Truck Photo */}
                       <div className="relative h-80 bg-gradient-to-br from-[#17cfcf]/10 to-[#0ea5a5]/10">
-                        {getTruckPhoto(currentTransporter.truckPhotos) ? (
+                        {photoCache[currentTransporter.id] ? (
                           <img
-                            src={getTruckPhoto(currentTransporter.truckPhotos)!}
+                            src={photoCache[currentTransporter.id]}
                             alt={currentTransporter.name}
                             className="w-full h-full object-cover"
                           />
@@ -326,13 +357,6 @@ export function TransporterPortfolio({ open, onOpenChange }: TransporterPortfoli
                             </span>
                           </div>
                         </div>
-
-                        {/* Photos Count */}
-                        {currentTransporter.truckPhotos && currentTransporter.truckPhotos.length > 1 && (
-                          <Badge variant="outline" className="w-fit">
-                            {currentTransporter.truckPhotos.length} photo{currentTransporter.truckPhotos.length !== 1 ? 's' : ''}
-                          </Badge>
-                        )}
                       </div>
                     </Card>
                   </motion.div>

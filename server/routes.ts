@@ -5422,14 +5422,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Query validated transporters with NECESSARY details for matching
-      // PERFORMANCE: Only select first truck photo to reduce payload size (photos are base64, ~3-5MB each)
+      // PERFORMANCE: Photos excluded from listing (loaded on-demand via separate endpoint)
       const transporters = await db
         .select({
           id: users.id,
           name: users.name,
           city: users.city,
           phoneNumber: users.phoneNumber, // Required for coordinator contact
-          truckPhotos: sql<string[]>`CASE WHEN ${users.truckPhotos} IS NOT NULL AND array_length(${users.truckPhotos}, 1) > 0 THEN ARRAY[${users.truckPhotos}[1]] ELSE ARRAY[]::text[] END`, // Only first photo for performance
+          hasPhoto: sql<boolean>`${users.truckPhotos} IS NOT NULL AND array_length(${users.truckPhotos}, 1) > 0`, // Flag to show if photo available
           rating: users.rating,           // Required to assess quality
           totalRatings: users.totalRatings,
           totalTrips: users.totalTrips,   // Required to assess experience
@@ -5444,6 +5444,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Erreur récupération portefeuille transporteurs:", error);
       res.status(500).json({ error: "Erreur lors de la récupération des transporteurs" });
+    }
+  });
+
+  // Get transporter's first truck photo - Lazy loading for performance
+  app.get("/api/coordinator/transporters/:id/photo", requireAuth, requireRole(['admin', 'coordinateur']), async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Query only the truck_photos column for this specific transporter
+      const result = await db
+        .select({
+          truckPhotos: users.truckPhotos,
+        })
+        .from(users)
+        .where(eq(users.id, id))
+        .limit(1);
+      
+      if (!result.length || !result[0].truckPhotos || result[0].truckPhotos.length === 0) {
+        return res.status(404).json({ error: "Photo non disponible" });
+      }
+      
+      // Return only the first photo
+      res.json({ photo: result[0].truckPhotos[0] });
+    } catch (error) {
+      console.error("Erreur récupération photo transporteur:", error);
+      res.status(500).json({ error: "Erreur lors de la récupération de la photo" });
     }
   });
 
