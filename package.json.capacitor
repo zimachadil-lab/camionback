@@ -1,0 +1,10 @@
+{
+  "scripts": {
+    "cap:sync": "npx cap sync android",
+    "cap:open": "npx cap open android",
+    "cap:build": "npm run build && npx cap sync android",
+    "cap:run": "npx cap run android",
+    "android:icons": "npx capacitor-assets generate --android",
+    "android:clean": "cd android && ./gradlew clean"
+  }
+}
