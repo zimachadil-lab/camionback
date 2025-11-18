@@ -284,27 +284,29 @@ export function TransporterPortfolio({ open, onOpenChange }: TransporterPortfoli
               </Button>
             </div>
           ) : (
-            // Tinder-style card stack
-            <div className="relative h-full flex items-center justify-center p-6">
-              <AnimatePresence mode="popLayout">
-                {currentTransporter && (
-                  <motion.div
-                    key={currentTransporter.id}
-                    initial={{ scale: 0.95, opacity: 0, y: 20 }}
-                    animate={{ 
-                      scale: 1, 
-                      opacity: 1, 
-                      y: 0,
-                      x: swipeDirection === "left" ? -400 : swipeDirection === "right" ? 400 : 0,
-                      rotate: swipeDirection === "left" ? -20 : swipeDirection === "right" ? 20 : 0,
-                    }}
-                    exit={{ scale: 0.8, opacity: 0 }}
-                    transition={{ duration: 0.3, type: "spring" }}
-                    className="absolute w-full max-w-md"
-                  >
-                    <Card className="overflow-hidden shadow-2xl border-2">
-                      {/* Truck Photo */}
-                      <div className="relative h-80 bg-gradient-to-br from-[#17cfcf]/10 to-[#0ea5a5]/10">
+            // Tinder-style card stack with controls
+            <div className="flex flex-col h-full gap-4 p-4 md:p-6">
+              {/* Card Container */}
+              <div className="flex-1 flex items-center justify-center min-h-0">
+                <AnimatePresence mode="popLayout">
+                  {currentTransporter && (
+                    <motion.div
+                      key={currentTransporter.id}
+                      initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                      animate={{ 
+                        scale: 1, 
+                        opacity: 1, 
+                        y: 0,
+                        x: swipeDirection === "left" ? -400 : swipeDirection === "right" ? 400 : 0,
+                        rotate: swipeDirection === "left" ? -20 : swipeDirection === "right" ? 20 : 0,
+                      }}
+                      exit={{ scale: 0.8, opacity: 0 }}
+                      transition={{ duration: 0.3, type: "spring" }}
+                      className="w-full max-w-md flex flex-col max-h-full"
+                    >
+                      <Card className="overflow-hidden shadow-2xl border-2 flex flex-col max-h-full">
+                        {/* Truck Photo */}
+                        <div className="relative h-40 md:h-48 flex-shrink-0 bg-gradient-to-br from-[#17cfcf]/10 to-[#0ea5a5]/10">
                         {photoCache[currentTransporter.id] ? (
                           <img
                             src={photoCache[currentTransporter.id]}
@@ -329,10 +331,10 @@ export function TransporterPortfolio({ open, onOpenChange }: TransporterPortfoli
                       </div>
 
                       {/* Info Section */}
-                      <div className="p-6 space-y-4">
+                      <div className="flex-1 p-4 space-y-3 overflow-y-auto min-h-0">
                         {/* Name & Rating */}
                         <div>
-                          <h3 className="text-2xl font-bold mb-2">{currentTransporter.name || 'Transporteur'}</h3>
+                          <h3 className="text-xl font-bold mb-1">{currentTransporter.name || 'Transporteur'}</h3>
                           {getStarDisplay(currentTransporter.rating, currentTransporter.totalRatings)}
                         </div>
 
@@ -355,18 +357,18 @@ export function TransporterPortfolio({ open, onOpenChange }: TransporterPortfoli
                         </div>
 
                         {/* Phone Section - Highly Visible */}
-                        <div className="pt-3 border-t">
+                        <div className="pt-2 border-t">
                           <div className="flex items-center justify-between gap-3">
                             <div className="flex items-center gap-2 flex-1">
                               <Phone className="w-5 h-5 text-[#17cfcf]" />
-                              <span className="font-semibold text-lg">{currentTransporter.phoneNumber}</span>
+                              <span className="font-semibold text-base">{currentTransporter.phoneNumber}</span>
                             </div>
                             <a
                               href={`tel:${currentTransporter.phoneNumber}`}
                               className={cn(
-                                "flex items-center gap-2 px-4 py-2 rounded-lg",
+                                "flex items-center gap-2 px-3 py-1.5 rounded-lg",
                                 "bg-gradient-to-br from-[#17cfcf] to-[#0ea5a5]",
-                                "text-white font-semibold",
+                                "text-white font-semibold text-sm",
                                 "hover-elevate active-elevate-2 shadow-md"
                               )}
                               data-testid={`button-call-card-${currentTransporter.id}`}
@@ -382,51 +384,50 @@ export function TransporterPortfolio({ open, onOpenChange }: TransporterPortfoli
                   </motion.div>
                 )}
               </AnimatePresence>
+              </div>
+
+              {/* Action Buttons - Integrated */}
+              {currentTransporter && currentIndex < transporters.length && (
+                <div className="flex items-center justify-center gap-6 px-4">
+                  {/* Pass Button */}
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    onClick={() => handleSwipe("left")}
+                    className={cn(
+                      "w-14 h-14 rounded-full border-2 hover:border-red-500 hover:bg-red-50 hover:text-red-500 transition-all shadow-lg",
+                      "active:scale-90"
+                    )}
+                    data-testid="button-pass-transporter"
+                  >
+                    <X className="w-7 h-7" />
+                  </Button>
+
+                  {/* Info Badge */}
+                  <div className="text-center min-w-[60px]">
+                    <p className="text-xs text-muted-foreground font-medium">
+                      {currentIndex + 1} / {transporters.length}
+                    </p>
+                  </div>
+
+                  {/* Save Button */}
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    onClick={() => handleSwipe("right")}
+                    className={cn(
+                      "w-14 h-14 rounded-full border-2 hover:border-green-500 hover:bg-green-50 hover:text-green-500 transition-all shadow-lg",
+                      "active:scale-90"
+                    )}
+                    data-testid="button-save-transporter"
+                  >
+                    <Heart className="w-7 h-7" />
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
-
-        {/* Action Buttons */}
-        {currentTransporter && currentIndex < transporters.length && (
-          <div className="p-6 border-t bg-background/50 backdrop-blur-sm">
-            <div className="flex items-center justify-center gap-6">
-              {/* Pass Button */}
-              <Button
-                size="icon"
-                variant="outline"
-                onClick={() => handleSwipe("left")}
-                className={cn(
-                  "w-16 h-16 rounded-full border-2 hover:border-red-500 hover:bg-red-50 hover:text-red-500 transition-all shadow-lg",
-                  "active:scale-90"
-                )}
-                data-testid="button-pass-transporter"
-              >
-                <X className="w-8 h-8" />
-              </Button>
-
-              {/* Info Badge */}
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground font-medium">
-                  {currentIndex + 1} / {transporters.length}
-                </p>
-              </div>
-
-              {/* Save Button */}
-              <Button
-                size="icon"
-                variant="outline"
-                onClick={() => handleSwipe("right")}
-                className={cn(
-                  "w-16 h-16 rounded-full border-2 hover:border-green-500 hover:bg-green-50 hover:text-green-500 transition-all shadow-lg",
-                  "active:scale-90"
-                )}
-                data-testid="button-save-transporter"
-              >
-                <Heart className="w-8 h-8" />
-              </Button>
-            </div>
-          </div>
-        )}
       </DialogContent>
     </Dialog>
   );
