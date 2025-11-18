@@ -346,15 +346,35 @@ export function TransporterPortfolio({ open, onOpenChange }: TransporterPortfoli
                             <Truck className="w-4 h-4 text-[#17cfcf]" />
                             <span className="font-medium">{currentTransporter.totalTrips} voyage{currentTransporter.totalTrips !== 1 ? 's' : ''}</span>
                           </div>
-                          <div className="flex items-center gap-2 text-sm">
-                            <Phone className="w-4 h-4 text-[#17cfcf]" />
-                            <span className="font-medium">{currentTransporter.phoneNumber}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm">
+                          <div className="flex items-center gap-2 text-sm col-span-2">
                             <Calendar className="w-4 h-4 text-[#17cfcf]" />
                             <span className="font-medium">
                               Depuis {format(new Date(currentTransporter.createdAt), 'MMM yyyy', { locale: fr })}
                             </span>
+                          </div>
+                        </div>
+
+                        {/* Phone Section - Highly Visible */}
+                        <div className="pt-3 border-t">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2 flex-1">
+                              <Phone className="w-5 h-5 text-[#17cfcf]" />
+                              <span className="font-semibold text-lg">{currentTransporter.phoneNumber}</span>
+                            </div>
+                            <a
+                              href={`tel:${currentTransporter.phoneNumber}`}
+                              className={cn(
+                                "flex items-center gap-2 px-4 py-2 rounded-lg",
+                                "bg-gradient-to-br from-[#17cfcf] to-[#0ea5a5]",
+                                "text-white font-semibold",
+                                "hover-elevate active-elevate-2 shadow-md"
+                              )}
+                              data-testid={`button-call-card-${currentTransporter.id}`}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Phone className="w-4 h-4" />
+                              Appeler
+                            </a>
                           </div>
                         </div>
                       </div>
