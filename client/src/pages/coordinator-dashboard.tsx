@@ -3090,11 +3090,11 @@ export default function CoordinatorDashboard() {
               />
             </div>
 
-            {(activeLoading || paymentLoading) ? (
+            {enActionLoading ? (
               <div className="flex justify-center py-12">
                 <LoadingTruck />
               </div>
-            ) : filterRequests([...activeRequests, ...paymentRequests], filters.production).length === 0 ? (
+            ) : filterRequests(enActionRequests, filters.production).length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center text-muted-foreground">
                   <Truck className="h-12 w-12 mx-auto mb-3 opacity-50" />
@@ -3103,7 +3103,7 @@ export default function CoordinatorDashboard() {
               </Card>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {filterRequests([...activeRequests, ...paymentRequests], filters.production).map((request) => 
+                {filterRequests(enActionRequests, filters.production).map((request) => 
                   renderRequestCard(request, false, false, false, false, true, false, true, false, { showProductionActions: true })
                 )}
               </div>
